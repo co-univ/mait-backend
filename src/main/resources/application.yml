@@ -17,3 +17,12 @@ spring:
         show_sql: true
         format_sql: true
         dialect: org.hibernate.dialect.MySQL8Dialect
+
+springdoc:
+  api-docs:
+    path: /api-docs
+    enabled: true
+  swagger-ui:
+    operations-sorter: alpha
+    tags-sorter: alpha
+    display-request-duration: true
