@@ -32,4 +32,13 @@ public class ErrorResponse extends BaseResponse {
 			null
 		);
 	}
+
+	public static ErrorResponse of(ExceptionCode exceptionCode, List<String> reasons) {
+		return new ErrorResponse(
+			exceptionCode.getStatus(),
+			exceptionCode.getCode(),
+			exceptionCode.getMessage(),
+			reasons
+		);
+	}
 }
