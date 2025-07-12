@@ -13,12 +13,14 @@ import lombok.Getter;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class ErrorResponse extends BaseResponse {
 
+	private final HttpStatusCode status;
 	private final String code;
 	private final String message;
 	private final List<String> reasons;
 
 	private ErrorResponse(HttpStatusCode status, String code, String message, List<String> reasons) {
-		super(false, status);
+		super(false);
+		this.status = status;
 		this.code = code;
 		this.message = message;
 		this.reasons = reasons;
