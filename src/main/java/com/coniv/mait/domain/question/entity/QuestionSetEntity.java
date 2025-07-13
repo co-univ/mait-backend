@@ -12,13 +12,14 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
+import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 @Table(name = "question_sets")
 @Entity
 @Getter
-@NoArgsConstructor
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class QuestionSetEntity {
 
 	@Id
@@ -40,4 +41,13 @@ public class QuestionSetEntity {
 	@Enumerated(EnumType.STRING)
 	@Column(nullable = false)
 	private DeliveryMode deliveryMode = DeliveryMode.LIVE_TIME;
+
+	private QuestionSetEntity(String subject, QuestionSetCreationType creationType) {
+		this.subject = subject;
+		this.creationType = creationType;
+	}
+
+	public static QuestionSetEntity of(String subject, QuestionSetCreationType creationType) {
+		return new QuestionSetEntity(subject, creationType);
+	}
 }
