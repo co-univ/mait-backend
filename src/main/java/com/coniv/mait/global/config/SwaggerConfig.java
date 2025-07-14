@@ -10,11 +10,11 @@ import io.swagger.v3.oas.models.info.Info;
 public class SwaggerConfig {
 
 	@Bean
-	public OpenAPI openAPI() {
+	public OpenAPI openApi() {
 		return new OpenAPI()
 			.info(new Info()
 				.title("MAIT API Documentation")
 				.description("교육 문제 생성 및 풀이 플랫폼 API")
 				.version("v1.0.0"));
 	}
-} 
+}
