@@ -54,7 +54,7 @@ class GlobalExceptionHandlerTest {
 	@DisplayName("MethodArgumentNotValidException 처리 - 유효성 검증 실패")
 	void handleMethodArgumentNotValid_Success() {
 		// Given
-		String requestURI = "/api/test";
+		String requestUri = "/api/test";
 		String errorMessage = "Validation failed";
 
 		// FieldError 목록 생성
@@ -68,7 +68,7 @@ class GlobalExceptionHandlerTest {
 		when(bindingResult.getFieldErrors()).thenReturn(fieldErrors);
 		when(methodArgumentNotValidException.getMessage()).thenReturn(errorMessage);
 		when(servletWebRequest.getRequest()).thenReturn(httpServletRequest);
-		when(httpServletRequest.getRequestURI()).thenReturn(requestURI);
+		when(httpServletRequest.getRequestURI()).thenReturn(requestUri);
 
 		// When
 		ResponseEntity<Object> response = globalExceptionHandler.handleMethodArgumentNotValid(
@@ -92,7 +92,7 @@ class GlobalExceptionHandlerTest {
 	@DisplayName("MethodArgumentNotValidException 처리 - 빈 에러 메시지")
 	void handleMethodArgumentNotValid_EmptyErrors() {
 		// Given
-		String requestURI = "/api/test";
+		String requestUri = "/api/test";
 		String errorMessage = "Validation failed";
 		List<FieldError> emptyFieldErrors = List.of();
 
@@ -101,7 +101,7 @@ class GlobalExceptionHandlerTest {
 		when(bindingResult.getFieldErrors()).thenReturn(emptyFieldErrors);
 		when(methodArgumentNotValidException.getMessage()).thenReturn(errorMessage);
 		when(servletWebRequest.getRequest()).thenReturn(httpServletRequest);
-		when(httpServletRequest.getRequestURI()).thenReturn(requestURI);
+		when(httpServletRequest.getRequestURI()).thenReturn(requestUri);
 
 		// When
 		ResponseEntity<Object> response = globalExceptionHandler.handleMethodArgumentNotValid(
