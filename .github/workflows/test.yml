@@ -24,7 +24,7 @@ jobs:
         run: ./gradlew checkstyleMain checkstyleTest
 
       - name: Build with Gradle Wrapper
-        run: ./gradlew build
+        run: ./gradlew build -x test
 
       - name: Run tests
         run: ./gradlew test
