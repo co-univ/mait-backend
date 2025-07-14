@@ -80,7 +80,7 @@ class GlobalExceptionHandlerTest {
 
 		ErrorResponse errorResponse = (ErrorResponse)response.getBody();
 		assertThat(errorResponse.getIsSuccess()).isFalse();
-		assertThat(errorResponse.getStatus()).isEqualTo(HttpStatus.BAD_REQUEST.value());
+		assertThat(errorResponse.getStatus()).isEqualTo(HttpStatus.BAD_REQUEST);
 
 		verify(methodArgumentNotValidException).getBindingResult();
 		verify(bindingResult).getFieldErrors();
@@ -113,7 +113,7 @@ class GlobalExceptionHandlerTest {
 
 		ErrorResponse errorResponse = (ErrorResponse)response.getBody();
 		assertThat(errorResponse.getIsSuccess()).isFalse();
-		assertThat(errorResponse.getStatus()).isEqualTo(HttpStatus.BAD_REQUEST.value());
+		assertThat(errorResponse.getStatus()).isEqualTo(HttpStatus.BAD_REQUEST);
 
 		verify(methodArgumentNotValidException).getBindingResult();
 		verify(bindingResult).getFieldErrors();
@@ -134,7 +134,7 @@ class GlobalExceptionHandlerTest {
 
 		ErrorResponse errorResponse = response.getBody();
 		assertThat(errorResponse.getIsSuccess()).isFalse();
-		assertThat(errorResponse.getStatus()).isEqualTo(HttpStatus.INTERNAL_SERVER_ERROR.value());
+		assertThat(errorResponse.getStatus()).isEqualTo(HttpStatus.INTERNAL_SERVER_ERROR);
 	}
 
 	@Test
@@ -152,7 +152,7 @@ class GlobalExceptionHandlerTest {
 
 		ErrorResponse errorResponse = response.getBody();
 		assertThat(errorResponse.getIsSuccess()).isFalse();
-		assertThat(errorResponse.getStatus()).isEqualTo(HttpStatus.INTERNAL_SERVER_ERROR.value());
+		assertThat(errorResponse.getStatus()).isEqualTo(HttpStatus.INTERNAL_SERVER_ERROR);
 	}
 
 	@Test
@@ -170,6 +170,6 @@ class GlobalExceptionHandlerTest {
 
 		ErrorResponse errorResponse = response.getBody();
 		assertThat(errorResponse.getIsSuccess()).isFalse();
-		assertThat(errorResponse.getStatus()).isEqualTo(HttpStatus.INTERNAL_SERVER_ERROR.value());
+		assertThat(errorResponse.getStatus()).isEqualTo(HttpStatus.INTERNAL_SERVER_ERROR);
 	}
 }
