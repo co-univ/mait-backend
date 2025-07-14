@@ -2,6 +2,7 @@ plugins {
     id 'java'
     id 'org.springframework.boot' version '3.5.0'
     id 'io.spring.dependency-management' version '1.1.7'
+    id 'checkstyle'
 }
 
 group = 'com.coniv'
@@ -41,4 +42,24 @@ dependencies {
 
 tasks.named('test') {
     useJUnitPlatform()
+}
+
+// CheckStyle 설정 (Naver Coding Convention)
+checkstyle {
+    toolVersion = '10.12.4'
+    configFile = file('config/checkstyle/checkstyle.xml')
+    configProperties = [
+        'suppressionFile': 'config/checkstyle/suppressions.xml'
+    ]
+    ignoreFailures = false
+    maxWarnings = 0
+    maxErrors = 0
+}
+
+checkstyleMain {
+    source ='src/main/java'
+}
+
+checkstyleTest {
+    source ='src/test/java'
 }

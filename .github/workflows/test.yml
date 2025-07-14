@@ -1,0 +1,30 @@
+name: complie-test
+
+on:
+  pull_request:
+    branches: [ "develop" , "release", "main" ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v3
+      - name: Set up JDK 21
+        uses: actions/setup-java@v3
+        with:
+          java-version: '21'
+          distribution: 'zulu'
+
+      - name: Grant permission for gradlew
+        run: chmod +x ./gradlew
+        shell: bash
+
+      - name: Run CheckStyle
+        run: ./gradlew checkstyleMain checkstyleTest
+
+      - name: Build with Gradle Wrapper
+        run: ./gradlew build
+
+      - name: Run tests
+        run: ./gradlew test
