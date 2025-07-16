@@ -1,0 +1,61 @@
+# Git 관련 파일
+.git
+.gitignore
+.gitattributes
+
+# IDE 관련 파일
+.idea/
+.vscode/
+*.iml
+*.iws
+*.ipr
+.project
+.classpath
+.settings/
+
+# 빌드 결과물
+build/
+target/
+out/
+*.jar
+*.war
+*.ear
+*.class
+
+# 로그 파일
+*.log
+logs/
+
+# 임시 파일
+*.tmp
+*.temp
+*.swp
+*.swo
+*~
+
+# OS 관련 파일
+.DS_Store
+Thumbs.db
+
+# 테스트 결과
+test-results/
+coverage/
+
+# 기타 불필요한 파일
+README.md
+LICENSE
+.dockerignore
+docker-compose.yml
+
+# 맥 관련 파일
+.DS_Store
+.Spotlight-V100
+.Trashes
+._*
+
+# 개발 환경 파일
+.env
+.env.local
+.env.development
+.env.test
+.env.production 
