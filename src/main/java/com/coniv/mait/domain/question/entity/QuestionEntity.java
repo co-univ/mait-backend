@@ -28,7 +28,7 @@ public abstract class QuestionEntity {
 	private String explanation;
 
 	@Column(nullable = false)
-	private Long order;
+	private Long number;
 
 	@ManyToOne(fetch = FetchType.LAZY)
 	@JoinColumn(name = "question_set_id")
