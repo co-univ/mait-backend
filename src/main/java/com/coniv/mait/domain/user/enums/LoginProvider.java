@@ -7,8 +7,7 @@ import lombok.Getter;
 @AllArgsConstructor
 public enum LoginProvider {
 
-	GOOGLE("구글"),
-	;
+	GOOGLE("구글");
 
 	private final String description;
 }
