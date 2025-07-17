@@ -37,6 +37,5 @@ public class UserEntity {
 	private String providerId;
 
 	@Enumerated(EnumType.STRING)
-	@Column(nullable = false)
 	private LoginProvider loginProvider;
 }
