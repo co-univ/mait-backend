@@ -32,11 +32,11 @@ public class UserEntity {
 	@Column(nullable = false)
 	private String name;
 
-	@Enumerated(EnumType.STRING)
-	@Column(nullable = false)
 	private Boolean isLocalLogin;
 
 	private String providerId;
 
+	@Enumerated(EnumType.STRING)
+	@Column(nullable = false)
 	private LoginProvider loginProvider;
 }
