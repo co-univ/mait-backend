@@ -32,6 +32,9 @@ public class UserEntity {
 	@Column(nullable = false)
 	private String name;
 
+	@Column(unique = true)
+	private String nickname;
+
 	private Boolean isLocalLogin;
 
 	@Column(unique = true)
@@ -39,4 +42,6 @@ public class UserEntity {
 
 	@Enumerated(EnumType.STRING)
 	private LoginProvider loginProvider;
+
+	//TODO 초대링크 작업 시 팀 필드 추가
 }
