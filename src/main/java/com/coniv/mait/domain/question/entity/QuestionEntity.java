@@ -30,6 +30,9 @@ public abstract class QuestionEntity {
 	@Column(nullable = false)
 	private Long number;
 
+	@Column(nullable = false)
+	private int displayDelayMilliseconds;
+
 	@ManyToOne(fetch = FetchType.LAZY)
 	@JoinColumn(name = "question_set_id")
 	private QuestionSetEntity questionSet;
