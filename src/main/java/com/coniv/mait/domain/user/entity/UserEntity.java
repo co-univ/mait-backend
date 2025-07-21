@@ -34,6 +34,7 @@ public class UserEntity {
 
 	private Boolean isLocalLogin;
 
+	@Column(unique = true)
 	private String providerId;
 
 	@Enumerated(EnumType.STRING)
