@@ -4,6 +4,6 @@ import jakarta.persistence.DiscriminatorValue;
 import jakarta.persistence.Entity;
 
 @Entity
-@DiscriminatorValue("mutliple")
+@DiscriminatorValue("multiple")
 public class MultipleQuestionEntity extends QuestionEntity {
 }
