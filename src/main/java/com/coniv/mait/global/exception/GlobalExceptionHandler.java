@@ -16,12 +16,21 @@ import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExcep
 
 import com.coniv.mait.global.response.ErrorResponse;
 
+import jakarta.persistence.EntityNotFoundException;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 @RestControllerAdvice
 public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
+
+	@ExceptionHandler(EntityNotFoundException.class)
+	public ResponseEntity<ErrorResponse> handleEntityNotFoundException(EntityNotFoundException exception,
+		HttpServletRequest request) {
+		log.info("EntityNotFoundException 발생: {}, 경로: {}", exception.getMessage(), request.getRequestURI());
+		return ResponseEntity.status(HttpStatus.NOT_FOUND)
+			.body(ErrorResponse.of(ExceptionCode.ENTITY_NOT_FOUND, List.of(exception.getMessage())));
+	}
 
 	@Override
 	protected ResponseEntity<Object> handleMethodArgumentNotValid(MethodArgumentNotValidException exception,
