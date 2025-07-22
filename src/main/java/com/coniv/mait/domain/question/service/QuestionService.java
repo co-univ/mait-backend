@@ -42,7 +42,14 @@ public class QuestionService {
 			List<MultipleChoiceEntity> choices = multipleQuestionFactory.createChoices(multiple.getChoices(),
 				multipleQuestion);
 			questionEntityRepository.save(multipleQuestion);
+			// Todo: JDBC Batch Insert로 변경
 			multipleChoiceEntityRepository.saveAll(choices);
 		});
+
+		// Todo: 주관식
+
+		// Todo: 순서
+
+		// Todo: 빈칸
 	}
 }
