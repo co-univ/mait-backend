@@ -44,4 +44,19 @@ public class UserEntity {
 	private LoginProvider loginProvider;
 
 	//TODO 초대링크 작업 시 팀 필드 추가
+
+	private UserEntity(String email, String name, String nickname, Boolean isLocalLogin, String providerId,
+		LoginProvider loginProvider) {
+		this.email = email;
+		this.name = name;
+		this.nickname = nickname;
+		this.isLocalLogin = isLocalLogin;
+		this.providerId = providerId;
+		this.loginProvider = loginProvider;
+	}
+
+	public static UserEntity socialLoginUser(String email, String name, String providerId,
+		LoginProvider loginProvider) {
+		return new UserEntity(email, name, null, false, providerId, loginProvider);
+	}
 }
