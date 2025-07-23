@@ -2,14 +2,14 @@ package com.coniv.mait.web.question.controller;
 
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.coniv.mait.domain.question.service.QuestionService;
 import com.coniv.mait.global.response.ApiResponse;
-import com.coniv.mait.web.question.dto.BaseUpdateQuestionApiRequest;
+import com.coniv.mait.web.question.dto.CreateMultipleQuestionApiRequest;
 
 import io.swagger.v3.oas.annotations.Operation;
 import jakarta.validation.Valid;
@@ -22,13 +22,12 @@ public class QuestionController {
 
 	private final QuestionService questionService;
 
-	@Operation(summary = "문제 셋에 문제 저장 API")
-	@PutMapping
+	@Operation(summary = "문제 셋에 객관식 문제 저장 API")
+	@PostMapping(params = "type=multiple")
 	public ResponseEntity<ApiResponse<Void>> saveQuestionsToQuestionSet(
-		@Valid @RequestBody BaseUpdateQuestionApiRequest request,
+		@Valid @RequestBody CreateMultipleQuestionApiRequest request,
 		@PathVariable("questionSetId") final Long questionSetId) {
-
-		questionService.saveQuestionsToQuestionSet(questionSetId, request.multipleQuestions());
+		questionService.createMultipleQuestion(questionSetId, request.multipleQuestionDto());
 		return ResponseEntity.ok(ApiResponse.ok(null));
 	}
 }
