@@ -19,6 +19,7 @@ import com.coniv.mait.domain.question.entity.QuestionSetEntity;
 import com.coniv.mait.domain.question.enums.QuestionSetCreationType;
 import com.coniv.mait.domain.question.service.dto.MultipleChoiceDto;
 import com.coniv.mait.domain.question.service.dto.MultipleQuestionDto;
+import com.coniv.mait.global.exception.custom.UserParameterException;
 import com.coniv.mait.global.util.RandomUtil;
 
 @ExtendWith(MockitoExtension.class)
@@ -33,19 +34,16 @@ class MultipleQuestionFactoryTest {
 		// given
 		List<MultipleChoiceDto> choices = Arrays.asList(
 			MultipleChoiceDto.builder()
-				.id(1L)
 				.number(1)
 				.content("선택지 1")
 				.isCorrect(true)
 				.build(),
 			MultipleChoiceDto.builder()
-				.id(2L)
 				.number(2)
 				.content("선택지 2")
 				.isCorrect(false)
 				.build(),
 			MultipleChoiceDto.builder()
-				.id(3L)
 				.number(3)
 				.content("선택지 3")
 				.isCorrect(true)
@@ -53,7 +51,6 @@ class MultipleQuestionFactoryTest {
 		);
 
 		MultipleQuestionDto questionDto = MultipleQuestionDto.builder()
-			.id(1L)
 			.content("테스트 문제")
 			.explanation("테스트 설명")
 			.number(1L)
@@ -73,7 +70,7 @@ class MultipleQuestionFactoryTest {
 
 			// then
 			assertThat(result).isNotNull();
-			assertThat(result.getId()).isEqualTo(1L);
+			assertThat(result.getId()).isNull(); // ID는 Factory에서 설정하지 않음
 			assertThat(result.getContent()).isEqualTo("테스트 문제");
 			assertThat(result.getExplanation()).isEqualTo("테스트 설명");
 			assertThat(result.getNumber()).isEqualTo(1L);
@@ -92,7 +89,6 @@ class MultipleQuestionFactoryTest {
 		QuestionSetEntity questionSet = QuestionSetEntity.of("테스트 과목", QuestionSetCreationType.MANUAL);
 
 		MultipleQuestionEntity question = MultipleQuestionEntity.builder()
-			.id(1L)
 			.content("테스트 문제")
 			.explanation("설명")
 			.number(1L)
@@ -103,19 +99,16 @@ class MultipleQuestionFactoryTest {
 
 		List<MultipleChoiceDto> choiceDtos = Arrays.asList(
 			MultipleChoiceDto.builder()
-				.id(1L)
 				.number(1)
 				.content("첫 번째 선택지")
 				.isCorrect(true)
 				.build(),
 			MultipleChoiceDto.builder()
-				.id(2L)
 				.number(2)
 				.content("두 번째 선택지")
 				.isCorrect(false)
 				.build(),
 			MultipleChoiceDto.builder()
-				.id(3L)
 				.number(3)
 				.content("세 번째 선택지")
 				.isCorrect(false)
@@ -129,21 +122,21 @@ class MultipleQuestionFactoryTest {
 		assertThat(result).hasSize(3);
 
 		MultipleChoiceEntity firstChoice = result.get(0);
-		assertThat(firstChoice.getId()).isEqualTo(1L);
+		assertThat(firstChoice.getId()).isNull(); // ID는 Factory에서 설정하지 않음
 		assertThat(firstChoice.getNumber()).isEqualTo(1);
 		assertThat(firstChoice.getContent()).isEqualTo("첫 번째 선택지");
 		assertThat(firstChoice.isCorrect()).isTrue();
 		assertThat(firstChoice.getQuestion()).isEqualTo(question);
 
 		MultipleChoiceEntity secondChoice = result.get(1);
-		assertThat(secondChoice.getId()).isEqualTo(2L);
+		assertThat(secondChoice.getId()).isNull(); // ID는 Factory에서 설정하지 않음
 		assertThat(secondChoice.getNumber()).isEqualTo(2);
 		assertThat(secondChoice.getContent()).isEqualTo("두 번째 선택지");
 		assertThat(secondChoice.isCorrect()).isFalse();
 		assertThat(secondChoice.getQuestion()).isEqualTo(question);
 
 		MultipleChoiceEntity thirdChoice = result.get(2);
-		assertThat(thirdChoice.getId()).isEqualTo(3L);
+		assertThat(thirdChoice.getId()).isNull(); // ID는 Factory에서 설정하지 않음
 		assertThat(thirdChoice.getNumber()).isEqualTo(3);
 		assertThat(thirdChoice.getContent()).isEqualTo("세 번째 선택지");
 		assertThat(thirdChoice.isCorrect()).isFalse();
@@ -157,7 +150,6 @@ class MultipleQuestionFactoryTest {
 		QuestionSetEntity questionSet = QuestionSetEntity.of("테스트 과목", QuestionSetCreationType.MANUAL);
 
 		MultipleQuestionEntity question = MultipleQuestionEntity.builder()
-			.id(1L)
 			.content("테스트 문제")
 			.explanation("설명")
 			.number(1L)
@@ -173,6 +165,40 @@ class MultipleQuestionFactoryTest {
 
 		// then
 		assertThat(result).isEmpty();
+	}
+
+	@Test
+	@DisplayName("객관식 선택지 생성 실패 - 중복된 선택지 번호")
+	void createChoices_DuplicateNumber_ThrowsException() {
+		// given
+		QuestionSetEntity questionSet = QuestionSetEntity.of("테스트 과목", QuestionSetCreationType.MANUAL);
+
+		MultipleQuestionEntity question = MultipleQuestionEntity.builder()
+			.content("테스트 문제")
+			.explanation("설명")
+			.number(1L)
+			.displayDelayMilliseconds(1000)
+			.questionSet(questionSet)
+			.answerCount(1)
+			.build();
+
+		List<MultipleChoiceDto> duplicateChoices = Arrays.asList(
+			MultipleChoiceDto.builder()
+				.number(1)
+				.content("첫 번째 선택지")
+				.isCorrect(true)
+				.build(),
+			MultipleChoiceDto.builder()
+				.number(1) // 중복된 번호
+				.content("두 번째 선택지")
+				.isCorrect(false)
+				.build()
+		);
+
+		// when & then
+		assertThatThrownBy(() -> multipleQuestionFactory.createChoices(duplicateChoices, question))
+			.isInstanceOf(UserParameterException.class)
+			.hasMessage("중복된 선택지 번호가 존재합니다.");
 	}
 
 }

@@ -22,7 +22,6 @@ public class MultipleQuestionFactory {
 
 	public MultipleQuestionEntity create(MultipleQuestionDto dto, QuestionSetEntity questionSet) {
 		return MultipleQuestionEntity.builder()
-			.id(dto.getId())
 			.content(dto.getContent())
 			.explanation(dto.getExplanation())
 			.number(dto.getNumber())
@@ -55,7 +54,6 @@ public class MultipleQuestionFactory {
 
 	private MultipleChoiceEntity createChoice(MultipleChoiceDto dto, MultipleQuestionEntity question) {
 		return MultipleChoiceEntity.builder()
-			.id(dto.getId())
 			.number(dto.getNumber())
 			.content(dto.getContent())
 			.question(question)
