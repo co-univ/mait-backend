@@ -12,11 +12,20 @@ import jakarta.persistence.InheritanceType;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
+import lombok.AccessLevel;
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.experimental.SuperBuilder;
 
 @Table(name = "questions")
 @Entity
 @Inheritance(strategy = InheritanceType.SINGLE_TABLE)
 @DiscriminatorColumn(name = "question_type")
+@Getter
+@SuperBuilder
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
+@AllArgsConstructor(access = AccessLevel.PROTECTED)
 public abstract class QuestionEntity {
 
 	@Id
@@ -29,6 +38,9 @@ public abstract class QuestionEntity {
 
 	@Column(nullable = false)
 	private Long number;
+
+	@Column(nullable = false)
+	private int displayDelayMilliseconds;
 
 	@ManyToOne(fetch = FetchType.LAZY)
 	@JoinColumn(name = "question_set_id")

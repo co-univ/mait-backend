@@ -1,6 +1,7 @@
-package com.coniv.mait.global.exception;
+package com.coniv.mait.global.exception.handler;
 
 import static org.assertj.core.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 import java.util.List;
@@ -20,8 +21,10 @@ import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.context.request.ServletWebRequest;
 
+import com.coniv.mait.global.exception.ExceptionCode;
 import com.coniv.mait.global.response.ErrorResponse;
 
+import jakarta.persistence.EntityNotFoundException;
 import jakarta.servlet.http.HttpServletRequest;
 
 @ExtendWith(MockitoExtension.class)
@@ -48,6 +51,34 @@ class GlobalExceptionHandlerTest {
 	@BeforeEach
 	void setUp() {
 		httpHeaders = new HttpHeaders();
+	}
+
+	@Test
+	@DisplayName("EntityNotFoundException 처리 - 엔티티를 찾을 수 없음")
+	void handleEntityNotFoundException() {
+		// Given
+		String requestUri = "/api/test";
+		String errorMessage = "Entity not found";
+
+		// Mock 설정
+		when(httpServletRequest.getRequestURI()).thenReturn(requestUri);
+
+		// When
+		ResponseEntity<ErrorResponse> response = globalExceptionHandler.handleEntityNotFoundException(
+			new EntityNotFoundException(errorMessage), httpServletRequest);
+
+		// Then
+		assertThat(response.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
+		assertThat(response.getBody()).isNotNull();
+
+		ErrorResponse errorResponse = response.getBody();
+		assertThat(errorResponse.getIsSuccess()).isFalse();
+		assertThat(errorResponse.getStatus()).isEqualTo(HttpStatus.NOT_FOUND);
+		assertThat(errorResponse.getMessage()).isEqualTo(ExceptionCode.ENTITY_NOT_FOUND.getMessage());
+		assertNotNull(errorResponse.getReasons());
+		assertThat(errorResponse.getReasons().get(0)).isEqualTo(errorMessage);
+
+		verify(httpServletRequest).getRequestURI();
 	}
 
 	@Test
