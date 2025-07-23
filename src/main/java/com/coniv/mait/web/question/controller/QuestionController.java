@@ -24,7 +24,7 @@ public class QuestionController {
 
 	@Operation(summary = "문제 셋에 객관식 문제 저장 API")
 	@PostMapping(params = "type=multiple")
-	public ResponseEntity<ApiResponse<Void>> saveQuestionsToQuestionSet(
+	public ResponseEntity<ApiResponse<Void>> createMultipleQuestion(
 		@Valid @RequestBody CreateMultipleQuestionApiRequest request,
 		@PathVariable("questionSetId") final Long questionSetId) {
 		questionService.createMultipleQuestion(questionSetId, request.multipleQuestionDto());
