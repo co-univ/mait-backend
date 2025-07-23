@@ -7,9 +7,9 @@ import lombok.Getter;
 @AllArgsConstructor
 public enum TeamRole {
 
-	MAKER("퀴즈 생성 가능자"),
+	MAKER("문제 관리자"),
 
-	OWNER("생성자"),
+	OWNER("팀 생성자"),
 
 	PLAYER("참가자");
 
