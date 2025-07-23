@@ -30,26 +30,20 @@ public class QuestionService {
 	private final MultipleQuestionFactory multipleQuestionFactory;
 
 	@Transactional
-	public void saveQuestionsToQuestionSet(
+	public void createMultipleQuestion(
 		final Long questionSetId,
-		final List<MultipleQuestionDto> multipleQuestionsDto
+		final MultipleQuestionDto multipleQuestionsDto
 	) {
 		QuestionSetEntity questionSetEntity = questionSetEntityRepository.findById(questionSetId)
 			.orElseThrow(() -> new EntityNotFoundException("QuestionSet not found with id: " + questionSetId));
 
-		multipleQuestionsDto.forEach(multiple -> {
-			MultipleQuestionEntity multipleQuestion = multipleQuestionFactory.create(multiple, questionSetEntity);
-			List<MultipleChoiceEntity> choices = multipleQuestionFactory.createChoices(multiple.getChoices(),
-				multipleQuestion);
-			questionEntityRepository.save(multipleQuestion);
-			// Todo: JDBC Batch Insert로 변경
-			multipleChoiceEntityRepository.saveAll(choices);
-		});
+		MultipleQuestionEntity multipleQuestion = multipleQuestionFactory.create(multipleQuestionsDto,
+			questionSetEntity);
 
-		// Todo: 주관식
+		List<MultipleChoiceEntity> choices = multipleQuestionFactory.createChoices(multipleQuestionsDto.getChoices(),
+			multipleQuestion);
 
-		// Todo: 순서
-
-		// Todo: 빈칸
+		questionEntityRepository.save(multipleQuestion);
+		multipleChoiceEntityRepository.saveAll(choices);
 	}
 }
