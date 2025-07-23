@@ -1,8 +1,11 @@
 package com.coniv.mait.domain.team.entity;
 
+import com.coniv.mait.domain.team.enums.TeamUserRole;
 import com.coniv.mait.domain.user.entity.UserEntity;
 
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -31,4 +34,7 @@ public class TeamUserEntity {
 	@ManyToOne(fetch = FetchType.LAZY)
 	@JoinColumn(name = "team_id", nullable = false)
 	private TeamEntity team;
+
+	@Enumerated(EnumType.STRING)
+	private TeamUserRole userRole;
 }

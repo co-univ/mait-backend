@@ -5,7 +5,7 @@ import lombok.Getter;
 
 @Getter
 @AllArgsConstructor
-public enum TeamRole {
+public enum TeamUserRole {
 
 	MAKER("문제 관리자"),
 
