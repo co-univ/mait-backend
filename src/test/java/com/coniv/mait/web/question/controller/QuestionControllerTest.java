@@ -54,7 +54,7 @@ class QuestionControllerTest {
 				.isCorrect(false)
 				.build()
 		);
-		
+
 		CreateMultipleQuestionApiRequest request = new CreateMultipleQuestionApiRequest(
 			"Sample Question", "Sample Explanation", 1L, choices);
 		String json = objectMapper.writeValueAsString(request);
@@ -136,7 +136,7 @@ class QuestionControllerTest {
 				.isCorrect(false)
 				.build()
 		);
-		
+
 		CreateMultipleQuestionApiRequest request = new CreateMultipleQuestionApiRequest(
 			"Sample Question", "Sample Explanation", 1L, choices);
 
