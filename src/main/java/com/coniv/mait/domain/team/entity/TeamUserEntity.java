@@ -14,7 +14,7 @@ import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
-@Table(name = "teamusers")
+@Table(name = "team_users")
 @Entity
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
