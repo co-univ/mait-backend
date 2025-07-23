@@ -9,6 +9,7 @@ import com.coniv.mait.domain.question.entity.MultipleQuestionEntity;
 import com.coniv.mait.domain.question.entity.QuestionSetEntity;
 import com.coniv.mait.domain.question.service.dto.MultipleChoiceDto;
 import com.coniv.mait.domain.question.service.dto.MultipleQuestionDto;
+import com.coniv.mait.global.exception.custom.UserParameterException;
 import com.coniv.mait.global.util.RandomUtil;
 
 import lombok.RequiredArgsConstructor;
@@ -35,9 +36,21 @@ public class MultipleQuestionFactory {
 		List<MultipleChoiceDto> dtos,
 		MultipleQuestionEntity question
 	) {
+		checkChoicesNumber(dtos);
 		return dtos.stream()
 			.map(dto -> createChoice(dto, question))
 			.toList();
+	}
+
+	private void checkChoicesNumber(List<MultipleChoiceDto> dtos) {
+		long count = dtos.stream()
+			.map(MultipleChoiceDto::getNumber)
+			.distinct()
+			.count();
+
+		if (count != dtos.size()) {
+			throw new UserParameterException("중복된 선택지 번호가 존재합니다.");
+		}
 	}
 
 	private MultipleChoiceEntity createChoice(MultipleChoiceDto dto, MultipleQuestionEntity question) {
