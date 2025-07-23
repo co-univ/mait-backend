@@ -1,4 +1,4 @@
-package com.coniv.mait.global.exception;
+package com.coniv.mait.global.exception.handler;
 
 import java.util.List;
 
@@ -14,6 +14,7 @@ import org.springframework.web.context.request.ServletWebRequest;
 import org.springframework.web.context.request.WebRequest;
 import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExceptionHandler;
 
+import com.coniv.mait.global.exception.ExceptionCode;
 import com.coniv.mait.global.response.ErrorResponse;
 
 import jakarta.persistence.EntityNotFoundException;

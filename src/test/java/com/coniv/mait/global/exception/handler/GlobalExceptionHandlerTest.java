@@ -1,4 +1,4 @@
-package com.coniv.mait.global.exception;
+package com.coniv.mait.global.exception.handler;
 
 import static org.assertj.core.api.Assertions.*;
 import static org.junit.jupiter.api.Assertions.*;
@@ -21,6 +21,7 @@ import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.context.request.ServletWebRequest;
 
+import com.coniv.mait.global.exception.ExceptionCode;
 import com.coniv.mait.global.response.ErrorResponse;
 
 import jakarta.persistence.EntityNotFoundException;
