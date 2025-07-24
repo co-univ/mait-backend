@@ -22,8 +22,8 @@ public class MultipleQuestionDto {
 
 	private String explanation;
 
-	@NotNull(message = "객관식 문제의 번호는 필수입니다.")
-	@Min(value = 1, message = "객관식 문제의 번호는 1 이상이어야 합니다.")
+	@NotNull(message = "문제의 번호는 필수입니다.")
+	@Min(value = 1, message = "문제의 번호는 1 이상이어야 합니다.")
 	private Long number;
 
 	@NotNull
