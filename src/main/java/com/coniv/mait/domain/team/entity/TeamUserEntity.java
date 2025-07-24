@@ -2,6 +2,7 @@ package com.coniv.mait.domain.team.entity;
 
 import com.coniv.mait.domain.team.enums.TeamUserRole;
 import com.coniv.mait.domain.user.entity.UserEntity;
+import com.coniv.mait.global.entity.BaseTimeEntity;
 
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -21,7 +22,7 @@ import lombok.NoArgsConstructor;
 @Entity
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-public class TeamUserEntity {
+public class TeamUserEntity extends BaseTimeEntity {
 
 	@Id
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
