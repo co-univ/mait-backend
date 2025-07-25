@@ -32,6 +32,9 @@ dependencies {
 
     implementation 'org.springframework.boot:spring-boot-starter-oauth2-client'
 
+    implementation 'org.springframework.boot:spring-boot-starter-security'
+    testImplementation 'org.springframework.security:spring-security-test'
+
     compileOnly 'org.projectlombok:lombok'
 
     runtimeOnly 'com.mysql:mysql-connector-j'
@@ -51,7 +54,7 @@ checkstyle {
     toolVersion = '10.12.4'
     configFile = file('config/checkstyle/checkstyle.xml')
     configProperties = [
-        'suppressionFile': 'config/checkstyle/suppressions.xml'
+            'suppressionFile': 'config/checkstyle/suppressions.xml'
     ]
     ignoreFailures = false
     maxWarnings = 0
@@ -59,9 +62,9 @@ checkstyle {
 }
 
 checkstyleMain {
-    source ='src/main/java'
+    source = 'src/main/java'
 }
 
 checkstyleTest {
-    source ='src/test/java'
+    source = 'src/test/java'
 }
