@@ -22,4 +22,6 @@ public abstract class QuestionDto {
 	@NotNull(message = "문제의 번호는 필수입니다.")
 	@Min(value = 1, message = "문제의 번호는 1 이상이어야 합니다.")
 	private Long number;
+
+	public abstract QuestionDto toQuestionDto();
 }
