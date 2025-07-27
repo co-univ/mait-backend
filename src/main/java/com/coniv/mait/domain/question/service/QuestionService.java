@@ -5,12 +5,12 @@ import java.util.List;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.coniv.mait.domain.question.constant.QuestionType;
 import com.coniv.mait.domain.question.entity.MultipleChoiceEntity;
 import com.coniv.mait.domain.question.entity.MultipleQuestionEntity;
 import com.coniv.mait.domain.question.entity.QuestionSetEntity;
 import com.coniv.mait.domain.question.entity.ShortAnswerEntity;
 import com.coniv.mait.domain.question.entity.ShortQuestionEntity;
+import com.coniv.mait.domain.question.enums.QuestionType;
 import com.coniv.mait.domain.question.repository.MultipleChoiceEntityRepository;
 import com.coniv.mait.domain.question.repository.QuestionEntityRepository;
 import com.coniv.mait.domain.question.repository.QuestionSetEntityRepository;
@@ -67,17 +67,18 @@ public class QuestionService {
 		QuestionSetEntity questionSetEntity = questionSetEntityRepository.findById(questionSetId)
 			.orElseThrow(() -> new EntityNotFoundException("QuestionSet not found with id: " + questionSetId));
 
-		if (type.equals(QuestionType.SHORT)) {
-			ShortQuestionDto shortQuestionDto = (ShortQuestionDto)questionDto.toQuestionDto();
-			ShortQuestionEntity shortQuestionEntity = shortQuestionFactory.create(shortQuestionDto, questionSetEntity);
+		switch (type) {
+			case QuestionType.SHORT -> {
+				ShortQuestionDto shortQuestionDto = (ShortQuestionDto)questionDto.toQuestionDto();
+				ShortQuestionEntity shortQuestionEntity = shortQuestionFactory.create(shortQuestionDto,
+					questionSetEntity);
 
-			questionEntityRepository.save(shortQuestionEntity);
-			List<ShortAnswerEntity> shortAnswers = shortQuestionFactory.createShortAnswers(
-				shortQuestionDto.getShortAnswers(), shortQuestionEntity);
-			shortAnswerEntityRepository.saveAll(shortAnswers);
-
-		} else {
-			throw new IllegalArgumentException("Unsupported question type: " + type);
+				questionEntityRepository.save(shortQuestionEntity);
+				List<ShortAnswerEntity> shortAnswers = shortQuestionFactory.createShortAnswers(
+					shortQuestionDto.getShortAnswers(), shortQuestionEntity);
+				shortAnswerEntityRepository.saveAll(shortAnswers);
+			}
+			default -> throw new IllegalArgumentException("Unsupported question type: " + type);
 		}
 	}
 }
