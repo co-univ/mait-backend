@@ -1,6 +1,6 @@
 package com.coniv.mait.domain.question.constant;
 
-public final class QuestionType {
+public final class QuestionContstant {
 	public static final String SHORT = "SHORT";
 	public static final String MULTIPLE = "MULTIPLE";
 	public static final String ORDERING = "ORDERING";
