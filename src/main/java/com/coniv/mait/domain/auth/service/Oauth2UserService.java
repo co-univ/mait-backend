@@ -31,7 +31,7 @@ public class Oauth2UserService extends DefaultOAuth2UserService {
 		LoginProvider loginProvider = LoginProvider.findByProvider(provider);
 		OAuth2UserInfo oAuth2UserInfo = null;
 
-		if (provider.equals("google")) {
+		if (loginProvider == LoginProvider.GOOGLE) {
 			oAuth2UserInfo = new GoogleUserDetails(oAuth2User.getAttributes());
 		}
 		String providerId = oAuth2UserInfo.getProviderId();
