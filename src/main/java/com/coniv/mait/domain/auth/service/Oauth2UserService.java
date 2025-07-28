@@ -42,7 +42,7 @@ public class Oauth2UserService extends DefaultOAuth2UserService {
 		UserEntity user = userEntityRepository.findByProviderId(loginId)
 			.orElseGet(() -> {
 				UserEntity newUser = UserEntity.socialLoginUser(
-					email, name, providerId, loginProvider
+					email, name, loginId, loginProvider
 				);
 				return userEntityRepository.save(newUser);
 			});
