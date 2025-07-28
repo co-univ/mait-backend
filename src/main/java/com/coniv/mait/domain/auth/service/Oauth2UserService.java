@@ -1,5 +1,7 @@
 package com.coniv.mait.domain.auth.service;
 
+import java.util.Map;
+
 import org.springframework.security.oauth2.client.userinfo.DefaultOAuth2UserService;
 import org.springframework.security.oauth2.client.userinfo.OAuth2UserRequest;
 import org.springframework.security.oauth2.core.OAuth2AuthenticationException;
@@ -29,11 +31,8 @@ public class Oauth2UserService extends DefaultOAuth2UserService {
 
 		String provider = userRequest.getClientRegistration().getRegistrationId();
 		LoginProvider loginProvider = LoginProvider.findByProvider(provider);
-		OAuth2UserInfo oAuth2UserInfo = null;
+		OAuth2UserInfo oAuth2UserInfo = mapToOAuth2UserInfo(loginProvider, oAuth2User.getAttributes());
 
-		if (loginProvider == LoginProvider.GOOGLE) {
-			oAuth2UserInfo = new GoogleUserDetails(oAuth2User.getAttributes());
-		}
 		String providerId = oAuth2UserInfo.getProviderId();
 		String email = oAuth2UserInfo.getEmail();
 		String loginId = provider + "_" + providerId;
@@ -48,5 +47,12 @@ public class Oauth2UserService extends DefaultOAuth2UserService {
 			});
 
 		return new Oauth2UserDetails(user, oAuth2User.getAttributes());
+	}
+
+	private OAuth2UserInfo mapToOAuth2UserInfo(LoginProvider loginProvider, Map<String, Object> attributes) {
+		if (loginProvider == LoginProvider.GOOGLE) {
+			return new GoogleUserDetails(attributes);
+		}
+		throw new OAuth2AuthenticationException("지원되지 않는 OAuth2 제공자: " + loginProvider.getProvider());
 	}
 }
