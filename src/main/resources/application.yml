@@ -27,7 +27,7 @@ spring:
             client-secret: ${GOOGLE_CLIENT_SECRET}
             scope:
               - email
-              - name
+              - profile
 
 springdoc:
   api-docs:
