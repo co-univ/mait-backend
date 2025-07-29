@@ -21,7 +21,9 @@ import org.springframework.test.web.servlet.MockMvc;
 
 import com.coniv.mait.domain.question.service.QuestionService;
 import com.coniv.mait.domain.question.service.dto.MultipleChoiceDto;
+import com.coniv.mait.domain.question.service.dto.ShortAnswerDto;
 import com.coniv.mait.web.question.dto.CreateMultipleQuestionApiRequest;
+import com.coniv.mait.web.question.dto.CreateShortQuestionApiRequest;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 @WebMvcTest(controllers = QuestionController.class)
@@ -154,5 +156,95 @@ class QuestionControllerTest {
 			);
 
 		verify(questionService, never()).createMultipleQuestion(anyLong(), any());
+	}
+
+	@Test
+	@DisplayName("문제 셋에 주관식 문제 저장 API 테스트")
+	void createShortQuestionTest() throws Exception {
+		// given
+		Long questionSetId = 1L;
+		String type = "SHORT";
+		var shortAnswers = List.of(
+			ShortAnswerDto.builder()
+				.answer("정답1")
+				.isMain(true)
+				.number(1L)
+				.build(),
+			ShortAnswerDto.builder()
+				.answer("정답2")
+				.isMain(false)
+				.number(2L)
+				.build()
+		);
+		var request = new CreateShortQuestionApiRequest();
+		request.setContent("주관식 문제 내용");
+		request.setExplanation("문제 해설");
+		request.setNumber(1L);
+		request.setShortAnswers(shortAnswers);
+		// type 필드 추가
+		String json = objectMapper.writeValueAsString(request);
+		json = json.replaceFirst("\\{", "{\"type\":\"SHORT\",");
+
+		// when & then
+		mockMvc.perform(post("/api/v1/question-sets/{questionSetId}/questions?type={type}", questionSetId, type)
+				.contentType(MediaType.APPLICATION_JSON)
+				.content(json))
+			.andExpect(status().isOk());
+
+		verify(questionService).createQuestion(eq(questionSetId),
+			eq(com.coniv.mait.domain.question.enums.QuestionType.SHORT), any());
+	}
+
+	@ParameterizedTest(name = "{index} - {0}")
+	@DisplayName("주관식 문제 생성 실패 테스트 - 유효하지 않은 요청")
+	@MethodSource("invalidCreateShortQuestionRequests")
+	void createShortQuestionInvalidRequestTest(
+		String testName,
+		CreateShortQuestionApiRequest request,
+		String expectedMessage
+	) throws Exception {
+		// given
+		Long questionSetId = 1L;
+		String type = "SHORT";
+		String json = objectMapper.writeValueAsString(request);
+		json = json.replaceFirst("\\{", "{\"type\":\"SHORT\",");
+
+		// when & then
+		mockMvc.perform(post("/api/v1/question-sets/{questionSetId}/questions?type={type}", questionSetId, type)
+				.contentType(MediaType.APPLICATION_JSON)
+				.content(json))
+			.andExpectAll(
+				status().isBadRequest(),
+				jsonPath("$.isSuccess").value(false),
+				jsonPath("$.code").value("C-001"),
+				jsonPath("$.message").value("사용자 입력 오류입니다."),
+				jsonPath("$.reasons").isArray(),
+				jsonPath("$.reasons[0]").value(expectedMessage)
+			);
+
+		verify(questionService, never()).createQuestion(anyLong(), any(), any());
+	}
+
+	static Stream<Arguments> invalidCreateShortQuestionRequests() {
+		return Stream.of(
+			Arguments.of("문제 번호 누락", new CreateShortQuestionApiRequest() {
+				{
+					setContent("주관식 문제 내용");
+					setExplanation("문제 해설");
+					setShortAnswers(List.of(
+						ShortAnswerDto.builder().answer("정답1").isMain(true).number(1L).build()
+					));
+					setNumber(null);
+				}
+			}, "문제 번호는 필수입니다."),
+			Arguments.of("정답 리스트 빈 배열", new CreateShortQuestionApiRequest() {
+				{
+					setContent("주관식 문제 내용");
+					setExplanation("문제 해설");
+					setNumber(1L);
+					setShortAnswers(List.of());
+				}
+			}, "정답은 최소 1개 이상이어야 합니다.")
+		);
 	}
 }
