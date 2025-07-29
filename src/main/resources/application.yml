@@ -34,6 +34,13 @@ spring:
               - email
               - profile
 
+jwt:
+  secretKey: ${JWT_SECRET_KEY}
+  access:
+    expiration: 1800000 # 30 minutes
+  refresh:
+    expiration: 259200000 # 3 days
+
 springdoc:
   api-docs:
     path: /api-docs
