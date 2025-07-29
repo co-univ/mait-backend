@@ -1,6 +1,6 @@
 package com.coniv.mait.domain.question.enums;
 
-import com.coniv.mait.domain.question.constant.QuestionContstant;
+import com.coniv.mait.domain.question.constant.QuestionConstant;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;
