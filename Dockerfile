@@ -51,6 +51,7 @@ ENV JAVA_OPTS="-Xmx512m -Xms256m -XX:+UseG1GC -XX:+UseContainerSupport"
 ENV DB_URL=jdbc:mysql://localhost:3306/mait
 ENV DB_USERNAME=sa
 ENV DB_PASSWORD=
+ENV JPA_DDL_AUTO=none
 
 # 애플리케이션 실행
 ENTRYPOINT ["sh", "-c", "java $JAVA_OPTS -jar /app/app.jar"] 
