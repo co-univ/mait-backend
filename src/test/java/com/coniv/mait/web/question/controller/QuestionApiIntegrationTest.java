@@ -156,9 +156,7 @@ public class QuestionApiIntegrationTest extends BaseIntegrationTest {
 		request.setNumber(questionNumber);
 		request.setShortAnswers(shortAnswers);
 
-		// type 필드 추가 (JSON 파싱을 위해 필요)
 		String json = objectMapper.writeValueAsString(request);
-		// json = json.replaceFirst("\\{", "{\"type\":\"SHORT\",");
 
 		// when
 		mockMvc.perform(post("/api/v1/question-sets/{questionSetId}/questions?type=SHORT", savedQuestionSet.getId())
