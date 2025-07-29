@@ -1,6 +1,6 @@
 package com.coniv.mait.web.question.dto;
 
-import com.coniv.mait.domain.question.constant.QuestionContstant;
+import com.coniv.mait.domain.question.constant.QuestionConstant;
 import com.coniv.mait.domain.question.service.dto.QuestionDto;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
