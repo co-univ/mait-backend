@@ -11,9 +11,9 @@ import org.springframework.stereotype.Service;
 import com.coniv.mait.domain.auth.oauth.GoogleUserDetails;
 import com.coniv.mait.domain.auth.oauth.OAuth2UserInfo;
 import com.coniv.mait.domain.auth.oauth.Oauth2UserDetails;
-import com.coniv.mait.domain.auth.repository.UserEntityRepository;
 import com.coniv.mait.domain.user.entity.UserEntity;
 import com.coniv.mait.domain.user.enums.LoginProvider;
+import com.coniv.mait.domain.user.repository.UserEntityRepository;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
