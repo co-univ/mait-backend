@@ -10,6 +10,9 @@ import org.springframework.security.oauth2.core.user.OAuth2User;
 
 import com.coniv.mait.domain.user.entity.UserEntity;
 
+import lombok.Getter;
+
+@Getter
 public class Oauth2UserDetails implements UserDetails, OAuth2User {
 
 	private final UserEntity user;
