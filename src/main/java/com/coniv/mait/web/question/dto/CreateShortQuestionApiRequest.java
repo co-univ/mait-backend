@@ -8,9 +8,15 @@ import com.coniv.mait.domain.question.service.dto.ShortQuestionDto;
 
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotEmpty;
-import lombok.Getter;
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.EqualsAndHashCode;
+import lombok.NoArgsConstructor;
 
-@Getter
+@EqualsAndHashCode(callSuper = true)
+@Data
+@AllArgsConstructor
+@NoArgsConstructor
 public class CreateShortQuestionApiRequest extends CreateQuestionApiRequest {
 
 	@Valid
