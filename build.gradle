@@ -36,6 +36,8 @@ dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-security'
     testImplementation 'org.springframework.security:spring-security-test'
 
+    implementation 'io.jsonwebtoken:jjwt:0.9.1'
+
     // CSV 파일 읽기를 위한 POI 라이브러리
     implementation 'org.apache.poi:poi:5.2.5'
     implementation 'org.apache.poi:poi-ooxml:5.2.5'
