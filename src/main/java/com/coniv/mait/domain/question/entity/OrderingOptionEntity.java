@@ -1,5 +1,6 @@
 package com.coniv.mait.domain.question.entity;
 
+import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -23,9 +24,14 @@ public class OrderingOptionEntity {
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	private Long id;
 
+	@Column(nullable = false)
 	private int originOrder; // 보기에 보여지는 순서
 
 	private String content;
 
+	@Column(nullable = false)
 	private int answerOrder; // 정답이 되는 순서
+
+	@Column(nullable = false)
+	private Long orderingQuestionId;
 }
