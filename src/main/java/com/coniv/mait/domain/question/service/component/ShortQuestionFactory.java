@@ -38,7 +38,7 @@ public class ShortQuestionFactory {
 				.answer(shortAnswerDto.getAnswer())
 				.isMain(shortAnswerDto.isMain())
 				.number(shortAnswerDto.getNumber())
-				.shortAnswerId(shortQuestionEntity.getId())
+				.shortQuestionId(shortQuestionEntity.getId())
 				.build())
 			.toList();
 	}

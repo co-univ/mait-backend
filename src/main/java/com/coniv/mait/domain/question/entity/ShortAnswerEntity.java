@@ -27,7 +27,7 @@ public class ShortAnswerEntity {
 	private String answer;
 
 	@Column(nullable = false)
-	private Long shortAnswerId;
+	private Long shortQuestionId;
 
 	private boolean isMain;
 
