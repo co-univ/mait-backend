@@ -14,6 +14,7 @@ import lombok.NoArgsConstructor;
 public class ShortAnswerDto {
 
 	private Long id;
+
 	private String answer;
 	@Schema(description = "주관식 문제의 메인 정답 여부", requiredMode = Schema.RequiredMode.REQUIRED)
 	private boolean isMain;
