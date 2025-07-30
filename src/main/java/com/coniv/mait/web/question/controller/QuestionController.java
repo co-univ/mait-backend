@@ -5,11 +5,14 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.coniv.mait.domain.question.enums.QuestionType;
 import com.coniv.mait.domain.question.service.QuestionService;
 import com.coniv.mait.global.response.ApiResponse;
 import com.coniv.mait.web.question.dto.CreateMultipleQuestionApiRequest;
+import com.coniv.mait.web.question.dto.CreateQuestionApiRequest;
 
 import io.swagger.v3.oas.annotations.Operation;
 import jakarta.validation.Valid;
@@ -28,6 +31,16 @@ public class QuestionController {
 		@Valid @RequestBody CreateMultipleQuestionApiRequest request,
 		@PathVariable("questionSetId") final Long questionSetId) {
 		questionService.createMultipleQuestion(questionSetId, request.multipleQuestionDto());
+		return ResponseEntity.ok(ApiResponse.ok(null));
+	}
+
+	@Operation(summary = "문제 셋에 주관식 문제 저장 API")
+	@PostMapping
+	public ResponseEntity<ApiResponse<Void>> createShortQuestion(
+		@RequestParam("type") QuestionType type,
+		@Valid @RequestBody CreateQuestionApiRequest request,
+		@PathVariable("questionSetId") final Long questionSetId) {
+		questionService.createQuestion(questionSetId, type, request.toQuestionDto());
 		return ResponseEntity.ok(ApiResponse.ok(null));
 	}
 }
