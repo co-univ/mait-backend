@@ -194,6 +194,6 @@ public class QuestionApiIntegrationTest extends BaseIntegrationTest {
 			.sum();
 		assertThat(mainAnswerCount).isEqualTo(1);
 
-		assertThat(savedAnswers).allMatch(answer -> answer.getShortAnswerId().equals(savedQuestion.getId()));
+		assertThat(savedAnswers).allMatch(answer -> answer.getShortQuestionId().equals(savedQuestion.getId()));
 	}
 }
