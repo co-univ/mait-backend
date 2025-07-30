@@ -19,6 +19,6 @@ public class OrderingQuestionDto extends QuestionDto {
 
 	@Override
 	public OrderingQuestionDto toQuestionDto() {
-		return null;
+		return this;
 	}
 }

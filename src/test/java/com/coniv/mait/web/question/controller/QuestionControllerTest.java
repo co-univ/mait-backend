@@ -21,8 +21,10 @@ import org.springframework.test.web.servlet.MockMvc;
 
 import com.coniv.mait.domain.question.service.QuestionService;
 import com.coniv.mait.domain.question.service.dto.MultipleChoiceDto;
+import com.coniv.mait.domain.question.service.dto.OrderingQuestionOptionDto;
 import com.coniv.mait.domain.question.service.dto.ShortAnswerDto;
 import com.coniv.mait.web.question.dto.CreateMultipleQuestionApiRequest;
+import com.coniv.mait.web.question.dto.CreateOrderingQuestionApiRequest;
 import com.coniv.mait.web.question.dto.CreateShortQuestionApiRequest;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
@@ -246,5 +248,117 @@ class QuestionControllerTest {
 				}
 			}, "정답은 최소 1개 이상이어야 합니다.")
 		);
+	}
+
+	@Test
+	@DisplayName("문제 셋에 순서배열 문제 저장 API 테스트 - 성공")
+	void createOrderingQuestionTest() throws Exception {
+		// given
+		Long questionSetId = 1L;
+		String type = "ORDERING";
+		var options = List.of(
+			OrderingQuestionOptionDto.builder()
+				.content("첫 번째 옵션")
+				.originOrder(1)
+				.answerOrder(2)
+				.build(),
+			OrderingQuestionOptionDto.builder()
+				.content("두 번째 옵션")
+				.originOrder(2)
+				.answerOrder(1)
+				.build(),
+			OrderingQuestionOptionDto.builder()
+				.content("세 번째 옵션")
+				.originOrder(3)
+				.answerOrder(3)
+				.build()
+		);
+		var request = new CreateOrderingQuestionApiRequest();
+		request.setContent("순서배열 문제 내용");
+		request.setExplanation("문제 해설");
+		request.setNumber(1L);
+		request.setOptions(options);
+		
+		// type 필드 추가
+		String json = objectMapper.writeValueAsString(request);
+		json = json.replaceFirst("\\{", "{\"type\":\"ORDERING\",");
+
+		// when & then
+		mockMvc.perform(post("/api/v1/question-sets/{questionSetId}/questions?type={type}", questionSetId, type)
+				.contentType(MediaType.APPLICATION_JSON)
+				.content(json))
+			.andExpect(status().isOk());
+
+		verify(questionService).createQuestion(eq(questionSetId),
+			eq(com.coniv.mait.domain.question.enums.QuestionType.ORDERING), any());
+	}
+
+	@Test
+	@DisplayName("순서배열 문제 생성 실패 테스트 - 선택지가 null인 경우")
+	void createOrderingQuestionNullOptionsTest() throws Exception {
+		// given
+		Long questionSetId = 1L;
+		String type = "ORDERING";
+		var request = new CreateOrderingQuestionApiRequest();
+		request.setContent("순서배열 문제 내용");
+		request.setExplanation("문제 해설");
+		request.setNumber(1L);
+		request.setOptions(null); // null로 설정
+		
+		String json = objectMapper.writeValueAsString(request);
+		json = json.replaceFirst("\\{", "{\"type\":\"ORDERING\",");
+
+		// when & then
+		mockMvc.perform(post("/api/v1/question-sets/{questionSetId}/questions?type={type}", questionSetId, type)
+				.contentType(MediaType.APPLICATION_JSON)
+				.content(json))
+			.andExpectAll(
+				status().isBadRequest(),
+				jsonPath("$.isSuccess").value(false),
+				jsonPath("$.code").value("C-001"),
+				jsonPath("$.message").value("사용자 입력 오류입니다."),
+				jsonPath("$.reasons").isArray(),
+				jsonPath("$.reasons[0]").value("선택지는 필수입니다.")
+			);
+
+		verify(questionService, never()).createQuestion(anyLong(), any(), any());
+	}
+
+	@Test
+	@DisplayName("순서배열 문제 생성 실패 테스트 - 문제 번호가 null인 경우")
+	void createOrderingQuestionNullNumberTest() throws Exception {
+		// given
+		Long questionSetId = 1L;
+		String type = "ORDERING";
+		var options = List.of(
+			OrderingQuestionOptionDto.builder()
+				.content("첫 번째 옵션")
+				.originOrder(1)
+				.answerOrder(2)
+				.build()
+		);
+		var request = new CreateOrderingQuestionApiRequest();
+		request.setContent("순서배열 문제 내용");
+		request.setExplanation("문제 해설");
+		request.setNumber(null); // null로 설정
+		request.setOptions(options);
+		
+		String json = objectMapper.writeValueAsString(request);
+		json = json.replaceFirst("\\{", "{\"type\":\"ORDERING\",");
+
+		// when & then
+		mockMvc.perform(post("/api/v1/question-sets/{questionSetId}/questions?type={type}", questionSetId, type)
+				.contentType(MediaType.APPLICATION_JSON)
+				.content(json))
+			.andExpectAll(
+				status().isBadRequest(),
+				jsonPath("$.isSuccess").value(false),
+				jsonPath("$.code").value("C-001"),
+				jsonPath("$.message").value("사용자 입력 오류입니다."),
+				jsonPath("$.reasons").isArray(),
+				jsonPath("$.reasons[0]").value("문제 번호는 필수입니다.")
+			);
+
+		verify(questionService, never()).createQuestion(anyLong(), any(), any());
 	}
 }
