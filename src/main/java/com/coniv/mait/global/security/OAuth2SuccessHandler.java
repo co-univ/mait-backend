@@ -18,9 +18,7 @@ import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 
-@Slf4j
 @Component
 @RequiredArgsConstructor
 public class OAuth2SuccessHandler implements AuthenticationSuccessHandler {
@@ -44,7 +42,5 @@ public class OAuth2SuccessHandler implements AuthenticationSuccessHandler {
 
 		Cookie cookie = CookieUtil.createRefreshCookie(token.getRefreshToken());
 		response.addCookie(cookie);
-		log.info(cookie.getName());
-		log.info("로그인 성공, JWT 토큰 생성");
 	}
 }
