@@ -13,6 +13,8 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import com.coniv.mait.domain.question.entity.FillBlankAnswerEntity;
+import com.coniv.mait.domain.question.entity.FillBlankQuestionEntity;
 import com.coniv.mait.domain.question.entity.MultipleChoiceEntity;
 import com.coniv.mait.domain.question.entity.MultipleQuestionEntity;
 import com.coniv.mait.domain.question.entity.OrderingOptionEntity;
@@ -21,14 +23,18 @@ import com.coniv.mait.domain.question.entity.QuestionSetEntity;
 import com.coniv.mait.domain.question.entity.ShortAnswerEntity;
 import com.coniv.mait.domain.question.entity.ShortQuestionEntity;
 import com.coniv.mait.domain.question.enums.QuestionType;
+import com.coniv.mait.domain.question.repository.FillBlankAnswerEntityRepository;
 import com.coniv.mait.domain.question.repository.MultipleChoiceEntityRepository;
 import com.coniv.mait.domain.question.repository.OrderingQuestionOptionRepository;
 import com.coniv.mait.domain.question.repository.QuestionEntityRepository;
 import com.coniv.mait.domain.question.repository.QuestionSetEntityRepository;
 import com.coniv.mait.domain.question.repository.ShortAnswerEntityRepository;
+import com.coniv.mait.domain.question.service.component.FillBlankQuestionFactory;
 import com.coniv.mait.domain.question.service.component.MultipleQuestionFactory;
 import com.coniv.mait.domain.question.service.component.OrderingQuestionFactory;
 import com.coniv.mait.domain.question.service.component.ShortQuestionFactory;
+import com.coniv.mait.domain.question.service.dto.FillBlankAnswerDto;
+import com.coniv.mait.domain.question.service.dto.FillBlankQuestionDto;
 import com.coniv.mait.domain.question.service.dto.MultipleChoiceDto;
 import com.coniv.mait.domain.question.service.dto.MultipleQuestionDto;
 import com.coniv.mait.domain.question.service.dto.OrderingQuestionDto;
@@ -66,6 +72,11 @@ class QuestionServiceTest {
 	private OrderingQuestionFactory orderingQuestionFactory;
 	@Mock
 	private OrderingQuestionOptionRepository orderingQuestionOptionRepository;
+
+	@Mock
+	private FillBlankQuestionFactory fillBlankQuestionFactory;
+	@Mock
+	private FillBlankAnswerEntityRepository fillBlankAnswerEntityRepository;
 
 	@Test
 	@DisplayName("객관식 문제 생성 테스트")
@@ -230,6 +241,61 @@ class QuestionServiceTest {
 			() -> questionService.createQuestion(questionSetId, QuestionType.ORDERING, questionDto));
 		verify(questionEntityRepository, never()).save(any());
 		verify(orderingQuestionOptionRepository, never()).saveAll(any());
+	}
+
+	@Test
+	@DisplayName("빈칸 문제 생성 테스트 - createQuestion(QuestionType.FILL_BLANK) 정상 동작")
+	void createFillBlankQuestion_Success() {
+		// given
+		final Long questionSetId = 1L;
+		QuestionSetEntity questionSetEntity = mock(QuestionSetEntity.class);
+		when(questionSetEntityRepository.findById(questionSetId)).thenReturn(Optional.of(questionSetEntity));
+
+		List<FillBlankAnswerDto> answerDtos = List.of(
+			FillBlankAnswerDto.builder().number(1L).answer("정답1").isMain(true).build(),
+			FillBlankAnswerDto.builder().number(2L).answer("정답2").isMain(false).build()
+		);
+		FillBlankQuestionDto fillBlankQuestionDto = FillBlankQuestionDto.builder()
+			.content("빈칸에 들어갈 적절한 단어는 ___입니다.")
+			.explanation("해설")
+			.number(1L)
+			.fillBlankAnswers(answerDtos)
+			.build();
+		FillBlankQuestionEntity fillBlankQuestionEntity = mock(FillBlankQuestionEntity.class);
+		List<FillBlankAnswerEntity> fillBlankAnswerEntities = List.of(
+			mock(FillBlankAnswerEntity.class), mock(FillBlankAnswerEntity.class)
+		);
+
+		when(fillBlankQuestionFactory.create(fillBlankQuestionDto, questionSetEntity)).thenReturn(fillBlankQuestionEntity);
+		when(fillBlankQuestionFactory.createFillBlankAnswers(answerDtos, fillBlankQuestionEntity)).thenReturn(fillBlankAnswerEntities);
+
+		// QuestionDto의 toQuestionDto()가 FillBlankQuestionDto 반환하도록 mock
+		QuestionDto questionDto = mock(QuestionDto.class);
+		when(questionDto.toQuestionDto()).thenReturn(fillBlankQuestionDto);
+
+		// when
+		questionService.createQuestion(questionSetId, QuestionType.FILL_BLANK, questionDto);
+
+		// then
+		verify(questionEntityRepository).save(fillBlankQuestionEntity);
+		verify(fillBlankQuestionFactory).create(fillBlankQuestionDto, questionSetEntity);
+		verify(fillBlankQuestionFactory).createFillBlankAnswers(answerDtos, fillBlankQuestionEntity);
+		verify(fillBlankAnswerEntityRepository).saveAll(fillBlankAnswerEntities);
+	}
+
+	@Test
+	@DisplayName("빈칸 문제 생성 실패 - QuestionSet이 존재하지 않을 때")
+	void createFillBlankQuestion_QuestionSetNotFound() {
+		// given
+		final Long questionSetId = 1L;
+		when(questionSetEntityRepository.findById(questionSetId)).thenReturn(Optional.empty());
+		QuestionDto questionDto = mock(QuestionDto.class);
+
+		// when, then
+		assertThrows(EntityNotFoundException.class,
+			() -> questionService.createQuestion(questionSetId, QuestionType.FILL_BLANK, questionDto));
+		verify(questionEntityRepository, never()).save(any());
+		verify(fillBlankAnswerEntityRepository, never()).saveAll(any());
 	}
 
 	@Test
