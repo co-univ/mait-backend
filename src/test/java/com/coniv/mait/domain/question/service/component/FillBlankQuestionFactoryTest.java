@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 
 import org.junit.jupiter.api.DisplayName;
@@ -101,7 +102,7 @@ class FillBlankQuestionFactoryTest {
 		// then
 		assertThat(result).hasSize(3);
 
-		FillBlankAnswerEntity firstAnswer = result.get(0);
+		FillBlankAnswerEntity firstAnswer = result.getFirst();
 		assertThat(firstAnswer.getId()).isNull(); // ID는 Factory에서 설정하지 않음
 		assertThat(firstAnswer.getNumber()).isEqualTo(1L);
 		assertThat(firstAnswer.getAnswer()).isEqualTo("정답");
@@ -138,7 +139,7 @@ class FillBlankQuestionFactoryTest {
 			.id(1L)
 			.build();
 
-		List<FillBlankAnswerDto> emptyAnswers = Arrays.asList();
+		List<FillBlankAnswerDto> emptyAnswers = List.of();
 
 		// when
 		List<FillBlankAnswerEntity> result = fillBlankQuestionFactory.createFillBlankAnswers(emptyAnswers, question);
@@ -196,7 +197,7 @@ class FillBlankQuestionFactoryTest {
 			.id(1L)
 			.build();
 
-		List<FillBlankAnswerDto> singleAnswer = Arrays.asList(
+		List<FillBlankAnswerDto> singleAnswer = Collections.singletonList(
 			FillBlankAnswerDto.builder()
 				.number(1L)
 				.answer("정답")
@@ -209,7 +210,7 @@ class FillBlankQuestionFactoryTest {
 
 		// then
 		assertThat(result).hasSize(1);
-		FillBlankAnswerEntity answer = result.get(0);
+		FillBlankAnswerEntity answer = result.getFirst();
 		assertThat(answer.getNumber()).isEqualTo(1L);
 		assertThat(answer.getAnswer()).isEqualTo("정답");
 		assertThat(answer.isMain()).isTrue();

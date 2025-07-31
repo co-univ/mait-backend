@@ -117,7 +117,7 @@ public class QuestionApiIntegrationTest extends BaseIntegrationTest {
 
 		assertThat(questions).hasSize(1);
 
-		MultipleQuestionEntity savedQuestion = questions.get(0);
+		MultipleQuestionEntity savedQuestion = questions.getFirst();
 		assertThat(savedQuestion.getContent()).isEqualTo(questionContent);
 		assertThat(savedQuestion.getExplanation()).isEqualTo(questionExplanation);
 		assertThat(savedQuestion.getNumber()).isEqualTo(questionNumber);
@@ -193,7 +193,7 @@ public class QuestionApiIntegrationTest extends BaseIntegrationTest {
 
 		assertThat(questions).hasSize(1);
 
-		ShortQuestionEntity savedQuestion = questions.get(0);
+		ShortQuestionEntity savedQuestion = questions.getFirst();
 		assertThat(savedQuestion.getContent()).isEqualTo(questionContent);
 		assertThat(savedQuestion.getExplanation()).isEqualTo(questionExplanation);
 		assertThat(savedQuestion.getNumber()).isEqualTo(questionNumber);
@@ -278,7 +278,7 @@ public class QuestionApiIntegrationTest extends BaseIntegrationTest {
 
 		assertThat(questions).hasSize(1);
 
-		OrderingQuestionEntity savedQuestion = questions.get(0);
+		OrderingQuestionEntity savedQuestion = questions.getFirst();
 		assertThat(savedQuestion.getContent()).isEqualTo(questionContent);
 		assertThat(savedQuestion.getExplanation()).isEqualTo(questionExplanation);
 		assertThat(savedQuestion.getNumber()).isEqualTo(questionNumber);
@@ -296,6 +296,7 @@ public class QuestionApiIntegrationTest extends BaseIntegrationTest {
 		assertThat(savedOptions).allMatch(option -> option.getOrderingQuestionId().equals(savedQuestion.getId()));
 	}
 
+	@SuppressWarnings("checkstyle:LineLength")
 	@Test
 	@DisplayName("문제 셋에 빈칸 문제 저장 API 성공 테스트")
 	void createFillBlankQuestionApiSuccess() throws Exception {
@@ -339,9 +340,10 @@ public class QuestionApiIntegrationTest extends BaseIntegrationTest {
 		String json = objectMapper.writeValueAsString(request);
 
 		// when
-		mockMvc.perform(post("/api/v1/question-sets/{questionSetId}/questions?type=FILL_BLANK", savedQuestionSet.getId())
-				.contentType(MediaType.APPLICATION_JSON)
-				.content(json))
+		mockMvc.perform(
+				post("/api/v1/question-sets/{questionSetId}/questions?type=FILL_BLANK", savedQuestionSet.getId())
+					.contentType(MediaType.APPLICATION_JSON)
+					.content(json))
 			.andExpect(status().isOk())
 			.andExpect(jsonPath("$.isSuccess").value(true))
 			.andExpect(jsonPath("$.data").doesNotExist());
@@ -355,7 +357,7 @@ public class QuestionApiIntegrationTest extends BaseIntegrationTest {
 
 		assertThat(questions).hasSize(1);
 
-		FillBlankQuestionEntity savedQuestion = questions.get(0);
+		FillBlankQuestionEntity savedQuestion = questions.getFirst();
 		assertThat(savedQuestion.getContent()).isEqualTo(questionContent);
 		assertThat(savedQuestion.getExplanation()).isEqualTo(questionExplanation);
 		assertThat(savedQuestion.getNumber()).isEqualTo(questionNumber);

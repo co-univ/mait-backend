@@ -266,8 +266,10 @@ class QuestionServiceTest {
 			mock(FillBlankAnswerEntity.class), mock(FillBlankAnswerEntity.class)
 		);
 
-		when(fillBlankQuestionFactory.create(fillBlankQuestionDto, questionSetEntity)).thenReturn(fillBlankQuestionEntity);
-		when(fillBlankQuestionFactory.createFillBlankAnswers(answerDtos, fillBlankQuestionEntity)).thenReturn(fillBlankAnswerEntities);
+		when(fillBlankQuestionFactory.create(fillBlankQuestionDto, questionSetEntity)).thenReturn(
+			fillBlankQuestionEntity);
+		when(fillBlankQuestionFactory.createFillBlankAnswers(answerDtos, fillBlankQuestionEntity)).thenReturn(
+			fillBlankAnswerEntities);
 
 		// QuestionDto의 toQuestionDto()가 FillBlankQuestionDto 반환하도록 mock
 		QuestionDto questionDto = mock(QuestionDto.class);
