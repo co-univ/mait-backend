@@ -11,7 +11,6 @@ import org.springframework.web.bind.annotation.RestController;
 import com.coniv.mait.domain.question.enums.QuestionType;
 import com.coniv.mait.domain.question.service.QuestionService;
 import com.coniv.mait.global.response.ApiResponse;
-import com.coniv.mait.web.question.dto.CreateMultipleQuestionApiRequest;
 import com.coniv.mait.web.question.dto.CreateQuestionApiRequest;
 
 import io.swagger.v3.oas.annotations.Operation;
@@ -24,15 +23,6 @@ import lombok.RequiredArgsConstructor;
 public class QuestionController {
 
 	private final QuestionService questionService;
-
-	@Operation(summary = "문제 셋에 객관식 문제 저장 API")
-	@PostMapping(params = "type=multiple")
-	public ResponseEntity<ApiResponse<Void>> createMultipleQuestion(
-		@Valid @RequestBody CreateMultipleQuestionApiRequest request,
-		@PathVariable("questionSetId") final Long questionSetId) {
-		questionService.createMultipleQuestion(questionSetId, request.multipleQuestionDto());
-		return ResponseEntity.ok(ApiResponse.ok(null));
-	}
 
 	@Operation(summary = "문제 셋에 주관식 문제 저장 API")
 	@PostMapping

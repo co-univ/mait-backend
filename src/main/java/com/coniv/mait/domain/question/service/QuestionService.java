@@ -50,24 +50,6 @@ public class QuestionService {
 	private final ShortAnswerEntityRepository shortAnswerEntityRepository;
 
 	@Transactional
-	public void createMultipleQuestion(
-		final Long questionSetId,
-		final MultipleQuestionDto multipleQuestionsDto
-	) {
-		QuestionSetEntity questionSetEntity = questionSetEntityRepository.findById(questionSetId)
-			.orElseThrow(() -> new EntityNotFoundException("QuestionSet not found with id: " + questionSetId));
-
-		MultipleQuestionEntity multipleQuestion = multipleQuestionFactory.create(multipleQuestionsDto,
-			questionSetEntity);
-
-		List<MultipleChoiceEntity> choices = multipleQuestionFactory.createChoices(multipleQuestionsDto.getChoices(),
-			multipleQuestion);
-
-		questionEntityRepository.save(multipleQuestion);
-		multipleChoiceEntityRepository.saveAll(choices);
-	}
-
-	@Transactional
 	public void createQuestion(
 		final Long questionSetId,
 		final QuestionType type,
@@ -77,6 +59,19 @@ public class QuestionService {
 			.orElseThrow(() -> new EntityNotFoundException("QuestionSet not found with id: " + questionSetId));
 
 		switch (type) {
+			case MULTIPLE -> {
+				MultipleQuestionDto multipleQuestionsDto = (MultipleQuestionDto)questionDto.toQuestionDto();
+				MultipleQuestionEntity multipleQuestion = multipleQuestionFactory.create(multipleQuestionsDto,
+					questionSetEntity);
+
+				questionEntityRepository.save(multipleQuestion);
+
+				List<MultipleChoiceEntity> choices = multipleQuestionFactory.createChoices(
+					multipleQuestionsDto.getChoices(),
+					multipleQuestion);
+
+				multipleChoiceEntityRepository.saveAll(choices);
+			}
 			case QuestionType.SHORT -> {
 				ShortQuestionDto shortQuestionDto = (ShortQuestionDto)questionDto.toQuestionDto();
 				ShortQuestionEntity shortQuestionEntity = shortQuestionFactory.create(shortQuestionDto,
