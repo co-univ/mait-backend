@@ -278,7 +278,7 @@ class QuestionControllerTest {
 		request.setExplanation("문제 해설");
 		request.setNumber(1L);
 		request.setOptions(options);
-		
+
 		// type 필드 추가
 		String json = objectMapper.writeValueAsString(request);
 		json = json.replaceFirst("\\{", "{\"type\":\"ORDERING\",");
@@ -304,7 +304,7 @@ class QuestionControllerTest {
 		request.setExplanation("문제 해설");
 		request.setNumber(1L);
 		request.setOptions(null); // null로 설정
-		
+
 		String json = objectMapper.writeValueAsString(request);
 		json = json.replaceFirst("\\{", "{\"type\":\"ORDERING\",");
 
@@ -342,7 +342,7 @@ class QuestionControllerTest {
 		request.setExplanation("문제 해설");
 		request.setNumber(null); // null로 설정
 		request.setOptions(options);
-		
+
 		String json = objectMapper.writeValueAsString(request);
 		json = json.replaceFirst("\\{", "{\"type\":\"ORDERING\",");
 

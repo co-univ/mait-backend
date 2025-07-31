@@ -200,7 +200,8 @@ class QuestionServiceTest {
 		);
 
 		when(orderingQuestionFactory.create(orderingQuestionDto, questionSetEntity)).thenReturn(orderingQuestionEntity);
-		when(orderingQuestionFactory.createOrderingQuestionOptions(optionDtos, orderingQuestionEntity)).thenReturn(optionEntities);
+		when(orderingQuestionFactory.createOrderingQuestionOptions(optionDtos, orderingQuestionEntity)).thenReturn(
+			optionEntities);
 
 		// QuestionDto의 toQuestionDto()가 OrderingQuestionDto 반환하도록 mock
 		QuestionDto questionDto = mock(QuestionDto.class);

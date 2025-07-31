@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 
 import org.junit.jupiter.api.DisplayName;
@@ -85,7 +86,7 @@ class OrderingQuestionFactoryTest {
 		// then
 		assertThat(result).hasSize(3);
 
-		OrderingOptionEntity first = result.get(0);
+		OrderingOptionEntity first = result.getFirst();
 		assertThat(first.getId()).isNull();
 		assertThat(first.getContent()).isEqualTo("첫 번째 옵션");
 		assertThat(first.getOriginOrder()).isEqualTo(1);
@@ -134,7 +135,8 @@ class OrderingQuestionFactoryTest {
 		);
 
 		// when & then
-		assertThatThrownBy(() -> orderingQuestionFactory.createOrderingQuestionOptions(duplicateAnswerOrderOptions, question))
+		assertThatThrownBy(
+			() -> orderingQuestionFactory.createOrderingQuestionOptions(duplicateAnswerOrderOptions, question))
 			.isInstanceOf(UserParameterException.class)
 			.hasMessageContaining("Ordering question options must have unique answer orders.");
 	}
@@ -166,7 +168,8 @@ class OrderingQuestionFactoryTest {
 		);
 
 		// when & then
-		assertThatThrownBy(() -> orderingQuestionFactory.createOrderingQuestionOptions(duplicateOriginOrderOptions, question))
+		assertThatThrownBy(
+			() -> orderingQuestionFactory.createOrderingQuestionOptions(duplicateOriginOrderOptions, question))
 			.isInstanceOf(UserParameterException.class)
 			.hasMessageContaining("Ordering question options must have unique origin orders.");
 	}
@@ -184,10 +187,11 @@ class OrderingQuestionFactoryTest {
 			.id(10L)
 			.build();
 
-		List<OrderingQuestionOptionDto> emptyOptions = Arrays.asList();
+		List<OrderingQuestionOptionDto> emptyOptions = List.of();
 
 		// when
-		List<OrderingOptionEntity> result = orderingQuestionFactory.createOrderingQuestionOptions(emptyOptions, question);
+		List<OrderingOptionEntity> result = orderingQuestionFactory.createOrderingQuestionOptions(emptyOptions,
+			question);
 
 		// then
 		assertThat(result).isEmpty();
@@ -206,7 +210,7 @@ class OrderingQuestionFactoryTest {
 			.id(10L)
 			.build();
 
-		List<OrderingQuestionOptionDto> singleOption = Arrays.asList(
+		List<OrderingQuestionOptionDto> singleOption = Collections.singletonList(
 			OrderingQuestionOptionDto.builder()
 				.content("유일한 옵션")
 				.originOrder(1)
@@ -215,11 +219,12 @@ class OrderingQuestionFactoryTest {
 		);
 
 		// when
-		List<OrderingOptionEntity> result = orderingQuestionFactory.createOrderingQuestionOptions(singleOption, question);
+		List<OrderingOptionEntity> result = orderingQuestionFactory.createOrderingQuestionOptions(singleOption,
+			question);
 
 		// then
 		assertThat(result).hasSize(1);
-		OrderingOptionEntity option = result.get(0);
+		OrderingOptionEntity option = result.getFirst();
 		assertThat(option.getContent()).isEqualTo("유일한 옵션");
 		assertThat(option.getOriginOrder()).isEqualTo(1);
 		assertThat(option.getAnswerOrder()).isEqualTo(1);
@@ -245,4 +250,4 @@ class OrderingQuestionFactoryTest {
 				.build()
 		);
 	}
-} 
+}
