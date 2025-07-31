@@ -74,7 +74,7 @@ class QuestionControllerTest {
 				.content(json))
 			.andExpect(status().isOk());
 
-		verify(questionService).createQuestion(eq(questionSetId), 
+		verify(questionService).createQuestion(eq(questionSetId),
 			eq(com.coniv.mait.domain.question.enums.QuestionType.MULTIPLE), any());
 	}
 
