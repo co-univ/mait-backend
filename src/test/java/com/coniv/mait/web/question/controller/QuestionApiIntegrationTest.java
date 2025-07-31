@@ -88,13 +88,19 @@ public class QuestionApiIntegrationTest extends BaseIntegrationTest {
 				.build()
 		);
 
-		CreateMultipleQuestionApiRequest request = new CreateMultipleQuestionApiRequest(
-			questionContent, questionExplanation, questionNumber, choices);
+		CreateMultipleQuestionApiRequest request = new CreateMultipleQuestionApiRequest();
+		request.setContent(questionContent);
+		request.setExplanation(questionExplanation);
+		request.setNumber(questionNumber);
+		request.setChoices(choices);
+
+		String json = objectMapper.writeValueAsString(request);
+		json = json.replaceFirst("\\{", "{\"type\":\"MULTIPLE\",");
 
 		// when
-		mockMvc.perform(post("/api/v1/question-sets/{questionSetId}/questions?type=multiple", savedQuestionSet.getId())
+		mockMvc.perform(post("/api/v1/question-sets/{questionSetId}/questions?type=MULTIPLE", savedQuestionSet.getId())
 				.contentType(MediaType.APPLICATION_JSON)
-				.content(objectMapper.writeValueAsString(request)))
+				.content(json))
 			.andExpect(status().isOk())
 			.andExpect(jsonPath("$.isSuccess").value(true))
 			.andExpect(jsonPath("$.data").doesNotExist());
