@@ -110,7 +110,7 @@ public class QuestionService {
 				FillBlankQuestionEntity fillBlankQuestionEntity = fillBlankQuestionFactory.create(fillBlankQuestionDto,
 					questionSetEntity);
 				questionEntityRepository.save(fillBlankQuestionEntity);
-				
+
 				List<FillBlankAnswerEntity> fillBlankAnswers = fillBlankQuestionFactory.createFillBlankAnswers(
 					fillBlankQuestionDto.getFillBlankAnswers(), fillBlankQuestionEntity);
 				fillBlankAnswerEntityRepository.saveAll(fillBlankAnswers);
