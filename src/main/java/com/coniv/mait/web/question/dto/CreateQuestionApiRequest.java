@@ -14,7 +14,6 @@ import lombok.Data;
 	property = "type"
 )
 @JsonSubTypes({
-	@JsonSubTypes.Type(value = CreateShortQuestionApiRequest.class, name = QuestionConstant.MULTIPLE),
 	@JsonSubTypes.Type(value = CreateShortQuestionApiRequest.class, name = QuestionConstant.SHORT),
 	@JsonSubTypes.Type(value = CreateMultipleQuestionApiRequest.class, name = QuestionConstant.MULTIPLE),
 	@JsonSubTypes.Type(value = CreateOrderingQuestionApiRequest.class, name = QuestionConstant.ORDERING)

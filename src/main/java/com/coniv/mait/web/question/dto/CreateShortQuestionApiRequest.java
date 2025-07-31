@@ -8,15 +8,11 @@ import com.coniv.mait.domain.question.service.dto.ShortQuestionDto;
 
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotEmpty;
-import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
-import lombok.NoArgsConstructor;
 
 @EqualsAndHashCode(callSuper = true)
 @Data
-@AllArgsConstructor
-@NoArgsConstructor
 public class CreateShortQuestionApiRequest extends CreateQuestionApiRequest {
 
 	@Valid
@@ -29,7 +25,7 @@ public class CreateShortQuestionApiRequest extends CreateQuestionApiRequest {
 			.content(getContent())
 			.explanation(getExplanation())
 			.number(getNumber())
-			.shortAnswers(getShortAnswers())
+			.shortAnswers(shortAnswers)
 			.build();
 	}
 }
