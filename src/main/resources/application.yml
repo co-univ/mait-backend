@@ -37,9 +37,9 @@ spring:
 jwt:
   secretKey: ${JWT_SECRET_KEY}
   access:
-    expiration: 1800000 # 30 minutes
+    expiration: ${JWT_ACCESS_TOKEN_EXPIRATION}
   refresh:
-    expiration: 259200000 # 3 days
+    expiration: ${JWT_REFRESH_TOKEN_EXPIRATION}
 
 springdoc:
   api-docs:
