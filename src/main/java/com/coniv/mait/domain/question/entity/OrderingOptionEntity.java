@@ -12,25 +12,26 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
-@Table(name = "short_answers")
+@Table(name = "ordering_options")
 @Entity
 @Getter
 @Builder
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-public class ShortAnswerEntity {
+public class OrderingOptionEntity {
 
 	@Id
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	private Long id;
 
-	private String answer;
+	@Column(nullable = false)
+	private int originOrder; // 보기에 보여지는 순서
+
+	private String content;
 
 	@Column(nullable = false)
-	private Long shortQuestionId;
-
-	private boolean isMain;
+	private int answerOrder; // 정답이 되는 순서
 
 	@Column(nullable = false)
-	private Long number;
+	private Long orderingQuestionId;
 }

@@ -14,18 +14,23 @@ import org.springframework.http.MediaType;
 
 import com.coniv.mait.domain.question.entity.MultipleChoiceEntity;
 import com.coniv.mait.domain.question.entity.MultipleQuestionEntity;
+import com.coniv.mait.domain.question.entity.OrderingOptionEntity;
+import com.coniv.mait.domain.question.entity.OrderingQuestionEntity;
 import com.coniv.mait.domain.question.entity.QuestionSetEntity;
 import com.coniv.mait.domain.question.entity.ShortAnswerEntity;
 import com.coniv.mait.domain.question.entity.ShortQuestionEntity;
 import com.coniv.mait.domain.question.enums.QuestionSetCreationType;
 import com.coniv.mait.domain.question.repository.MultipleChoiceEntityRepository;
+import com.coniv.mait.domain.question.repository.OrderingQuestionOptionRepository;
 import com.coniv.mait.domain.question.repository.QuestionEntityRepository;
 import com.coniv.mait.domain.question.repository.QuestionSetEntityRepository;
 import com.coniv.mait.domain.question.repository.ShortAnswerEntityRepository;
 import com.coniv.mait.domain.question.service.dto.MultipleChoiceDto;
+import com.coniv.mait.domain.question.service.dto.OrderingQuestionOptionDto;
 import com.coniv.mait.domain.question.service.dto.ShortAnswerDto;
 import com.coniv.mait.web.integration.BaseIntegrationTest;
 import com.coniv.mait.web.question.dto.CreateMultipleQuestionApiRequest;
+import com.coniv.mait.web.question.dto.CreateOrderingQuestionApiRequest;
 import com.coniv.mait.web.question.dto.CreateShortQuestionApiRequest;
 
 public class QuestionApiIntegrationTest extends BaseIntegrationTest {
@@ -42,10 +47,14 @@ public class QuestionApiIntegrationTest extends BaseIntegrationTest {
 	@Autowired
 	private ShortAnswerEntityRepository shortAnswerEntityRepository;
 
+	@Autowired
+	private OrderingQuestionOptionRepository orderingQuestionOptionRepository;
+
 	@BeforeEach
 	void setUp() {
 		shortAnswerEntityRepository.deleteAll();
 		multipleChoiceEntityRepository.deleteAll();
+		orderingQuestionOptionRepository.deleteAll();
 		questionEntityRepository.deleteAll();
 		questionSetEntityRepository.deleteAll();
 	}
@@ -194,6 +203,87 @@ public class QuestionApiIntegrationTest extends BaseIntegrationTest {
 			.sum();
 		assertThat(mainAnswerCount).isEqualTo(1);
 
-		assertThat(savedAnswers).allMatch(answer -> answer.getShortAnswerId().equals(savedQuestion.getId()));
+		assertThat(savedAnswers).allMatch(answer -> answer.getShortQuestionId().equals(savedQuestion.getId()));
+	}
+
+	@Test
+	@DisplayName("문제 셋에 순서배열 문제 저장 API 성공 테스트")
+	void createOrderingQuestionApiSuccess() throws Exception {
+		// given
+		QuestionSetEntity questionSet = QuestionSetEntity.of("Sample Subject", QuestionSetCreationType.MANUAL);
+		QuestionSetEntity savedQuestionSet = questionSetEntityRepository.save(questionSet);
+
+		String questionContent = "순서배열 문제 내용";
+		String questionExplanation = "순서배열 문제 해설";
+		Long questionNumber = 1L;
+
+		List<OrderingQuestionOptionDto> options = List.of(
+			OrderingQuestionOptionDto.builder()
+				.content("첫 번째 단계")
+				.originOrder(1)
+				.answerOrder(3)
+				.build(),
+			OrderingQuestionOptionDto.builder()
+				.content("두 번째 단계")
+				.originOrder(2)
+				.answerOrder(1)
+				.build(),
+			OrderingQuestionOptionDto.builder()
+				.content("세 번째 단계")
+				.originOrder(3)
+				.answerOrder(2)
+				.build(),
+			OrderingQuestionOptionDto.builder()
+				.content("네 번째 단계")
+				.originOrder(4)
+				.answerOrder(4)
+				.build()
+		);
+
+		CreateOrderingQuestionApiRequest request = new CreateOrderingQuestionApiRequest();
+		request.setContent(questionContent);
+		request.setExplanation(questionExplanation);
+		request.setNumber(questionNumber);
+		request.setOptions(options);
+
+		String json = objectMapper.writeValueAsString(request);
+		// JSON에 type 필드가 없다면 추가
+		if (!json.contains("\"type\"")) {
+			json = json.replaceFirst("\\{", "{\"type\":\"ORDERING\",");
+		}
+
+		// when
+		mockMvc.perform(post("/api/v1/question-sets/{questionSetId}/questions?type=ORDERING", savedQuestionSet.getId())
+				.contentType(MediaType.APPLICATION_JSON)
+				.content(json))
+			.andExpect(status().isOk())
+			.andExpect(jsonPath("$.isSuccess").value(true))
+			.andExpect(jsonPath("$.data").doesNotExist());
+
+		// then
+		List<OrderingQuestionEntity> questions = questionEntityRepository.findAll()
+			.stream()
+			.filter(q -> q instanceof OrderingQuestionEntity)
+			.map(q -> (OrderingQuestionEntity)q)
+			.toList();
+
+		assertThat(questions).hasSize(1);
+
+		OrderingQuestionEntity savedQuestion = questions.get(0);
+		assertThat(savedQuestion.getContent()).isEqualTo(questionContent);
+		assertThat(savedQuestion.getExplanation()).isEqualTo(questionExplanation);
+		assertThat(savedQuestion.getNumber()).isEqualTo(questionNumber);
+		assertThat(savedQuestion.getQuestionSet().getId()).isEqualTo(savedQuestionSet.getId());
+
+		List<OrderingOptionEntity> savedOptions = orderingQuestionOptionRepository.findAll();
+		assertThat(savedOptions).hasSize(4);
+		assertThat(savedOptions).extracting("content")
+			.containsExactlyInAnyOrder("첫 번째 단계", "두 번째 단계", "세 번째 단계", "네 번째 단계");
+		assertThat(savedOptions).extracting("originOrder")
+			.containsExactlyInAnyOrder(1, 2, 3, 4);
+		assertThat(savedOptions).extracting("answerOrder")
+			.containsExactlyInAnyOrder(3, 1, 2, 4);
+
+		assertThat(savedOptions).allMatch(option -> option.getOrderingQuestionId().equals(savedQuestion.getId()));
 	}
 }

@@ -113,14 +113,14 @@ class ShortQuestionFactoryTest {
 		assertThat(first.getNumber()).isEqualTo(1L);
 		assertThat(first.getAnswer()).isEqualTo("정답1");
 		assertThat(first.isMain()).isTrue();
-		assertThat(first.getShortAnswerId()).isEqualTo(10L);
+		assertThat(first.getShortQuestionId()).isEqualTo(10L);
 
 		ShortAnswerEntity second = result.get(1);
 		assertThat(second.getId()).isNull();
 		assertThat(second.getNumber()).isEqualTo(2L);
 		assertThat(second.getAnswer()).isEqualTo("정답2");
 		assertThat(second.isMain()).isFalse();
-		assertThat(second.getShortAnswerId()).isEqualTo(10L);
+		assertThat(second.getShortQuestionId()).isEqualTo(10L);
 	}
 
 	@Test
