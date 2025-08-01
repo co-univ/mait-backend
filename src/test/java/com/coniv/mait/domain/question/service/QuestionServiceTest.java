@@ -101,8 +101,12 @@ class QuestionServiceTest {
 			.thenReturn(List.of(mock(MultipleChoiceEntity.class), mock(MultipleChoiceEntity.class),
 				mock(MultipleChoiceEntity.class)));
 
+		// QuestionDto의 toQuestionDto()가 MultipleQuestionDto 반환하도록 mock
+		QuestionDto questionDto = mock(QuestionDto.class);
+		when(questionDto.toQuestionDto()).thenReturn(multipleQuestionDto);
+
 		// when
-		questionService.createMultipleQuestion(questionSetId, multipleQuestionDto);
+		questionService.createQuestion(questionSetId, QuestionType.MULTIPLE, questionDto);
 
 		// then
 		verify(questionEntityRepository).save(any());
@@ -116,17 +120,11 @@ class QuestionServiceTest {
 		final Long questionSetId = 1L;
 		when(questionSetEntityRepository.findById(questionSetId)).thenReturn(Optional.empty());
 
-		List<MultipleChoiceDto> choiceDtos = List.of(MultipleChoiceDto.builder().number(1).build(),
-			MultipleChoiceDto.builder().number(2).build(),
-			MultipleChoiceDto.builder().number(3).build());
-
-		MultipleQuestionDto multipleQuestionDto = MultipleQuestionDto.builder()
-			.choices(choiceDtos)
-			.build();
+		QuestionDto questionDto = mock(QuestionDto.class);
 
 		// when, then
 		assertThrows(EntityNotFoundException.class,
-			() -> questionService.createMultipleQuestion(questionSetId, multipleQuestionDto));
+			() -> questionService.createQuestion(questionSetId, QuestionType.MULTIPLE, questionDto));
 
 		verify(questionEntityRepository, never()).save(any());
 		verify(multipleChoiceEntityRepository, never()).saveAll(any());
@@ -311,7 +309,7 @@ class QuestionServiceTest {
 
 		// when, then
 		assertThrows(IllegalArgumentException.class,
-			() -> questionService.createQuestion(questionSetId, QuestionType.MULTIPLE, questionDto));
+			() -> questionService.createQuestion(questionSetId, QuestionType.FILL_BLANK, questionDto));
 		verify(questionEntityRepository, never()).save(any());
 		verify(shortAnswerEntityRepository, never()).saveAll(any());
 	}

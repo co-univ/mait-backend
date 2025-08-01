@@ -61,17 +61,23 @@ class QuestionControllerTest {
 				.build()
 		);
 
-		CreateMultipleQuestionApiRequest request = new CreateMultipleQuestionApiRequest(
-			"Sample Question", "Sample Explanation", 1L, choices);
+		CreateMultipleQuestionApiRequest request = new CreateMultipleQuestionApiRequest();
+		request.setContent("Sample Question");
+		request.setExplanation("Sample Explanation");
+		request.setNumber(1L);
+		request.setChoices(choices);
+
 		String json = objectMapper.writeValueAsString(request);
+		json = json.replaceFirst("\\{", "{\"type\":\"MULTIPLE\",");
 
 		// when & then
-		mockMvc.perform(post("/api/v1/question-sets/{questionSetId}/questions?type=multiple", questionSetId)
+		mockMvc.perform(post("/api/v1/question-sets/{questionSetId}/questions?type=MULTIPLE", questionSetId)
 				.contentType(MediaType.APPLICATION_JSON)
 				.content(json))
 			.andExpect(status().isOk());
 
-		verify(questionService).createMultipleQuestion(questionSetId, request.multipleQuestionDto());
+		verify(questionService).createQuestion(eq(questionSetId),
+			eq(com.coniv.mait.domain.question.enums.QuestionType.MULTIPLE), any());
 	}
 
 	@ParameterizedTest(name = "{index} - {0}")
@@ -81,13 +87,19 @@ class QuestionControllerTest {
 		String expectedMessage) throws Exception {
 		// given
 		Long questionSetId = 1L;
-		CreateMultipleQuestionApiRequest request = new CreateMultipleQuestionApiRequest(
-			"Sample Question", "Sample Explanation", 1L, choices);
+		CreateMultipleQuestionApiRequest request = new CreateMultipleQuestionApiRequest();
+		request.setContent("Sample Question");
+		request.setExplanation("Sample Explanation");
+		request.setNumber(1L);
+		request.setChoices(choices);
+
+		String json = objectMapper.writeValueAsString(request);
+		json = json.replaceFirst("\\{", "{\"type\":\"MULTIPLE\",");
 
 		// when & then
-		mockMvc.perform(post("/api/v1/question-sets/{questionSetId}/questions?type=multiple", questionSetId)
+		mockMvc.perform(post("/api/v1/question-sets/{questionSetId}/questions?type=MULTIPLE", questionSetId)
 				.contentType(MediaType.APPLICATION_JSON)
-				.content(objectMapper.writeValueAsString(request)))
+				.content(json))
 			.andExpectAll(
 				status().isBadRequest(),
 				jsonPath("$.isSuccess").value(false),
@@ -97,7 +109,7 @@ class QuestionControllerTest {
 				jsonPath("$.reasons[0]").value(expectedMessage)
 			);
 
-		verify(questionService, never()).createMultipleQuestion(anyLong(), any());
+		verify(questionService, never()).createQuestion(anyLong(), any(), any());
 	}
 
 	static Stream<Arguments> invalidCreateMultipleQuestionRequests() {
@@ -143,13 +155,19 @@ class QuestionControllerTest {
 				.build()
 		);
 
-		CreateMultipleQuestionApiRequest request = new CreateMultipleQuestionApiRequest(
-			"Sample Question", "Sample Explanation", 1L, choices);
+		CreateMultipleQuestionApiRequest request = new CreateMultipleQuestionApiRequest();
+		request.setContent("Sample Question");
+		request.setExplanation("Sample Explanation");
+		request.setNumber(1L);
+		request.setChoices(choices);
+
+		String json = objectMapper.writeValueAsString(request);
+		json = json.replaceFirst("\\{", "{\"type\":\"MULTIPLE\",");
 
 		// when & then
-		mockMvc.perform(post("/api/v1/question-sets/{questionSetId}/questions?type=multiple", questionSetId)
+		mockMvc.perform(post("/api/v1/question-sets/{questionSetId}/questions?type=MULTIPLE", questionSetId)
 				.contentType(MediaType.APPLICATION_JSON)
-				.content(objectMapper.writeValueAsString(request)))
+				.content(json))
 			.andExpectAll(
 				status().isBadRequest(),
 				jsonPath("$.isSuccess").value(false),
@@ -159,7 +177,7 @@ class QuestionControllerTest {
 				jsonPath("$.reasons[0]").value("객관식 선지의 내용은 필수입니다.")
 			);
 
-		verify(questionService, never()).createMultipleQuestion(anyLong(), any());
+		verify(questionService, never()).createQuestion(anyLong(), any(), any());
 	}
 
 	@Test
