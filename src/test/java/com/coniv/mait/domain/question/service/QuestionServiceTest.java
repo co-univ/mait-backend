@@ -253,7 +253,7 @@ class QuestionServiceTest {
 
 		List<FillBlankAnswerDto> answerDtos = List.of(
 			FillBlankAnswerDto.builder().number(1L).answer("정답1").isMain(true).build(),
-			FillBlankAnswerDto.builder().number(2L).answer("정답2").isMain(false).build()
+			FillBlankAnswerDto.builder().number(2L).answer("정답2").isMain(true).build()
 		);
 		FillBlankQuestionDto fillBlankQuestionDto = FillBlankQuestionDto.builder()
 			.content("빈칸에 들어갈 적절한 단어는 ___입니다.")

@@ -86,7 +86,7 @@ public class QuestionService {
 			.orElseThrow(() -> new EntityNotFoundException("QuestionSet not found with id: " + questionSetId));
 
 		switch (type) {
-			case QuestionType.SHORT -> {
+			case SHORT -> {
 				ShortQuestionDto shortQuestionDto = (ShortQuestionDto)questionDto.toQuestionDto();
 				ShortQuestionEntity shortQuestionEntity = shortQuestionFactory.create(shortQuestionDto,
 					questionSetEntity);
@@ -96,7 +96,7 @@ public class QuestionService {
 					shortQuestionDto.getShortAnswers(), shortQuestionEntity);
 				shortAnswerEntityRepository.saveAll(shortAnswers);
 			}
-			case QuestionType.ORDERING -> {
+			case ORDERING -> {
 				OrderingQuestionDto orderingQuestionDto = (OrderingQuestionDto)questionDto.toQuestionDto();
 				OrderingQuestionEntity orderingQuestionEntity = orderingQuestionFactory.create(orderingQuestionDto,
 					questionSetEntity);
@@ -105,7 +105,7 @@ public class QuestionService {
 					.createOrderingQuestionOptions(orderingQuestionDto.getOptions(), orderingQuestionEntity);
 				orderingQuestionOptionRepository.saveAll(orderingOptions);
 			}
-			case QuestionType.FILL_BLANK -> {
+			case FILL_BLANK -> {
 				FillBlankQuestionDto fillBlankQuestionDto = (FillBlankQuestionDto)questionDto.toQuestionDto();
 				FillBlankQuestionEntity fillBlankQuestionEntity = fillBlankQuestionFactory.create(fillBlankQuestionDto,
 					questionSetEntity);
