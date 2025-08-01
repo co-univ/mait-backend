@@ -87,12 +87,12 @@ class FillBlankQuestionFactoryTest {
 			FillBlankAnswerDto.builder()
 				.number(2L)
 				.answer("정답2")
-				.isMain(false)
+				.isMain(true)
 				.build(),
 			FillBlankAnswerDto.builder()
 				.number(3L)
 				.answer("정답3")
-				.isMain(false)
+				.isMain(true)
 				.build()
 		);
 
@@ -113,14 +113,14 @@ class FillBlankQuestionFactoryTest {
 		assertThat(secondAnswer.getId()).isNull(); // ID는 Factory에서 설정하지 않음
 		assertThat(secondAnswer.getNumber()).isEqualTo(2L);
 		assertThat(secondAnswer.getAnswer()).isEqualTo("정답2");
-		assertThat(secondAnswer.isMain()).isFalse();
+		assertThat(secondAnswer.isMain()).isTrue();
 		assertThat(secondAnswer.getFillBlankQuestionId()).isEqualTo(1L);
 
 		FillBlankAnswerEntity thirdAnswer = result.get(2);
 		assertThat(thirdAnswer.getId()).isNull(); // ID는 Factory에서 설정하지 않음
 		assertThat(thirdAnswer.getNumber()).isEqualTo(3L);
 		assertThat(thirdAnswer.getAnswer()).isEqualTo("정답3");
-		assertThat(thirdAnswer.isMain()).isFalse();
+		assertThat(thirdAnswer.isMain()).isTrue();
 		assertThat(thirdAnswer.getFillBlankQuestionId()).isEqualTo(1L);
 	}
 
@@ -149,8 +149,8 @@ class FillBlankQuestionFactoryTest {
 	}
 
 	@Test
-	@DisplayName("빈칸 문제 답변 생성 실패 - 중복된 답변 번호")
-	void createFillBlankAnswers_DuplicateNumber_ThrowsException() {
+	@DisplayName("빈칸 문제 답변 생성 실패 - 같은 번호에 메인 답변이 여러 개")
+	void createFillBlankAnswers_MultipleMainAnswers_ThrowsException() {
 		// given
 		QuestionSetEntity questionSet = QuestionSetEntity.of("테스트 과목", QuestionSetCreationType.MANUAL);
 
@@ -163,23 +163,120 @@ class FillBlankQuestionFactoryTest {
 			.id(1L)
 			.build();
 
-		List<FillBlankAnswerDto> duplicateAnswers = Arrays.asList(
+		List<FillBlankAnswerDto> multipleMainAnswers = Arrays.asList(
 			FillBlankAnswerDto.builder()
 				.number(1L)
 				.answer("정답1")
 				.isMain(true)
 				.build(),
 			FillBlankAnswerDto.builder()
-				.number(1L) // 중복된 번호
+				.number(1L) // 같은 번호에 메인 답변이 또 있음
+				.answer("정답2")
+				.isMain(true)
+				.build()
+		);
+
+		// when & then
+		assertThatThrownBy(() -> fillBlankQuestionFactory.createFillBlankAnswers(multipleMainAnswers, question))
+			.isInstanceOf(UserParameterException.class)
+			.hasMessage("Each blank number must have exactly one main answer. Number 1 has 2 main answers.");
+	}
+
+	@Test
+	@DisplayName("빈칸 문제 답변 생성 실패 - 메인 답변이 없는 경우")
+	void createFillBlankAnswers_NoMainAnswer_ThrowsException() {
+		// given
+		QuestionSetEntity questionSet = QuestionSetEntity.of("테스트 과목", QuestionSetCreationType.MANUAL);
+
+		FillBlankQuestionEntity question = FillBlankQuestionEntity.builder()
+			.content("빈칸에 들어갈 적절한 단어는 ___입니다.")
+			.explanation("설명")
+			.number(1L)
+			.displayDelayMilliseconds(1000)
+			.questionSet(questionSet)
+			.id(1L)
+			.build();
+
+		List<FillBlankAnswerDto> noMainAnswers = Arrays.asList(
+			FillBlankAnswerDto.builder()
+				.number(1L)
+				.answer("정답1")
+				.isMain(false)
+				.build(),
+			FillBlankAnswerDto.builder()
+				.number(1L)
 				.answer("정답2")
 				.isMain(false)
 				.build()
 		);
 
 		// when & then
-		assertThatThrownBy(() -> fillBlankQuestionFactory.createFillBlankAnswers(duplicateAnswers, question))
+		assertThatThrownBy(() -> fillBlankQuestionFactory.createFillBlankAnswers(noMainAnswers, question))
 			.isInstanceOf(UserParameterException.class)
-			.hasMessage("Fill blank answer numbers must be unique.");
+			.hasMessage("Each blank number must have exactly one main answer. Number 1 has 0 main answers.");
+	}
+
+	@Test
+	@DisplayName("빈칸 문제 답변 생성 테스트 - 같은 번호에 메인과 대안 답변")
+	void createFillBlankAnswers_MainAndAlternativeAnswers() {
+		// given
+		QuestionSetEntity questionSet = QuestionSetEntity.of("테스트 과목", QuestionSetCreationType.MANUAL);
+
+		FillBlankQuestionEntity question = FillBlankQuestionEntity.builder()
+			.content("빈칸에 들어갈 적절한 단어는 ___와 ___입니다.")
+			.explanation("설명")
+			.number(1L)
+			.displayDelayMilliseconds(1000)
+			.questionSet(questionSet)
+			.id(1L)
+			.build();
+
+		List<FillBlankAnswerDto> answers = Arrays.asList(
+			FillBlankAnswerDto.builder()
+				.number(1L)
+				.answer("정답1")
+				.isMain(true)
+				.build(),
+			FillBlankAnswerDto.builder()
+				.number(1L)
+				.answer("정답1_대안")
+				.isMain(false)
+				.build(),
+			FillBlankAnswerDto.builder()
+				.number(2L)
+				.answer("정답2")
+				.isMain(true)
+				.build(),
+			FillBlankAnswerDto.builder()
+				.number(2L)
+				.answer("정답2_대안")
+				.isMain(false)
+				.build()
+		);
+
+		// when
+		List<FillBlankAnswerEntity> result = fillBlankQuestionFactory.createFillBlankAnswers(answers, question);
+
+		// then
+		assertThat(result).hasSize(4);
+
+		// 번호 1 답변들 확인
+		List<FillBlankAnswerEntity> number1Answers = result.stream()
+			.filter(answer -> answer.getNumber().equals(1L))
+			.toList();
+		assertThat(number1Answers).hasSize(2);
+		assertThat(number1Answers).extracting("answer")
+			.containsExactlyInAnyOrder("정답1", "정답1_대안");
+		assertThat(number1Answers.stream().filter(FillBlankAnswerEntity::isMain)).hasSize(1);
+
+		// 번호 2 답변들 확인
+		List<FillBlankAnswerEntity> number2Answers = result.stream()
+			.filter(answer -> answer.getNumber().equals(2L))
+			.toList();
+		assertThat(number2Answers).hasSize(2);
+		assertThat(number2Answers).extracting("answer")
+			.containsExactlyInAnyOrder("정답2", "정답2_대안");
+		assertThat(number2Answers.stream().filter(FillBlankAnswerEntity::isMain)).hasSize(1);
 	}
 
 	@Test
