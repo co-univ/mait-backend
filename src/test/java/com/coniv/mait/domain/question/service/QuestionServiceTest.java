@@ -87,18 +87,14 @@ class QuestionServiceTest {
 		when(questionSetEntityRepository.findById(questionSetId)).thenReturn(Optional.of(questionSetEntity));
 
 		List<MultipleChoiceDto> choiceDtos = List.of(MultipleChoiceDto.builder().number(1).build(),
-			MultipleChoiceDto.builder().number(2).build(),
-			MultipleChoiceDto.builder().number(3).build());
+			MultipleChoiceDto.builder().number(2).build(), MultipleChoiceDto.builder().number(3).build());
 
-		MultipleQuestionDto multipleQuestionDto = MultipleQuestionDto.builder()
-			.choices(choiceDtos)
-			.build();
+		MultipleQuestionDto multipleQuestionDto = MultipleQuestionDto.builder().choices(choiceDtos).build();
 		MultipleQuestionEntity multipleQuestionEntity = mock(MultipleQuestionEntity.class);
-		when(multipleQuestionFactory.create(multipleQuestionDto, questionSetEntity))
-			.thenReturn(multipleQuestionEntity);
+		when(multipleQuestionFactory.create(multipleQuestionDto, questionSetEntity)).thenReturn(multipleQuestionEntity);
 
-		when(multipleQuestionFactory.createChoices(choiceDtos, multipleQuestionEntity))
-			.thenReturn(List.of(mock(MultipleChoiceEntity.class), mock(MultipleChoiceEntity.class),
+		when(multipleQuestionFactory.createChoices(choiceDtos, multipleQuestionEntity)).thenReturn(
+			List.of(mock(MultipleChoiceEntity.class), mock(MultipleChoiceEntity.class),
 				mock(MultipleChoiceEntity.class)));
 
 		// QuestionDto의 toQuestionDto()가 MultipleQuestionDto 반환하도록 mock
@@ -140,8 +136,7 @@ class QuestionServiceTest {
 
 		List<ShortAnswerDto> answerDtos = List.of(
 			ShortAnswerDto.builder().number(1L).answer("정답1").isMain(true).build(),
-			ShortAnswerDto.builder().number(2L).answer("정답2").isMain(false).build()
-		);
+			ShortAnswerDto.builder().number(2L).answer("정답2").isMain(false).build());
 		ShortQuestionDto shortQuestionDto = ShortQuestionDto.builder()
 			.content("주관식 문제 내용")
 			.explanation("해설")
@@ -149,9 +144,8 @@ class QuestionServiceTest {
 			.shortAnswers(answerDtos)
 			.build();
 		ShortQuestionEntity shortQuestionEntity = mock(ShortQuestionEntity.class);
-		List<ShortAnswerEntity> shortAnswerEntities = List.of(
-			mock(ShortAnswerEntity.class), mock(ShortAnswerEntity.class)
-		);
+		List<ShortAnswerEntity> shortAnswerEntities = List.of(mock(ShortAnswerEntity.class),
+			mock(ShortAnswerEntity.class));
 
 		when(shortQuestionFactory.create(shortQuestionDto, questionSetEntity)).thenReturn(shortQuestionEntity);
 		when(shortQuestionFactory.createShortAnswers(answerDtos, shortQuestionEntity)).thenReturn(shortAnswerEntities);
@@ -195,8 +189,7 @@ class QuestionServiceTest {
 		List<OrderingQuestionOptionDto> optionDtos = List.of(
 			OrderingQuestionOptionDto.builder().content("첫 번째 옵션").originOrder(1).answerOrder(2).build(),
 			OrderingQuestionOptionDto.builder().content("두 번째 옵션").originOrder(2).answerOrder(1).build(),
-			OrderingQuestionOptionDto.builder().content("세 번째 옵션").originOrder(3).answerOrder(3).build()
-		);
+			OrderingQuestionOptionDto.builder().content("세 번째 옵션").originOrder(3).answerOrder(3).build());
 		OrderingQuestionDto orderingQuestionDto = OrderingQuestionDto.builder()
 			.content("순서배열 문제 내용")
 			.explanation("해설")
@@ -204,9 +197,8 @@ class QuestionServiceTest {
 			.options(optionDtos)
 			.build();
 		OrderingQuestionEntity orderingQuestionEntity = mock(OrderingQuestionEntity.class);
-		List<OrderingOptionEntity> optionEntities = List.of(
-			mock(OrderingOptionEntity.class), mock(OrderingOptionEntity.class), mock(OrderingOptionEntity.class)
-		);
+		List<OrderingOptionEntity> optionEntities = List.of(mock(OrderingOptionEntity.class),
+			mock(OrderingOptionEntity.class), mock(OrderingOptionEntity.class));
 
 		when(orderingQuestionFactory.create(orderingQuestionDto, questionSetEntity)).thenReturn(orderingQuestionEntity);
 		when(orderingQuestionFactory.createOrderingQuestionOptions(optionDtos, orderingQuestionEntity)).thenReturn(
@@ -251,8 +243,7 @@ class QuestionServiceTest {
 
 		List<FillBlankAnswerDto> answerDtos = List.of(
 			FillBlankAnswerDto.builder().number(1L).answer("정답1").isMain(true).build(),
-			FillBlankAnswerDto.builder().number(2L).answer("정답2").isMain(true).build()
-		);
+			FillBlankAnswerDto.builder().number(2L).answer("정답2").isMain(true).build());
 		FillBlankQuestionDto fillBlankQuestionDto = FillBlankQuestionDto.builder()
 			.content("빈칸에 들어갈 적절한 단어는 ___입니다.")
 			.explanation("해설")
@@ -260,9 +251,8 @@ class QuestionServiceTest {
 			.fillBlankAnswers(answerDtos)
 			.build();
 		FillBlankQuestionEntity fillBlankQuestionEntity = mock(FillBlankQuestionEntity.class);
-		List<FillBlankAnswerEntity> fillBlankAnswerEntities = List.of(
-			mock(FillBlankAnswerEntity.class), mock(FillBlankAnswerEntity.class)
-		);
+		List<FillBlankAnswerEntity> fillBlankAnswerEntities = List.of(mock(FillBlankAnswerEntity.class),
+			mock(FillBlankAnswerEntity.class));
 
 		when(fillBlankQuestionFactory.create(fillBlankQuestionDto, questionSetEntity)).thenReturn(
 			fillBlankQuestionEntity);
@@ -299,18 +289,26 @@ class QuestionServiceTest {
 	}
 
 	@Test
-	@DisplayName("지원하지 않는 문제 타입 입력 시 예외 발생")
-	void createQuestion_UnsupportedType() {
+	@DisplayName("빈칸 문제 생성 테스트 - createQuestion(QuestionType.FILL_BLANK) 정상 동작")
+	void createFillBlankQuestion_Success_via_createQuestion() {
 		// given
 		final Long questionSetId = 1L;
 		QuestionSetEntity questionSetEntity = mock(QuestionSetEntity.class);
 		when(questionSetEntityRepository.findById(questionSetId)).thenReturn(Optional.of(questionSetEntity));
+		FillBlankQuestionDto fillBlankQuestionDto = mock(FillBlankQuestionDto.class);
 		QuestionDto questionDto = mock(QuestionDto.class);
+		when(questionDto.toQuestionDto()).thenReturn(fillBlankQuestionDto);
 
-		// when, then
-		assertThrows(IllegalArgumentException.class,
-			() -> questionService.createQuestion(questionSetId, QuestionType.FILL_BLANK, questionDto));
-		verify(questionEntityRepository, never()).save(any());
-		verify(shortAnswerEntityRepository, never()).saveAll(any());
+		FillBlankQuestionEntity fillBlankQuestionEntity = mock(FillBlankQuestionEntity.class);
+		when(fillBlankQuestionFactory.create(fillBlankQuestionDto, questionSetEntity)).thenReturn(
+			fillBlankQuestionEntity);
+		when(fillBlankQuestionFactory.createFillBlankAnswers(any(), eq(fillBlankQuestionEntity))).thenReturn(List.of());
+
+		// when
+		questionService.createQuestion(questionSetId, QuestionType.FILL_BLANK, questionDto);
+
+		// then
+		verify(questionEntityRepository).save(fillBlankQuestionEntity);
+		verify(fillBlankAnswerEntityRepository).saveAll(any());
 	}
 }
