@@ -1,7 +1,6 @@
 package com.coniv.mait.domain.question.service.component;
 
 import java.util.List;
-import java.util.Set;
 import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Component;
@@ -31,23 +30,36 @@ public class FillBlankQuestionFactory {
 
 	public List<FillBlankAnswerEntity> createFillBlankAnswers(
 		List<FillBlankAnswerDto> fillBlankAnswerDtos, FillBlankQuestionEntity fillBlankQuestionEntity) {
-		checkDuplicateNumber(fillBlankAnswerDtos);
+		validateMainAnswers(fillBlankAnswerDtos);
 		return fillBlankAnswerDtos.stream()
-			.map(fillBlankAnswerDto -> FillBlankAnswerEntity.builder()
-				.answer(fillBlankAnswerDto.getAnswer())
-				.isMain(fillBlankAnswerDto.isMain())
-				.number(fillBlankAnswerDto.getNumber())
-				.fillBlankQuestionId(fillBlankQuestionEntity.getId())
-				.build())
+			.map(dto -> createFillBlankAnswerEntity(dto, fillBlankQuestionEntity.getId()))
 			.toList();
 	}
 
-	private void checkDuplicateNumber(List<FillBlankAnswerDto> fillBlankAnswerDtos) {
-		Set<Long> numbers = fillBlankAnswerDtos.stream()
-			.map(FillBlankAnswerDto::getNumber)
-			.collect(Collectors.toSet());
-		if (numbers.size() != fillBlankAnswerDtos.size()) {
-			throw new UserParameterException("Fill blank answer numbers must be unique.");
+	private FillBlankAnswerEntity createFillBlankAnswerEntity(FillBlankAnswerDto dto, Long questionId) {
+		return FillBlankAnswerEntity.builder()
+			.answer(dto.getAnswer())
+			.isMain(dto.isMain())
+			.number(dto.getNumber())
+			.fillBlankQuestionId(questionId)
+			.build();
+	}
+
+	private void validateMainAnswers(List<FillBlankAnswerDto> answers) {
+		answers.stream()
+			.collect(Collectors.groupingBy(FillBlankAnswerDto::getNumber))
+			.forEach(this::validateSingleMainAnswer);
+	}
+
+	private void validateSingleMainAnswer(Long number, List<FillBlankAnswerDto> answersForNumber) {
+		long mainCount = answersForNumber.stream()
+			.mapToLong(answer -> answer.isMain() ? 1 : 0)
+			.sum();
+
+		if (mainCount != 1) {
+			throw new UserParameterException(
+				String.format("Each blank number must have exactly one main answer. Number %d has %d main answers.",
+					number, mainCount));
 		}
 	}
 }
