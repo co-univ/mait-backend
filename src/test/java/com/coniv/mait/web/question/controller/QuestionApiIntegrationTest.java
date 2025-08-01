@@ -12,6 +12,8 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
 
+import com.coniv.mait.domain.question.entity.FillBlankAnswerEntity;
+import com.coniv.mait.domain.question.entity.FillBlankQuestionEntity;
 import com.coniv.mait.domain.question.entity.MultipleChoiceEntity;
 import com.coniv.mait.domain.question.entity.MultipleQuestionEntity;
 import com.coniv.mait.domain.question.entity.OrderingOptionEntity;
@@ -20,15 +22,18 @@ import com.coniv.mait.domain.question.entity.QuestionSetEntity;
 import com.coniv.mait.domain.question.entity.ShortAnswerEntity;
 import com.coniv.mait.domain.question.entity.ShortQuestionEntity;
 import com.coniv.mait.domain.question.enums.QuestionSetCreationType;
+import com.coniv.mait.domain.question.repository.FillBlankAnswerEntityRepository;
 import com.coniv.mait.domain.question.repository.MultipleChoiceEntityRepository;
 import com.coniv.mait.domain.question.repository.OrderingQuestionOptionRepository;
 import com.coniv.mait.domain.question.repository.QuestionEntityRepository;
 import com.coniv.mait.domain.question.repository.QuestionSetEntityRepository;
 import com.coniv.mait.domain.question.repository.ShortAnswerEntityRepository;
+import com.coniv.mait.domain.question.service.dto.FillBlankAnswerDto;
 import com.coniv.mait.domain.question.service.dto.MultipleChoiceDto;
 import com.coniv.mait.domain.question.service.dto.OrderingQuestionOptionDto;
 import com.coniv.mait.domain.question.service.dto.ShortAnswerDto;
 import com.coniv.mait.web.integration.BaseIntegrationTest;
+import com.coniv.mait.web.question.dto.CreateFillBlankQuestionApiRequest;
 import com.coniv.mait.web.question.dto.CreateMultipleQuestionApiRequest;
 import com.coniv.mait.web.question.dto.CreateOrderingQuestionApiRequest;
 import com.coniv.mait.web.question.dto.CreateShortQuestionApiRequest;
@@ -50,11 +55,15 @@ public class QuestionApiIntegrationTest extends BaseIntegrationTest {
 	@Autowired
 	private OrderingQuestionOptionRepository orderingQuestionOptionRepository;
 
+	@Autowired
+	private FillBlankAnswerEntityRepository fillBlankAnswerEntityRepository;
+
 	@BeforeEach
 	void setUp() {
 		shortAnswerEntityRepository.deleteAll();
 		multipleChoiceEntityRepository.deleteAll();
 		orderingQuestionOptionRepository.deleteAll();
+		fillBlankAnswerEntityRepository.deleteAll();
 		questionEntityRepository.deleteAll();
 		questionSetEntityRepository.deleteAll();
 	}
@@ -114,7 +123,7 @@ public class QuestionApiIntegrationTest extends BaseIntegrationTest {
 
 		assertThat(questions).hasSize(1);
 
-		MultipleQuestionEntity savedQuestion = questions.get(0);
+		MultipleQuestionEntity savedQuestion = questions.getFirst();
 		assertThat(savedQuestion.getContent()).isEqualTo(questionContent);
 		assertThat(savedQuestion.getExplanation()).isEqualTo(questionExplanation);
 		assertThat(savedQuestion.getNumber()).isEqualTo(questionNumber);
@@ -190,7 +199,7 @@ public class QuestionApiIntegrationTest extends BaseIntegrationTest {
 
 		assertThat(questions).hasSize(1);
 
-		ShortQuestionEntity savedQuestion = questions.get(0);
+		ShortQuestionEntity savedQuestion = questions.getFirst();
 		assertThat(savedQuestion.getContent()).isEqualTo(questionContent);
 		assertThat(savedQuestion.getExplanation()).isEqualTo(questionExplanation);
 		assertThat(savedQuestion.getNumber()).isEqualTo(questionNumber);
@@ -275,7 +284,7 @@ public class QuestionApiIntegrationTest extends BaseIntegrationTest {
 
 		assertThat(questions).hasSize(1);
 
-		OrderingQuestionEntity savedQuestion = questions.get(0);
+		OrderingQuestionEntity savedQuestion = questions.getFirst();
 		assertThat(savedQuestion.getContent()).isEqualTo(questionContent);
 		assertThat(savedQuestion.getExplanation()).isEqualTo(questionExplanation);
 		assertThat(savedQuestion.getNumber()).isEqualTo(questionNumber);
@@ -291,5 +300,108 @@ public class QuestionApiIntegrationTest extends BaseIntegrationTest {
 			.containsExactlyInAnyOrder(3, 1, 2, 4);
 
 		assertThat(savedOptions).allMatch(option -> option.getOrderingQuestionId().equals(savedQuestion.getId()));
+	}
+
+	@SuppressWarnings("checkstyle:LineLength")
+	@Test
+	@DisplayName("문제 셋에 빈칸 문제 저장 API 성공 테스트")
+	void createFillBlankQuestionApiSuccess() throws Exception {
+		// given
+		QuestionSetEntity questionSet = QuestionSetEntity.of("Sample Subject", QuestionSetCreationType.MANUAL);
+		QuestionSetEntity savedQuestionSet = questionSetEntityRepository.save(questionSet);
+
+		String questionContent = "빈칸에 들어갈 적절한 단어는 ___와 ___입니다.";
+		String questionExplanation = "빈칸 문제 해설";
+		Long questionNumber = 1L;
+
+		List<FillBlankAnswerDto> fillBlankAnswers = List.of(
+			FillBlankAnswerDto.builder()
+				.answer("정답1")
+				.isMain(true)
+				.number(1L)
+				.build(),
+			FillBlankAnswerDto.builder()
+				.answer("정답1_대안")
+				.isMain(false)
+				.number(1L)
+				.build(),
+			FillBlankAnswerDto.builder()
+				.answer("정답2")
+				.isMain(true)
+				.number(2L)
+				.build(),
+			FillBlankAnswerDto.builder()
+				.answer("정답2_대안")
+				.isMain(false)
+				.number(2L)
+				.build()
+		);
+
+		CreateFillBlankQuestionApiRequest request = new CreateFillBlankQuestionApiRequest();
+		request.setContent(questionContent);
+		request.setExplanation(questionExplanation);
+		request.setNumber(questionNumber);
+		request.setFillBlankAnswers(fillBlankAnswers);
+
+		String json = objectMapper.writeValueAsString(request);
+
+		// when
+		mockMvc.perform(
+				post("/api/v1/question-sets/{questionSetId}/questions?type=FILL_BLANK", savedQuestionSet.getId())
+					.contentType(MediaType.APPLICATION_JSON)
+					.content(json))
+			.andExpect(status().isOk())
+			.andExpect(jsonPath("$.isSuccess").value(true))
+			.andExpect(jsonPath("$.data").doesNotExist());
+
+		// then
+		List<FillBlankQuestionEntity> questions = questionEntityRepository.findAll()
+			.stream()
+			.filter(q -> q instanceof FillBlankQuestionEntity)
+			.map(q -> (FillBlankQuestionEntity)q)
+			.toList();
+
+		assertThat(questions).hasSize(1);
+
+		FillBlankQuestionEntity savedQuestion = questions.getFirst();
+		assertThat(savedQuestion.getContent()).isEqualTo(questionContent);
+		assertThat(savedQuestion.getExplanation()).isEqualTo(questionExplanation);
+		assertThat(savedQuestion.getNumber()).isEqualTo(questionNumber);
+		assertThat(savedQuestion.getQuestionSet().getId()).isEqualTo(savedQuestionSet.getId());
+
+		List<FillBlankAnswerEntity> savedAnswers = fillBlankAnswerEntityRepository.findAll();
+		assertThat(savedAnswers).hasSize(4);
+		assertThat(savedAnswers).extracting("answer")
+			.containsExactlyInAnyOrder("정답1", "정답1_대안", "정답2", "정답2_대안");
+		assertThat(savedAnswers).extracting("number")
+			.containsExactlyInAnyOrder(1L, 1L, 2L, 2L);
+
+		// 각 번호별로 메인 답변이 하나씩 있는지 확인
+		long mainAnswerCount = savedAnswers.stream()
+			.mapToLong(answer -> answer.isMain() ? 1 : 0)
+			.sum();
+		assertThat(mainAnswerCount).isEqualTo(2); // 번호 1, 2 각각에 메인 답변 하나씩
+
+		// 번호 1의 메인 답변 확인
+		List<FillBlankAnswerEntity> number1Answers = savedAnswers.stream()
+			.filter(answer -> answer.getNumber().equals(1L))
+			.toList();
+		assertThat(number1Answers).hasSize(2);
+		long number1MainCount = number1Answers.stream()
+			.mapToLong(answer -> answer.isMain() ? 1 : 0)
+			.sum();
+		assertThat(number1MainCount).isEqualTo(1);
+
+		// 번호 2의 메인 답변 확인
+		List<FillBlankAnswerEntity> number2Answers = savedAnswers.stream()
+			.filter(answer -> answer.getNumber().equals(2L))
+			.toList();
+		assertThat(number2Answers).hasSize(2);
+		long number2MainCount = number2Answers.stream()
+			.mapToLong(answer -> answer.isMain() ? 1 : 0)
+			.sum();
+		assertThat(number2MainCount).isEqualTo(1);
+
+		assertThat(savedAnswers).allMatch(answer -> answer.getFillBlankQuestionId().equals(savedQuestion.getId()));
 	}
 }

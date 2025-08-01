@@ -2,8 +2,12 @@ package com.coniv.mait.domain.question.entity;
 
 import jakarta.persistence.DiscriminatorValue;
 import jakarta.persistence.Entity;
+import lombok.AllArgsConstructor;
+import lombok.experimental.SuperBuilder;
 
 @Entity
 @DiscriminatorValue("fill_blank")
+@SuperBuilder
+@AllArgsConstructor(access = lombok.AccessLevel.PROTECTED)
 public class FillBlankQuestionEntity extends QuestionEntity {
 }

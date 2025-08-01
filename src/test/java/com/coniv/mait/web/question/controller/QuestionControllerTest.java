@@ -20,9 +20,11 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
 import com.coniv.mait.domain.question.service.QuestionService;
+import com.coniv.mait.domain.question.service.dto.FillBlankAnswerDto;
 import com.coniv.mait.domain.question.service.dto.MultipleChoiceDto;
 import com.coniv.mait.domain.question.service.dto.OrderingQuestionOptionDto;
 import com.coniv.mait.domain.question.service.dto.ShortAnswerDto;
+import com.coniv.mait.web.question.dto.CreateFillBlankQuestionApiRequest;
 import com.coniv.mait.web.question.dto.CreateMultipleQuestionApiRequest;
 import com.coniv.mait.web.question.dto.CreateOrderingQuestionApiRequest;
 import com.coniv.mait.web.question.dto.CreateShortQuestionApiRequest;
@@ -363,6 +365,113 @@ class QuestionControllerTest {
 
 		String json = objectMapper.writeValueAsString(request);
 		json = json.replaceFirst("\\{", "{\"type\":\"ORDERING\",");
+
+		// when & then
+		mockMvc.perform(post("/api/v1/question-sets/{questionSetId}/questions?type={type}", questionSetId, type)
+				.contentType(MediaType.APPLICATION_JSON)
+				.content(json))
+			.andExpectAll(
+				status().isBadRequest(),
+				jsonPath("$.isSuccess").value(false),
+				jsonPath("$.code").value("C-001"),
+				jsonPath("$.message").value("사용자 입력 오류입니다."),
+				jsonPath("$.reasons").isArray(),
+				jsonPath("$.reasons[0]").value("문제 번호는 필수입니다.")
+			);
+
+		verify(questionService, never()).createQuestion(anyLong(), any(), any());
+	}
+
+	@Test
+	@DisplayName("문제 셋에 빈칸 문제 저장 API 테스트 - 성공")
+	void createFillBlankQuestionTest() throws Exception {
+		// given
+		Long questionSetId = 1L;
+		String type = "FILL_BLANK";
+		var fillBlankAnswers = List.of(
+			FillBlankAnswerDto.builder()
+				.answer("정답1")
+				.isMain(true)
+				.number(1L)
+				.build(),
+			FillBlankAnswerDto.builder()
+				.answer("정답2")
+				.isMain(false)
+				.number(2L)
+				.build()
+		);
+		var request = new CreateFillBlankQuestionApiRequest();
+		request.setContent("빈칸에 들어갈 적절한 단어는 ___입니다.");
+		request.setExplanation("문제 해설");
+		request.setNumber(1L);
+		request.setFillBlankAnswers(fillBlankAnswers);
+
+		// type 필드 추가
+		String json = objectMapper.writeValueAsString(request);
+		json = json.replaceFirst("\\{", "{\"type\":\"FILL_BLANK\",");
+
+		// when & then
+		mockMvc.perform(post("/api/v1/question-sets/{questionSetId}/questions?type={type}", questionSetId, type)
+				.contentType(MediaType.APPLICATION_JSON)
+				.content(json))
+			.andExpect(status().isOk());
+
+		verify(questionService).createQuestion(eq(questionSetId),
+			eq(com.coniv.mait.domain.question.enums.QuestionType.FILL_BLANK), any());
+	}
+
+	@Test
+	@DisplayName("빈칸 문제 생성 실패 테스트 - 정답이 null인 경우")
+	void createFillBlankQuestionNullAnswersTest() throws Exception {
+		// given
+		Long questionSetId = 1L;
+		String type = "FILL_BLANK";
+		var request = new CreateFillBlankQuestionApiRequest();
+		request.setContent("빈칸에 들어갈 적절한 단어는 ___입니다.");
+		request.setExplanation("문제 해설");
+		request.setNumber(1L);
+		request.setFillBlankAnswers(null); // null로 설정
+
+		String json = objectMapper.writeValueAsString(request);
+		json = json.replaceFirst("\\{", "{\"type\":\"FILL_BLANK\",");
+
+		// when & then
+		mockMvc.perform(post("/api/v1/question-sets/{questionSetId}/questions?type={type}", questionSetId, type)
+				.contentType(MediaType.APPLICATION_JSON)
+				.content(json))
+			.andExpectAll(
+				status().isBadRequest(),
+				jsonPath("$.isSuccess").value(false),
+				jsonPath("$.code").value("C-001"),
+				jsonPath("$.message").value("사용자 입력 오류입니다."),
+				jsonPath("$.reasons").isArray(),
+				jsonPath("$.reasons[0]").value("빈칸 문제 정답은 필수입니다.")
+			);
+
+		verify(questionService, never()).createQuestion(anyLong(), any(), any());
+	}
+
+	@Test
+	@DisplayName("빈칸 문제 생성 실패 테스트 - 문제 번호가 null인 경우")
+	void createFillBlankQuestionNullNumberTest() throws Exception {
+		// given
+		Long questionSetId = 1L;
+		String type = "FILL_BLANK";
+		var fillBlankAnswers = List.of(
+			FillBlankAnswerDto.builder()
+				.answer("정답1")
+				.isMain(true)
+				.number(1L)
+				.build()
+		);
+		var request = new CreateFillBlankQuestionApiRequest();
+		request.setContent("빈칸에 들어갈 적절한 단어는 ___입니다.");
+		request.setExplanation("문제 해설");
+		request.setNumber(null); // null로 설정
+		request.setFillBlankAnswers(fillBlankAnswers);
+
+		String json = objectMapper.writeValueAsString(request);
+		json = json.replaceFirst("\\{", "{\"type\":\"FILL_BLANK\",");
 
 		// when & then
 		mockMvc.perform(post("/api/v1/question-sets/{questionSetId}/questions?type={type}", questionSetId, type)

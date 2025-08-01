@@ -5,6 +5,8 @@ import java.util.List;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.coniv.mait.domain.question.entity.FillBlankAnswerEntity;
+import com.coniv.mait.domain.question.entity.FillBlankQuestionEntity;
 import com.coniv.mait.domain.question.entity.MultipleChoiceEntity;
 import com.coniv.mait.domain.question.entity.MultipleQuestionEntity;
 import com.coniv.mait.domain.question.entity.OrderingOptionEntity;
@@ -13,14 +15,17 @@ import com.coniv.mait.domain.question.entity.QuestionSetEntity;
 import com.coniv.mait.domain.question.entity.ShortAnswerEntity;
 import com.coniv.mait.domain.question.entity.ShortQuestionEntity;
 import com.coniv.mait.domain.question.enums.QuestionType;
+import com.coniv.mait.domain.question.repository.FillBlankAnswerEntityRepository;
 import com.coniv.mait.domain.question.repository.MultipleChoiceEntityRepository;
 import com.coniv.mait.domain.question.repository.OrderingQuestionOptionRepository;
 import com.coniv.mait.domain.question.repository.QuestionEntityRepository;
 import com.coniv.mait.domain.question.repository.QuestionSetEntityRepository;
 import com.coniv.mait.domain.question.repository.ShortAnswerEntityRepository;
+import com.coniv.mait.domain.question.service.component.FillBlankQuestionFactory;
 import com.coniv.mait.domain.question.service.component.MultipleQuestionFactory;
 import com.coniv.mait.domain.question.service.component.OrderingQuestionFactory;
 import com.coniv.mait.domain.question.service.component.ShortQuestionFactory;
+import com.coniv.mait.domain.question.service.dto.FillBlankQuestionDto;
 import com.coniv.mait.domain.question.service.dto.MultipleQuestionDto;
 import com.coniv.mait.domain.question.service.dto.OrderingQuestionDto;
 import com.coniv.mait.domain.question.service.dto.QuestionDto;
@@ -49,6 +54,10 @@ public class QuestionService {
 
 	private final ShortAnswerEntityRepository shortAnswerEntityRepository;
 
+	private final FillBlankQuestionFactory fillBlankQuestionFactory;
+
+	private final FillBlankAnswerEntityRepository fillBlankAnswerEntityRepository;
+
 	@Transactional
 	public void createQuestion(
 		final Long questionSetId,
@@ -72,7 +81,7 @@ public class QuestionService {
 
 				multipleChoiceEntityRepository.saveAll(choices);
 			}
-			case QuestionType.SHORT -> {
+			case SHORT -> {
 				ShortQuestionDto shortQuestionDto = (ShortQuestionDto)questionDto.toQuestionDto();
 				ShortQuestionEntity shortQuestionEntity = shortQuestionFactory.create(shortQuestionDto,
 					questionSetEntity);
@@ -82,7 +91,7 @@ public class QuestionService {
 					shortQuestionDto.getShortAnswers(), shortQuestionEntity);
 				shortAnswerEntityRepository.saveAll(shortAnswers);
 			}
-			case QuestionType.ORDERING -> {
+			case ORDERING -> {
 				OrderingQuestionDto orderingQuestionDto = (OrderingQuestionDto)questionDto.toQuestionDto();
 				OrderingQuestionEntity orderingQuestionEntity = orderingQuestionFactory.create(orderingQuestionDto,
 					questionSetEntity);
@@ -90,6 +99,16 @@ public class QuestionService {
 				List<OrderingOptionEntity> orderingOptions = orderingQuestionFactory
 					.createOrderingQuestionOptions(orderingQuestionDto.getOptions(), orderingQuestionEntity);
 				orderingQuestionOptionRepository.saveAll(orderingOptions);
+			}
+			case FILL_BLANK -> {
+				FillBlankQuestionDto fillBlankQuestionDto = (FillBlankQuestionDto)questionDto.toQuestionDto();
+				FillBlankQuestionEntity fillBlankQuestionEntity = fillBlankQuestionFactory.create(fillBlankQuestionDto,
+					questionSetEntity);
+				questionEntityRepository.save(fillBlankQuestionEntity);
+
+				List<FillBlankAnswerEntity> fillBlankAnswers = fillBlankQuestionFactory.createFillBlankAnswers(
+					fillBlankQuestionDto.getFillBlankAnswers(), fillBlankQuestionEntity);
+				fillBlankAnswerEntityRepository.saveAll(fillBlankAnswers);
 			}
 			default -> throw new IllegalArgumentException("Unsupported question type: " + type);
 		}
