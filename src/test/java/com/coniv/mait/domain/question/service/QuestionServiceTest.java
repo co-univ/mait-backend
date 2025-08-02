@@ -42,6 +42,7 @@ import com.coniv.mait.domain.question.service.dto.OrderingQuestionOptionDto;
 import com.coniv.mait.domain.question.service.dto.QuestionDto;
 import com.coniv.mait.domain.question.service.dto.ShortAnswerDto;
 import com.coniv.mait.domain.question.service.dto.ShortQuestionDto;
+import com.coniv.mait.global.exception.custom.ResourceNotBelongException;
 
 import jakarta.persistence.EntityNotFoundException;
 
@@ -310,5 +311,173 @@ class QuestionServiceTest {
 		// then
 		verify(questionEntityRepository).save(fillBlankQuestionEntity);
 		verify(fillBlankAnswerEntityRepository).saveAll(any());
+	}
+
+	@Test
+	@DisplayName("객관식 문제 조회 성공")
+	void getMultipleQuestion_Success() {
+		// given
+		final Long questionSetId = 1L;
+		final Long questionId = 1L;
+
+		QuestionSetEntity questionSetEntity = mock(QuestionSetEntity.class);
+		when(questionSetEntity.getId()).thenReturn(questionSetId);
+
+		MultipleQuestionEntity multipleQuestion = mock(MultipleQuestionEntity.class);
+		when(multipleQuestion.getQuestionSet()).thenReturn(questionSetEntity);
+
+		List<MultipleChoiceEntity> choices = List.of(
+			mock(MultipleChoiceEntity.class),
+			mock(MultipleChoiceEntity.class)
+		);
+
+		when(questionEntityRepository.findById(questionId)).thenReturn(Optional.of(multipleQuestion));
+		when(multipleChoiceEntityRepository.findAllByQuestionId(questionId)).thenReturn(choices);
+
+		// when
+		QuestionDto result = questionService.getQuestion(questionSetId, questionId);
+
+		// then
+		assertNotNull(result);
+		verify(questionEntityRepository).findById(questionId);
+		verify(multipleChoiceEntityRepository).findAllByQuestionId(questionId);
+	}
+
+	@Test
+	@DisplayName("주관식 문제 조회 성공")
+	void getShortQuestion_Success() {
+		// given
+		final Long questionSetId = 1L;
+		final Long questionId = 2L;
+
+		QuestionSetEntity questionSetEntity = mock(QuestionSetEntity.class);
+		when(questionSetEntity.getId()).thenReturn(questionSetId);
+
+		ShortQuestionEntity shortQuestion = mock(ShortQuestionEntity.class);
+		when(shortQuestion.getQuestionSet()).thenReturn(questionSetEntity);
+		when(shortQuestion.getId()).thenReturn(questionId);
+
+		List<ShortAnswerEntity> shortAnswers = List.of(
+			mock(ShortAnswerEntity.class),
+			mock(ShortAnswerEntity.class)
+		);
+
+		when(questionEntityRepository.findById(questionId)).thenReturn(Optional.of(shortQuestion));
+		when(shortAnswerEntityRepository.findAllByShortQuestionId(questionId)).thenReturn(shortAnswers);
+
+		// when
+		QuestionDto result = questionService.getQuestion(questionSetId, questionId);
+
+		// then
+		assertNotNull(result);
+		verify(questionEntityRepository).findById(questionId);
+		verify(shortAnswerEntityRepository).findAllByShortQuestionId(questionId);
+	}
+
+	@Test
+	@DisplayName("순서배열 문제 조회 성공")
+	void getOrderingQuestion_Success() {
+		// given
+		final Long questionSetId = 1L;
+		final Long questionId = 3L;
+
+		QuestionSetEntity questionSetEntity = mock(QuestionSetEntity.class);
+		when(questionSetEntity.getId()).thenReturn(questionSetId);
+
+		OrderingQuestionEntity orderingQuestion = mock(OrderingQuestionEntity.class);
+		when(orderingQuestion.getQuestionSet()).thenReturn(questionSetEntity);
+		when(orderingQuestion.getId()).thenReturn(questionId);
+
+		List<OrderingOptionEntity> options = List.of(
+			mock(OrderingOptionEntity.class),
+			mock(OrderingOptionEntity.class)
+		);
+
+		when(questionEntityRepository.findById(questionId)).thenReturn(Optional.of(orderingQuestion));
+		when(orderingQuestionOptionRepository.findAllByOrderingQuestionId(questionId)).thenReturn(options);
+
+		// when
+		QuestionDto result = questionService.getQuestion(questionSetId, questionId);
+
+		// then
+		assertNotNull(result);
+		verify(questionEntityRepository).findById(questionId);
+		verify(orderingQuestionOptionRepository).findAllByOrderingQuestionId(questionId);
+	}
+
+	@Test
+	@DisplayName("빈칸채우기 문제 조회 성공")
+	void getFillBlankQuestion_Success() {
+		// given
+		final Long questionSetId = 1L;
+		final Long questionId = 4L;
+
+		QuestionSetEntity questionSetEntity = mock(QuestionSetEntity.class);
+		when(questionSetEntity.getId()).thenReturn(questionSetId);
+
+		FillBlankQuestionEntity fillBlankQuestion = mock(FillBlankQuestionEntity.class);
+		when(fillBlankQuestion.getQuestionSet()).thenReturn(questionSetEntity);
+		when(fillBlankQuestion.getId()).thenReturn(questionId);
+
+		List<FillBlankAnswerEntity> fillBlankAnswers = List.of(
+			mock(FillBlankAnswerEntity.class),
+			mock(FillBlankAnswerEntity.class)
+		);
+
+		when(questionEntityRepository.findById(questionId)).thenReturn(Optional.of(fillBlankQuestion));
+		when(fillBlankAnswerEntityRepository.findAllByFillBlankQuestionId(questionId)).thenReturn(fillBlankAnswers);
+
+		// when
+		QuestionDto result = questionService.getQuestion(questionSetId, questionId);
+
+		// then
+		assertNotNull(result);
+		verify(questionEntityRepository).findById(questionId);
+		verify(fillBlankAnswerEntityRepository).findAllByFillBlankQuestionId(questionId);
+	}
+
+	@Test
+	@DisplayName("문제 조회 실패 - 존재하지 않는 문제")
+	void getQuestion_QuestionNotFound() {
+		// given
+		final Long questionSetId = 1L;
+		final Long questionId = 999L;
+
+		when(questionEntityRepository.findById(questionId)).thenReturn(Optional.empty());
+
+		// when & then
+		assertThrows(EntityNotFoundException.class,
+			() -> questionService.getQuestion(questionSetId, questionId));
+
+		verify(questionEntityRepository).findById(questionId);
+		verify(multipleChoiceEntityRepository, never()).findAllByQuestionId(any());
+		verify(shortAnswerEntityRepository, never()).findAllByShortQuestionId(any());
+		verify(orderingQuestionOptionRepository, never()).findAllByOrderingQuestionId(any());
+		verify(fillBlankAnswerEntityRepository, never()).findAllByFillBlankQuestionId(any());
+	}
+
+	@Test
+	@DisplayName("문제 조회 실패 - 해당 문제셋에 속하지 않는 문제")
+	void getQuestion_QuestionNotBelongToQuestionSet() {
+		// given
+		final Long questionSetId = 1L;
+		final Long questionId = 1L;
+		final Long differentQuestionSetId = 2L;
+
+		QuestionSetEntity differentQuestionSet = mock(QuestionSetEntity.class);
+		when(differentQuestionSet.getId()).thenReturn(differentQuestionSetId);
+
+		MultipleQuestionEntity multipleQuestion = mock(MultipleQuestionEntity.class);
+		when(multipleQuestion.getQuestionSet()).thenReturn(differentQuestionSet);
+
+		when(questionEntityRepository.findById(questionId)).thenReturn(Optional.of(multipleQuestion));
+
+		// when & then
+		ResourceNotBelongException exception = assertThrows(ResourceNotBelongException.class,
+			() -> questionService.getQuestion(questionSetId, questionId));
+
+		assertEquals("해당 문제 셋에 속한 문제가 아닙니다.", exception.getMessage());
+		verify(questionEntityRepository).findById(questionId);
+		verify(multipleChoiceEntityRepository, never()).findAllByQuestionId(any());
 	}
 }
