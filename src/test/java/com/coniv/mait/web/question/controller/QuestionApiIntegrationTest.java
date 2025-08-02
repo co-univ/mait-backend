@@ -404,4 +404,219 @@ public class QuestionApiIntegrationTest extends BaseIntegrationTest {
 
 		assertThat(savedAnswers).allMatch(answer -> answer.getFillBlankQuestionId().equals(savedQuestion.getId()));
 	}
+
+	@Test
+	@DisplayName("객관식 문제 조회 API 성공 테스트")
+	void getMultipleQuestionApiSuccess() throws Exception {
+		// given
+		QuestionSetEntity questionSet = QuestionSetEntity.of("Sample Subject", QuestionSetCreationType.MANUAL);
+		QuestionSetEntity savedQuestionSet = questionSetEntityRepository.save(questionSet);
+
+		MultipleQuestionEntity question = MultipleQuestionEntity.builder()
+			.content("객관식 문제 내용")
+			.explanation("객관식 문제 해설")
+			.number(1L)
+			.questionSet(savedQuestionSet)
+			.build();
+		MultipleQuestionEntity savedQuestion = questionEntityRepository.save(question);
+
+		List<MultipleChoiceEntity> choices = List.of(
+			MultipleChoiceEntity.builder()
+				.question(savedQuestion)
+				.number(1)
+				.content("선택지 1")
+				.isCorrect(true)
+				.build(),
+			MultipleChoiceEntity.builder()
+				.question(savedQuestion)
+				.number(2)
+				.content("선택지 2")
+				.isCorrect(false)
+				.build()
+		);
+		multipleChoiceEntityRepository.saveAll(choices);
+
+		// when & then
+		mockMvc.perform(get("/api/v1/question-sets/{questionSetId}/questions/{questionId}",
+				savedQuestionSet.getId(), savedQuestion.getId())
+				.contentType(MediaType.APPLICATION_JSON))
+			.andExpectAll(
+				status().isOk(),
+				jsonPath("$.isSuccess").value(true),
+				jsonPath("$.data.id").value(savedQuestion.getId()),
+				jsonPath("$.data.content").value("객관식 문제 내용"),
+				jsonPath("$.data.explanation").value("객관식 문제 해설"),
+				jsonPath("$.data.number").value(1),
+				jsonPath("$.data.choices").isArray(),
+				jsonPath("$.data.choices.length()").value(2),
+				jsonPath("$.data.choices[0].number").value(1),
+				jsonPath("$.data.choices[0].content").value("선택지 1"),
+				jsonPath("$.data.choices[0].isCorrect").value(true),
+				jsonPath("$.data.choices[1].number").value(2),
+				jsonPath("$.data.choices[1].content").value("선택지 2"),
+				jsonPath("$.data.choices[1].isCorrect").value(false)
+			);
+	}
+
+	@Test
+	@DisplayName("주관식 문제 조회 API 성공 테스트")
+	void getShortQuestionApiSuccess() throws Exception {
+		// given
+		QuestionSetEntity questionSet = QuestionSetEntity.of("Sample Subject", QuestionSetCreationType.MANUAL);
+		QuestionSetEntity savedQuestionSet = questionSetEntityRepository.save(questionSet);
+
+		ShortQuestionEntity question = ShortQuestionEntity.builder()
+			.content("주관식 문제 내용")
+			.explanation("주관식 문제 해설")
+			.number(1L)
+			.questionSet(savedQuestionSet)
+			.build();
+		ShortQuestionEntity savedQuestion = questionEntityRepository.save(question);
+
+		List<ShortAnswerEntity> answers = List.of(
+			ShortAnswerEntity.builder()
+				.shortQuestionId(savedQuestion.getId())
+				.answer("정답1")
+				.isMain(true)
+				.number(1L)
+				.build(),
+			ShortAnswerEntity.builder()
+				.shortQuestionId(savedQuestion.getId())
+				.answer("정답2")
+				.isMain(false)
+				.number(1L)
+				.build()
+		);
+		shortAnswerEntityRepository.saveAll(answers);
+
+		// when & then
+		mockMvc.perform(get("/api/v1/question-sets/{questionSetId}/questions/{questionId}",
+				savedQuestionSet.getId(), savedQuestion.getId())
+				.contentType(MediaType.APPLICATION_JSON))
+			.andExpectAll(
+				status().isOk(),
+				jsonPath("$.isSuccess").value(true),
+				jsonPath("$.data.type").value("SHORT"),
+				jsonPath("$.data.id").value(savedQuestion.getId()),
+				jsonPath("$.data.content").value("주관식 문제 내용"),
+				jsonPath("$.data.explanation").value("주관식 문제 해설"),
+				jsonPath("$.data.number").value(1),
+				jsonPath("$.data.answers").isArray(),
+				jsonPath("$.data.answers.length()").value(2),
+				jsonPath("$.data.answers[0].answer").value("정답1"),
+				jsonPath("$.data.answers[0].isMain").value(true),
+				jsonPath("$.data.answers[0].number").value(1),
+				jsonPath("$.data.answers[1].answer").value("정답2"),
+				jsonPath("$.data.answers[1].isMain").value(false),
+				jsonPath("$.data.answers[1].number").value(1)
+			);
+	}
+
+	@Test
+	@DisplayName("순서배열 문제 조회 API 성공 테스트")
+	void getOrderingQuestionApiSuccess() throws Exception {
+		// given
+		QuestionSetEntity questionSet = QuestionSetEntity.of("Sample Subject", QuestionSetCreationType.MANUAL);
+		QuestionSetEntity savedQuestionSet = questionSetEntityRepository.save(questionSet);
+
+		OrderingQuestionEntity question = OrderingQuestionEntity.builder()
+			.content("순서배열 문제 내용")
+			.explanation("순서배열 문제 해설")
+			.number(1L)
+			.questionSet(savedQuestionSet)
+			.build();
+		OrderingQuestionEntity savedQuestion = questionEntityRepository.save(question);
+
+		List<OrderingOptionEntity> options = List.of(
+			OrderingOptionEntity.builder()
+				.orderingQuestionId(savedQuestion.getId())
+				.content("첫 번째 단계")
+				.originOrder(1)
+				.answerOrder(2)
+				.build(),
+			OrderingOptionEntity.builder()
+				.orderingQuestionId(savedQuestion.getId())
+				.content("두 번째 단계")
+				.originOrder(2)
+				.answerOrder(1)
+				.build()
+		);
+		orderingQuestionOptionRepository.saveAll(options);
+
+		// when & then
+		mockMvc.perform(get("/api/v1/question-sets/{questionSetId}/questions/{questionId}",
+				savedQuestionSet.getId(), savedQuestion.getId())
+				.contentType(MediaType.APPLICATION_JSON))
+			.andExpectAll(
+				status().isOk(),
+				jsonPath("$.isSuccess").value(true),
+				jsonPath("$.data.type").value("ORDERING"),
+				jsonPath("$.data.id").value(savedQuestion.getId()),
+				jsonPath("$.data.content").value("순서배열 문제 내용"),
+				jsonPath("$.data.explanation").value("순서배열 문제 해설"),
+				jsonPath("$.data.number").value(1),
+				jsonPath("$.data.options").isArray(),
+				jsonPath("$.data.options.length()").value(2),
+				jsonPath("$.data.options[0].content").value("첫 번째 단계"),
+				jsonPath("$.data.options[0].originOrder").value(1),
+				jsonPath("$.data.options[0].answerOrder").value(2),
+				jsonPath("$.data.options[1].content").value("두 번째 단계"),
+				jsonPath("$.data.options[1].originOrder").value(2),
+				jsonPath("$.data.options[1].answerOrder").value(1)
+			);
+	}
+
+	@Test
+	@DisplayName("빈칸 문제 조회 API 성공 테스트")
+	void getFillBlankQuestionApiSuccess() throws Exception {
+		// given
+		QuestionSetEntity questionSet = QuestionSetEntity.of("Sample Subject", QuestionSetCreationType.MANUAL);
+		QuestionSetEntity savedQuestionSet = questionSetEntityRepository.save(questionSet);
+
+		FillBlankQuestionEntity question = FillBlankQuestionEntity.builder()
+			.content("빈칸에 들어갈 적절한 단어는 ___입니다.")
+			.explanation("빈칸 문제 해설")
+			.number(1L)
+			.questionSet(savedQuestionSet)
+			.build();
+		FillBlankQuestionEntity savedQuestion = questionEntityRepository.save(question);
+
+		List<FillBlankAnswerEntity> answers = List.of(
+			FillBlankAnswerEntity.builder()
+				.fillBlankQuestionId(savedQuestion.getId())
+				.answer("정답1")
+				.isMain(true)
+				.number(1L)
+				.build(),
+			FillBlankAnswerEntity.builder()
+				.fillBlankQuestionId(savedQuestion.getId())
+				.answer("정답2")
+				.isMain(false)
+				.number(1L)
+				.build()
+		);
+		fillBlankAnswerEntityRepository.saveAll(answers);
+
+		// when & then
+		mockMvc.perform(get("/api/v1/question-sets/{questionSetId}/questions/{questionId}",
+				savedQuestionSet.getId(), savedQuestion.getId())
+				.contentType(MediaType.APPLICATION_JSON))
+			.andExpectAll(
+				status().isOk(),
+				jsonPath("$.isSuccess").value(true),
+				jsonPath("$.data.type").value("FILL_BLANK"),
+				jsonPath("$.data.id").value(savedQuestion.getId()),
+				jsonPath("$.data.content").value("빈칸에 들어갈 적절한 단어는 ___입니다."),
+				jsonPath("$.data.explanation").value("빈칸 문제 해설"),
+				jsonPath("$.data.number").value(1),
+				jsonPath("$.data.answers").isArray(),
+				jsonPath("$.data.answers.length()").value(2),
+				jsonPath("$.data.answers[0].answer").value("정답1"),
+				jsonPath("$.data.answers[0].isMain").value(true),
+				jsonPath("$.data.answers[0].number").value(1),
+				jsonPath("$.data.answers[1].answer").value("정답2"),
+				jsonPath("$.data.answers[1].isMain").value(false),
+				jsonPath("$.data.answers[1].number").value(1)
+			);
+	}
 }
