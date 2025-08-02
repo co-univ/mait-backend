@@ -28,7 +28,7 @@ public class ShortQuestionApiResponse extends QuestionApiResponse {
 			.content(dto.getContent())
 			.explanation(dto.getExplanation())
 			.number(dto.getNumber())
-			.questionType(QuestionType.SHORT)
+			.type(QuestionType.SHORT)
 			.answers(answers)
 			.build();
 	}

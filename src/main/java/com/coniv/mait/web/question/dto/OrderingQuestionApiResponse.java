@@ -28,7 +28,7 @@ public class OrderingQuestionApiResponse extends QuestionApiResponse {
 			.content(dto.getContent())
 			.explanation(dto.getExplanation())
 			.number(dto.getNumber())
-			.questionType(QuestionType.ORDERING)
+			.type(QuestionType.ORDERING)
 			.options(options)
 			.build();
 	}

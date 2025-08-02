@@ -28,7 +28,7 @@ public class MultipleQuestionApiResponse extends QuestionApiResponse {
 			.content(dto.getContent())
 			.explanation(dto.getExplanation())
 			.number(dto.getNumber())
-			.questionType(QuestionType.MULTIPLE)
+			.type(QuestionType.MULTIPLE)
 			.choices(choices)
 			.build();
 	}

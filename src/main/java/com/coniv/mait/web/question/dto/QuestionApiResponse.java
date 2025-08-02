@@ -38,7 +38,7 @@ public abstract class QuestionApiResponse {
 	private Long number;
 
 	@Schema(requiredMode = Schema.RequiredMode.REQUIRED)
-	private QuestionType questionType;
+	private QuestionType type;
 
 	public static QuestionApiResponse from(QuestionDto questionDto) {
 		return switch (questionDto) {
