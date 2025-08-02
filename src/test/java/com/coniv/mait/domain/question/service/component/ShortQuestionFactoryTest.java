@@ -113,7 +113,7 @@ class ShortQuestionFactoryTest {
 
 		// then
 		assertThat(result).hasSize(3);
-		
+
 		ShortAnswerEntity first = result.get(0);
 		assertThat(first.getId()).isNull();
 		assertThat(first.getNumber()).isEqualTo(1L);
@@ -166,7 +166,8 @@ class ShortQuestionFactoryTest {
 		// when & then
 		assertThatThrownBy(() -> shortQuestionFactory.createShortAnswers(answersWithoutMain, question))
 			.isInstanceOf(UserParameterException.class)
-			.hasMessageContaining("Each short answer number must have exactly one main answer. Number 1 has 0 main answers.");
+			.hasMessageContaining(
+				"Each short answer number must have exactly one main answer. Number 1 has 0 main answers.");
 	}
 
 	@Test
@@ -204,7 +205,8 @@ class ShortQuestionFactoryTest {
 		// when & then
 		assertThatThrownBy(() -> shortQuestionFactory.createShortAnswers(answersWithMultipleMain, question))
 			.isInstanceOf(UserParameterException.class)
-			.hasMessageContaining("Each short answer number must have exactly one main answer. Number 1 has 2 main answers.");
+			.hasMessageContaining(
+				"Each short answer number must have exactly one main answer. Number 1 has 2 main answers.");
 	}
 
 	@Test
@@ -242,6 +244,7 @@ class ShortQuestionFactoryTest {
 		// when & then
 		assertThatThrownBy(() -> shortQuestionFactory.createShortAnswers(answers, question))
 			.isInstanceOf(UserParameterException.class)
-			.hasMessageContaining("Each short answer number must have exactly one main answer. Number 2 has 0 main answers.");
+			.hasMessageContaining(
+				"Each short answer number must have exactly one main answer. Number 2 has 0 main answers.");
 	}
 }
