@@ -22,13 +22,17 @@ import org.springframework.test.web.servlet.MockMvc;
 import com.coniv.mait.domain.question.service.QuestionService;
 import com.coniv.mait.domain.question.service.dto.FillBlankAnswerDto;
 import com.coniv.mait.domain.question.service.dto.MultipleChoiceDto;
+import com.coniv.mait.domain.question.service.dto.MultipleQuestionDto;
 import com.coniv.mait.domain.question.service.dto.OrderingQuestionOptionDto;
 import com.coniv.mait.domain.question.service.dto.ShortAnswerDto;
+import com.coniv.mait.global.exception.custom.ResourceNotBelongException;
 import com.coniv.mait.web.question.dto.CreateFillBlankQuestionApiRequest;
 import com.coniv.mait.web.question.dto.CreateMultipleQuestionApiRequest;
 import com.coniv.mait.web.question.dto.CreateOrderingQuestionApiRequest;
 import com.coniv.mait.web.question.dto.CreateShortQuestionApiRequest;
 import com.fasterxml.jackson.databind.ObjectMapper;
+
+import jakarta.persistence.EntityNotFoundException;
 
 @WebMvcTest(controllers = QuestionController.class)
 @AutoConfigureMockMvc(addFilters = false)
@@ -487,5 +491,89 @@ class QuestionControllerTest {
 			);
 
 		verify(questionService, never()).createQuestion(anyLong(), any(), any());
+	}
+
+	@Test
+	@DisplayName("문제 조회 API 테스트 - 성공")
+	void getQuestionTest() throws Exception {
+		// given
+		final Long questionSetId = 1L;
+		final Long questionId = 1L;
+
+		MultipleQuestionDto mockQuestionDto = MultipleQuestionDto.builder()
+			.id(questionId)
+			.content("객관식 문제 내용")
+			.explanation("문제 해설")
+			.number(1L)
+			.choices(List.of(
+				MultipleChoiceDto.builder()
+					.number(1)
+					.content("선택지 1")
+					.isCorrect(true)
+					.build()
+			))
+			.build();
+
+		when(questionService.getQuestion(questionSetId, questionId)).thenReturn(mockQuestionDto);
+
+		// when & then
+		mockMvc.perform(get("/api/v1/question-sets/{questionSetId}/questions/{questionId}", questionSetId, questionId)
+				.contentType(MediaType.APPLICATION_JSON))
+			.andExpectAll(
+				status().isOk(),
+				jsonPath("$.isSuccess").value(true),
+				jsonPath("$.data").exists(),
+				jsonPath("$.data.content").value("객관식 문제 내용")
+			);
+
+		verify(questionService).getQuestion(questionSetId, questionId);
+	}
+
+	@Test
+	@DisplayName("문제 조회 API 테스트 - 존재하지 않는 문제")
+	void getQuestionNotFoundTest() throws Exception {
+		// given
+		final Long questionSetId = 1L;
+		final Long questionId = 999L;
+
+		when(questionService.getQuestion(questionSetId, questionId))
+			.thenThrow(new EntityNotFoundException("Question not found with id: " + questionId));
+
+		// when & then
+		mockMvc.perform(get("/api/v1/question-sets/{questionSetId}/questions/{questionId}", questionSetId, questionId)
+				.contentType(MediaType.APPLICATION_JSON))
+			.andExpectAll(
+				status().isNotFound(),
+				jsonPath("$.isSuccess").value(false),
+				jsonPath("$.code").value("C-002"),
+				jsonPath("$.message").value("특정 엔티티를 조회할 수 없습니다."),
+				jsonPath("$.reasons").value("Question not found with id: " + questionId)
+			);
+
+		verify(questionService).getQuestion(questionSetId, questionId);
+	}
+
+	@Test
+	@DisplayName("문제 조회 API 테스트 - 해당 문제셋에 속하지 않는 문제")
+	void getQuestionNotBelongToQuestionSetTest() throws Exception {
+		// given
+		final Long questionSetId = 1L;
+		final Long questionId = 1L;
+
+		when(questionService.getQuestion(questionSetId, questionId))
+			.thenThrow(new ResourceNotBelongException("해당 문제 셋에 속한 문제가 아닙니다."));
+
+		// when & then
+		mockMvc.perform(get("/api/v1/question-sets/{questionSetId}/questions/{questionId}", questionSetId, questionId)
+				.contentType(MediaType.APPLICATION_JSON))
+			.andExpectAll(
+				status().isBadRequest(),
+				jsonPath("$.isSuccess").value(false),
+				jsonPath("$.code").value("C-004"),
+				jsonPath("$.message").value("리소스가 소속되지 않았습니다."),
+				jsonPath("$.reasons").value("해당 문제 셋에 속한 문제가 아닙니다.")
+			);
+
+		verify(questionService).getQuestion(questionSetId, questionId);
 	}
 }
