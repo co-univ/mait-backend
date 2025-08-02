@@ -22,6 +22,7 @@ import com.coniv.mait.domain.question.entity.QuestionSetEntity;
 import com.coniv.mait.domain.question.entity.ShortAnswerEntity;
 import com.coniv.mait.domain.question.entity.ShortQuestionEntity;
 import com.coniv.mait.domain.question.enums.QuestionSetCreationType;
+import com.coniv.mait.domain.question.enums.QuestionType;
 import com.coniv.mait.domain.question.repository.FillBlankAnswerEntityRepository;
 import com.coniv.mait.domain.question.repository.MultipleChoiceEntityRepository;
 import com.coniv.mait.domain.question.repository.OrderingQuestionOptionRepository;
@@ -444,6 +445,7 @@ public class QuestionApiIntegrationTest extends BaseIntegrationTest {
 				status().isOk(),
 				jsonPath("$.isSuccess").value(true),
 				jsonPath("$.data.id").value(savedQuestion.getId()),
+				jsonPath("$.data.type").value(QuestionType.MULTIPLE.name()),
 				jsonPath("$.data.content").value("객관식 문제 내용"),
 				jsonPath("$.data.explanation").value("객관식 문제 해설"),
 				jsonPath("$.data.number").value(1),
@@ -496,7 +498,7 @@ public class QuestionApiIntegrationTest extends BaseIntegrationTest {
 			.andExpectAll(
 				status().isOk(),
 				jsonPath("$.isSuccess").value(true),
-				jsonPath("$.data.type").value("SHORT"),
+				jsonPath("$.data.type").value(QuestionType.SHORT.name()),
 				jsonPath("$.data.id").value(savedQuestion.getId()),
 				jsonPath("$.data.content").value("주관식 문제 내용"),
 				jsonPath("$.data.explanation").value("주관식 문제 해설"),
@@ -550,7 +552,7 @@ public class QuestionApiIntegrationTest extends BaseIntegrationTest {
 			.andExpectAll(
 				status().isOk(),
 				jsonPath("$.isSuccess").value(true),
-				jsonPath("$.data.type").value("ORDERING"),
+				jsonPath("$.data.type").value(QuestionType.ORDERING.name()),
 				jsonPath("$.data.id").value(savedQuestion.getId()),
 				jsonPath("$.data.content").value("순서배열 문제 내용"),
 				jsonPath("$.data.explanation").value("순서배열 문제 해설"),
@@ -604,7 +606,7 @@ public class QuestionApiIntegrationTest extends BaseIntegrationTest {
 			.andExpectAll(
 				status().isOk(),
 				jsonPath("$.isSuccess").value(true),
-				jsonPath("$.data.type").value("FILL_BLANK"),
+				jsonPath("$.data.type").value(QuestionType.FILL_BLANK.name()),
 				jsonPath("$.data.id").value(savedQuestion.getId()),
 				jsonPath("$.data.content").value("빈칸에 들어갈 적절한 단어는 ___입니다."),
 				jsonPath("$.data.explanation").value("빈칸 문제 해설"),
