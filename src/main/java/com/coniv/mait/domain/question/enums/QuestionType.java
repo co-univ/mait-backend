@@ -14,4 +14,9 @@ public enum QuestionType {
 	FILL_BLANK(QuestionConstant.FILL_BLANK);
 
 	private final String type;
+
+	@Override
+	public String toString() {
+		return name();
+	}
 }
