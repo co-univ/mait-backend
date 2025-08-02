@@ -31,7 +31,7 @@ import com.coniv.mait.domain.question.service.dto.MultipleQuestionDto;
 import com.coniv.mait.domain.question.service.dto.OrderingQuestionDto;
 import com.coniv.mait.domain.question.service.dto.QuestionDto;
 import com.coniv.mait.domain.question.service.dto.ShortQuestionDto;
-import com.coniv.mait.global.exception.custom.UserParameterException;
+import com.coniv.mait.global.exception.custom.ResourceNotBelongException;
 
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
@@ -121,7 +121,7 @@ public class QuestionService {
 			.orElseThrow(() -> new EntityNotFoundException("Question not found with id: " + questionId));
 
 		if (!question.getQuestionSet().getId().equals(questionSetId)) {
-			throw new UserParameterException("해당 문제 셋에 속한 문제가 아닙니다.");
+			throw new ResourceNotBelongException("해당 문제 셋에 속한 문제가 아닙니다.");
 		}
 
 		switch (question) {
