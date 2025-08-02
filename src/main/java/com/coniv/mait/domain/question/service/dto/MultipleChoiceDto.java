@@ -1,5 +1,7 @@
 package com.coniv.mait.domain.question.service.dto;
 
+import com.coniv.mait.domain.question.entity.MultipleChoiceEntity;
+
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -25,4 +27,13 @@ public class MultipleChoiceDto {
 
 	@NotNull(message = "객관식 선지의 정답 여부는 필수입니다.")
 	private boolean isCorrect;
+
+	public static MultipleChoiceDto from(final MultipleChoiceEntity multipleChoice) {
+		return MultipleChoiceDto.builder()
+			.id(multipleChoice.getId())
+			.number(multipleChoice.getNumber())
+			.content(multipleChoice.getContent())
+			.isCorrect(multipleChoice.isCorrect())
+			.build();
+	}
 }

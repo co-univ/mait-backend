@@ -2,6 +2,9 @@ package com.coniv.mait.domain.question.service.dto;
 
 import java.util.List;
 
+import com.coniv.mait.domain.question.entity.MultipleChoiceEntity;
+import com.coniv.mait.domain.question.entity.MultipleQuestionEntity;
+
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
@@ -24,5 +27,19 @@ public class MultipleQuestionDto extends QuestionDto {
 	@Override
 	public QuestionDto toQuestionDto() {
 		return this;
+	}
+
+	public static MultipleQuestionDto of(MultipleQuestionEntity multipleQuestion, List<MultipleChoiceEntity> choices) {
+		List<MultipleChoiceDto> choiceDtos = choices.stream()
+			.map(MultipleChoiceDto::from)
+			.toList();
+
+		return MultipleQuestionDto.builder()
+			.id(multipleQuestion.getId())
+			.content(multipleQuestion.getContent())
+			.explanation(multipleQuestion.getExplanation())
+			.number(multipleQuestion.getNumber())
+			.choices(choiceDtos)
+			.build();
 	}
 }

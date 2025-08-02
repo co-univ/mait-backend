@@ -1,5 +1,7 @@
 package com.coniv.mait.domain.question.service.dto;
 
+import com.coniv.mait.domain.question.entity.OrderingOptionEntity;
+
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
@@ -25,4 +27,13 @@ public class OrderingQuestionOptionDto {
 	@Schema(description = "정답이 되는 순서", examples = {"1", "2", "3"}, requiredMode = Schema.RequiredMode.REQUIRED)
 	@NotNull(message = "정답이 되는 순서는 필수입니다.")
 	private int answerOrder;
+
+	public static OrderingQuestionOptionDto from(OrderingOptionEntity orderingOptionEntity) {
+		return OrderingQuestionOptionDto.builder()
+			.id(orderingOptionEntity.getId())
+			.originOrder(orderingOptionEntity.getOriginOrder())
+			.content(orderingOptionEntity.getContent())
+			.answerOrder(orderingOptionEntity.getAnswerOrder())
+			.build();
+	}
 }

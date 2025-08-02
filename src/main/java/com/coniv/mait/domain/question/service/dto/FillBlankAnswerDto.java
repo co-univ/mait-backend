@@ -1,5 +1,7 @@
 package com.coniv.mait.domain.question.service.dto;
 
+import com.coniv.mait.domain.question.entity.FillBlankAnswerEntity;
+
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
@@ -23,4 +25,13 @@ public class FillBlankAnswerDto {
 	@Schema(description = "빈칸 문제 정답 그룹 번호", requiredMode = Schema.RequiredMode.REQUIRED)
 	@NotNull(message = "빈칸 문제 정답 그룹 번호는 필수입니다.")
 	private Long number;
+
+	public static FillBlankAnswerDto from(FillBlankAnswerEntity fillBlankAnswerEntity) {
+		return FillBlankAnswerDto.builder()
+			.id(fillBlankAnswerEntity.getId())
+			.answer(fillBlankAnswerEntity.getAnswer())
+			.isMain(fillBlankAnswerEntity.isMain())
+			.number(fillBlankAnswerEntity.getNumber())
+			.build();
+	}
 }
