@@ -43,6 +43,9 @@ public class QuestionSetEntity extends BaseTimeEntity {
 	@Column(nullable = false)
 	private DeliveryMode deliveryMode = DeliveryMode.LIVE_TIME;
 
+	// @Column(nullable = false)
+	private Long teamId;
+
 	private QuestionSetEntity(String subject, QuestionSetCreationType creationType) {
 		this.subject = subject;
 		this.creationType = creationType;
