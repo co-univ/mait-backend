@@ -1,5 +1,8 @@
 package com.coniv.mait.domain.question.service;
 
+import java.util.Comparator;
+import java.util.List;
+
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -27,5 +30,13 @@ public class QuestionSetService {
 			.id(questionSetEntity.getId())
 			.subject(questionSetEntity.getSubject())
 			.build();
+	}
+
+	public List<QuestionSetDto> getQuestionSets(final Long teamId) {
+		// Todo: 조회하려는 유저와 팀이 일치하는지 확인
+		return questionSetEntityRepository.findAllByTeamId(teamId).stream()
+			.sorted(Comparator.comparing(QuestionSetEntity::getCreatedAt).reversed())
+			.map(QuestionSetDto::from)
+			.toList();
 	}
 }

@@ -1,5 +1,12 @@
 package com.coniv.mait.domain.question.service.dto;
 
+import java.time.LocalDateTime;
+
+import com.coniv.mait.domain.question.entity.QuestionSetEntity;
+import com.coniv.mait.domain.question.enums.DeliveryMode;
+import com.coniv.mait.domain.question.enums.QuestionSetCreationType;
+import com.coniv.mait.domain.question.enums.QuestionSetVisibility;
+
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -13,7 +20,22 @@ public class QuestionSetDto {
 	private Long id;
 	private String subject;
 	private String title;
-	private String creationType;
-	private String visibility;
-	private String deliveryMode;
+	private QuestionSetCreationType creationType;
+	private QuestionSetVisibility visibility;
+	private DeliveryMode deliveryMode;
+	private Long teamId;
+	private LocalDateTime createdAt;
+
+	public static QuestionSetDto from(final QuestionSetEntity questionSetEntity) {
+		return QuestionSetDto.builder()
+			.id(questionSetEntity.getId())
+			.subject(questionSetEntity.getSubject())
+			.title(questionSetEntity.getTitle())
+			.creationType(questionSetEntity.getCreationType())
+			.visibility(questionSetEntity.getVisibility())
+			.deliveryMode(questionSetEntity.getDeliveryMode())
+			.teamId(questionSetEntity.getTeamId())
+			.createdAt(questionSetEntity.getCreatedAt())
+			.build();
+	}
 }
