@@ -66,8 +66,8 @@ jobs:
             JPA_DDL_AUTO=${{ secrets.JPA_DDL_AUTO }}
             EOL
             
-            # Deploy using docker-compose
+            # Deploy using docker compose
             cd ~
-            docker-compose pull
-            docker-compose down || true
-            docker-compose up -d
+            docker compose pull
+            docker compose down || true
+            docker compose up -d
