@@ -57,11 +57,14 @@ jobs:
           key: ${{ secrets.EC2_PRIVATE_KEY }}
           port: 22
           script: |
-            # Update docker-compose.yml with environment variables
-            sed -i "s|build:|image: ${{ secrets.DOCKER_USERNAME }}/mait-dev-app:latest|g" ~/docker-compose.yml
-            
-            # Add environment variables to docker-compose.yml
-            sed -i "/SPRING_REDIS_PORT/a\      - DB_URL=${{ secrets.DB_URL }}\n      - DB_USERNAME=${{ secrets.DB_USERNAME }}\n      - DB_PASSWORD=${{ secrets.DB_PASSWORD }}\n      - JPA_DDL_AUTO=${{ secrets.JPA_DDL_AUTO }}" ~/docker-compose.yml
+            # Create .env file with required environment variables
+            cat > ~/.env << EOL
+            DOCKER_USERNAME=${{ secrets.DOCKER_USERNAME }}
+            DB_URL=${{ secrets.DB_URL }}
+            DB_USERNAME=${{ secrets.DB_USERNAME }}
+            DB_PASSWORD=${{ secrets.DB_PASSWORD }}
+            JPA_DDL_AUTO=${{ secrets.JPA_DDL_AUTO }}
+            EOL
             
             # Deploy using docker-compose
             cd ~

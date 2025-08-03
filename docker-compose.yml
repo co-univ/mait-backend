@@ -2,15 +2,17 @@ version: '3.8'
 
 services:
   app:
-    build:
-      context: .
-      dockerfile: Dockerfile
+    image: ${DOCKER_USERNAME}/mait-dev-app:latest
     ports:
       - "8080:8080"
     environment:
       - SPRING_PROFILES_ACTIVE=prod
       - SPRING_REDIS_HOST=redis
       - SPRING_REDIS_PORT=6379
+      - DB_URL=${DB_URL}
+      - DB_USERNAME=${DB_USERNAME}
+      - DB_PASSWORD=${DB_PASSWORD}
+      - JPA_DDL_AUTO=${JPA_DDL_AUTO}
     depends_on:
       - redis
     networks:
