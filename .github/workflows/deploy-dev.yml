@@ -37,7 +37,18 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
-      # Step 5: Deploy to EC2
+      # Step 5: Copy docker-compose.yml to EC2
+      - name: Copy docker-compose file
+        uses: appleboy/scp-action@v0.1.4
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USER }}
+          key: ${{ secrets.EC2_PRIVATE_KEY }}
+          port: 22
+          source: "docker-compose.yml"
+          target: "~/"
+
+      # Step 6: Deploy to EC2
       - name: Deploy to EC2
         uses: appleboy/ssh-action@v1.0.0
         with:
@@ -46,12 +57,14 @@ jobs:
           key: ${{ secrets.EC2_PRIVATE_KEY }}
           port: 22
           script: |
-            docker pull ${{ secrets.DOCKER_USERNAME }}/mait-dev-app:latest
-            docker stop mait-dev-app || true
-            docker rm mait-dev-app || true
-            docker run -d --name mait-dev-app -p 8080:8080 \
-              -e DB_URL="${{ secrets.DB_URL }}" \
-              -e DB_USERNAME="${{ secrets.DB_USERNAME }}" \
-              -e DB_PASSWORD="${{ secrets.DB_PASSWORD }}" \
-              -e JPA_DDL_AUTO="${{ secrets.JPA_DDL_AUTO }}" \
-              ${{ secrets.DOCKER_USERNAME }}/mait-dev-app:latest
+            # Update docker-compose.yml with environment variables
+            sed -i "s|build:|image: ${{ secrets.DOCKER_USERNAME }}/mait-dev-app:latest|g" ~/docker-compose.yml
+            
+            # Add environment variables to docker-compose.yml
+            sed -i "/SPRING_REDIS_PORT/a\      - DB_URL=${{ secrets.DB_URL }}\n      - DB_USERNAME=${{ secrets.DB_USERNAME }}\n      - DB_PASSWORD=${{ secrets.DB_PASSWORD }}\n      - JPA_DDL_AUTO=${{ secrets.JPA_DDL_AUTO }}" ~/docker-compose.yml
+            
+            # Deploy using docker-compose
+            cd ~
+            docker-compose pull
+            docker-compose down || true
+            docker-compose up -d
