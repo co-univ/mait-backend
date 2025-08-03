@@ -57,6 +57,14 @@ jobs:
           key: ${{ secrets.EC2_PRIVATE_KEY }}
           port: 22
           script: |
+            # Stop any container using port 8080
+            CONTAINER_ID=$(docker ps -q --filter "publish=8080")
+            if [ ! -z "$CONTAINER_ID" ]; then
+              echo "Found container using port 8080. Stopping it..."
+              docker stop $CONTAINER_ID
+              docker rm $CONTAINER_ID
+            fi
+            
             # Create .env file with required environment variables
             cat > ~/.env << EOL
             DOCKER_USERNAME=${{ secrets.DOCKER_USERNAME }}
@@ -66,8 +74,12 @@ jobs:
             JPA_DDL_AUTO=${{ secrets.JPA_DDL_AUTO }}
             EOL
             
+            # Clean up existing deployment
+            docker compose down -v || true
+            
             # Deploy using docker compose
             cd ~
             docker compose pull
-            docker compose down || true
             docker compose up -d
+            
+            echo "Application is running on port $PORT"
