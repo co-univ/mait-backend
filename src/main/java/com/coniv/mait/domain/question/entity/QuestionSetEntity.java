@@ -14,12 +14,16 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import lombok.AccessLevel;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 @Table(name = "question_sets")
 @Entity
 @Getter
+@Builder
+@AllArgsConstructor(access = AccessLevel.PRIVATE)
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class QuestionSetEntity extends BaseTimeEntity {
 
@@ -33,14 +37,17 @@ public class QuestionSetEntity extends BaseTimeEntity {
 
 	@Enumerated(EnumType.STRING)
 	@Column(nullable = false)
-	private QuestionSetCreationType creationType;
+	@Builder.Default
+	private QuestionSetCreationType creationType = QuestionSetCreationType.MANUAL;
 
 	@Enumerated(EnumType.STRING)
 	@Column(nullable = false)
+	@Builder.Default
 	private QuestionSetVisibility visibility = QuestionSetVisibility.GROUP;
 
 	@Enumerated(EnumType.STRING)
 	@Column(nullable = false)
+	@Builder.Default
 	private DeliveryMode deliveryMode = DeliveryMode.LIVE_TIME;
 
 	// @Column(nullable = false)
@@ -52,6 +59,9 @@ public class QuestionSetEntity extends BaseTimeEntity {
 	}
 
 	public static QuestionSetEntity of(String subject, QuestionSetCreationType creationType) {
-		return new QuestionSetEntity(subject, creationType);
+		return QuestionSetEntity.builder()
+			.subject(subject)
+			.creationType(creationType)
+			.build();
 	}
 }
