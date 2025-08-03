@@ -4,6 +4,7 @@ import static org.mockito.Mockito.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
+import java.util.List;
 import java.util.stream.Stream;
 
 import org.junit.jupiter.api.DisplayName;
@@ -123,5 +124,27 @@ class QuestionSetControllerTest {
 			);
 
 		verify(questionSetService, never()).createQuestionSet(anyString(), any());
+	}
+
+	@Test
+	@DisplayName("문제 셋 목록 조회 테스트")
+	void getQuestionSetsTest() throws Exception {
+		// given
+		Long teamId = 1L;
+		QuestionSetDto questionSet1 = QuestionSetDto.builder().id(1L).subject("Subject 1").build();
+		QuestionSetDto questionSet2 = QuestionSetDto.builder().id(2L).subject("Subject 2").build();
+		when(questionSetService.getQuestionSets(teamId)).thenReturn(List.of(questionSet1, questionSet2));
+
+		// when & then
+		mockMvc.perform(get("/api/v1/question-sets")
+				.param("teamId", String.valueOf(teamId)))
+			.andExpect(status().isOk())
+			.andExpect(jsonPath("$.data.length()").value(2))
+			.andExpect(jsonPath("$.data[0].id").value(1L))
+			.andExpect(jsonPath("$.data[0].subject").value("Subject 1"))
+			.andExpect(jsonPath("$.data[1].id").value(2L))
+			.andExpect(jsonPath("$.data[1].subject").value("Subject 2"));
+
+		verify(questionSetService).getQuestionSets(teamId);
 	}
 }
