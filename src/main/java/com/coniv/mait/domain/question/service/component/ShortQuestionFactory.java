@@ -1,7 +1,6 @@
 package com.coniv.mait.domain.question.service.component;
 
 import java.util.List;
-import java.util.Set;
 import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Component;
@@ -32,7 +31,7 @@ public class ShortQuestionFactory {
 
 	public List<ShortAnswerEntity> createShortAnswers(List<ShortAnswerDto> shortAnswerDtos,
 		ShortQuestionEntity shortQuestionEntity) {
-		checkDuplicateNumber(shortAnswerDtos);
+		validateMainAnswers(shortAnswerDtos);
 		return shortAnswerDtos.stream()
 			.map(shortAnswerDto -> ShortAnswerEntity.builder()
 				.answer(shortAnswerDto.getAnswer())
@@ -43,11 +42,22 @@ public class ShortQuestionFactory {
 			.toList();
 	}
 
-	private void checkDuplicateNumber(List<ShortAnswerDto> shortAnswerDtos) {
-		Set<Long> numbers = shortAnswerDtos.stream().map(ShortAnswerDto::getNumber)
-			.collect(Collectors.toSet());
-		if (numbers.size() != shortAnswerDtos.size()) {
-			throw new UserParameterException("Short answer numbers must be unique.");
+	private void validateMainAnswers(List<ShortAnswerDto> answers) {
+		answers.stream()
+			.collect(Collectors.groupingBy(ShortAnswerDto::getNumber))
+			.forEach(this::validateSingleMainAnswer);
+	}
+
+	private void validateSingleMainAnswer(Long number, List<ShortAnswerDto> shortAnswerDtos) {
+		long mainCount = shortAnswerDtos.stream()
+			.mapToLong(answer -> answer.isMain() ? 1 : 0)
+			.sum();
+
+		if (mainCount != 1) {
+			throw new UserParameterException(
+				String.format(
+					"Each short answer number must have exactly one main answer. Number %d has %d main answers.",
+					number, mainCount));
 		}
 	}
 }

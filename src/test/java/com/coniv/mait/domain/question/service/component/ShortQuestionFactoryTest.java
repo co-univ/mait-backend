@@ -41,7 +41,7 @@ class ShortQuestionFactoryTest {
 			ShortAnswerDto.builder()
 				.number(2L)
 				.answer("정답2")
-				.isMain(false)
+				.isMain(true)
 				.build()
 		);
 
@@ -86,7 +86,7 @@ class ShortQuestionFactoryTest {
 			.number(1L)
 			.displayDelayMilliseconds(1000)
 			.questionSet(null)
-			.answerCount(2)
+			.answerCount(3)
 			.id(10L)
 			.build();
 
@@ -97,9 +97,14 @@ class ShortQuestionFactoryTest {
 				.isMain(true)
 				.build(),
 			ShortAnswerDto.builder()
+				.number(1L)
+				.answer("정답1-2")
+				.isMain(false)
+				.build(),
+			ShortAnswerDto.builder()
 				.number(2L)
 				.answer("정답2")
-				.isMain(false)
+				.isMain(true)
 				.build()
 		);
 
@@ -107,7 +112,8 @@ class ShortQuestionFactoryTest {
 		List<ShortAnswerEntity> result = shortQuestionFactory.createShortAnswers(answerDtos, question);
 
 		// then
-		assertThat(result).hasSize(2);
+		assertThat(result).hasSize(3);
+
 		ShortAnswerEntity first = result.get(0);
 		assertThat(first.getId()).isNull();
 		assertThat(first.getNumber()).isEqualTo(1L);
@@ -117,15 +123,22 @@ class ShortQuestionFactoryTest {
 
 		ShortAnswerEntity second = result.get(1);
 		assertThat(second.getId()).isNull();
-		assertThat(second.getNumber()).isEqualTo(2L);
-		assertThat(second.getAnswer()).isEqualTo("정답2");
+		assertThat(second.getNumber()).isEqualTo(1L);
+		assertThat(second.getAnswer()).isEqualTo("정답1-2");
 		assertThat(second.isMain()).isFalse();
 		assertThat(second.getShortQuestionId()).isEqualTo(10L);
+
+		ShortAnswerEntity third = result.get(2);
+		assertThat(third.getId()).isNull();
+		assertThat(third.getNumber()).isEqualTo(2L);
+		assertThat(third.getAnswer()).isEqualTo("정답2");
+		assertThat(third.isMain()).isTrue();
+		assertThat(third.getShortQuestionId()).isEqualTo(10L);
 	}
 
 	@Test
-	@DisplayName("주관식 정답 생성 실패 - 중복된 정답 번호")
-	void createShortAnswers_DuplicateNumber_ThrowsException() {
+	@DisplayName("주관식 정답 생성 실패 - 메인 답안 없음")
+	void createShortAnswers_NoMainAnswer_ThrowsException() {
 		// given
 		ShortQuestionEntity question = ShortQuestionEntity.builder()
 			.content("주관식 문제")
@@ -137,22 +150,101 @@ class ShortQuestionFactoryTest {
 			.id(10L)
 			.build();
 
-		List<ShortAnswerDto> duplicateAnswers = Arrays.asList(
+		List<ShortAnswerDto> answersWithoutMain = Arrays.asList(
 			ShortAnswerDto.builder()
 				.number(1L)
 				.answer("정답1")
-				.isMain(true)
+				.isMain(false)
 				.build(),
 			ShortAnswerDto.builder()
-				.number(1L) // 중복 번호
+				.number(1L)
 				.answer("정답2")
 				.isMain(false)
 				.build()
 		);
 
 		// when & then
-		assertThatThrownBy(() -> shortQuestionFactory.createShortAnswers(duplicateAnswers, question))
+		assertThatThrownBy(() -> shortQuestionFactory.createShortAnswers(answersWithoutMain, question))
 			.isInstanceOf(UserParameterException.class)
-			.hasMessageContaining("Short answer numbers must be unique");
+			.hasMessageContaining(
+				"Each short answer number must have exactly one main answer. Number 1 has 0 main answers.");
+	}
+
+	@Test
+	@DisplayName("주관식 정답 생성 실패 - 메인 답안이 여러 개")
+	void createShortAnswers_MultipleMainAnswers_ThrowsException() {
+		// given
+		ShortQuestionEntity question = ShortQuestionEntity.builder()
+			.content("주관식 문제")
+			.explanation("설명")
+			.number(1L)
+			.displayDelayMilliseconds(1000)
+			.questionSet(null)
+			.answerCount(3)
+			.id(10L)
+			.build();
+
+		List<ShortAnswerDto> answersWithMultipleMain = Arrays.asList(
+			ShortAnswerDto.builder()
+				.number(1L)
+				.answer("정답1")
+				.isMain(true)
+				.build(),
+			ShortAnswerDto.builder()
+				.number(1L)
+				.answer("정답2")
+				.isMain(true)
+				.build(),
+			ShortAnswerDto.builder()
+				.number(1L)
+				.answer("정답3")
+				.isMain(false)
+				.build()
+		);
+
+		// when & then
+		assertThatThrownBy(() -> shortQuestionFactory.createShortAnswers(answersWithMultipleMain, question))
+			.isInstanceOf(UserParameterException.class)
+			.hasMessageContaining(
+				"Each short answer number must have exactly one main answer. Number 1 has 2 main answers.");
+	}
+
+	@Test
+	@DisplayName("주관식 정답 생성 실패 - 다른 번호에서 메인 답안 없음")
+	void createShortAnswers_DifferentNumberNoMainAnswer_ThrowsException() {
+		// given
+		ShortQuestionEntity question = ShortQuestionEntity.builder()
+			.content("주관식 문제")
+			.explanation("설명")
+			.number(1L)
+			.displayDelayMilliseconds(1000)
+			.questionSet(null)
+			.answerCount(3)
+			.id(10L)
+			.build();
+
+		List<ShortAnswerDto> answers = Arrays.asList(
+			ShortAnswerDto.builder()
+				.number(1L)
+				.answer("정답1")
+				.isMain(true)
+				.build(),
+			ShortAnswerDto.builder()
+				.number(2L)
+				.answer("정답2")
+				.isMain(false)
+				.build(),
+			ShortAnswerDto.builder()
+				.number(2L)
+				.answer("정답3")
+				.isMain(false)
+				.build()
+		);
+
+		// when & then
+		assertThatThrownBy(() -> shortQuestionFactory.createShortAnswers(answers, question))
+			.isInstanceOf(UserParameterException.class)
+			.hasMessageContaining(
+				"Each short answer number must have exactly one main answer. Number 2 has 0 main answers.");
 	}
 }

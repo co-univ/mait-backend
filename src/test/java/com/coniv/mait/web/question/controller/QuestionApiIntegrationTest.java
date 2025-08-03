@@ -164,14 +164,14 @@ public class QuestionApiIntegrationTest extends BaseIntegrationTest {
 				.number(1L)
 				.build(),
 			ShortAnswerDto.builder()
-				.answer("정답2")
+				.answer("정답1_대안")
 				.isMain(false)
-				.number(2L)
+				.number(1L)
 				.build(),
 			ShortAnswerDto.builder()
-				.answer("정답3")
-				.isMain(false)
-				.number(3L)
+				.answer("정답2")
+				.isMain(true)
+				.number(2L)
 				.build()
 		);
 
@@ -210,14 +210,34 @@ public class QuestionApiIntegrationTest extends BaseIntegrationTest {
 		List<ShortAnswerEntity> savedAnswers = shortAnswerEntityRepository.findAll();
 		assertThat(savedAnswers).hasSize(3);
 		assertThat(savedAnswers).extracting("answer")
-			.containsExactlyInAnyOrder("정답1", "정답2", "정답3");
+			.containsExactlyInAnyOrder("정답1", "정답1_대안", "정답2");
 		assertThat(savedAnswers).extracting("number")
-			.containsExactlyInAnyOrder(1L, 2L, 3L);
+			.containsExactlyInAnyOrder(1L, 1L, 2L);
 
 		long mainAnswerCount = savedAnswers.stream()
 			.mapToLong(answer -> answer.isMain() ? 1 : 0)
 			.sum();
-		assertThat(mainAnswerCount).isEqualTo(1);
+		assertThat(mainAnswerCount).isEqualTo(2); // 번호 1, 2 각각에 메인 답변 하나씩
+
+		// 번호 1의 메인 답변 확인
+		List<ShortAnswerEntity> number1Answers = savedAnswers.stream()
+			.filter(answer -> answer.getNumber().equals(1L))
+			.toList();
+		assertThat(number1Answers).hasSize(2);
+		long number1MainCount = number1Answers.stream()
+			.mapToLong(answer -> answer.isMain() ? 1 : 0)
+			.sum();
+		assertThat(number1MainCount).isEqualTo(1);
+
+		// 번호 2의 메인 답변 확인
+		List<ShortAnswerEntity> number2Answers = savedAnswers.stream()
+			.filter(answer -> answer.getNumber().equals(2L))
+			.toList();
+		assertThat(number2Answers).hasSize(1);
+		long number2MainCount = number2Answers.stream()
+			.mapToLong(answer -> answer.isMain() ? 1 : 0)
+			.sum();
+		assertThat(number2MainCount).isEqualTo(1);
 
 		assertThat(savedAnswers).allMatch(answer -> answer.getShortQuestionId().equals(savedQuestion.getId()));
 	}
