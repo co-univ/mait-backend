@@ -14,6 +14,7 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 
+import com.coniv.mait.global.exception.custom.ResourceNotBelongException;
 import com.coniv.mait.global.exception.custom.UserParameterException;
 import com.coniv.mait.global.response.ErrorResponse;
 
@@ -44,6 +45,23 @@ class CustomExceptionHandlerTest {
 
 		// when
 		ResponseEntity<ErrorResponse> errorResponse = customExceptionHandler.handleUserParameterException(
+			exception, httpServletRequest);
+
+		// then
+		assertNotNull(errorResponse);
+		assertTrue(errorResponse.getBody().getReasons().contains(errorMessage));
+		assertThat(errorResponse.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
+	}
+
+	@Test
+	@DisplayName("ResourceNotBelongException 처리 테스트")
+	void handleResourceNotBelongException() {
+		// given
+		String errorMessage = "Resource does not belong to the user";
+		ResourceNotBelongException exception = new ResourceNotBelongException(errorMessage);
+
+		// when
+		ResponseEntity<ErrorResponse> errorResponse = customExceptionHandler.handleResourceNotBelongException(
 			exception, httpServletRequest);
 
 		// then

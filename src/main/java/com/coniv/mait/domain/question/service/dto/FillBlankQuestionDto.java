@@ -2,6 +2,9 @@ package com.coniv.mait.domain.question.service.dto;
 
 import java.util.List;
 
+import com.coniv.mait.domain.question.entity.FillBlankAnswerEntity;
+import com.coniv.mait.domain.question.entity.FillBlankQuestionEntity;
+
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -20,5 +23,20 @@ public class FillBlankQuestionDto extends QuestionDto {
 	@Override
 	public FillBlankQuestionDto toQuestionDto() {
 		return this;
+	}
+
+	public static QuestionDto of(FillBlankQuestionEntity fillBlankQuestion,
+		List<FillBlankAnswerEntity> fillBlankAnswers) {
+		List<FillBlankAnswerDto> fillBlankAnswerDtos = fillBlankAnswers.stream()
+			.map(FillBlankAnswerDto::from)
+			.toList();
+
+		return FillBlankQuestionDto.builder()
+			.id(fillBlankQuestion.getId())
+			.content(fillBlankQuestion.getContent())
+			.explanation(fillBlankQuestion.getExplanation())
+			.number(fillBlankQuestion.getNumber())
+			.fillBlankAnswers(fillBlankAnswerDtos)
+			.build();
 	}
 }

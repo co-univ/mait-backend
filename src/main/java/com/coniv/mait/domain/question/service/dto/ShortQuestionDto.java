@@ -2,6 +2,9 @@ package com.coniv.mait.domain.question.service.dto;
 
 import java.util.List;
 
+import com.coniv.mait.domain.question.entity.ShortAnswerEntity;
+import com.coniv.mait.domain.question.entity.ShortQuestionEntity;
+
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -25,6 +28,19 @@ public class ShortQuestionDto extends QuestionDto {
 			.explanation(getExplanation())
 			.number(getNumber())
 			.shortAnswers(shortAnswers)
+			.build();
+	}
+
+	public static QuestionDto of(ShortQuestionEntity shortQuestion, List<ShortAnswerEntity> shortAnswers) {
+		List<ShortAnswerDto> shortAnswerDtos = shortAnswers.stream()
+			.map(ShortAnswerDto::from)
+			.toList();
+		return ShortQuestionDto.builder()
+			.id(shortQuestion.getId())
+			.content(shortQuestion.getContent())
+			.explanation(shortQuestion.getExplanation())
+			.number(shortQuestion.getNumber())
+			.shortAnswers(shortAnswerDtos)
 			.build();
 	}
 }

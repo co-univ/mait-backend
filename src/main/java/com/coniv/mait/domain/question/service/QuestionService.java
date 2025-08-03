@@ -11,6 +11,7 @@ import com.coniv.mait.domain.question.entity.MultipleChoiceEntity;
 import com.coniv.mait.domain.question.entity.MultipleQuestionEntity;
 import com.coniv.mait.domain.question.entity.OrderingOptionEntity;
 import com.coniv.mait.domain.question.entity.OrderingQuestionEntity;
+import com.coniv.mait.domain.question.entity.QuestionEntity;
 import com.coniv.mait.domain.question.entity.QuestionSetEntity;
 import com.coniv.mait.domain.question.entity.ShortAnswerEntity;
 import com.coniv.mait.domain.question.entity.ShortQuestionEntity;
@@ -30,6 +31,7 @@ import com.coniv.mait.domain.question.service.dto.MultipleQuestionDto;
 import com.coniv.mait.domain.question.service.dto.OrderingQuestionDto;
 import com.coniv.mait.domain.question.service.dto.QuestionDto;
 import com.coniv.mait.domain.question.service.dto.ShortQuestionDto;
+import com.coniv.mait.global.exception.custom.ResourceNotBelongException;
 
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
@@ -111,6 +113,39 @@ public class QuestionService {
 				fillBlankAnswerEntityRepository.saveAll(fillBlankAnswers);
 			}
 			default -> throw new IllegalArgumentException("Unsupported question type: " + type);
+		}
+	}
+
+	public QuestionDto getQuestion(final Long questionSetId, final Long questionId) {
+		QuestionEntity question = questionEntityRepository.findById(questionId)
+			.orElseThrow(() -> new EntityNotFoundException("Question not found with id: " + questionId));
+
+		if (!question.getQuestionSet().getId().equals(questionSetId)) {
+			throw new ResourceNotBelongException("해당 문제 셋에 속한 문제가 아닙니다.");
+		}
+
+		switch (question) {
+			case MultipleQuestionEntity multipleQuestion -> {
+				List<MultipleChoiceEntity> choices = multipleChoiceEntityRepository.findAllByQuestionId(questionId);
+				return MultipleQuestionDto.of(multipleQuestion, choices);
+			}
+			case ShortQuestionEntity shortQuestion -> {
+				List<ShortAnswerEntity> shortAnswers = shortAnswerEntityRepository.findAllByShortQuestionId(
+					shortQuestion.getId());
+
+				return ShortQuestionDto.of(shortQuestion, shortAnswers);
+			}
+			case OrderingQuestionEntity orderingQuestion -> {
+				List<OrderingOptionEntity> options = orderingQuestionOptionRepository.findAllByOrderingQuestionId(
+					orderingQuestion.getId());
+				return OrderingQuestionDto.of(orderingQuestion, options);
+			}
+			case FillBlankQuestionEntity fillBlankQuestion -> {
+				List<FillBlankAnswerEntity> fillBlankAnswers = fillBlankAnswerEntityRepository
+					.findAllByFillBlankQuestionId(fillBlankQuestion.getId());
+				return FillBlankQuestionDto.of(fillBlankQuestion, fillBlankAnswers);
+			}
+			default -> throw new IllegalStateException("Unexpected value: " + question);
 		}
 	}
 }
