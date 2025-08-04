@@ -38,4 +38,14 @@ public class TeamUserEntity extends BaseTimeEntity {
 
 	@Enumerated(EnumType.STRING)
 	private TeamUserRole userRole;
+
+	private TeamUserEntity(UserEntity user, TeamEntity team, TeamUserRole userRole) {
+		this.user = user;
+		this.team = team;
+		this.userRole = userRole;
+	}
+
+	public static TeamUserEntity createPlayerUser(UserEntity user, TeamEntity team) {
+		return new TeamUserEntity(user, team, TeamUserRole.PLAYER);
+	}
 }

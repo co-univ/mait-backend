@@ -28,4 +28,12 @@ public class TeamEntity extends BaseTimeEntity {
 
 	@Column(nullable = false)
 	private String name;
+
+	private TeamEntity(String name) {
+		this.name = name;
+	}
+
+	public static TeamEntity of(String name) {
+		return new TeamEntity(name);
+	}
 }
