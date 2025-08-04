@@ -103,7 +103,7 @@ class CsvUserEntityCreationTest {
 			for (int i = 0; i < 3; i++) {
 				sheet.autoSizeColumn(i);
 			}
-			
+
 			try (FileOutputStream outputStream = new FileOutputStream(filePath)) {
 				workbook.write(outputStream);
 			}
