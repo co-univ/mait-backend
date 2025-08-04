@@ -80,4 +80,19 @@ public class QuestionSetApiIntegrationTest extends BaseIntegrationTest {
 		// then
 		assertThat(questionSetEntityRepository.count()).isEqualTo(2);
 	}
+
+	@Test
+	@DisplayName("문제 셋 단건 조회 API 성공 테스트")
+	void getQuestionSetApiSuccess() throws Exception {
+		// given
+		String subject = "Sample Subject";
+		QuestionSetEntity questionSet = questionSetEntityRepository.save(QuestionSetEntity.builder().subject(subject).build());
+
+		// when & then
+		mockMvc.perform(get("/api/v1/question-sets/{questionSetId}", questionSet.getId())
+				.accept(MediaType.APPLICATION_JSON))
+			.andExpect(status().isOk())
+			.andExpect(jsonPath("$.data.id").value(questionSet.getId()))
+			.andExpect(jsonPath("$.data.subject").value(subject));
+	}
 }
