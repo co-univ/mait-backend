@@ -35,7 +35,10 @@ public class QuestionSetService {
 	public List<QuestionSetDto> getQuestionSets(final Long teamId) {
 		// Todo: 조회하려는 유저와 팀이 일치하는지 확인
 		return questionSetEntityRepository.findAllByTeamId(teamId).stream()
-			.sorted(Comparator.comparing(QuestionSetEntity::getCreatedAt).reversed())
+			.sorted(Comparator.comparing(
+				QuestionSetEntity::getCreatedAt,
+				Comparator.nullsLast(Comparator.naturalOrder())
+			).reversed())
 			.map(QuestionSetDto::from)
 			.toList();
 	}
