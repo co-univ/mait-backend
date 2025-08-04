@@ -6,6 +6,8 @@ import static org.mockito.Mockito.*;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
+
 
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -70,5 +72,44 @@ class QuestionSetServiceTest {
 		assertThat(result.get(1).getId()).isEqualTo(1L);
 
 		verify(questionSetEntityRepository, times(1)).findAllByTeamId(teamId);
+	}
+
+	@Test
+	@DisplayName("문제 셋 단건 조회 테스트 - 성공")
+	void getQuestionSetTest_Success() {
+		// given
+		final Long questionSetId = 1L;
+		final QuestionSetEntity questionSetEntity = mock(QuestionSetEntity.class);
+		when(questionSetEntity.getId()).thenReturn(questionSetId);
+		when(questionSetEntity.getSubject()).thenReturn("Test Subject");
+
+		when(questionSetEntityRepository.findById(questionSetId))
+			.thenReturn(Optional.of(questionSetEntity));
+
+		// when
+		QuestionSetDto result = questionSetService.getQuestionSet(questionSetId);
+
+		// then
+		assertThat(result).isNotNull();
+		assertThat(result.getId()).isEqualTo(questionSetId);
+		assertThat(result.getSubject()).isEqualTo("Test Subject");
+
+		verify(questionSetEntityRepository, times(1)).findById(questionSetId);
+	}
+
+	@Test
+	@DisplayName("문제 셋 단건 조회 테스트 - 실패 (ID를 찾을 수 없음)")
+	void getQuestionSetTest_Fail_NotFound() {
+		// given
+		final Long questionSetId = 1L;
+		when(questionSetEntityRepository.findById(questionSetId))
+			.thenReturn(Optional.empty());
+
+		// when & then
+		assertThatThrownBy(() -> questionSetService.getQuestionSet(questionSetId))
+			.isInstanceOf(IllegalArgumentException.class)
+			.hasMessage("Question set not found");
+
+		verify(questionSetEntityRepository, times(1)).findById(questionSetId);
 	}
 }

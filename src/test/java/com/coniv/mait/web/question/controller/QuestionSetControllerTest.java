@@ -147,4 +147,26 @@ class QuestionSetControllerTest {
 
 		verify(questionSetService).getQuestionSets(teamId);
 	}
+
+	@Test
+	@DisplayName("문제 셋 단건 조회 테스트")
+	void getQuestionSetTest() throws Exception {
+		// given
+		final Long questionSetId = 1L;
+		final String subject = "Test Subject";
+		QuestionSetDto questionSetDto = QuestionSetDto.builder()
+			.id(questionSetId)
+			.subject(subject)
+			.build();
+
+		when(questionSetService.getQuestionSet(questionSetId)).thenReturn(questionSetDto);
+
+		// when & then
+		mockMvc.perform(get("/api/v1/question-sets/{questionSetId}", questionSetId))
+			.andExpect(status().isOk())
+			.andExpect(jsonPath("$.data.id").value(questionSetId))
+			.andExpect(jsonPath("$.data.subject").value(subject));
+
+		verify(questionSetService).getQuestionSet(questionSetId);
+	}
 }
