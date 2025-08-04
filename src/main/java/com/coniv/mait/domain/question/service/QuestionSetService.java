@@ -42,4 +42,11 @@ public class QuestionSetService {
 			.map(QuestionSetDto::from)
 			.toList();
 	}
+
+	public QuestionSetDto getQuestionSet(final Long questionSetId) {
+		final QuestionSetEntity questionSetEntity = questionSetEntityRepository.findById(questionSetId)
+			.orElseThrow(() -> new IllegalArgumentException("Question set not found"));
+
+		return QuestionSetDto.from(questionSetEntity);
+	}
 }

@@ -5,6 +5,7 @@ import java.util.List;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -49,5 +50,13 @@ public class QuestionSetController {
 			.map(QuestionSetApiResponse::from)
 			.toList();
 		return ResponseEntity.ok(ApiResponse.ok(responses));
+	}
+
+	@Operation(summary = "문제 셋 단건 조회")
+	@GetMapping("/{questionSetId}")
+	public ResponseEntity<ApiResponse<QuestionSetApiResponse>> getQuestionSet(
+		@PathVariable Long questionSetId) {
+		QuestionSetDto questionSetDto = questionSetService.getQuestionSet(questionSetId);
+		return ResponseEntity.ok(ApiResponse.ok(QuestionSetApiResponse.from(questionSetDto)));
 	}
 }
