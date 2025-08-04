@@ -25,8 +25,6 @@ import com.coniv.mait.domain.team.service.TeamService;
 import com.coniv.mait.domain.user.entity.UserEntity;
 import com.coniv.mait.util.TemporaryPasswordGenerator;
 
-import jakarta.persistence.EntityNotFoundException;
-
 @SpringBootTest
 @ActiveProfiles("test")
 @Transactional
@@ -129,7 +127,7 @@ class CsvUserEntityCreationTest {
 			}
 		}
 	}
-	
+
 	@Test
 	@DisplayName("CSV에서 사용자를 생성하고 팀과 연결")
 	void integrationTestWithTeamService() throws IOException {
@@ -141,8 +139,7 @@ class CsvUserEntityCreationTest {
 
 		// TeamEntity team = teamEntityRepository.save(TeamEntity.of("코니브 팀"));
 
-		TeamEntity team = teamEntityRepository.findById(teamId)
-			.orElseThrow(() -> new EntityNotFoundException("팀을 찾을 수 없습니다. ID: " + teamId));
+		TeamEntity team = teamEntityRepository.findAll().getFirst();
 
 		teamService.createUsersAndLinkTeam(users, team);
 	}
