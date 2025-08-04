@@ -31,8 +31,7 @@ import com.coniv.mait.util.TemporaryPasswordGenerator;
 class CsvUserEntityCreationTest {
 
 	private final String inputFileName = "cotato-users.csv";
-	private final String outputFileName = "cotato-users-password.csv";
-	private final Long teamId = 1L;
+	private final String outputFileName = "src/test/resources/cotato-users-password.xlsx"; // .xlsx 확장자로 변경
 	private final BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
 
 	@Autowired
@@ -66,7 +65,6 @@ class CsvUserEntityCreationTest {
 						String name = values[0].trim();
 						String email = values[1].trim();
 
-						// 임시 비밀번호 생성 (테스트용으로 인덱스 기반)
 						String temporaryPassword = TemporaryPasswordGenerator.generateTemporaryPassword();
 
 						// 비밀번호 암호화
@@ -90,7 +88,7 @@ class CsvUserEntityCreationTest {
 	}
 
 	/**
-	 * 사용자 데이터를 엑셀 파일로 생성
+	 * 사용자 데이터를 엑셀 파일로 생성 (한글 인코딩 문제 해결)
 	 *
 	 * @param userData 사용자 데이터 리스트
 	 * @param filePath 생성할 엑셀 파일 경로
@@ -137,9 +135,9 @@ class CsvUserEntityCreationTest {
 		// users.forEach(user -> System.out.println(
 		// 	"User: " + user.getName() + ", Email: " + user.getEmail() + ", Encoded Password: " + user.getPassword()));
 
-		// TeamEntity team = teamEntityRepository.save(TeamEntity.of("코니브 팀"));
+		TeamEntity team = teamEntityRepository.save(TeamEntity.of("코니브 팀"));
 
-		TeamEntity team = teamEntityRepository.findAll().getFirst();
+		// TeamEntity team = teamEntityRepository.findAll().getFirst();
 
 		teamService.createUsersAndLinkTeam(users, team);
 	}
@@ -156,5 +154,3 @@ class CsvUserEntityCreationTest {
 		}
 	}
 }
-
-
