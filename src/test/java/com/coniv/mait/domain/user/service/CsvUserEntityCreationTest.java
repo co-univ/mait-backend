@@ -141,15 +141,6 @@ class CsvUserEntityCreationTest {
 		teamService.createUsersAndLinkTeam(users, team);
 	}
 
-	static class UserData {
-		String name;
-		String email;
-		String temporaryPassword;
-
-		UserData(String name, String email, String temporaryPassword) {
-			this.name = name;
-			this.email = email;
-			this.temporaryPassword = temporaryPassword;
-		}
+	record UserData(String name, String email, String temporaryPassword) {
 	}
 }
