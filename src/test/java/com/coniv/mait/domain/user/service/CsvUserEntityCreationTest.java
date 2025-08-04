@@ -132,10 +132,13 @@ class CsvUserEntityCreationTest {
 		List<UserEntity> users = readUsersFromCsv(inputFileName, outputFileName);
 		userEntityRepository.saveAll(users);
 
-		TeamEntity team = teamEntityRepository.findAll().getFirst();
-		if (team == null) {
+		List<TeamEntity> teams = teamEntityRepository.findAll();
+		TeamEntity team;
+		if (teams.isEmpty()) {
 			team = TeamEntity.of("테스트");
 			teamEntityRepository.save(team);
+		} else {
+			team = teams.getFirst();
 		}
 
 		teamService.createUsersAndLinkTeam(users, team);
