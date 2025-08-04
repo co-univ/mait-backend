@@ -10,6 +10,7 @@ import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.Workbook;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -110,6 +111,7 @@ class CsvUserEntityCreationTest {
 		}
 	}
 
+	@Disabled("실제 CSV 파일을 읽고 엑셀 파일을 생성하는 테스트는 수동으로 실행")
 	@Test
 	@DisplayName("CSV에서 사용자를 생성하고 팀과 연결")
 	void integrationTestWithTeamService() throws IOException {
