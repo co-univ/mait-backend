@@ -1,6 +1,6 @@
 package com.coniv.mait.util;
 
-import java.util.Random;
+import java.security.SecureRandom;
 
 /**
  * 임시 비밀번호 생성 유틸리티 클래스
@@ -8,7 +8,7 @@ import java.util.Random;
 public class TemporaryPasswordGenerator {
 
 	private static final String[] SPECIAL_CHARS = {"!", "@", "#"};
-	private static final Random RANDOM = new Random();
+	private static final SecureRandom RANDOM = new SecureRandom();
 
 	/**
 	 * temp + 3자리 숫자 + 특수문자 형태의 임시 비밀번호 생성
