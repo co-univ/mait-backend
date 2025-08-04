@@ -528,7 +528,7 @@ class QuestionServiceTest {
 		assertEquals(4, result.size());
 
 		// number 순으로 정렬되었는지 확인 (1, 2, 3, 4)
-		// 실제로는 QuestionDto의 구체적인 타입을 확인하기 어려우므로, 
+		// 실제로는 QuestionDto의 구체적인 타입을 확인하기 어려우므로,
 		// repository 호출이 올바르게 이루어졌는지 확인
 		verify(questionEntityRepository).findAllByQuestionSetId(questionSetId);
 		verify(shortAnswerEntityRepository).findAllByShortQuestionId(2L);

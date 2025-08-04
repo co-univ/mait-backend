@@ -86,7 +86,8 @@ public class QuestionSetApiIntegrationTest extends BaseIntegrationTest {
 	void getQuestionSetApiSuccess() throws Exception {
 		// given
 		String subject = "Sample Subject";
-		QuestionSetEntity questionSet = questionSetEntityRepository.save(QuestionSetEntity.builder().subject(subject).build());
+		QuestionSetEntity questionSet = questionSetEntityRepository.save(
+			QuestionSetEntity.builder().subject(subject).build());
 
 		// when & then
 		mockMvc.perform(get("/api/v1/question-sets/{questionSetId}", questionSet.getId())
