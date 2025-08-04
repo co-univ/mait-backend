@@ -56,8 +56,23 @@ public class UserEntity extends BaseTimeEntity {
 		this.loginProvider = loginProvider;
 	}
 
+	private UserEntity(String email, String password, String name, String nickname, Boolean isLocalLogin,
+		String providerId, LoginProvider loginProvider) {
+		this.email = email;
+		this.password = password;
+		this.name = name;
+		this.nickname = nickname;
+		this.isLocalLogin = isLocalLogin;
+		this.providerId = providerId;
+		this.loginProvider = loginProvider;
+	}
+
 	public static UserEntity socialLoginUser(String email, String name, String providerId,
 		LoginProvider loginProvider) {
 		return new UserEntity(email, name, null, false, providerId, loginProvider);
+	}
+
+	public static UserEntity localLoginUser(String email, String password, String name, String nickname) {
+		return new UserEntity(email, password, name, nickname, true, null, null);
 	}
 }
