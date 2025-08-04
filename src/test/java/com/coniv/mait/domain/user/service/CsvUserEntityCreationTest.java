@@ -132,12 +132,11 @@ class CsvUserEntityCreationTest {
 		List<UserEntity> users = readUsersFromCsv(inputFileName, outputFileName);
 		userEntityRepository.saveAll(users);
 
-		// users.forEach(user -> System.out.println(
-		// 	"User: " + user.getName() + ", Email: " + user.getEmail() + ", Encoded Password: " + user.getPassword()));
-
-		TeamEntity team = teamEntityRepository.save(TeamEntity.of("코니브 팀"));
-
-		// TeamEntity team = teamEntityRepository.findAll().getFirst();
+		TeamEntity team = teamEntityRepository.findAll().getFirst();
+		if (team == null) {
+			team = TeamEntity.of("테스트");
+			teamEntityRepository.save(team);
+		}
 
 		teamService.createUsersAndLinkTeam(users, team);
 	}
