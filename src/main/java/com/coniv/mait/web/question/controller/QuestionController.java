@@ -40,7 +40,7 @@ public class QuestionController {
 
 	@Operation(summary = "문제 조회 API")
 	@GetMapping("/{questionId}")
-	public ResponseEntity<ApiResponse<?>> getQuestion(
+	public ResponseEntity<ApiResponse<QuestionApiResponse>> getQuestion(
 		@PathVariable("questionSetId") final Long questionSetId,
 		@PathVariable("questionId") final Long questionId) {
 		return ResponseEntity.ok(
