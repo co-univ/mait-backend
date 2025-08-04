@@ -641,4 +641,141 @@ public class QuestionApiIntegrationTest extends BaseIntegrationTest {
 				jsonPath("$.data.answers[1].number").value(1)
 			);
 	}
+
+	@Test
+	@DisplayName("문제 셋의 모든 문제 조회 API 성공 테스트 - 다양한 타입")
+	void getQuestionsApiSuccess() throws Exception {
+		// given
+		QuestionSetEntity questionSet = QuestionSetEntity.of("Sample Subject", QuestionSetCreationType.MANUAL);
+		QuestionSetEntity savedQuestionSet = questionSetEntityRepository.save(questionSet);
+
+		// 객관식 문제 생성 (number: 2)
+		MultipleQuestionEntity multipleQuestion = MultipleQuestionEntity.builder()
+			.content("객관식 문제")
+			.explanation("객관식 문제 해설")
+			.number(2L)
+			.questionSet(savedQuestionSet)
+			.build();
+		MultipleQuestionEntity savedMultipleQuestion = questionEntityRepository.save(multipleQuestion);
+
+		List<MultipleChoiceEntity> choices = List.of(
+			MultipleChoiceEntity.builder()
+				.question(savedMultipleQuestion)
+				.number(1)
+				.content("선택지 1")
+				.isCorrect(true)
+				.build(),
+			MultipleChoiceEntity.builder()
+				.question(savedMultipleQuestion)
+				.number(2)
+				.content("선택지 2")
+				.isCorrect(false)
+				.build()
+		);
+		multipleChoiceEntityRepository.saveAll(choices);
+
+		// 주관식 문제 생성 (number: 1)
+		ShortQuestionEntity shortQuestion = ShortQuestionEntity.builder()
+			.content("주관식 문제")
+			.explanation("주관식 문제 해설")
+			.number(1L)
+			.questionSet(savedQuestionSet)
+			.build();
+		ShortQuestionEntity savedShortQuestion = questionEntityRepository.save(shortQuestion);
+
+		List<ShortAnswerEntity> shortAnswers = List.of(
+			ShortAnswerEntity.builder()
+				.shortQuestionId(savedShortQuestion.getId())
+				.answer("주관식 정답")
+				.isMain(true)
+				.number(1L)
+				.build()
+		);
+		shortAnswerEntityRepository.saveAll(shortAnswers);
+
+		// 순서배열 문제 생성 (number: 3)
+		OrderingQuestionEntity orderingQuestion = OrderingQuestionEntity.builder()
+			.content("순서배열 문제")
+			.explanation("순서배열 문제 해설")
+			.number(3L)
+			.questionSet(savedQuestionSet)
+			.build();
+		OrderingQuestionEntity savedOrderingQuestion = questionEntityRepository.save(orderingQuestion);
+
+		List<OrderingOptionEntity> options = List.of(
+			OrderingOptionEntity.builder()
+				.orderingQuestionId(savedOrderingQuestion.getId())
+				.content("첫 번째 단계")
+				.originOrder(1)
+				.answerOrder(1)
+				.build(),
+			OrderingOptionEntity.builder()
+				.orderingQuestionId(savedOrderingQuestion.getId())
+				.content("두 번째 단계")
+				.originOrder(2)
+				.answerOrder(2)
+				.build()
+		);
+		orderingQuestionOptionRepository.saveAll(options);
+
+		// 빈칸 문제 생성 (number: 4)
+		FillBlankQuestionEntity fillBlankQuestion = FillBlankQuestionEntity.builder()
+			.content("빈칸 문제")
+			.explanation("빈칸 문제 해설")
+			.number(4L)
+			.questionSet(savedQuestionSet)
+			.build();
+		FillBlankQuestionEntity savedFillBlankQuestion = questionEntityRepository.save(fillBlankQuestion);
+
+		List<FillBlankAnswerEntity> fillBlankAnswers = List.of(
+			FillBlankAnswerEntity.builder()
+				.fillBlankQuestionId(savedFillBlankQuestion.getId())
+				.answer("빈칸 정답")
+				.isMain(true)
+				.number(1L)
+				.build()
+		);
+		fillBlankAnswerEntityRepository.saveAll(fillBlankAnswers);
+
+		// when & then
+		mockMvc.perform(get("/api/v1/question-sets/{questionSetId}/questions", savedQuestionSet.getId())
+				.contentType(MediaType.APPLICATION_JSON))
+			.andExpectAll(
+				status().isOk(),
+				jsonPath("$.isSuccess").value(true),
+				jsonPath("$.data").isArray(),
+				jsonPath("$.data.length()").value(4),
+				// number 순으로 정렬되어야 함 (1, 2, 3, 4)
+				jsonPath("$.data[0].number").value(1), // 주관식
+				jsonPath("$.data[0].content").value("주관식 문제"),
+				jsonPath("$.data[0].type").value(QuestionType.SHORT.name()),
+				jsonPath("$.data[1].number").value(2), // 객관식
+				jsonPath("$.data[1].content").value("객관식 문제"),
+				jsonPath("$.data[1].type").value(QuestionType.MULTIPLE.name()),
+				jsonPath("$.data[2].number").value(3), // 순서배열
+				jsonPath("$.data[2].content").value("순서배열 문제"),
+				jsonPath("$.data[2].type").value(QuestionType.ORDERING.name()),
+				jsonPath("$.data[3].number").value(4), // 빈칸
+				jsonPath("$.data[3].content").value("빈칸 문제"),
+				jsonPath("$.data[3].type").value(QuestionType.FILL_BLANK.name())
+			);
+	}
+
+	@Test
+	@DisplayName("문제 셋의 모든 문제 조회 API 성공 테스트 - 빈 목록")
+	void getQuestionsApiEmptyListSuccess() throws Exception {
+		// given
+		QuestionSetEntity questionSet = QuestionSetEntity.of("Sample Subject", QuestionSetCreationType.MANUAL);
+		QuestionSetEntity savedQuestionSet = questionSetEntityRepository.save(questionSet);
+
+		// when & then
+		mockMvc.perform(get("/api/v1/question-sets/{questionSetId}/questions", savedQuestionSet.getId())
+				.contentType(MediaType.APPLICATION_JSON))
+			.andExpectAll(
+				status().isOk(),
+				jsonPath("$.isSuccess").value(true),
+				jsonPath("$.data").isArray(),
+				jsonPath("$.data.length()").value(0)
+			);
+	}
 }

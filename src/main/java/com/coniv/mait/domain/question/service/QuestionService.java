@@ -1,5 +1,6 @@
 package com.coniv.mait.domain.question.service;
 
+import java.util.Comparator;
 import java.util.List;
 
 import org.springframework.stereotype.Service;
@@ -124,15 +125,26 @@ public class QuestionService {
 			throw new ResourceNotBelongException("해당 문제 셋에 속한 문제가 아닙니다.");
 		}
 
+		return mapToQuestionDto(question);
+	}
+
+	public List<QuestionDto> getQuestions(final Long questionSetId) {
+		return questionEntityRepository.findAllByQuestionSetId(questionSetId).stream()
+			.sorted(Comparator.comparingLong(QuestionEntity::getNumber))
+			.map(this::mapToQuestionDto)
+			.toList();
+	}
+
+	private QuestionDto mapToQuestionDto(final QuestionEntity question) {
 		switch (question) {
 			case MultipleQuestionEntity multipleQuestion -> {
-				List<MultipleChoiceEntity> choices = multipleChoiceEntityRepository.findAllByQuestionId(questionId);
+				List<MultipleChoiceEntity> choices = multipleChoiceEntityRepository.findAllByQuestionId(
+					multipleQuestion.getId());
 				return MultipleQuestionDto.of(multipleQuestion, choices);
 			}
 			case ShortQuestionEntity shortQuestion -> {
 				List<ShortAnswerEntity> shortAnswers = shortAnswerEntityRepository.findAllByShortQuestionId(
 					shortQuestion.getId());
-
 				return ShortQuestionDto.of(shortQuestion, shortAnswers);
 			}
 			case OrderingQuestionEntity orderingQuestion -> {
@@ -145,7 +157,8 @@ public class QuestionService {
 					.findAllByFillBlankQuestionId(fillBlankQuestion.getId());
 				return FillBlankQuestionDto.of(fillBlankQuestion, fillBlankAnswers);
 			}
-			default -> throw new IllegalStateException("Unexpected value: " + question);
+			default ->
+				throw new IllegalStateException("Unsupported question type: " + question.getClass().getSimpleName());
 		}
 	}
 }

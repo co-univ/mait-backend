@@ -576,4 +576,88 @@ class QuestionControllerTest {
 
 		verify(questionService).getQuestion(questionSetId, questionId);
 	}
+
+	@Test
+	@DisplayName("문제 셋의 모든 문제 조회 API 테스트 - 성공")
+	void getQuestionsTest() throws Exception {
+		// given
+		final Long questionSetId = 1L;
+
+		// 다양한 타입의 문제 DTO들을 생성
+		MultipleQuestionDto multipleQuestionDto = MultipleQuestionDto.builder()
+			.id(1L)
+			.content("객관식 문제 1")
+			.explanation("객관식 문제 해설")
+			.number(1L)
+			.choices(List.of(
+				MultipleChoiceDto.builder()
+					.number(1)
+					.content("선택지 1")
+					.isCorrect(true)
+					.build(),
+				MultipleChoiceDto.builder()
+					.number(2)
+					.content("선택지 2")
+					.isCorrect(false)
+					.build()
+			))
+			.build();
+
+		ShortAnswerDto shortAnswerDto = ShortAnswerDto.builder()
+			.answer("주관식 정답")
+			.isMain(true)
+			.number(1L)
+			.build();
+
+		com.coniv.mait.domain.question.service.dto.ShortQuestionDto shortQuestionDto =
+			com.coniv.mait.domain.question.service.dto.ShortQuestionDto.builder()
+				.id(2L)
+				.content("주관식 문제 1")
+				.explanation("주관식 문제 해설")
+				.number(2L)
+				.shortAnswers(List.of(shortAnswerDto))
+				.build();
+
+		List<com.coniv.mait.domain.question.service.dto.QuestionDto> mockQuestions =
+			List.of(multipleQuestionDto, shortQuestionDto);
+
+		when(questionService.getQuestions(questionSetId)).thenReturn(mockQuestions);
+
+		// when & then
+		mockMvc.perform(get("/api/v1/question-sets/{questionSetId}/questions", questionSetId)
+				.contentType(MediaType.APPLICATION_JSON))
+			.andExpectAll(
+				status().isOk(),
+				jsonPath("$.isSuccess").value(true),
+				jsonPath("$.data").isArray(),
+				jsonPath("$.data.length()").value(2),
+				jsonPath("$.data[0].content").value("객관식 문제 1"),
+				jsonPath("$.data[0].number").value(1),
+				jsonPath("$.data[1].content").value("주관식 문제 1"),
+				jsonPath("$.data[1].number").value(2)
+			);
+
+		verify(questionService).getQuestions(questionSetId);
+	}
+
+	@Test
+	@DisplayName("문제 셋의 모든 문제 조회 API 테스트 - 빈 목록")
+	void getQuestionsEmptyListTest() throws Exception {
+		// given
+		final Long questionSetId = 1L;
+
+		when(questionService.getQuestions(questionSetId)).thenReturn(List.of());
+
+		// when & then
+		mockMvc.perform(get("/api/v1/question-sets/{questionSetId}/questions", questionSetId)
+				.contentType(MediaType.APPLICATION_JSON))
+			.andExpectAll(
+				status().isOk(),
+				jsonPath("$.isSuccess").value(true),
+				jsonPath("$.data").isArray(),
+				jsonPath("$.data.length()").value(0)
+			);
+
+		verify(questionService).getQuestions(questionSetId);
+	}
 }

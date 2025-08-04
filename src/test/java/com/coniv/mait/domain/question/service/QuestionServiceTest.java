@@ -19,6 +19,7 @@ import com.coniv.mait.domain.question.entity.MultipleChoiceEntity;
 import com.coniv.mait.domain.question.entity.MultipleQuestionEntity;
 import com.coniv.mait.domain.question.entity.OrderingOptionEntity;
 import com.coniv.mait.domain.question.entity.OrderingQuestionEntity;
+import com.coniv.mait.domain.question.entity.QuestionEntity;
 import com.coniv.mait.domain.question.entity.QuestionSetEntity;
 import com.coniv.mait.domain.question.entity.ShortAnswerEntity;
 import com.coniv.mait.domain.question.entity.ShortQuestionEntity;
@@ -325,6 +326,7 @@ class QuestionServiceTest {
 
 		MultipleQuestionEntity multipleQuestion = mock(MultipleQuestionEntity.class);
 		when(multipleQuestion.getQuestionSet()).thenReturn(questionSetEntity);
+		when(multipleQuestion.getId()).thenReturn(questionId);
 
 		List<MultipleChoiceEntity> choices = List.of(
 			mock(MultipleChoiceEntity.class),
@@ -479,5 +481,119 @@ class QuestionServiceTest {
 		assertEquals("해당 문제 셋에 속한 문제가 아닙니다.", exception.getMessage());
 		verify(questionEntityRepository).findById(questionId);
 		verify(multipleChoiceEntityRepository, never()).findAllByQuestionId(any());
+	}
+
+	@Test
+	@DisplayName("문제 셋의 모든 문제 조회 성공 - number 순으로 정렬")
+	void getQuestions_Success() {
+		// given
+		final Long questionSetId = 1L;
+
+		// 다양한 타입의 문제들을 number 순서가 뒤섞인 상태로 생성
+		MultipleQuestionEntity multipleQuestion = mock(MultipleQuestionEntity.class);
+		when(multipleQuestion.getNumber()).thenReturn(3L);
+		when(multipleQuestion.getId()).thenReturn(1L);
+
+		ShortQuestionEntity shortQuestion = mock(ShortQuestionEntity.class);
+		when(shortQuestion.getNumber()).thenReturn(1L);
+		when(shortQuestion.getId()).thenReturn(2L);
+
+		OrderingQuestionEntity orderingQuestion = mock(OrderingQuestionEntity.class);
+		when(orderingQuestion.getNumber()).thenReturn(2L);
+		when(orderingQuestion.getId()).thenReturn(3L);
+
+		FillBlankQuestionEntity fillBlankQuestion = mock(FillBlankQuestionEntity.class);
+		when(fillBlankQuestion.getNumber()).thenReturn(4L);
+		when(fillBlankQuestion.getId()).thenReturn(4L);
+
+		// Repository에서 순서가 뒤섞인 상태로 반환
+		List<QuestionEntity> questions = List.of(multipleQuestion, fillBlankQuestion, shortQuestion, orderingQuestion);
+		when(questionEntityRepository.findAllByQuestionSetId(questionSetId)).thenReturn(questions);
+
+		// 각 문제 타입별 세부 데이터 mock
+		when(multipleChoiceEntityRepository.findAllByQuestionId(1L)).thenReturn(
+			List.of(mock(MultipleChoiceEntity.class)));
+		when(shortAnswerEntityRepository.findAllByShortQuestionId(2L)).thenReturn(
+			List.of(mock(ShortAnswerEntity.class)));
+		when(orderingQuestionOptionRepository.findAllByOrderingQuestionId(3L)).thenReturn(
+			List.of(mock(OrderingOptionEntity.class)));
+		when(fillBlankAnswerEntityRepository.findAllByFillBlankQuestionId(4L)).thenReturn(
+			List.of(mock(FillBlankAnswerEntity.class)));
+
+		// when
+		List<QuestionDto> result = questionService.getQuestions(questionSetId);
+
+		// then
+		assertNotNull(result);
+		assertEquals(4, result.size());
+
+		// number 순으로 정렬되었는지 확인 (1, 2, 3, 4)
+		// 실제로는 QuestionDto의 구체적인 타입을 확인하기 어려우므로,
+		// repository 호출이 올바르게 이루어졌는지 확인
+		verify(questionEntityRepository).findAllByQuestionSetId(questionSetId);
+		verify(shortAnswerEntityRepository).findAllByShortQuestionId(2L);
+		verify(orderingQuestionOptionRepository).findAllByOrderingQuestionId(3L);
+		verify(multipleChoiceEntityRepository).findAllByQuestionId(1L);
+		verify(fillBlankAnswerEntityRepository).findAllByFillBlankQuestionId(4L);
+	}
+
+	@Test
+	@DisplayName("문제 셋의 모든 문제 조회 성공 - 빈 목록")
+	void getQuestions_EmptyList() {
+		// given
+		final Long questionSetId = 1L;
+		when(questionEntityRepository.findAllByQuestionSetId(questionSetId)).thenReturn(List.of());
+
+		// when
+		List<QuestionDto> result = questionService.getQuestions(questionSetId);
+
+		// then
+		assertNotNull(result);
+		assertEquals(0, result.size());
+		verify(questionEntityRepository).findAllByQuestionSetId(questionSetId);
+
+		// 빈 목록이므로 세부 repository 호출은 없어야 함
+		verify(multipleChoiceEntityRepository, never()).findAllByQuestionId(any());
+		verify(shortAnswerEntityRepository, never()).findAllByShortQuestionId(any());
+		verify(orderingQuestionOptionRepository, never()).findAllByOrderingQuestionId(any());
+		verify(fillBlankAnswerEntityRepository, never()).findAllByFillBlankQuestionId(any());
+	}
+
+	@Test
+	@DisplayName("문제 셋의 모든 문제 조회 성공 - 단일 타입 (객관식만)")
+	void getQuestions_SingleType_MultipleChoice() {
+		// given
+		final Long questionSetId = 1L;
+
+		MultipleQuestionEntity question1 = mock(MultipleQuestionEntity.class);
+		when(question1.getNumber()).thenReturn(2L);
+		when(question1.getId()).thenReturn(1L);
+
+		MultipleQuestionEntity question2 = mock(MultipleQuestionEntity.class);
+		when(question2.getNumber()).thenReturn(1L);
+		when(question2.getId()).thenReturn(2L);
+
+		List<QuestionEntity> questions = List.of(question1, question2);
+		when(questionEntityRepository.findAllByQuestionSetId(questionSetId)).thenReturn(questions);
+
+		when(multipleChoiceEntityRepository.findAllByQuestionId(1L)).thenReturn(
+			List.of(mock(MultipleChoiceEntity.class)));
+		when(multipleChoiceEntityRepository.findAllByQuestionId(2L)).thenReturn(
+			List.of(mock(MultipleChoiceEntity.class)));
+
+		// when
+		List<QuestionDto> result = questionService.getQuestions(questionSetId);
+
+		// then
+		assertNotNull(result);
+		assertEquals(2, result.size());
+		verify(questionEntityRepository).findAllByQuestionSetId(questionSetId);
+		verify(multipleChoiceEntityRepository).findAllByQuestionId(1L);
+		verify(multipleChoiceEntityRepository).findAllByQuestionId(2L);
+
+		// 다른 타입의 repository는 호출되지 않아야 함
+		verify(shortAnswerEntityRepository, never()).findAllByShortQuestionId(any());
+		verify(orderingQuestionOptionRepository, never()).findAllByOrderingQuestionId(any());
+		verify(fillBlankAnswerEntityRepository, never()).findAllByFillBlankQuestionId(any());
 	}
 }

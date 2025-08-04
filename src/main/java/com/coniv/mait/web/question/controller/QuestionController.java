@@ -1,5 +1,7 @@
 package com.coniv.mait.web.question.controller;
 
+import java.util.List;
+
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -45,5 +47,15 @@ public class QuestionController {
 		@PathVariable("questionId") final Long questionId) {
 		return ResponseEntity.ok(
 			ApiResponse.ok(QuestionApiResponse.from(questionService.getQuestion(questionSetId, questionId))));
+	}
+
+	@Operation(summary = "문제 셋에 속한 모든 문제 조회 API")
+	@GetMapping
+	public ResponseEntity<ApiResponse<List<QuestionApiResponse>>> getQuestions(
+		@PathVariable("questionSetId") final Long questionSetId) {
+		final List<QuestionApiResponse> result = questionService.getQuestions(questionSetId).stream()
+			.map(QuestionApiResponse::from)
+			.toList();
+		return ResponseEntity.ok(ApiResponse.ok(result));
 	}
 }
