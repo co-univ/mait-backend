@@ -33,11 +33,11 @@ public class QuestionControlService {
 		checkQuestionSetIsOnLive(question.getQuestionSet());
 
 		question.updateQuestionStatus(QuestionStatusType.ACCESS_PERMISSION);
-		QuestionStatusMessage message = new QuestionStatusMessage(
-			questionSetId,
-			questionId,
-			QuestionStatusType.ACCESS_PERMISSION
-		);
+		QuestionStatusMessage message = QuestionStatusMessage.builder()
+			.questionSetId(questionSetId)
+			.questionId(questionId)
+			.statusType(QuestionStatusType.ACCESS_PERMISSION)
+			.build();
 
 		questionWebSocketController.broadcastQuestionStatus(questionSetId, message);
 	}
@@ -53,11 +53,11 @@ public class QuestionControlService {
 		checkQuestionSetIsOnLive(question.getQuestionSet());
 
 		question.updateQuestionStatus(QuestionStatusType.SOLVE_PERMISSION);
-		QuestionStatusMessage message = new QuestionStatusMessage(
-			questionSetId,
-			questionId,
-			QuestionStatusType.SOLVE_PERMISSION
-		);
+		QuestionStatusMessage message = QuestionStatusMessage.builder()
+			.questionSetId(questionSetId)
+			.questionId(questionId)
+			.statusType(QuestionStatusType.SOLVE_PERMISSION)
+			.build();
 
 		questionWebSocketController.broadcastQuestionStatus(questionSetId, message);
 	}
