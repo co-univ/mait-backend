@@ -5,7 +5,6 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.coniv.mait.domain.question.dto.QuestionStatusMessage;
 import com.coniv.mait.domain.question.entity.QuestionEntity;
-import com.coniv.mait.domain.question.entity.QuestionSetEntity;
 import com.coniv.mait.domain.question.enums.QuestionStatusType;
 import com.coniv.mait.domain.question.repository.QuestionEntityRepository;
 import com.coniv.mait.web.question.controller.QuestionWebSocketController;
@@ -30,7 +29,7 @@ public class QuestionControlService {
 		QuestionEntity question = questionEntityRepository.findById(questionId)
 			.orElseThrow(() -> new EntityNotFoundException("Question not found with id: " + questionId));
 		checkQuestionBelongsToSet(questionSetId, question);
-		checkQuestionSetIsOnLive(question.getQuestionSet());
+		// checkQuestionSetIsOnLive(question.getQuestionSet()); //TODO: 비즈니스 익셉션 추가 후 주석 해제
 
 		question.updateQuestionStatus(QuestionStatusType.ACCESS_PERMISSION);
 		QuestionStatusMessage message = QuestionStatusMessage.builder()
@@ -50,7 +49,7 @@ public class QuestionControlService {
 		QuestionEntity question = questionEntityRepository.findById(questionId)
 			.orElseThrow(() -> new EntityNotFoundException("Question not found with id: " + questionId));
 		checkQuestionBelongsToSet(questionSetId, question);
-		checkQuestionSetIsOnLive(question.getQuestionSet());
+		// checkQuestionSetIsOnLive(question.getQuestionSet()); //TODO: 비즈니스 익셉션 추가 후 주석 해제
 
 		question.updateQuestionStatus(QuestionStatusType.SOLVE_PERMISSION);
 		QuestionStatusMessage message = QuestionStatusMessage.builder()
@@ -71,11 +70,12 @@ public class QuestionControlService {
 		}
 	}
 
-	private void checkQuestionSetIsOnLive(QuestionSetEntity questionSet) {
+	//TODO: 비즈니스 익셉션 추가 후 주석 해제
+	/*private void checkQuestionSetIsOnLive(QuestionSetEntity questionSet) {
 		if (!questionSet.isOnLive()) {
 			throw new IllegalArgumentException("QuestionSet with id " + questionSet.getId() + " is not on live.");
 		}
-	}
+	}*/
 
 	//TODO: 신청 관리자가 해당 팀의 관리자인지 확인하는 로직 추가 필요
 }
