@@ -23,12 +23,7 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
 	public void registerStompEndpoints(StompEndpointRegistry registry) {
 		// WebSocket 연결을 위한 엔드포인트 설정
 		registry.addEndpoint("/ws")
-			.setAllowedOrigins(
-				"http://localhost:3000",           // 로컬 개발 환경
-				"https://localhost:3000",          // 로컬 HTTPS 개발 환경
-				"https://dev.mait.kr",             // 개발 프론트엔드
-				"https://mait.kr"                  // 프로덕션 프론트엔드
-			)  // 프론트엔드 도메인들 허용
+			.setAllowedOriginPatterns("*")  // CORS 설정: 모든 출처에서의 연결 허용
 			.withSockJS();  // SockJS fallback 옵션
 	}
 }
