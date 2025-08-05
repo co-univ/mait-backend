@@ -12,7 +12,7 @@ import lombok.Getter;
 @AllArgsConstructor
 public class ShortQuestionSubmitAnswer implements SubmitAnswerDto<String> {
 
-	@Schema(description = "사용자가 입력한 답변")
+	@Schema(description = "사용자가 입력한 답변", requiredMode = Schema.RequiredMode.REQUIRED)
 	private List<String> submitAnswers;
 
 	@Override
