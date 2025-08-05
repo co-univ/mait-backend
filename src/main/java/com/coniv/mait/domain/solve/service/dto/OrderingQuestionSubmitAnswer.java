@@ -10,18 +10,18 @@ import lombok.Getter;
 
 @Getter
 @AllArgsConstructor
-public class ShortQuestionSubmitAnswer implements SubmitAnswerDto<String> {
+public class OrderingQuestionSubmitAnswer implements SubmitAnswerDto<Long> {
 
-	@Schema(description = "사용자가 입력한 답변", requiredMode = Schema.RequiredMode.REQUIRED)
-	private List<String> submitAnswers;
+	@Schema(description = "사용자가 입력한 답변 순서", requiredMode = Schema.RequiredMode.REQUIRED)
+	private List<Long> submitAnswers;
 
 	@Override
 	public QuestionType getType() {
-		return QuestionType.SHORT;
+		return QuestionType.ORDERING;
 	}
 
 	@Override
-	public List<String> getSubmitAnswers() {
+	public List<Long> getSubmitAnswers() {
 		return submitAnswers;
 	}
 }
