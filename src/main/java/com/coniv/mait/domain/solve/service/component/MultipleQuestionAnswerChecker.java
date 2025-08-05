@@ -1,0 +1,46 @@
+package com.coniv.mait.domain.solve.service.component;
+
+import java.util.HashSet;
+import java.util.Set;
+import java.util.stream.Collectors;
+
+import org.apache.commons.collections4.SetUtils;
+import org.springframework.stereotype.Component;
+
+import com.coniv.mait.domain.question.entity.MultipleChoiceEntity;
+import com.coniv.mait.domain.question.entity.QuestionEntity;
+import com.coniv.mait.domain.question.enums.QuestionType;
+import com.coniv.mait.domain.question.repository.MultipleChoiceEntityRepository;
+import com.coniv.mait.domain.solve.service.dto.MultipleQuestionSubmitAnswer;
+import com.coniv.mait.domain.solve.service.dto.SubmitAnswerDto;
+
+import lombok.RequiredArgsConstructor;
+
+@Component
+@RequiredArgsConstructor
+public class MultipleQuestionAnswerChecker implements AnswerChecker {
+
+	private final MultipleChoiceEntityRepository multipleChoiceEntityRepository;
+
+	@Override
+	public QuestionType getQuestionType() {
+		return QuestionType.MULTIPLE;
+	}
+
+	@Override
+	public boolean checkAnswer(final QuestionEntity question, final SubmitAnswerDto request) {
+		Set<Long> answerIds = multipleChoiceEntityRepository.findAllByQuestionId(question.getId()).stream()
+			.map(MultipleChoiceEntity::getId)
+			.collect(Collectors.toSet());
+
+		if (request.getType() != QuestionType.MULTIPLE) {
+			throw new IllegalArgumentException("Invalid question type for MultipleQuestionAnswerChecker");
+		}
+
+		MultipleQuestionSubmitAnswer submitAnswer = (MultipleQuestionSubmitAnswer)request;
+
+		Set<Long> submitAnswerIds = new HashSet<>(submitAnswer.getSelectedChoiceIds());
+
+		return SetUtils.isEqualSet(answerIds, submitAnswerIds);
+	}
+}
