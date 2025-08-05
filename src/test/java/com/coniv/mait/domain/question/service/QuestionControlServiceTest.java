@@ -12,6 +12,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import com.coniv.mait.domain.question.dto.QuestionStatusMessage;
 import com.coniv.mait.domain.question.entity.QuestionEntity;
 import com.coniv.mait.domain.question.entity.QuestionSetEntity;
 import com.coniv.mait.domain.question.enums.QuestionStatusType;
@@ -56,7 +57,8 @@ class QuestionControlServiceTest {
 
 		// then
 		verify(questionEntity).updateQuestionStatus(QuestionStatusType.ACCESS_PERMISSION);
-		verify(questionWebSocketController).broadcastQuestionStatus(eq(questionSetId), any());
+		verify(questionWebSocketController).broadcastQuestionStatus(eq(questionSetId),
+			any(QuestionStatusMessage.class));
 	}
 
 	@Test
@@ -76,7 +78,8 @@ class QuestionControlServiceTest {
 
 		// then
 		verify(questionEntity).updateQuestionStatus(QuestionStatusType.SOLVE_PERMISSION);
-		verify(questionWebSocketController).broadcastQuestionStatus(eq(questionSetId), any());
+		verify(questionWebSocketController).broadcastQuestionStatus(eq(questionSetId),
+			any(QuestionStatusMessage.class));
 	}
 
 	@Test
