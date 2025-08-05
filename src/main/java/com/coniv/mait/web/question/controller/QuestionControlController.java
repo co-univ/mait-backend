@@ -9,13 +9,13 @@ import org.springframework.web.bind.annotation.RestController;
 import com.coniv.mait.domain.question.service.QuestionControlService;
 import com.coniv.mait.global.response.ApiResponse;
 
+import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 
+@Tag(name = "Question-control", description = "문제 제어 API")
 @RestController
 @RequestMapping("/api/v1/question-sets/{questionSetId}")
 @RequiredArgsConstructor
-@Slf4j
 public class QuestionControlController {
 
 	private final QuestionControlService questionControlService;
