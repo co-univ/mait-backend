@@ -18,7 +18,7 @@ import lombok.RequiredArgsConstructor;
 
 @Component
 @RequiredArgsConstructor
-public class MultipleQuestionAnswerChecker implements AnswerChecker {
+public class MultipleQuestionAnswerChecker implements AnswerChecker<Long> {
 
 	private final MultipleChoiceEntityRepository multipleChoiceEntityRepository;
 
@@ -28,7 +28,7 @@ public class MultipleQuestionAnswerChecker implements AnswerChecker {
 	}
 
 	@Override
-	public boolean checkAnswer(final QuestionEntity question, final SubmitAnswerDto request) {
+	public boolean checkAnswer(final QuestionEntity question, final SubmitAnswerDto<Long> request) {
 		Set<Long> answerIds = multipleChoiceEntityRepository.findAllByQuestionId(question.getId()).stream()
 			.map(MultipleChoiceEntity::getNumber)
 			.map(Long::valueOf)
