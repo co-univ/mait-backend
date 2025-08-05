@@ -41,6 +41,9 @@ public class QuestionAnswerSubmitService {
 		final QuestionEntity question = questionEntityRepository.findById(questionId)
 			.orElseThrow(() -> new EntityNotFoundException("문제를 찾을 수 없습니다."));
 
+		// Todo: 문제 상태 검증 로직 추가
+		// Todo: 유저가 해당 QuestionSet에 접근할 권한이 있는지 확인
+
 		if (!question.getQuestionSet().getId().equals(questionSetId)) {
 			throw new ResourceNotBelongException("문제 세트와 문제 ID가 일치하지 않습니다.");
 		}
