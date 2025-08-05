@@ -10,10 +10,14 @@ import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.Setter;
+import lombok.experimental.SuperBuilder;
 
 @Getter
+@Setter
 @AllArgsConstructor
 @NoArgsConstructor
+@SuperBuilder
 public class ShortQuestionSubmitApiRequest extends QuestionAnswerSubmitApiRequest {
 
 	@NotNull(message = "주관식 문제의 답변은 필수입니다.")
