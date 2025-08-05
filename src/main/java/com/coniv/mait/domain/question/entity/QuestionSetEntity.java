@@ -56,7 +56,7 @@ public class QuestionSetEntity extends BaseTimeEntity {
 
 	@Enumerated(EnumType.STRING)
 	@Builder.Default
-	private QuestionSetLiveStatus questionSetLiveStatus = QuestionSetLiveStatus.BEFORE_LIVE;
+	private QuestionSetLiveStatus liveStatus = QuestionSetLiveStatus.BEFORE_LIVE;
 
 	private QuestionSetEntity(String subject, QuestionSetCreationType creationType) {
 		this.subject = subject;
@@ -71,6 +71,6 @@ public class QuestionSetEntity extends BaseTimeEntity {
 	}
 
 	public boolean isOnLive() {
-		return questionSetLiveStatus == QuestionSetLiveStatus.LIVE && deliveryMode == DeliveryMode.LIVE_TIME;
+		return liveStatus == QuestionSetLiveStatus.LIVE && deliveryMode == DeliveryMode.LIVE_TIME;
 	}
 }

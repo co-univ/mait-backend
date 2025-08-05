@@ -64,7 +64,7 @@ public class QuestionControlService {
 
 	private void checkQuestionBelongsToSet(Long questionSetId, QuestionEntity question) {
 		if (!question.getQuestionSet().getId().equals(questionSetId)) {
-			throw new IllegalArgumentException(
+			throw new IllegalStateException(
 				"Question with id " + question.getQuestionSet().getId() + " does not belong to Set with id "
 					+ questionSetId
 			);
@@ -73,7 +73,7 @@ public class QuestionControlService {
 
 	private void checkQuestionSetIsOnLive(QuestionSetEntity questionSet) {
 		if (!questionSet.isOnLive()) {
-			throw new IllegalArgumentException("QuestionSet with id " + questionSet.getId() + " is not on live.");
+			throw new IllegalStateException("QuestionSet with id " + questionSet.getId() + " is not on live.");
 		}
 	}
 
