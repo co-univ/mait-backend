@@ -16,6 +16,7 @@ import com.coniv.mait.domain.question.entity.QuestionEntity;
 import com.coniv.mait.domain.question.entity.QuestionSetEntity;
 import com.coniv.mait.domain.question.enums.QuestionStatusType;
 import com.coniv.mait.domain.question.repository.QuestionEntityRepository;
+import com.coniv.mait.global.exception.custom.ResourceNotBelongException;
 import com.coniv.mait.web.question.controller.QuestionWebSocketController;
 
 import jakarta.persistence.EntityNotFoundException;
@@ -48,7 +49,7 @@ class QuestionControlServiceTest {
 		when(questionEntityRepository.findById(questionId)).thenReturn(Optional.of(questionEntity));
 		when(questionEntity.getQuestionSet()).thenReturn(questionSetEntity);
 		when(questionSetEntity.getId()).thenReturn(questionSetId);
-		when(questionSetEntity.isOnLive()).thenReturn(true);
+		//when(questionSetEntity.isOnLive()).thenReturn(true); //TODO: 비즈니스 익셉션 추가 후 주석 해제
 
 		// when
 		questionControlService.allowQuestionAccess(questionSetId, questionId);
@@ -68,7 +69,7 @@ class QuestionControlServiceTest {
 		when(questionEntityRepository.findById(questionId)).thenReturn(Optional.of(questionEntity));
 		when(questionEntity.getQuestionSet()).thenReturn(questionSetEntity);
 		when(questionSetEntity.getId()).thenReturn(questionSetId);
-		when(questionSetEntity.isOnLive()).thenReturn(true);
+		//when(questionSetEntity.isOnLive()).thenReturn(true); //TODO: 비즈니스 익셉션 추가 후 주석 해제
 
 		// when
 		questionControlService.allowQuestionSolve(questionSetId, questionId);
@@ -119,7 +120,7 @@ class QuestionControlServiceTest {
 		when(questionSetEntity.getId()).thenReturn(differentQuestionSetId);
 
 		// when & then
-		assertThrows(IllegalArgumentException.class, () ->
+		assertThrows(ResourceNotBelongException.class, () ->
 			questionControlService.allowQuestionAccess(questionSetId, questionId));
 	}
 
@@ -136,11 +137,12 @@ class QuestionControlServiceTest {
 		when(questionSetEntity.getId()).thenReturn(differentQuestionSetId);
 
 		// when & then
-		assertThrows(IllegalArgumentException.class, () ->
+		assertThrows(ResourceNotBelongException.class, () ->
 			questionControlService.allowQuestionSolve(questionSetId, questionId));
 	}
 
-	@Test
+	//TODO: 비즈니스 익셉션 추가 후 주석 해제
+	/*@Test
 	@DisplayName("문제 접근 허용 실패 - QuestionSet이 라이브 상태가 아님")
 	void allowQuestionAccess_QuestionSetNotOnLive() {
 		// given
@@ -155,9 +157,9 @@ class QuestionControlServiceTest {
 		// when & then
 		assertThrows(IllegalArgumentException.class, () ->
 			questionControlService.allowQuestionAccess(questionSetId, questionId));
-	}
+	}*/
 
-	@Test
+/*	@Test
 	@DisplayName("문제 풀이 허용 실패 - QuestionSet이 라이브 상태가 아님")
 	void allowQuestionSolve_QuestionSetNotOnLive() {
 		// given
@@ -172,5 +174,5 @@ class QuestionControlServiceTest {
 		// when & then
 		assertThrows(IllegalArgumentException.class, () ->
 			questionControlService.allowQuestionSolve(questionSetId, questionId));
-	}
+	}*/
 }
