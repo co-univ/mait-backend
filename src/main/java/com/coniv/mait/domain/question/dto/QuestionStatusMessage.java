@@ -1,6 +1,6 @@
 package com.coniv.mait.domain.question.dto;
 
-import com.coniv.mait.domain.question.enums.QuizStatusType;
+import com.coniv.mait.domain.question.enums.QuestionStatusType;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -12,5 +12,5 @@ import lombok.NoArgsConstructor;
 public class QuestionStatusMessage {
 	private Long questionSetId;
 	private Long questionId;
-	private QuizStatusType statusType;
+	private QuestionStatusType statusType;
 }
