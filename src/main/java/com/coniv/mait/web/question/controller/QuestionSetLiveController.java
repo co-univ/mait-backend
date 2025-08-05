@@ -17,7 +17,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 @RestController
-@RequestMapping("/api/question-sets")
+@RequestMapping("/api/v1/question-sets")
 @RequiredArgsConstructor
 @Slf4j
 @Tag(name = "QuestionSet Live Control", description = "실시간 문제셋 제어 API")
