@@ -2,6 +2,7 @@ package com.coniv.mait.domain.question.entity;
 
 import com.coniv.mait.domain.question.enums.DeliveryMode;
 import com.coniv.mait.domain.question.enums.QuestionSetCreationType;
+import com.coniv.mait.domain.question.enums.QuestionSetLiveStatus;
 import com.coniv.mait.domain.question.enums.QuestionSetVisibility;
 import com.coniv.mait.global.entity.BaseTimeEntity;
 
@@ -52,6 +53,10 @@ public class QuestionSetEntity extends BaseTimeEntity {
 
 	// @Column(nullable = false)
 	private Long teamId;
+
+	@Enumerated(EnumType.STRING)
+	@Builder.Default
+	private QuestionSetLiveStatus questionSetLiveStatus = QuestionSetLiveStatus.BEFORE_LIVE;
 
 	private QuestionSetEntity(String subject, QuestionSetCreationType creationType) {
 		this.subject = subject;
