@@ -56,4 +56,8 @@ public abstract class QuestionEntity {
 	@ManyToOne(fetch = FetchType.LAZY)
 	@JoinColumn(name = "question_set_id")
 	private QuestionSetEntity questionSet;
+
+	public void updateQuestionStatus(QuestionStatusType questionStatus) {
+		this.questionStatus = questionStatus;
+	}
 }

@@ -28,6 +28,7 @@ public class QuestionControlService {
 			.orElseThrow(() -> new EntityNotFoundException("Question not found with id: " + questionId));
 		checkQuestionBelongsToSet(questionSetId, question);
 
+		question.updateQuestionStatus(QuestionStatusType.ACCESS_PERMISSION);
 		QuestionStatusMessage message = new QuestionStatusMessage(
 			questionSetId,
 			questionId,
@@ -45,6 +46,7 @@ public class QuestionControlService {
 			.orElseThrow(() -> new EntityNotFoundException("Question not found with id: " + questionId));
 		checkQuestionBelongsToSet(questionSetId, question);
 
+		question.updateQuestionStatus(QuestionStatusType.SOLVE_PERMISSION);
 		QuestionStatusMessage message = new QuestionStatusMessage(
 			questionSetId,
 			questionId,
