@@ -35,12 +35,13 @@ class MultipleQuestionAnswerCheckerTest {
 
 		when(multipleChoiceEntityRepository.findAllByQuestionId(1L))
 			.thenReturn(List.of(
-				MultipleChoiceEntity.builder().number(1).build(),
-				MultipleChoiceEntity.builder().number(2).build(),
-				MultipleChoiceEntity.builder().number(3).build()
+				MultipleChoiceEntity.builder().number(1).isCorrect(true).build(),
+				MultipleChoiceEntity.builder().number(2).isCorrect(true).build(),
+				MultipleChoiceEntity.builder().number(3).isCorrect(false).build()
 			));
 
-		MultipleQuestionSubmitAnswer submitAnswer = new MultipleQuestionSubmitAnswer(List.of(1L, 2L, 3L));
+		// 정답만 제출
+		MultipleQuestionSubmitAnswer submitAnswer = new MultipleQuestionSubmitAnswer(List.of(1L, 2L));
 
 		// when
 		boolean result = checker.checkAnswer(question, submitAnswer);

@@ -10,6 +10,7 @@ import org.springframework.stereotype.Component;
 
 import com.coniv.mait.domain.question.entity.QuestionEntity;
 import com.coniv.mait.domain.question.enums.QuestionType;
+import com.coniv.mait.domain.solve.service.dto.FillBlankSubmitAnswer;
 import com.coniv.mait.domain.solve.service.dto.SubmitAnswerDto;
 
 @Component
@@ -35,6 +36,11 @@ public class AnswerGrader {
 				return ((AnswerChecker<Long>)checker).checkAnswer(question, (SubmitAnswerDto<Long>)submitAnswer);
 			case SHORT:
 				return ((AnswerChecker<String>)checker).checkAnswer(question, (SubmitAnswerDto<String>)submitAnswer);
+			case FILL_BLANK:
+				return ((AnswerChecker<FillBlankSubmitAnswer>)checker).checkAnswer(question,
+					(SubmitAnswerDto<FillBlankSubmitAnswer>)submitAnswer);
+			case ORDERING:
+				return ((AnswerChecker<Long>)checker).checkAnswer(question, (SubmitAnswerDto<Long>)submitAnswer);
 			default:
 				throw new IllegalArgumentException("지원하지 않는 문제 유형입니다: " + question.getType());
 		}

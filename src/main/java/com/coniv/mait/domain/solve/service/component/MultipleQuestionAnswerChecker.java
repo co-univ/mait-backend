@@ -29,7 +29,8 @@ public class MultipleQuestionAnswerChecker implements AnswerChecker<Long> {
 
 	@Override
 	public boolean checkAnswer(final QuestionEntity question, final SubmitAnswerDto<Long> request) {
-		Set<Long> answerIds = multipleChoiceEntityRepository.findAllByQuestionId(question.getId()).stream()
+		Set<Long> answerNumbers = multipleChoiceEntityRepository.findAllByQuestionId(question.getId()).stream()
+			.filter(MultipleChoiceEntity::isCorrect)
 			.map(MultipleChoiceEntity::getNumber)
 			.map(Long::valueOf)
 			.collect(Collectors.toSet());
@@ -40,8 +41,8 @@ public class MultipleQuestionAnswerChecker implements AnswerChecker<Long> {
 
 		MultipleQuestionSubmitAnswer submitAnswer = (MultipleQuestionSubmitAnswer)request;
 
-		Set<Long> submitAnswerIds = new HashSet<>(submitAnswer.getSelectedChoiceNumbers());
+		Set<Long> submitAnswerNumbers = new HashSet<>(submitAnswer.getSelectedChoiceNumbers());
 
-		return SetUtils.isEqualSet(answerIds, submitAnswerIds);
+		return SetUtils.isEqualSet(answerNumbers, submitAnswerNumbers);
 	}
 }
