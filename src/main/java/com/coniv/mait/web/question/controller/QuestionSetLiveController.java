@@ -17,7 +17,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 @RestController
-@RequestMapping("/api/v1/question-sets")
+@RequestMapping("/api/v1/question-sets/{questionSetId}/live-status")
 @RequiredArgsConstructor
 @Slf4j
 @Tag(name = "QuestionSet Live Control", description = "실시간 문제셋 제어 API")
@@ -26,7 +26,7 @@ public class QuestionSetLiveController {
 	private final QuestionSetLiveControlService questionSetLiveControlService;
 
 	@Operation(summary = "실시간 문제셋 시작")
-	@PatchMapping("/{questionSetId}/live/start")
+	@PatchMapping("/start")
 	public ResponseEntity<Void> startLiveQuestionSet(
 		@PathVariable Long questionSetId) {
 		questionSetLiveControlService.startLiveQuestionSet(questionSetId);
@@ -34,7 +34,7 @@ public class QuestionSetLiveController {
 	}
 
 	@Operation(summary = "실시간 문제셋 종료")
-	@PatchMapping("/{questionSetId}/live/end")
+	@PatchMapping("/end")
 	public ResponseEntity<Void> endLiveQuestionSet(
 		@PathVariable Long questionSetId) {
 		questionSetLiveControlService.endLiveQuestionSet(questionSetId);
@@ -42,7 +42,7 @@ public class QuestionSetLiveController {
 	}
 
 	@Operation(summary = "실시간 문제셋 상태 조회")
-	@GetMapping("/{questionSetId}/live/status")
+	@GetMapping
 	public ResponseEntity<QuestionSetLiveStatusResponse> getLiveStatus(
 		@PathVariable Long questionSetId) {
 		QuestionSetLiveStatus status = questionSetLiveControlService.getLiveStatus(questionSetId);
