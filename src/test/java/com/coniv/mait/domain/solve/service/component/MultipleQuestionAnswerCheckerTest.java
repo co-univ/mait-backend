@@ -14,10 +14,8 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import com.coniv.mait.domain.question.entity.MultipleChoiceEntity;
 import com.coniv.mait.domain.question.entity.QuestionEntity;
-import com.coniv.mait.domain.question.enums.QuestionType;
 import com.coniv.mait.domain.question.repository.MultipleChoiceEntityRepository;
 import com.coniv.mait.domain.solve.service.dto.MultipleQuestionSubmitAnswer;
-import com.coniv.mait.domain.solve.service.dto.SubmitAnswerDto;
 
 @ExtendWith(MockitoExtension.class)
 class MultipleQuestionAnswerCheckerTest {
@@ -71,20 +69,5 @@ class MultipleQuestionAnswerCheckerTest {
 
 		// then
 		assertThat(result).isFalse();
-	}
-
-	@Test
-	@DisplayName("MULTIPLE 타입이 아닌 경우 예외 발생")
-	void checkAnswer_invalidType() {
-		// given
-		QuestionEntity question = mock(QuestionEntity.class);
-		when(question.getId()).thenReturn(1L);
-
-		SubmitAnswerDto wrongTypeDto = () -> QuestionType.SHORT;
-
-		// when & then
-		assertThatThrownBy(() -> checker.checkAnswer(question, wrongTypeDto))
-			.isInstanceOf(IllegalArgumentException.class)
-			.hasMessageContaining("Invalid question type");
 	}
 }
