@@ -30,7 +30,8 @@ public class MultipleQuestionAnswerChecker implements AnswerChecker {
 	@Override
 	public boolean checkAnswer(final QuestionEntity question, final SubmitAnswerDto request) {
 		Set<Long> answerIds = multipleChoiceEntityRepository.findAllByQuestionId(question.getId()).stream()
-			.map(MultipleChoiceEntity::getId)
+			.map(MultipleChoiceEntity::getNumber)
+			.map(Long::valueOf)
 			.collect(Collectors.toSet());
 
 		if (request.getType() != QuestionType.MULTIPLE) {
@@ -39,7 +40,7 @@ public class MultipleQuestionAnswerChecker implements AnswerChecker {
 
 		MultipleQuestionSubmitAnswer submitAnswer = (MultipleQuestionSubmitAnswer)request;
 
-		Set<Long> submitAnswerIds = new HashSet<>(submitAnswer.getSelectedChoiceIds());
+		Set<Long> submitAnswerIds = new HashSet<>(submitAnswer.getSelectedChoiceNumbers());
 
 		return SetUtils.isEqualSet(answerIds, submitAnswerIds);
 	}

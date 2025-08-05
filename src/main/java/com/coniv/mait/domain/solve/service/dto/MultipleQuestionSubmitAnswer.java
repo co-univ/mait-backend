@@ -11,9 +11,9 @@ import lombok.Getter;
 @Getter
 public class MultipleQuestionSubmitAnswer implements SubmitAnswerDto {
 
-	@Schema(description = "선택한 번호 PK 목록")
+	@Schema(description = "선택한 번호 목록")
 	@NotEmpty(message = "선택한 번호를 입력해주세요.")
-	private List<Long> selectedChoiceIds;
+	private List<Long> selectedChoiceNumbers;
 
 	@Override
 	public QuestionType getType() {
