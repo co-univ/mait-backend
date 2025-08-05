@@ -11,6 +11,7 @@ import com.coniv.mait.domain.solve.service.QuestionAnswerSubmitService;
 import com.coniv.mait.global.response.ApiResponse;
 import com.coniv.mait.web.solve.dto.QuestionAnswerSubmitApiRequest;
 import com.coniv.mait.web.solve.dto.QuestionAnswerSubmitApiResponse;
+import com.fasterxml.jackson.core.JsonProcessingException;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -29,7 +30,8 @@ public class QuestionAnswerSubmitController {
 	@PostMapping("/submit")
 	public ResponseEntity<ApiResponse<QuestionAnswerSubmitApiResponse>> submitAnswer(
 		@Valid @RequestBody QuestionAnswerSubmitApiRequest request,
-		@PathVariable("questionSetId") Long questionSetId, @PathVariable("questionId") Long questionId) {
+		@PathVariable("questionSetId") Long questionSetId, @PathVariable("questionId") Long questionId) throws
+		JsonProcessingException {
 		return ResponseEntity.ok().body(ApiResponse.ok(
 			QuestionAnswerSubmitApiResponse.from(questionAnswerSubmitService.submitAnswer(questionSetId, questionId,
 				request.getUserId(),

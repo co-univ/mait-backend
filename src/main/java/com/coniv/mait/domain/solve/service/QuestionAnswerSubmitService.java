@@ -13,6 +13,7 @@ import com.coniv.mait.domain.solve.service.dto.AnswerSubmitDto;
 import com.coniv.mait.domain.solve.service.dto.SubmitAnswerDto;
 import com.coniv.mait.domain.user.entity.UserEntity;
 import com.coniv.mait.global.exception.custom.ResourceNotBelongException;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import jakarta.persistence.EntityNotFoundException;
@@ -34,7 +35,7 @@ public class QuestionAnswerSubmitService {
 
 	@Transactional
 	public AnswerSubmitDto submitAnswer(final Long questionSetId, final Long questionId, final Long userId,
-		final SubmitAnswerDto submitAnswer) {
+		final SubmitAnswerDto<?> submitAnswer) throws JsonProcessingException {
 		final UserEntity user = userEntityRepository.findById(userId)
 			.orElseThrow(() -> new EntityNotFoundException("사용자를 찾을 수 없습니다."));
 
@@ -54,7 +55,7 @@ public class QuestionAnswerSubmitService {
 			.userId(user.getId())
 			.questionId(question.getId())
 			.isCorrect(isCorrect)
-			.submittedAnswer(objectMapper.convertValue(submitAnswer, String.class))
+			.submittedAnswer(objectMapper.writeValueAsString(submitAnswer))
 			.build();
 
 		answerSubmitRecordEntityRepository.save(submitRecord);
