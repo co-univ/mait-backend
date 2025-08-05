@@ -25,7 +25,7 @@ import com.coniv.mait.domain.question.enums.QuestionSetCreationType;
 import com.coniv.mait.domain.question.enums.QuestionType;
 import com.coniv.mait.domain.question.repository.FillBlankAnswerEntityRepository;
 import com.coniv.mait.domain.question.repository.MultipleChoiceEntityRepository;
-import com.coniv.mait.domain.question.repository.OrderingQuestionOptionRepository;
+import com.coniv.mait.domain.question.repository.OrderingOptionRepository;
 import com.coniv.mait.domain.question.repository.QuestionEntityRepository;
 import com.coniv.mait.domain.question.repository.QuestionSetEntityRepository;
 import com.coniv.mait.domain.question.repository.ShortAnswerEntityRepository;
@@ -54,7 +54,7 @@ public class QuestionApiIntegrationTest extends BaseIntegrationTest {
 	private ShortAnswerEntityRepository shortAnswerEntityRepository;
 
 	@Autowired
-	private OrderingQuestionOptionRepository orderingQuestionOptionRepository;
+	private OrderingOptionRepository orderingOptionRepository;
 
 	@Autowired
 	private FillBlankAnswerEntityRepository fillBlankAnswerEntityRepository;
@@ -63,7 +63,7 @@ public class QuestionApiIntegrationTest extends BaseIntegrationTest {
 	void setUp() {
 		shortAnswerEntityRepository.deleteAll();
 		multipleChoiceEntityRepository.deleteAll();
-		orderingQuestionOptionRepository.deleteAll();
+		orderingOptionRepository.deleteAll();
 		fillBlankAnswerEntityRepository.deleteAll();
 		questionEntityRepository.deleteAll();
 		questionSetEntityRepository.deleteAll();
@@ -311,7 +311,7 @@ public class QuestionApiIntegrationTest extends BaseIntegrationTest {
 		assertThat(savedQuestion.getNumber()).isEqualTo(questionNumber);
 		assertThat(savedQuestion.getQuestionSet().getId()).isEqualTo(savedQuestionSet.getId());
 
-		List<OrderingOptionEntity> savedOptions = orderingQuestionOptionRepository.findAll();
+		List<OrderingOptionEntity> savedOptions = orderingOptionRepository.findAll();
 		assertThat(savedOptions).hasSize(4);
 		assertThat(savedOptions).extracting("content")
 			.containsExactlyInAnyOrder("첫 번째 단계", "두 번째 단계", "세 번째 단계", "네 번째 단계");
@@ -563,7 +563,7 @@ public class QuestionApiIntegrationTest extends BaseIntegrationTest {
 				.answerOrder(1)
 				.build()
 		);
-		orderingQuestionOptionRepository.saveAll(options);
+		orderingOptionRepository.saveAll(options);
 
 		// when & then
 		mockMvc.perform(get("/api/v1/question-sets/{questionSetId}/questions/{questionId}",
@@ -716,7 +716,7 @@ public class QuestionApiIntegrationTest extends BaseIntegrationTest {
 				.answerOrder(2)
 				.build()
 		);
-		orderingQuestionOptionRepository.saveAll(options);
+		orderingOptionRepository.saveAll(options);
 
 		// 빈칸 문제 생성 (number: 4)
 		FillBlankQuestionEntity fillBlankQuestion = FillBlankQuestionEntity.builder()
