@@ -7,6 +7,7 @@ import com.coniv.mait.domain.question.dto.QuestionStatusMessage;
 import com.coniv.mait.domain.question.entity.QuestionEntity;
 import com.coniv.mait.domain.question.enums.QuestionStatusType;
 import com.coniv.mait.domain.question.repository.QuestionEntityRepository;
+import com.coniv.mait.global.exception.custom.ResourceNotBelongException;
 import com.coniv.mait.web.question.controller.QuestionWebSocketController;
 
 import jakarta.persistence.EntityNotFoundException;
@@ -63,7 +64,7 @@ public class QuestionControlService {
 
 	private void checkQuestionBelongsToSet(Long questionSetId, QuestionEntity question) {
 		if (!question.getQuestionSet().getId().equals(questionSetId)) {
-			throw new IllegalArgumentException(
+			throw new ResourceNotBelongException(
 				"Question with id " + question.getQuestionSet().getId() + " does not belong to Set with id "
 					+ questionSetId
 			);
