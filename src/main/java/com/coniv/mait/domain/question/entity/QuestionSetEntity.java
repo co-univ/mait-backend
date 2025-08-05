@@ -69,4 +69,8 @@ public class QuestionSetEntity extends BaseTimeEntity {
 			.creationType(creationType)
 			.build();
 	}
+
+	public boolean isOnLive() {
+		return questionSetLiveStatus == QuestionSetLiveStatus.LIVE && deliveryMode == DeliveryMode.LIVE_TIME;
+	}
 }
