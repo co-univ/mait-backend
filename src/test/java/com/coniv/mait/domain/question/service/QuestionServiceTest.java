@@ -26,7 +26,7 @@ import com.coniv.mait.domain.question.entity.ShortQuestionEntity;
 import com.coniv.mait.domain.question.enums.QuestionType;
 import com.coniv.mait.domain.question.repository.FillBlankAnswerEntityRepository;
 import com.coniv.mait.domain.question.repository.MultipleChoiceEntityRepository;
-import com.coniv.mait.domain.question.repository.OrderingOptionRepository;
+import com.coniv.mait.domain.question.repository.OrderingOptionEntityRepository;
 import com.coniv.mait.domain.question.repository.QuestionEntityRepository;
 import com.coniv.mait.domain.question.repository.QuestionSetEntityRepository;
 import com.coniv.mait.domain.question.repository.ShortAnswerEntityRepository;
@@ -73,7 +73,7 @@ class QuestionServiceTest {
 	@Mock
 	private OrderingQuestionFactory orderingQuestionFactory;
 	@Mock
-	private OrderingOptionRepository orderingOptionRepository;
+	private OrderingOptionEntityRepository orderingOptionEntityRepository;
 
 	@Mock
 	private FillBlankQuestionFactory fillBlankQuestionFactory;
@@ -217,7 +217,7 @@ class QuestionServiceTest {
 		verify(questionEntityRepository).save(orderingQuestionEntity);
 		verify(orderingQuestionFactory).create(orderingQuestionDto, questionSetEntity);
 		verify(orderingQuestionFactory).createOrderingQuestionOptions(optionDtos, orderingQuestionEntity);
-		verify(orderingOptionRepository).saveAll(optionEntities);
+		verify(orderingOptionEntityRepository).saveAll(optionEntities);
 	}
 
 	@Test
@@ -232,7 +232,7 @@ class QuestionServiceTest {
 		assertThrows(EntityNotFoundException.class,
 			() -> questionService.createQuestion(questionSetId, QuestionType.ORDERING, questionDto));
 		verify(questionEntityRepository, never()).save(any());
-		verify(orderingOptionRepository, never()).saveAll(any());
+		verify(orderingOptionEntityRepository, never()).saveAll(any());
 	}
 
 	@Test
@@ -396,7 +396,7 @@ class QuestionServiceTest {
 		);
 
 		when(questionEntityRepository.findById(questionId)).thenReturn(Optional.of(orderingQuestion));
-		when(orderingOptionRepository.findAllByOrderingQuestionId(questionId)).thenReturn(options);
+		when(orderingOptionEntityRepository.findAllByOrderingQuestionId(questionId)).thenReturn(options);
 
 		// when
 		QuestionDto result = questionService.getQuestion(questionSetId, questionId);
@@ -404,7 +404,7 @@ class QuestionServiceTest {
 		// then
 		assertNotNull(result);
 		verify(questionEntityRepository).findById(questionId);
-		verify(orderingOptionRepository).findAllByOrderingQuestionId(questionId);
+		verify(orderingOptionEntityRepository).findAllByOrderingQuestionId(questionId);
 	}
 
 	@Test
@@ -454,7 +454,7 @@ class QuestionServiceTest {
 		verify(questionEntityRepository).findById(questionId);
 		verify(multipleChoiceEntityRepository, never()).findAllByQuestionId(any());
 		verify(shortAnswerEntityRepository, never()).findAllByShortQuestionId(any());
-		verify(orderingOptionRepository, never()).findAllByOrderingQuestionId(any());
+		verify(orderingOptionEntityRepository, never()).findAllByOrderingQuestionId(any());
 		verify(fillBlankAnswerEntityRepository, never()).findAllByFillBlankQuestionId(any());
 	}
 
@@ -515,7 +515,7 @@ class QuestionServiceTest {
 			List.of(mock(MultipleChoiceEntity.class)));
 		when(shortAnswerEntityRepository.findAllByShortQuestionId(2L)).thenReturn(
 			List.of(mock(ShortAnswerEntity.class)));
-		when(orderingOptionRepository.findAllByOrderingQuestionId(3L)).thenReturn(
+		when(orderingOptionEntityRepository.findAllByOrderingQuestionId(3L)).thenReturn(
 			List.of(mock(OrderingOptionEntity.class)));
 		when(fillBlankAnswerEntityRepository.findAllByFillBlankQuestionId(4L)).thenReturn(
 			List.of(mock(FillBlankAnswerEntity.class)));
@@ -532,7 +532,7 @@ class QuestionServiceTest {
 		// repository 호출이 올바르게 이루어졌는지 확인
 		verify(questionEntityRepository).findAllByQuestionSetId(questionSetId);
 		verify(shortAnswerEntityRepository).findAllByShortQuestionId(2L);
-		verify(orderingOptionRepository).findAllByOrderingQuestionId(3L);
+		verify(orderingOptionEntityRepository).findAllByOrderingQuestionId(3L);
 		verify(multipleChoiceEntityRepository).findAllByQuestionId(1L);
 		verify(fillBlankAnswerEntityRepository).findAllByFillBlankQuestionId(4L);
 	}
@@ -555,7 +555,7 @@ class QuestionServiceTest {
 		// 빈 목록이므로 세부 repository 호출은 없어야 함
 		verify(multipleChoiceEntityRepository, never()).findAllByQuestionId(any());
 		verify(shortAnswerEntityRepository, never()).findAllByShortQuestionId(any());
-		verify(orderingOptionRepository, never()).findAllByOrderingQuestionId(any());
+		verify(orderingOptionEntityRepository, never()).findAllByOrderingQuestionId(any());
 		verify(fillBlankAnswerEntityRepository, never()).findAllByFillBlankQuestionId(any());
 	}
 
@@ -593,7 +593,7 @@ class QuestionServiceTest {
 
 		// 다른 타입의 repository는 호출되지 않아야 함
 		verify(shortAnswerEntityRepository, never()).findAllByShortQuestionId(any());
-		verify(orderingOptionRepository, never()).findAllByOrderingQuestionId(any());
+		verify(orderingOptionEntityRepository, never()).findAllByOrderingQuestionId(any());
 		verify(fillBlankAnswerEntityRepository, never()).findAllByFillBlankQuestionId(any());
 	}
 }

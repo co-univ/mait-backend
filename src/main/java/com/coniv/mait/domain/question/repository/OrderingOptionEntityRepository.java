@@ -6,7 +6,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 
 import com.coniv.mait.domain.question.entity.OrderingOptionEntity;
 
-public interface OrderingOptionRepository extends JpaRepository<OrderingOptionEntity, Long> {
+public interface OrderingOptionEntityRepository extends JpaRepository<OrderingOptionEntity, Long> {
 
 	List<OrderingOptionEntity> findAllByOrderingQuestionId(Long orderingQuestionId);
 }

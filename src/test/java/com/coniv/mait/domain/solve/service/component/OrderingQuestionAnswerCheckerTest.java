@@ -15,7 +15,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import com.coniv.mait.domain.question.entity.OrderingOptionEntity;
 import com.coniv.mait.domain.question.entity.QuestionEntity;
 import com.coniv.mait.domain.question.enums.QuestionType;
-import com.coniv.mait.domain.question.repository.OrderingOptionRepository;
+import com.coniv.mait.domain.question.repository.OrderingOptionEntityRepository;
 import com.coniv.mait.domain.solve.service.dto.SubmitAnswerDto;
 
 @ExtendWith(MockitoExtension.class)
@@ -25,12 +25,12 @@ class OrderingQuestionAnswerCheckerTest {
 	private OrderingQuestionAnswerChecker orderingQuestionAnswerChecker;
 
 	@Mock
-	private OrderingOptionRepository orderingOptionRepository;
+	private OrderingOptionEntityRepository orderingOptionEntityRepository;
 
 	@Test
 	@DisplayName("정답: 정해진 순서로 originOrder 제출")
 	void checkAnswer_correctOrder() {
-		OrderingOptionRepository repo = mock(OrderingOptionRepository.class);
+		OrderingOptionEntityRepository repo = mock(OrderingOptionEntityRepository.class);
 		OrderingQuestionAnswerChecker checker = new OrderingQuestionAnswerChecker(repo);
 
 		QuestionEntity question = mock(QuestionEntity.class);
@@ -87,7 +87,7 @@ class OrderingQuestionAnswerCheckerTest {
 	@Test
 	@DisplayName("오답: 순서가 틀림")
 	void checkAnswer_wrongOrder() {
-		OrderingOptionRepository repo = mock(OrderingOptionRepository.class);
+		OrderingOptionEntityRepository repo = mock(OrderingOptionEntityRepository.class);
 		OrderingQuestionAnswerChecker checker = new OrderingQuestionAnswerChecker(repo);
 
 		QuestionEntity question = mock(QuestionEntity.class);

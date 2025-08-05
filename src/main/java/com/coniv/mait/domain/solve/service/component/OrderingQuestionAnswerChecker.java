@@ -8,7 +8,7 @@ import org.springframework.stereotype.Component;
 import com.coniv.mait.domain.question.entity.OrderingOptionEntity;
 import com.coniv.mait.domain.question.entity.QuestionEntity;
 import com.coniv.mait.domain.question.enums.QuestionType;
-import com.coniv.mait.domain.question.repository.OrderingOptionRepository;
+import com.coniv.mait.domain.question.repository.OrderingOptionEntityRepository;
 import com.coniv.mait.domain.solve.service.dto.SubmitAnswerDto;
 
 import lombok.RequiredArgsConstructor;
@@ -17,7 +17,7 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class OrderingQuestionAnswerChecker implements AnswerChecker<Long> {
 
-	private final OrderingOptionRepository orderingOptionRepository;
+	private final OrderingOptionEntityRepository orderingOptionEntityRepository;
 
 	@Override
 	public QuestionType getQuestionType() {
@@ -26,7 +26,7 @@ public class OrderingQuestionAnswerChecker implements AnswerChecker<Long> {
 
 	@Override
 	public boolean checkAnswer(QuestionEntity question, SubmitAnswerDto<Long> answers) {
-		List<Long> answerOrders = orderingOptionRepository.findAllByOrderingQuestionId(question.getId()).stream()
+		List<Long> answerOrders = orderingOptionEntityRepository.findAllByOrderingQuestionId(question.getId()).stream()
 			.sorted(Comparator.comparing(OrderingOptionEntity::getAnswerOrder))
 			.map(OrderingOptionEntity::getOriginOrder)
 			.map(Long::valueOf)

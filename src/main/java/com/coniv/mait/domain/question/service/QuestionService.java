@@ -19,7 +19,7 @@ import com.coniv.mait.domain.question.entity.ShortQuestionEntity;
 import com.coniv.mait.domain.question.enums.QuestionType;
 import com.coniv.mait.domain.question.repository.FillBlankAnswerEntityRepository;
 import com.coniv.mait.domain.question.repository.MultipleChoiceEntityRepository;
-import com.coniv.mait.domain.question.repository.OrderingOptionRepository;
+import com.coniv.mait.domain.question.repository.OrderingOptionEntityRepository;
 import com.coniv.mait.domain.question.repository.QuestionEntityRepository;
 import com.coniv.mait.domain.question.repository.QuestionSetEntityRepository;
 import com.coniv.mait.domain.question.repository.ShortAnswerEntityRepository;
@@ -53,7 +53,7 @@ public class QuestionService {
 
 	private final OrderingQuestionFactory orderingQuestionFactory;
 
-	private final OrderingOptionRepository orderingOptionRepository;
+	private final OrderingOptionEntityRepository orderingOptionEntityRepository;
 
 	private final ShortAnswerEntityRepository shortAnswerEntityRepository;
 
@@ -101,7 +101,7 @@ public class QuestionService {
 				questionEntityRepository.save(orderingQuestionEntity);
 				List<OrderingOptionEntity> orderingOptions = orderingQuestionFactory
 					.createOrderingQuestionOptions(orderingQuestionDto.getOptions(), orderingQuestionEntity);
-				orderingOptionRepository.saveAll(orderingOptions);
+				orderingOptionEntityRepository.saveAll(orderingOptions);
 			}
 			case FILL_BLANK -> {
 				FillBlankQuestionDto fillBlankQuestionDto = (FillBlankQuestionDto)questionDto.toQuestionDto();
@@ -148,7 +148,7 @@ public class QuestionService {
 				return ShortQuestionDto.of(shortQuestion, shortAnswers);
 			}
 			case OrderingQuestionEntity orderingQuestion -> {
-				List<OrderingOptionEntity> options = orderingOptionRepository.findAllByOrderingQuestionId(
+				List<OrderingOptionEntity> options = orderingOptionEntityRepository.findAllByOrderingQuestionId(
 					orderingQuestion.getId());
 				return OrderingQuestionDto.of(orderingQuestion, options);
 			}
