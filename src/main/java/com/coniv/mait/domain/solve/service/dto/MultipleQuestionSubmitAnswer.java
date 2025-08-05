@@ -6,9 +6,11 @@ import com.coniv.mait.domain.question.enums.QuestionType;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotEmpty;
+import lombok.AllArgsConstructor;
 import lombok.Getter;
 
 @Getter
+@AllArgsConstructor
 public class MultipleQuestionSubmitAnswer implements SubmitAnswerDto {
 
 	@Schema(description = "선택한 번호 목록")
