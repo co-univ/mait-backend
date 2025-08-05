@@ -1,6 +1,7 @@
 package com.coniv.mait.domain.question.service;
 
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.coniv.mait.domain.question.dto.QuestionStatusMessage;
 import com.coniv.mait.domain.question.entity.QuestionEntity;
@@ -24,6 +25,7 @@ public class QuestionControlService {
 	/**
 	 * 특정 문제의 접근을 허용
 	 */
+	@Transactional
 	public void allowQuestionAccess(Long questionSetId, Long questionId) {
 		QuestionEntity question = questionEntityRepository.findById(questionId)
 			.orElseThrow(() -> new EntityNotFoundException("Question not found with id: " + questionId));
@@ -43,6 +45,7 @@ public class QuestionControlService {
 	/**
 	 * 특정 문제의 풀이를 허용
 	 */
+	@Transactional
 	public void allowQuestionSolve(Long questionSetId, Long questionId) {
 		QuestionEntity question = questionEntityRepository.findById(questionId)
 			.orElseThrow(() -> new EntityNotFoundException("Question not found with id: " + questionId));
