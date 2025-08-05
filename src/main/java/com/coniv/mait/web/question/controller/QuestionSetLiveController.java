@@ -26,16 +26,15 @@ public class QuestionSetLiveController {
 	private final QuestionSetLiveControlService questionSetLiveControlService;
 
 	@Operation(summary = "실시간 문제셋 시작")
-	@PutMapping("/{questionSetId}/live/start")
+	@PatchMapping("/{questionSetId}/live/start")
 	public ResponseEntity<Void> startLiveQuestionSet(
 		@PathVariable Long questionSetId) {
 		questionSetLiveControlService.startLiveQuestionSet(questionSetId);
 		return ResponseEntity.ok().build();
 	}
 
-	@Operation(summary = "실시간 문제셋 종료",
-		description = "LIVE -> AFTER_LIVE 상태로 변경")
-	@PutMapping("/{questionSetId}/live/end")
+	@Operation(summary = "실시간 문제셋 종료")
+	@PatchMapping("/{questionSetId}/live/end")
 	public ResponseEntity<Void> endLiveQuestionSet(
 		@PathVariable Long questionSetId) {
 		questionSetLiveControlService.endLiveQuestionSet(questionSetId);
