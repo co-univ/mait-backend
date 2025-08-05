@@ -7,7 +7,10 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotNull;
+import lombok.AllArgsConstructor;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.experimental.SuperBuilder;
 
 @JsonTypeInfo(
 	use = JsonTypeInfo.Id.NAME,
@@ -20,6 +23,9 @@ import lombok.Getter;
 	@JsonSubTypes.Type(value = FillBlankQuestionSubmitApiRequest.class, name = QuestionConstant.FILL_BLANK)
 })
 @Getter
+@NoArgsConstructor
+@AllArgsConstructor
+@SuperBuilder
 public abstract class QuestionAnswerSubmitApiRequest {
 
 	@Schema(description = "문제 PK, 추후에 삭제 예정")
