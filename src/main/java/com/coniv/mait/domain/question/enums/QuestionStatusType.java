@@ -5,8 +5,8 @@ import lombok.Getter;
 
 @Getter
 @AllArgsConstructor
-public enum QuizStatusType {
-	WAITING("대기"),
+public enum QuestionStatusType {
+	NOT_OPEN("시작하지 않음"),
 	ACCESS_PERMISSION("접근 허용"),
 	SOLVE_PERMISSION("문제 풀이 허용");
 

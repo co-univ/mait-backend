@@ -1,8 +1,12 @@
 package com.coniv.mait.domain.question.entity;
 
+import com.coniv.mait.domain.question.enums.QuestionStatusType;
+
 import jakarta.persistence.Column;
 import jakarta.persistence.DiscriminatorColumn;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -14,6 +18,7 @@ import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.experimental.SuperBuilder;
@@ -43,7 +48,16 @@ public abstract class QuestionEntity {
 	@Column(nullable = false)
 	private int displayDelayMilliseconds;
 
+	@Enumerated(EnumType.STRING)
+	@Column(nullable = false)
+	@Builder.Default
+	private QuestionStatusType questionStatus = QuestionStatusType.NOT_OPEN;
+
 	@ManyToOne(fetch = FetchType.LAZY)
 	@JoinColumn(name = "question_set_id")
 	private QuestionSetEntity questionSet;
+
+	public void updateQuestionStatus(QuestionStatusType questionStatus) {
+		this.questionStatus = questionStatus;
+	}
 }
