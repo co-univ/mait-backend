@@ -11,7 +11,7 @@ import lombok.Getter;
 
 @Getter
 @AllArgsConstructor
-public class MultipleQuestionSubmitAnswer implements SubmitAnswerDto {
+public class MultipleQuestionSubmitAnswer implements SubmitAnswerDto<Long> {
 
 	@Schema(description = "선택한 번호 목록")
 	@NotEmpty(message = "선택한 번호를 입력해주세요.")
@@ -20,5 +20,10 @@ public class MultipleQuestionSubmitAnswer implements SubmitAnswerDto {
 	@Override
 	public QuestionType getType() {
 		return QuestionType.MULTIPLE;
+	}
+
+	@Override
+	public List<Long> getSubmitAnswers() {
+		return this.selectedChoiceNumbers;
 	}
 }

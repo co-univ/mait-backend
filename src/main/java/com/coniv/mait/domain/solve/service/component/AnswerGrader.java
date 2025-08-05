@@ -15,15 +15,28 @@ import com.coniv.mait.domain.solve.service.dto.SubmitAnswerDto;
 @Component
 public class AnswerGrader {
 
-	private final Map<QuestionType, AnswerChecker> answerCheckers;
+	private final Map<QuestionType, AnswerChecker<?>> answerCheckers;
 
 	@Autowired
-	public AnswerGrader(List<AnswerChecker> checkers) {
+	public AnswerGrader(List<AnswerChecker<?>> checkers) {
 		answerCheckers = checkers.stream()
 			.collect(Collectors.toUnmodifiableMap(AnswerChecker::getQuestionType, Function.identity()));
 	}
 
-	public boolean gradeAnswer(QuestionEntity question, SubmitAnswerDto submitAnswer) {
-		return answerCheckers.get(question.getType()).checkAnswer(question, submitAnswer);
+	@SuppressWarnings("unchecked")
+	public boolean gradeAnswer(QuestionEntity question, SubmitAnswerDto<?> submitAnswer) {
+		AnswerChecker<?> checker = answerCheckers.get(question.getType());
+		if (checker == null) {
+			throw new IllegalArgumentException("지원하지 않는 문제 유형입니다: " + question.getType());
+		}
+
+		switch (question.getType()) {
+			case MULTIPLE:
+				return ((AnswerChecker<Long>)checker).checkAnswer(question, (SubmitAnswerDto<Long>)submitAnswer);
+			case SHORT:
+				return ((AnswerChecker<String>)checker).checkAnswer(question, (SubmitAnswerDto<String>)submitAnswer);
+			default:
+				throw new IllegalArgumentException("지원하지 않는 문제 유형입니다: " + question.getType());
+		}
 	}
 }
