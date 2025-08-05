@@ -1,6 +1,7 @@
 package com.coniv.mait.domain.question.entity;
 
 import com.coniv.mait.domain.question.enums.QuestionStatusType;
+import com.coniv.mait.domain.question.enums.QuestionType;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.DiscriminatorColumn;
@@ -59,5 +60,23 @@ public abstract class QuestionEntity {
 
 	public void updateQuestionStatus(QuestionStatusType questionStatus) {
 		this.questionStatus = questionStatus;
+	}
+
+	public QuestionType getType() {
+		switch (this) {
+			case MultipleQuestionEntity multipleQuestion -> {
+				return QuestionType.MULTIPLE;
+			}
+			case ShortQuestionEntity shortQuestionEntity -> {
+				return QuestionType.SHORT;
+			}
+			case FillBlankQuestionEntity fillBlankQuestionEntity -> {
+				return QuestionType.FILL_BLANK;
+			}
+			case OrderingQuestionEntity orderingQuestionEntity -> {
+				return QuestionType.ORDERING;
+			}
+			default -> throw new IllegalArgumentException("지원하지 않는 문제 유형입니다: " + this.getClass().getSimpleName());
+		}
 	}
 }
