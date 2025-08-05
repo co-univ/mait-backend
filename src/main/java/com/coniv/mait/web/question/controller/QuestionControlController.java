@@ -13,7 +13,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 @RestController
-@RequestMapping("/api/question-control/{questionSetId}")
+@RequestMapping("/api/v1/question-sets/{questionSetId}")
 @RequiredArgsConstructor
 @Slf4j
 public class QuestionControlController {
@@ -23,7 +23,7 @@ public class QuestionControlController {
 	/**
 	 * 특정 문제의 접근을 허용
 	 */
-	@PostMapping("/questions/{questionId}/access")
+	@PostMapping("/questions/{questionId}/control/access")
 	public ResponseEntity<ApiResponse<Void>> allowQuestionAccess(
 		@PathVariable Long questionSetId,
 		@PathVariable Long questionId) {
@@ -35,7 +35,7 @@ public class QuestionControlController {
 	/**
 	 * 특정 문제의 풀이를 허용
 	 */
-	@PostMapping("/questions/{questionId}/solve")
+	@PostMapping("/questions/{questionId}/control/solve")
 	public ResponseEntity<ApiResponse<Void>> allowQuestionSolve(
 		@PathVariable Long questionSetId,
 		@PathVariable Long questionId) {
