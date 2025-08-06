@@ -126,7 +126,8 @@ public class QuestionService {
 			throw new ResourceNotBelongException("해당 문제 셋에 속한 문제가 아닙니다.");
 		}
 
-		return mapToQuestionDto(question, mode.isAnswerVisible());
+		boolean answerVisible = mode == null || mode.isAnswerVisible();
+		return mapToQuestionDto(question, answerVisible);
 	}
 
 	public List<QuestionDto> getQuestions(final Long questionSetId) {

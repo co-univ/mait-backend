@@ -26,6 +26,7 @@ import com.coniv.mait.domain.question.service.dto.MultipleChoiceDto;
 import com.coniv.mait.domain.question.service.dto.MultipleQuestionDto;
 import com.coniv.mait.domain.question.service.dto.OrderingQuestionOptionDto;
 import com.coniv.mait.domain.question.service.dto.ShortAnswerDto;
+import com.coniv.mait.domain.question.enums.DeliveryMode;
 import com.coniv.mait.global.exception.custom.ResourceNotBelongException;
 import com.coniv.mait.global.interceptor.idempotency.IdempotencyInterceptor;
 import com.coniv.mait.web.question.dto.CreateFillBlankQuestionApiRequest;
@@ -524,7 +525,7 @@ class QuestionControllerTest {
 			))
 			.build();
 
-		when(questionService.getQuestion(questionSetId, questionId)).thenReturn(mockQuestionDto);
+		when(questionService.getQuestion(questionSetId, questionId, null)).thenReturn(mockQuestionDto);
 
 		// when & then
 		mockMvc.perform(get("/api/v1/question-sets/{questionSetId}/questions/{questionId}", questionSetId, questionId)
@@ -536,7 +537,7 @@ class QuestionControllerTest {
 				jsonPath("$.data.content").value("객관식 문제 내용")
 			);
 
-		verify(questionService).getQuestion(questionSetId, questionId);
+		verify(questionService).getQuestion(questionSetId, questionId, null);
 	}
 
 	@Test
@@ -546,7 +547,7 @@ class QuestionControllerTest {
 		final Long questionSetId = 1L;
 		final Long questionId = 999L;
 
-		when(questionService.getQuestion(questionSetId, questionId))
+		when(questionService.getQuestion(questionSetId, questionId, null))
 			.thenThrow(new EntityNotFoundException("Question not found with id: " + questionId));
 
 		// when & then
@@ -560,7 +561,7 @@ class QuestionControllerTest {
 				jsonPath("$.reasons").value("Question not found with id: " + questionId)
 			);
 
-		verify(questionService).getQuestion(questionSetId, questionId);
+		verify(questionService).getQuestion(questionSetId, questionId, null);
 	}
 
 	@Test
@@ -570,7 +571,7 @@ class QuestionControllerTest {
 		final Long questionSetId = 1L;
 		final Long questionId = 1L;
 
-		when(questionService.getQuestion(questionSetId, questionId))
+		when(questionService.getQuestion(questionSetId, questionId, null))
 			.thenThrow(new ResourceNotBelongException("해당 문제 셋에 속한 문제가 아닙니다."));
 
 		// when & then
@@ -584,7 +585,7 @@ class QuestionControllerTest {
 				jsonPath("$.reasons").value("해당 문제 셋에 속한 문제가 아닙니다.")
 			);
 
-		verify(questionService).getQuestion(questionSetId, questionId);
+		verify(questionService).getQuestion(questionSetId, questionId, null);
 	}
 
 	@Test

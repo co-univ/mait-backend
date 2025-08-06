@@ -57,11 +57,11 @@ public class MultipleQuestionFactory {
 			.number(dto.getNumber())
 			.content(dto.getContent())
 			.question(question)
-			.isCorrect(dto.isCorrect())
+			.isCorrect(dto.getIsCorrect())
 			.build();
 	}
 
 	private int calculateAnswerCount(List<MultipleChoiceDto> choices) {
-		return (int)choices.stream().filter(MultipleChoiceDto::isCorrect).count();
+		return (int)choices.stream().filter(choice -> choice.getIsCorrect()).count();
 	}
 }

@@ -18,7 +18,7 @@ public record MultipleChoiceApiResponse(
 			dto.getId(),
 			dto.getNumber(),
 			dto.getContent(),
-			dto.isCorrect()
+			dto.getIsCorrect()
 		);
 	}
 }
