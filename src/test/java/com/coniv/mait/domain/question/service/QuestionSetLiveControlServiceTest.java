@@ -176,4 +176,127 @@ class QuestionSetLiveControlServiceTest {
 		verify(questionSetEntityRepository).findById(questionSetId);
 		verify(questionSetParticipantRepository).findAllByQuestionSetWithFetchJoinUser(questionSetEntity);
 	}
+
+	@Test
+	@DisplayName("활성 참가자 업데이트 - 성공")
+	void updateActiveParticipants_Success() {
+		// given
+		Long questionSetId = 1L;
+		List<Long> activeUserIds = Arrays.asList(1L, 2L);
+
+		when(questionSetEntityRepository.findById(questionSetId))
+			.thenReturn(Optional.of(questionSetEntity));
+
+		// 참가자 목록 설정 (3명 전체, 그 중 2명만 활성화)
+		List<QuestionSetParticipantEntity> allParticipants = Arrays.asList(
+			activeParticipant1, activeParticipant2, eliminatedParticipant
+		);
+		when(questionSetParticipantRepository.findAllByQuestionSetWithFetchJoinUser(questionSetEntity))
+			.thenReturn(allParticipants);
+
+		// 사용자 설정
+		when(activeParticipant1.getUser()).thenReturn(user1);
+		when(user1.getId()).thenReturn(1L);
+
+		when(activeParticipant2.getUser()).thenReturn(user2);
+		when(user2.getId()).thenReturn(2L);
+
+		when(eliminatedParticipant.getUser()).thenReturn(user3);
+		when(user3.getId()).thenReturn(3L);
+
+		// when
+		questionSetLiveControlService.updateActiveParticipants(questionSetId, activeUserIds);
+
+		// then
+		verify(questionSetEntityRepository).findById(questionSetId);
+		verify(questionSetParticipantRepository).findAllByQuestionSetWithFetchJoinUser(questionSetEntity);
+
+		// 상태 업데이트 검증
+		verify(activeParticipant1).updateStatus(ParticipantStatus.ACTIVE);
+		verify(activeParticipant2).updateStatus(ParticipantStatus.ACTIVE);
+		verify(eliminatedParticipant).updateStatus(ParticipantStatus.ELIMINATED);
+	}
+
+	@Test
+	@DisplayName("활성 참가자 업데이트 - QuestionSet이 존재하지 않음")
+	void updateActiveParticipants_QuestionSetNotFound() {
+		// given
+		Long questionSetId = 999L;
+		List<Long> activeUserIds = Arrays.asList(1L, 2L);
+
+		when(questionSetEntityRepository.findById(questionSetId)).thenReturn(Optional.empty());
+
+		// when & then
+		assertThrows(EntityNotFoundException.class, () ->
+			questionSetLiveControlService.updateActiveParticipants(questionSetId, activeUserIds));
+
+		verify(questionSetEntityRepository).findById(questionSetId);
+		verify(questionSetParticipantRepository, never()).findAllByQuestionSetWithFetchJoinUser(any());
+	}
+
+	@Test
+	@DisplayName("활성 참가자 업데이트 - 빈 활성 사용자 목록")
+	void updateActiveParticipants_EmptyActiveUserIds() {
+		// given
+		Long questionSetId = 1L;
+		List<Long> activeUserIds = List.of(); // 빈 목록
+
+		when(questionSetEntityRepository.findById(questionSetId))
+			.thenReturn(Optional.of(questionSetEntity));
+
+		List<QuestionSetParticipantEntity> allParticipants = Arrays.asList(
+			activeParticipant1, activeParticipant2
+		);
+		when(questionSetParticipantRepository.findAllByQuestionSetWithFetchJoinUser(questionSetEntity))
+			.thenReturn(allParticipants);
+
+		when(activeParticipant1.getUser()).thenReturn(user1);
+		when(user1.getId()).thenReturn(1L);
+
+		when(activeParticipant2.getUser()).thenReturn(user2);
+		when(user2.getId()).thenReturn(2L);
+
+		// when
+		questionSetLiveControlService.updateActiveParticipants(questionSetId, activeUserIds);
+
+		// then
+		// 모든 참가자가 ELIMINATED 상태가 되어야 함
+		verify(activeParticipant1).updateStatus(ParticipantStatus.ELIMINATED);
+		verify(activeParticipant2).updateStatus(ParticipantStatus.ELIMINATED);
+	}
+
+	@Test
+	@DisplayName("활성 참가자 업데이트 - 모든 참가자 활성화")
+	void updateActiveParticipants_AllParticipantsActive() {
+		// given
+		Long questionSetId = 1L;
+		List<Long> activeUserIds = Arrays.asList(1L, 2L, 3L); // 모든 사용자 활성화
+
+		when(questionSetEntityRepository.findById(questionSetId))
+			.thenReturn(Optional.of(questionSetEntity));
+
+		List<QuestionSetParticipantEntity> allParticipants = Arrays.asList(
+			activeParticipant1, activeParticipant2, eliminatedParticipant
+		);
+		when(questionSetParticipantRepository.findAllByQuestionSetWithFetchJoinUser(questionSetEntity))
+			.thenReturn(allParticipants);
+
+		when(activeParticipant1.getUser()).thenReturn(user1);
+		when(user1.getId()).thenReturn(1L);
+
+		when(activeParticipant2.getUser()).thenReturn(user2);
+		when(user2.getId()).thenReturn(2L);
+
+		when(eliminatedParticipant.getUser()).thenReturn(user3);
+		when(user3.getId()).thenReturn(3L);
+
+		// when
+		questionSetLiveControlService.updateActiveParticipants(questionSetId, activeUserIds);
+
+		// then
+		// 모든 참가자가 ACTIVE 상태가 되어야 함
+		verify(activeParticipant1).updateStatus(ParticipantStatus.ACTIVE);
+		verify(activeParticipant2).updateStatus(ParticipantStatus.ACTIVE);
+		verify(eliminatedParticipant).updateStatus(ParticipantStatus.ACTIVE);
+	}
 }
