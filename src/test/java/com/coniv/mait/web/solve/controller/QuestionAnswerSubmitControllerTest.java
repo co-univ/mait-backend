@@ -5,6 +5,7 @@ import static org.mockito.Mockito.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -16,6 +17,7 @@ import org.springframework.test.web.servlet.MockMvc;
 
 import com.coniv.mait.domain.solve.service.QuestionAnswerSubmitService;
 import com.coniv.mait.domain.solve.service.dto.AnswerSubmitDto;
+import com.coniv.mait.global.interceptor.idempotency.IdempotencyInterceptor;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 @WebMvcTest(controllers = QuestionAnswerSubmitController.class)
@@ -31,6 +33,14 @@ class QuestionAnswerSubmitControllerTest {
 
 	@MockitoBean
 	private QuestionAnswerSubmitService questionAnswerSubmitService;
+
+	@MockitoBean
+	private IdempotencyInterceptor idempotencyInterceptor;
+
+	@BeforeEach
+	void setUp() throws Exception {
+		when(idempotencyInterceptor.preHandle(any(), any(), any())).thenReturn(true);
+	}
 
 	@Test
 	@DisplayName("객관식 문제 정답 제출 성공")
