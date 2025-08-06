@@ -1,4 +1,4 @@
-package com.coniv.mait.domain.auth.repository;
+package com.coniv.mait.domain.user.repository;
 
 import java.util.Optional;
 
