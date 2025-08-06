@@ -20,6 +20,8 @@ public class ShortQuestionDto extends QuestionDto {
 
 	private List<ShortAnswerDto> shortAnswers;
 
+	private Integer answerCount;
+
 	@Override
 	public ShortQuestionDto toQuestionDto() {
 		return ShortQuestionDto.builder()
@@ -28,19 +30,25 @@ public class ShortQuestionDto extends QuestionDto {
 			.explanation(getExplanation())
 			.number(getNumber())
 			.shortAnswers(shortAnswers)
+			.answerCount(answerCount)
 			.build();
 	}
 
-	public static QuestionDto of(ShortQuestionEntity shortQuestion, List<ShortAnswerEntity> shortAnswers) {
-		List<ShortAnswerDto> shortAnswerDtos = shortAnswers.stream()
-			.map(ShortAnswerDto::from)
-			.toList();
+	public static QuestionDto of(ShortQuestionEntity shortQuestion, List<ShortAnswerEntity> shortAnswers,
+		boolean answerVisible) {
+		List<ShortAnswerDto> shortAnswerDtos = answerVisible
+			? shortAnswers.stream()
+			.map(shortAnswerEntity -> ShortAnswerDto.of(shortAnswerEntity, answerVisible))
+			.toList()
+			: null;
+
 		return ShortQuestionDto.builder()
 			.id(shortQuestion.getId())
 			.content(shortQuestion.getContent())
 			.explanation(shortQuestion.getExplanation())
 			.number(shortQuestion.getNumber())
 			.shortAnswers(shortAnswerDtos)
+			.answerCount(shortAnswers.size())
 			.build();
 	}
 }

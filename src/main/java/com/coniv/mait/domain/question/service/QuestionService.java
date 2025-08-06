@@ -16,6 +16,7 @@ import com.coniv.mait.domain.question.entity.QuestionEntity;
 import com.coniv.mait.domain.question.entity.QuestionSetEntity;
 import com.coniv.mait.domain.question.entity.ShortAnswerEntity;
 import com.coniv.mait.domain.question.entity.ShortQuestionEntity;
+import com.coniv.mait.domain.question.enums.DeliveryMode;
 import com.coniv.mait.domain.question.enums.QuestionType;
 import com.coniv.mait.domain.question.repository.FillBlankAnswerEntityRepository;
 import com.coniv.mait.domain.question.repository.MultipleChoiceEntityRepository;
@@ -117,7 +118,7 @@ public class QuestionService {
 		}
 	}
 
-	public QuestionDto getQuestion(final Long questionSetId, final Long questionId) {
+	public QuestionDto getQuestion(final Long questionSetId, final Long questionId, final DeliveryMode mode) {
 		QuestionEntity question = questionEntityRepository.findById(questionId)
 			.orElseThrow(() -> new EntityNotFoundException("Question not found with id: " + questionId));
 
@@ -125,37 +126,38 @@ public class QuestionService {
 			throw new ResourceNotBelongException("해당 문제 셋에 속한 문제가 아닙니다.");
 		}
 
-		return mapToQuestionDto(question);
+		boolean answerVisible = mode == null || mode.isAnswerVisible();
+		return mapToQuestionDto(question, answerVisible);
 	}
 
 	public List<QuestionDto> getQuestions(final Long questionSetId) {
 		return questionEntityRepository.findAllByQuestionSetId(questionSetId).stream()
 			.sorted(Comparator.comparingLong(QuestionEntity::getNumber))
-			.map(this::mapToQuestionDto)
+			.map(question -> mapToQuestionDto(question, true))
 			.toList();
 	}
 
-	private QuestionDto mapToQuestionDto(final QuestionEntity question) {
+	private QuestionDto mapToQuestionDto(final QuestionEntity question, final boolean answerVisible) {
 		switch (question) {
 			case MultipleQuestionEntity multipleQuestion -> {
 				List<MultipleChoiceEntity> choices = multipleChoiceEntityRepository.findAllByQuestionId(
 					multipleQuestion.getId());
-				return MultipleQuestionDto.of(multipleQuestion, choices);
+				return MultipleQuestionDto.of(multipleQuestion, choices, answerVisible);
 			}
 			case ShortQuestionEntity shortQuestion -> {
 				List<ShortAnswerEntity> shortAnswers = shortAnswerEntityRepository.findAllByShortQuestionId(
 					shortQuestion.getId());
-				return ShortQuestionDto.of(shortQuestion, shortAnswers);
+				return ShortQuestionDto.of(shortQuestion, shortAnswers, answerVisible);
 			}
 			case OrderingQuestionEntity orderingQuestion -> {
 				List<OrderingOptionEntity> options = orderingOptionEntityRepository.findAllByOrderingQuestionId(
 					orderingQuestion.getId());
-				return OrderingQuestionDto.of(orderingQuestion, options);
+				return OrderingQuestionDto.of(orderingQuestion, options, answerVisible);
 			}
 			case FillBlankQuestionEntity fillBlankQuestion -> {
 				List<FillBlankAnswerEntity> fillBlankAnswers = fillBlankAnswerEntityRepository
 					.findAllByFillBlankQuestionId(fillBlankQuestion.getId());
-				return FillBlankQuestionDto.of(fillBlankQuestion, fillBlankAnswers);
+				return FillBlankQuestionDto.of(fillBlankQuestion, fillBlankAnswers, answerVisible);
 			}
 			default ->
 				throw new IllegalStateException("Unsupported question type: " + question.getClass().getSimpleName());

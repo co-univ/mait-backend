@@ -1,5 +1,6 @@
 package com.coniv.mait.domain.question.service;
 
+import static org.assertj.core.api.Assertions.*;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
@@ -23,6 +24,7 @@ import com.coniv.mait.domain.question.entity.QuestionEntity;
 import com.coniv.mait.domain.question.entity.QuestionSetEntity;
 import com.coniv.mait.domain.question.entity.ShortAnswerEntity;
 import com.coniv.mait.domain.question.entity.ShortQuestionEntity;
+import com.coniv.mait.domain.question.enums.DeliveryMode;
 import com.coniv.mait.domain.question.enums.QuestionType;
 import com.coniv.mait.domain.question.repository.FillBlankAnswerEntityRepository;
 import com.coniv.mait.domain.question.repository.MultipleChoiceEntityRepository;
@@ -337,7 +339,7 @@ class QuestionServiceTest {
 		when(multipleChoiceEntityRepository.findAllByQuestionId(questionId)).thenReturn(choices);
 
 		// when
-		QuestionDto result = questionService.getQuestion(questionSetId, questionId);
+		QuestionDto result = questionService.getQuestion(questionSetId, questionId, DeliveryMode.REVIEW);
 
 		// then
 		assertNotNull(result);
@@ -368,7 +370,7 @@ class QuestionServiceTest {
 		when(shortAnswerEntityRepository.findAllByShortQuestionId(questionId)).thenReturn(shortAnswers);
 
 		// when
-		QuestionDto result = questionService.getQuestion(questionSetId, questionId);
+		QuestionDto result = questionService.getQuestion(questionSetId, questionId, DeliveryMode.REVIEW);
 
 		// then
 		assertNotNull(result);
@@ -399,7 +401,7 @@ class QuestionServiceTest {
 		when(orderingOptionEntityRepository.findAllByOrderingQuestionId(questionId)).thenReturn(options);
 
 		// when
-		QuestionDto result = questionService.getQuestion(questionSetId, questionId);
+		QuestionDto result = questionService.getQuestion(questionSetId, questionId, DeliveryMode.REVIEW);
 
 		// then
 		assertNotNull(result);
@@ -430,7 +432,7 @@ class QuestionServiceTest {
 		when(fillBlankAnswerEntityRepository.findAllByFillBlankQuestionId(questionId)).thenReturn(fillBlankAnswers);
 
 		// when
-		QuestionDto result = questionService.getQuestion(questionSetId, questionId);
+		QuestionDto result = questionService.getQuestion(questionSetId, questionId, DeliveryMode.REVIEW);
 
 		// then
 		assertNotNull(result);
@@ -449,7 +451,7 @@ class QuestionServiceTest {
 
 		// when & then
 		assertThrows(EntityNotFoundException.class,
-			() -> questionService.getQuestion(questionSetId, questionId));
+			() -> questionService.getQuestion(questionSetId, questionId, DeliveryMode.REVIEW));
 
 		verify(questionEntityRepository).findById(questionId);
 		verify(multipleChoiceEntityRepository, never()).findAllByQuestionId(any());
@@ -476,7 +478,7 @@ class QuestionServiceTest {
 
 		// when & then
 		ResourceNotBelongException exception = assertThrows(ResourceNotBelongException.class,
-			() -> questionService.getQuestion(questionSetId, questionId));
+			() -> questionService.getQuestion(questionSetId, questionId, DeliveryMode.REVIEW));
 
 		assertEquals("해당 문제 셋에 속한 문제가 아닙니다.", exception.getMessage());
 		verify(questionEntityRepository).findById(questionId);
@@ -595,5 +597,86 @@ class QuestionServiceTest {
 		verify(shortAnswerEntityRepository, never()).findAllByShortQuestionId(any());
 		verify(orderingOptionEntityRepository, never()).findAllByOrderingQuestionId(any());
 		verify(fillBlankAnswerEntityRepository, never()).findAllByFillBlankQuestionId(any());
+	}
+
+	@Test
+	@DisplayName("실시간 모드에서 주관식 문제 조회 시 답안은 null이고 개수 정보만 제공한다")
+	void getShortQuestion_LiveMode_HidesAnswersButShowsCount() {
+		// given
+		Long questionSetId = 1L;
+		Long questionId = 1L;
+
+		QuestionSetEntity questionSet = mock(QuestionSetEntity.class);
+		ShortQuestionEntity shortQuestion = mock(ShortQuestionEntity.class);
+
+		when(questionSet.getId()).thenReturn(questionSetId);
+		when(shortQuestion.getId()).thenReturn(questionId);
+		when(shortQuestion.getQuestionSet()).thenReturn(questionSet);
+		when(shortQuestion.getContent()).thenReturn("테스트 주관식 문제");
+		when(shortQuestion.getNumber()).thenReturn(1L);
+
+		List<ShortAnswerEntity> shortAnswers = List.of(
+			mock(ShortAnswerEntity.class),
+			mock(ShortAnswerEntity.class),
+			mock(ShortAnswerEntity.class)
+		);
+
+		when(questionEntityRepository.findById(questionId)).thenReturn(Optional.of(shortQuestion));
+		when(shortAnswerEntityRepository.findAllByShortQuestionId(questionId)).thenReturn(shortAnswers);
+
+		// when
+		QuestionDto result = questionService.getQuestion(questionSetId, questionId, DeliveryMode.LIVE_TIME);
+
+		// then
+		assertThat(result).isInstanceOf(com.coniv.mait.domain.question.service.dto.ShortQuestionDto.class);
+
+		com.coniv.mait.domain.question.service.dto.ShortQuestionDto shortResult =
+			(com.coniv.mait.domain.question.service.dto.ShortQuestionDto)result;
+
+		assertThat(shortResult.getShortAnswers()).isNull(); // 실시간 모드에서는 답안 숨김
+		assertThat(shortResult.getAnswerCount()).isEqualTo(3); // 개수 정보는 제공
+	}
+
+	@Test
+	@DisplayName("실시간 모드에서 빈칸 채우기 문제 조회 시 답안은 null이고 빈칸 개수 정보만 제공한다")
+	void getFillBlankQuestion_LiveMode_HidesAnswersButShowsBlankCount() {
+		// given
+		Long questionSetId = 1L;
+		Long questionId = 1L;
+
+		QuestionSetEntity questionSet = mock(QuestionSetEntity.class);
+		FillBlankQuestionEntity fillBlankQuestion = mock(FillBlankQuestionEntity.class);
+
+		when(questionSet.getId()).thenReturn(questionSetId);
+		when(fillBlankQuestion.getId()).thenReturn(questionId);
+		when(fillBlankQuestion.getQuestionSet()).thenReturn(questionSet);
+		when(fillBlankQuestion.getContent()).thenReturn("테스트 빈칸 문제");
+		when(fillBlankQuestion.getNumber()).thenReturn(1L);
+
+		// 2개의 빈칸 (number 1, 2), 각각 여러 정답 가능
+		FillBlankAnswerEntity answer1 = mock(FillBlankAnswerEntity.class);
+		FillBlankAnswerEntity answer2 = mock(FillBlankAnswerEntity.class);
+		FillBlankAnswerEntity answer3 = mock(FillBlankAnswerEntity.class);
+
+		when(answer1.getNumber()).thenReturn(1L); // 첫 번째 빈칸
+		when(answer2.getNumber()).thenReturn(1L); // 첫 번째 빈칸의 다른 정답
+		when(answer3.getNumber()).thenReturn(2L); // 두 번째 빈칸
+
+		List<FillBlankAnswerEntity> fillBlankAnswers = List.of(answer1, answer2, answer3);
+
+		when(questionEntityRepository.findById(questionId)).thenReturn(Optional.of(fillBlankQuestion));
+		when(fillBlankAnswerEntityRepository.findAllByFillBlankQuestionId(questionId)).thenReturn(fillBlankAnswers);
+
+		// when
+		QuestionDto result = questionService.getQuestion(questionSetId, questionId, DeliveryMode.LIVE_TIME);
+
+		// then
+		assertThat(result).isInstanceOf(com.coniv.mait.domain.question.service.dto.FillBlankQuestionDto.class);
+
+		com.coniv.mait.domain.question.service.dto.FillBlankQuestionDto fillBlankResult =
+			(com.coniv.mait.domain.question.service.dto.FillBlankQuestionDto)result;
+
+		assertThat(fillBlankResult.getFillBlankAnswers()).isNull(); // 실시간 모드에서는 답안 숨김
+		assertThat(fillBlankResult.getBlankCount()).isEqualTo(2); // 빈칸 개수는 제공 (number 1, 2)
 	}
 }

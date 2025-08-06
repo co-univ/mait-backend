@@ -11,14 +11,14 @@ public record MultipleChoiceApiResponse(
 	int number,
 	String content,
 	@Schema(requiredMode = Schema.RequiredMode.REQUIRED)
-	boolean isCorrect
+	Boolean isCorrect
 ) {
 	public static MultipleChoiceApiResponse from(MultipleChoiceDto dto) {
 		return new MultipleChoiceApiResponse(
 			dto.getId(),
 			dto.getNumber(),
 			dto.getContent(),
-			dto.isCorrect()
+			dto.getIsCorrect()
 		);
 	}
 }

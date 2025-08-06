@@ -10,4 +10,8 @@ public enum DeliveryMode {
 	REVIEW("복습");
 
 	private final String description;
+
+	public boolean isAnswerVisible() {
+		return this != DeliveryMode.LIVE_TIME;
+	}
 }

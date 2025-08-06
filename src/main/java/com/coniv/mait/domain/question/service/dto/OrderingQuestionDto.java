@@ -25,9 +25,10 @@ public class OrderingQuestionDto extends QuestionDto {
 		return this;
 	}
 
-	public static OrderingQuestionDto of(OrderingQuestionEntity orderingQuestion, List<OrderingOptionEntity> options) {
+	public static OrderingQuestionDto of(OrderingQuestionEntity orderingQuestion, List<OrderingOptionEntity> options,
+		boolean answerVisible) {
 		List<OrderingQuestionOptionDto> optionDtos = options.stream()
-			.map(OrderingQuestionOptionDto::from)
+			.map(option -> OrderingQuestionOptionDto.of(option, answerVisible))
 			.toList();
 
 		return OrderingQuestionDto.builder()

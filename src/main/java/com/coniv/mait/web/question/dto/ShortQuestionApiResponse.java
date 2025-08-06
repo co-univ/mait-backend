@@ -15,13 +15,18 @@ import lombok.experimental.SuperBuilder;
 @EqualsAndHashCode(callSuper = true)
 public class ShortQuestionApiResponse extends QuestionApiResponse {
 
-	@Schema(description = "주관식 문제의 정답 목록", requiredMode = Schema.RequiredMode.REQUIRED)
+	@Schema(description = "주관식 문제의 정답 목록", requiredMode = Schema.RequiredMode.NOT_REQUIRED)
 	private final List<ShortAnswerApiResponse> answers;
 
+	@Schema(description = "주관식 문제의 정답 개수", requiredMode = Schema.RequiredMode.REQUIRED)
+	private final Integer answerCount;
+
 	public static ShortQuestionApiResponse from(ShortQuestionDto dto) {
-		List<ShortAnswerApiResponse> answers = dto.getShortAnswers().stream()
+		List<ShortAnswerApiResponse> answers = dto.getShortAnswers() != null
+			? dto.getShortAnswers().stream()
 			.map(ShortAnswerApiResponse::from)
-			.toList();
+			.toList()
+			: null;
 
 		return ShortQuestionApiResponse.builder()
 			.id(dto.getId())
@@ -30,6 +35,7 @@ public class ShortQuestionApiResponse extends QuestionApiResponse {
 			.number(dto.getNumber())
 			.type(QuestionType.SHORT)
 			.answers(answers)
+			.answerCount(dto.getAnswerCount())
 			.build();
 	}
 }

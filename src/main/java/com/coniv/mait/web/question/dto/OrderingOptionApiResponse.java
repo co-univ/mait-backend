@@ -10,8 +10,8 @@ public record OrderingOptionApiResponse(
 	@Schema(description = "정렬 문제 옵션의 원래 순서", requiredMode = Schema.RequiredMode.REQUIRED)
 	int originOrder,
 	String content,
-	@Schema(description = "정렬 문제 옵션의 답안 순서", requiredMode = Schema.RequiredMode.REQUIRED)
-	int answerOrder
+	@Schema(description = "정렬 문제 옵션의 답안 순서", requiredMode = Schema.RequiredMode.NOT_REQUIRED)
+	Integer answerOrder
 ) {
 	public static OrderingOptionApiResponse from(OrderingQuestionOptionDto dto) {
 		return new OrderingOptionApiResponse(

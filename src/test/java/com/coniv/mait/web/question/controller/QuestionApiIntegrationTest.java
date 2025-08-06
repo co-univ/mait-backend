@@ -515,6 +515,7 @@ public class QuestionApiIntegrationTest extends BaseIntegrationTest {
 		mockMvc.perform(get("/api/v1/question-sets/{questionSetId}/questions/{questionId}",
 				savedQuestionSet.getId(), savedQuestion.getId())
 				.contentType(MediaType.APPLICATION_JSON))
+
 			.andExpectAll(
 				status().isOk(),
 				jsonPath("$.isSuccess").value(true),
@@ -523,6 +524,7 @@ public class QuestionApiIntegrationTest extends BaseIntegrationTest {
 				jsonPath("$.data.content").value("주관식 문제 내용"),
 				jsonPath("$.data.explanation").value("주관식 문제 해설"),
 				jsonPath("$.data.number").value(1),
+				jsonPath("$.data.answerCount").value(2),
 				jsonPath("$.data.answers").isArray(),
 				jsonPath("$.data.answers.length()").value(2),
 				jsonPath("$.data.answers[0].answer").value("정답1"),
@@ -631,6 +633,7 @@ public class QuestionApiIntegrationTest extends BaseIntegrationTest {
 				jsonPath("$.data.content").value("빈칸에 들어갈 적절한 단어는 ___입니다."),
 				jsonPath("$.data.explanation").value("빈칸 문제 해설"),
 				jsonPath("$.data.number").value(1),
+				jsonPath("$.data.blankCount").value(1),
 				jsonPath("$.data.answers").isArray(),
 				jsonPath("$.data.answers.length()").value(2),
 				jsonPath("$.data.answers[0].answer").value("정답1"),
