@@ -8,6 +8,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.coniv.mait.domain.question.entity.QuestionSetEntity;
 import com.coniv.mait.domain.question.enums.QuestionSetCreationType;
+import com.coniv.mait.domain.question.repository.QuestionEntityRepository;
 import com.coniv.mait.domain.question.repository.QuestionSetEntityRepository;
 import com.coniv.mait.domain.question.service.dto.QuestionSetDto;
 
@@ -18,6 +19,8 @@ import lombok.RequiredArgsConstructor;
 public class QuestionSetService {
 
 	private final QuestionSetEntityRepository questionSetEntityRepository;
+
+	private final QuestionEntityRepository questionEntityRepository;
 
 	@Transactional
 	public QuestionSetDto createQuestionSet(final String subject, final QuestionSetCreationType creationType) {
@@ -47,6 +50,8 @@ public class QuestionSetService {
 		final QuestionSetEntity questionSetEntity = questionSetEntityRepository.findById(questionSetId)
 			.orElseThrow(() -> new IllegalArgumentException("Question set not found"));
 
-		return QuestionSetDto.from(questionSetEntity);
+		long questionCount = questionEntityRepository.countByQuestionSetId(questionSetEntity.getId());
+
+		return QuestionSetDto.of(questionSetEntity, questionCount);
 	}
 }
