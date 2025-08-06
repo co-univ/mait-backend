@@ -1,6 +1,8 @@
 package com.coniv.mait.domain.question.service;
 
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -98,5 +100,21 @@ public class QuestionSetLiveControlService {
 			.filter(participant -> participant.getStatus() == ParticipantStatus.ACTIVE)
 			.map(ParticipantDto::from)
 			.toList();
+	}
+
+	@Transactional
+	public void updateActiveParticipants(Long questionSetId, List<Long> activeUserIds) {
+		QuestionSetEntity questionSet = findQuestionSetById(questionSetId);
+
+		List<QuestionSetParticipantEntity> allParticipants =
+			questionSetParticipantRepository.findAllByQuestionSetWithFetchJoinUser(questionSet);
+		Set<Long> activeIdSet = new HashSet<>(activeUserIds);
+
+		allParticipants.forEach(p -> {
+			ParticipantStatus newStatus = activeIdSet.contains(p.getUser().getId())
+				? ParticipantStatus.ACTIVE
+				: ParticipantStatus.ELIMINATED;
+			p.updateStatus(newStatus);
+		});
 	}
 }

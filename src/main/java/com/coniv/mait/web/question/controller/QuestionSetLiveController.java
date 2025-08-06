@@ -6,6 +6,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -14,6 +16,7 @@ import com.coniv.mait.domain.question.enums.QuestionSetLiveStatus;
 import com.coniv.mait.domain.question.service.QuestionSetLiveControlService;
 import com.coniv.mait.web.question.dto.ActiveParticipantsResponse;
 import com.coniv.mait.web.question.dto.QuestionSetLiveStatusResponse;
+import com.coniv.mait.web.question.dto.UpdateActiveParticipantsRequest;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -59,5 +62,14 @@ public class QuestionSetLiveController {
 		@PathVariable Long questionSetId) {
 		List<ParticipantDto> participants = questionSetLiveControlService.getActiveParticipants(questionSetId);
 		return ResponseEntity.ok(ActiveParticipantsResponse.from(participants));
+	}
+
+	@Operation(summary = "다음 문제 진출자 수정")
+	@PutMapping("/participants")
+	public ResponseEntity<Void> updateActiveParticipants(
+		@PathVariable Long questionSetId,
+		@RequestBody UpdateActiveParticipantsRequest request) {
+		questionSetLiveControlService.updateActiveParticipants(questionSetId, request.activeUserIds());
+		return ResponseEntity.ok().build();
 	}
 }
