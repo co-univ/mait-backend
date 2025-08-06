@@ -26,9 +26,9 @@ public class FillBlankQuestionDto extends QuestionDto {
 	}
 
 	public static QuestionDto of(FillBlankQuestionEntity fillBlankQuestion,
-		List<FillBlankAnswerEntity> fillBlankAnswers) {
+		List<FillBlankAnswerEntity> fillBlankAnswers, boolean answerVisible) {
 		List<FillBlankAnswerDto> fillBlankAnswerDtos = fillBlankAnswers.stream()
-			.map(FillBlankAnswerDto::from)
+			.map(fillBlankAnswer -> FillBlankAnswerDto.of(fillBlankAnswer, answerVisible))
 			.toList();
 
 		return FillBlankQuestionDto.builder()

@@ -31,9 +31,10 @@ public class ShortQuestionDto extends QuestionDto {
 			.build();
 	}
 
-	public static QuestionDto of(ShortQuestionEntity shortQuestion, List<ShortAnswerEntity> shortAnswers) {
+	public static QuestionDto of(ShortQuestionEntity shortQuestion, List<ShortAnswerEntity> shortAnswers,
+		boolean answerVisible) {
 		List<ShortAnswerDto> shortAnswerDtos = shortAnswers.stream()
-			.map(ShortAnswerDto::from)
+			.map(shortAnswerEntity -> ShortAnswerDto.of(shortAnswerEntity, answerVisible))
 			.toList();
 		return ShortQuestionDto.builder()
 			.id(shortQuestion.getId())

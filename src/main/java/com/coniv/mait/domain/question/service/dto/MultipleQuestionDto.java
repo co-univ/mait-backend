@@ -29,9 +29,10 @@ public class MultipleQuestionDto extends QuestionDto {
 		return this;
 	}
 
-	public static MultipleQuestionDto of(MultipleQuestionEntity multipleQuestion, List<MultipleChoiceEntity> choices) {
+	public static MultipleQuestionDto of(MultipleQuestionEntity multipleQuestion, List<MultipleChoiceEntity> choices,
+		final boolean answerVisible) {
 		List<MultipleChoiceDto> choiceDtos = choices.stream()
-			.map(MultipleChoiceDto::from)
+			.map(choice -> MultipleChoiceDto.of(choice, answerVisible))
 			.toList();
 
 		return MultipleQuestionDto.builder()

@@ -25,10 +25,10 @@ public class ShortAnswerDto {
 	@NotNull(message = "주관식 문제 정답 그룹 번호는 필수입니다.")
 	private Long number;
 
-	public static ShortAnswerDto from(ShortAnswerEntity shortAnswerEntity) {
+	public static ShortAnswerDto of(ShortAnswerEntity shortAnswerEntity, boolean answerVisible) {
 		return ShortAnswerDto.builder()
 			.id(shortAnswerEntity.getId())
-			.answer(shortAnswerEntity.getAnswer())
+			.answer(answerVisible ? shortAnswerEntity.getAnswer() : null)
 			.isMain(shortAnswerEntity.isMain())
 			.number(shortAnswerEntity.getNumber())
 			.build();

@@ -26,10 +26,10 @@ public class FillBlankAnswerDto {
 	@NotNull(message = "빈칸 문제 정답 그룹 번호는 필수입니다.")
 	private Long number;
 
-	public static FillBlankAnswerDto from(FillBlankAnswerEntity fillBlankAnswerEntity) {
+	public static FillBlankAnswerDto of(FillBlankAnswerEntity fillBlankAnswerEntity, boolean answerVisible) {
 		return FillBlankAnswerDto.builder()
 			.id(fillBlankAnswerEntity.getId())
-			.answer(fillBlankAnswerEntity.getAnswer())
+			.answer(answerVisible ? fillBlankAnswerEntity.getAnswer() : null)
 			.isMain(fillBlankAnswerEntity.isMain())
 			.number(fillBlankAnswerEntity.getNumber())
 			.build();

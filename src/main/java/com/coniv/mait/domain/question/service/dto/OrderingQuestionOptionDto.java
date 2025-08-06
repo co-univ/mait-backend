@@ -24,16 +24,16 @@ public class OrderingQuestionOptionDto {
 	@Schema(description = "보기 내용", examples = {"보기 내용 1", "보기 내용 2"}, requiredMode = Schema.RequiredMode.REQUIRED)
 	private String content;
 
-	@Schema(description = "정답이 되는 순서", examples = {"1", "2", "3"}, requiredMode = Schema.RequiredMode.REQUIRED)
+	@Schema(description = "정답이 되는 순서", examples = {"1", "2", "3"}, requiredMode = Schema.RequiredMode.NOT_REQUIRED)
 	@NotNull(message = "정답이 되는 순서는 필수입니다.")
-	private int answerOrder;
+	private Integer answerOrder;
 
-	public static OrderingQuestionOptionDto from(OrderingOptionEntity orderingOptionEntity) {
+	public static OrderingQuestionOptionDto of(OrderingOptionEntity orderingOptionEntity, boolean answerVisible) {
 		return OrderingQuestionOptionDto.builder()
 			.id(orderingOptionEntity.getId())
 			.originOrder(orderingOptionEntity.getOriginOrder())
 			.content(orderingOptionEntity.getContent())
-			.answerOrder(orderingOptionEntity.getAnswerOrder())
+			.answerOrder(answerVisible ? orderingOptionEntity.getAnswerOrder() : null)
 			.build();
 	}
 }

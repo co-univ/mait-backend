@@ -26,14 +26,14 @@ public class MultipleChoiceDto {
 	private String content;
 
 	@NotNull(message = "객관식 선지의 정답 여부는 필수입니다.")
-	private boolean isCorrect;
+	private Boolean isCorrect;
 
-	public static MultipleChoiceDto from(final MultipleChoiceEntity multipleChoice) {
+	public static MultipleChoiceDto of(final MultipleChoiceEntity multipleChoice, final boolean answerVisible) {
 		return MultipleChoiceDto.builder()
 			.id(multipleChoice.getId())
 			.number(multipleChoice.getNumber())
 			.content(multipleChoice.getContent())
-			.isCorrect(multipleChoice.isCorrect())
+			.isCorrect(answerVisible ? multipleChoice.isCorrect() : null)
 			.build();
 	}
 }

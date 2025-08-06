@@ -11,6 +11,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.coniv.mait.domain.question.enums.DeliveryMode;
 import com.coniv.mait.domain.question.enums.QuestionType;
 import com.coniv.mait.domain.question.service.QuestionService;
 import com.coniv.mait.global.response.ApiResponse;
@@ -44,9 +45,10 @@ public class QuestionController {
 	@GetMapping("/{questionId}")
 	public ResponseEntity<ApiResponse<QuestionApiResponse>> getQuestion(
 		@PathVariable("questionSetId") final Long questionSetId,
-		@PathVariable("questionId") final Long questionId) {
+		@PathVariable("questionId") final Long questionId,
+		@RequestParam(value = "mode", required = false) DeliveryMode mode) {
 		return ResponseEntity.ok(
-			ApiResponse.ok(QuestionApiResponse.from(questionService.getQuestion(questionSetId, questionId))));
+			ApiResponse.ok(QuestionApiResponse.from(questionService.getQuestion(questionSetId, questionId, mode))));
 	}
 
 	@Operation(summary = "문제 셋에 속한 모든 문제 조회 API")
