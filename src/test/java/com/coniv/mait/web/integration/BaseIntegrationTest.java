@@ -10,7 +10,6 @@ import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.coniv.mait.config.TestRedisConfigWithoutServer;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 @SpringBootTest
@@ -19,7 +18,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 @Rollback
 @Transactional
 @ActiveProfiles({"test"})
-@Import(TestRedisConfigWithoutServer.class)
 public class BaseIntegrationTest {
 
 	@Autowired
