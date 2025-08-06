@@ -1,7 +1,7 @@
-package com.coniv.mait.web.question.controller;
+package com.coniv.mait.domain.question.service.component;
 
 import org.springframework.messaging.simp.SimpMessagingTemplate;
-import org.springframework.stereotype.Controller;
+import org.springframework.stereotype.Service;
 
 import com.coniv.mait.domain.question.dto.QuestionSetStatusMessage;
 import com.coniv.mait.domain.question.dto.QuestionStatusMessage;
@@ -9,10 +9,10 @@ import com.coniv.mait.domain.question.dto.QuestionStatusMessage;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
-@Controller
+@Service
 @RequiredArgsConstructor
 @Slf4j
-public class QuestionWebSocketController {
+public class QuestionWebSocketSender {
 
 	private final SimpMessagingTemplate messagingTemplate;
 
@@ -31,3 +31,4 @@ public class QuestionWebSocketController {
 		log.info("Broadcasting question set status to {}: {}", destination, message);
 	}
 }
+

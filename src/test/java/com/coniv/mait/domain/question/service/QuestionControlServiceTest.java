@@ -17,8 +17,8 @@ import com.coniv.mait.domain.question.entity.QuestionEntity;
 import com.coniv.mait.domain.question.entity.QuestionSetEntity;
 import com.coniv.mait.domain.question.enums.QuestionStatusType;
 import com.coniv.mait.domain.question.repository.QuestionEntityRepository;
+import com.coniv.mait.domain.question.service.component.QuestionWebSocketSender;
 import com.coniv.mait.global.exception.custom.ResourceNotBelongException;
-import com.coniv.mait.web.question.controller.QuestionWebSocketController;
 
 import jakarta.persistence.EntityNotFoundException;
 
@@ -26,7 +26,7 @@ import jakarta.persistence.EntityNotFoundException;
 class QuestionControlServiceTest {
 
 	@Mock
-	private QuestionWebSocketController questionWebSocketController;
+	private QuestionWebSocketSender questionWebSocketSender;
 
 	@Mock
 	private QuestionEntityRepository questionEntityRepository;
@@ -57,7 +57,7 @@ class QuestionControlServiceTest {
 
 		// then
 		verify(questionEntity).updateQuestionStatus(QuestionStatusType.ACCESS_PERMISSION);
-		verify(questionWebSocketController).broadcastQuestionStatus(eq(questionSetId),
+		verify(questionWebSocketSender).broadcastQuestionStatus(eq(questionSetId),
 			any(QuestionStatusMessage.class));
 	}
 
@@ -78,7 +78,7 @@ class QuestionControlServiceTest {
 
 		// then
 		verify(questionEntity).updateQuestionStatus(QuestionStatusType.SOLVE_PERMISSION);
-		verify(questionWebSocketController).broadcastQuestionStatus(eq(questionSetId),
+		verify(questionWebSocketSender).broadcastQuestionStatus(eq(questionSetId),
 			any(QuestionStatusMessage.class));
 	}
 
