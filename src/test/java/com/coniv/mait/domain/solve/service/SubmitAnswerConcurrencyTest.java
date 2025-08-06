@@ -34,7 +34,7 @@ import com.coniv.mait.domain.solve.repository.QuestionScorerEntityRepository;
 import com.coniv.mait.domain.solve.service.dto.MultipleQuestionSubmitAnswer;
 import com.coniv.mait.domain.user.entity.UserEntity;
 
-@Disabled("GitHub Actions에서 embedded Redis 실행 불가 - 로컬에서만 실행")
+@Disabled("동시성 테스트는 로컬에서만 실행 - CI 환경에서 불안정")
 @SpringBootTest
 @ActiveProfiles("test")
 @Import(TestRedisConfig.class)

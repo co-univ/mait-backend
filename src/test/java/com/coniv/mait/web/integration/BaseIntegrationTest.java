@@ -11,7 +11,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-@SpringBootTest(classes = com.coniv.mait.TestMaitApplication.class)
+@SpringBootTest
 @Disabled
 @AutoConfigureMockMvc
 @Rollback
