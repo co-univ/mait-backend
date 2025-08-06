@@ -31,9 +31,8 @@ public class AnswerSubmitRecordEntity extends BaseTimeEntity {
 	@Column(nullable = false)
 	private Long questionId;
 
-	// Todo: 선착순 로직 처리 시에 추가
-	// @Column(nullable = false)
-	// private Long submitOrder;
+	@Column(nullable = false)
+	private Long submitOrder;
 
 	@Column(nullable = false)
 	private boolean isCorrect;
