@@ -1,5 +1,7 @@
 package com.coniv.mait.web.solve.controller;
 
+import java.util.List;
+
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -13,6 +15,7 @@ import com.coniv.mait.domain.solve.service.QuestionScorerService;
 import com.coniv.mait.global.response.ApiResponse;
 import com.coniv.mait.web.solve.dto.QuestionAnswerSubmitApiRequest;
 import com.coniv.mait.web.solve.dto.QuestionAnswerSubmitApiResponse;
+import com.coniv.mait.web.solve.dto.QuestionAnswerSubmitRecordApiResponse;
 import com.coniv.mait.web.solve.dto.QuestionScorerApiResponse;
 import com.fasterxml.jackson.core.JsonProcessingException;
 
@@ -51,5 +54,14 @@ public class QuestionAnswerSubmitController {
 	) {
 		return ResponseEntity.ok().body(ApiResponse.ok(
 			QuestionScorerApiResponse.from(questionScorerService.getScorer(questionSetId, questionId))));
+	}
+
+	@Operation(summary = "문제 풀이 정답 제출 기록 조회 API")
+	@GetMapping("/submit-records")
+	public ResponseEntity<ApiResponse<List<QuestionAnswerSubmitRecordApiResponse>>> getSubmitRecords(
+		@PathVariable("questionSetId") Long questionSetId, @PathVariable("questionId") Long questionId) {
+		return ResponseEntity.ok().body(ApiResponse.ok(
+			QuestionAnswerSubmitRecordApiResponse.from(
+				questionAnswerSubmitService.getSubmitRecords(questionSetId, questionId))));
 	}
 }
