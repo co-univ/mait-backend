@@ -21,6 +21,8 @@ import com.coniv.mait.domain.question.repository.OrderingOptionEntityRepository;
 import com.coniv.mait.domain.question.repository.QuestionEntityRepository;
 import com.coniv.mait.domain.question.repository.QuestionSetEntityRepository;
 import com.coniv.mait.domain.question.repository.ShortAnswerEntityRepository;
+import com.coniv.mait.domain.solve.entity.QuestionScorerEntity;
+import com.coniv.mait.domain.solve.repository.QuestionScorerEntityRepository;
 import com.coniv.mait.domain.user.entity.UserEntity;
 import com.coniv.mait.domain.user.repository.UserEntityRepository;
 import com.coniv.mait.web.integration.BaseIntegrationTest;
@@ -57,8 +59,12 @@ public class QuestionAnswerSubmitApiIntegrationTest extends BaseIntegrationTest 
 	@Autowired
 	private OrderingOptionEntityRepository orderingOptionEntityRepository;
 
+	@Autowired
+	private QuestionScorerEntityRepository questionScorerEntityRepository;
+
 	@BeforeEach
 	void clear() {
+		questionScorerEntityRepository.deleteAll();
 		multipleChoiceEntityRepository.deleteAll();
 		fillBlankAnswerEntityRepository.deleteAll();
 		shortAnswerEntityRepository.deleteAll();
@@ -125,6 +131,57 @@ public class QuestionAnswerSubmitApiIntegrationTest extends BaseIntegrationTest 
 				jsonPath("$.data.userId").value(user.getId()),
 				jsonPath("$.data.questionId").value(multipleQuestion.getId()),
 				jsonPath("$.data.isCorrect").value(true)
+			);
+	}
+
+	@Test
+	@DisplayName("문제별 득점자 조회 성공 API 테스트")
+	void getScorer_Success() throws Exception {
+		// Given
+		final Long teamId = 1L;
+		UserEntity user = userEntityRepository.save(
+			UserEntity.localLoginUser("email", "testUser", "테스트사용자", "singsing"));
+
+		QuestionSetEntity questionSet = questionSetEntityRepository.save(
+			QuestionSetEntity.builder()
+				.teamId(teamId)
+				.build()
+		);
+
+		MultipleQuestionEntity multipleQuestion = questionEntityRepository.save(
+			MultipleQuestionEntity.builder()
+				.number(1L)
+				.questionSet(questionSet)
+				.build()
+		);
+
+		MultipleChoiceEntity multipleChoice1 = MultipleChoiceEntity.builder()
+			.question(multipleQuestion)
+			.number(1)
+			.isCorrect(true)
+			.build();
+
+		multipleChoiceEntityRepository.save(multipleChoice1);
+
+		QuestionScorerEntity scorer = questionScorerEntityRepository.save(
+			QuestionScorerEntity.builder()
+				.questionId(multipleQuestion.getId())
+				.userId(user.getId())
+				.submitOrder(1L)
+				.build()
+		);
+
+		// When & Then
+		mockMvc.perform(get("/api/v1/question-sets/{questionSetId}/questions/{questionId}/scorer",
+				questionSet.getId(), multipleQuestion.getId()))
+			.andExpect(status().isOk())
+			.andExpectAll(
+				jsonPath("$.isSuccess").value(true),
+				jsonPath("$.data.id").value(scorer.getId()),
+				jsonPath("$.data.questionId").value(multipleQuestion.getId()),
+				jsonPath("$.data.userId").value(user.getId()),
+				jsonPath("$.data.userName").value("테스트사용자"),
+				jsonPath("$.data.submitOrder").value(1)
 			);
 	}
 }
