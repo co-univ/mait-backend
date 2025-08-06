@@ -122,7 +122,7 @@ public class QuestionAnswerSubmitApiIntegrationTest extends BaseIntegrationTest 
 			.andExpectAll(
 				jsonPath("$.isSuccess").value(true),
 				jsonPath("$.data.id").exists(),
-				jsonPath("$.data.userId").value(1L),
+				jsonPath("$.data.userId").value(user.getId()),
 				jsonPath("$.data.questionId").value(multipleQuestion.getId()),
 				jsonPath("$.data.isCorrect").value(true)
 			);
