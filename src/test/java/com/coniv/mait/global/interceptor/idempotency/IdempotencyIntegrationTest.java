@@ -15,12 +15,12 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
-import com.coniv.mait.domain.auth.repository.UserEntityRepository;
 import com.coniv.mait.domain.question.entity.MultipleQuestionEntity;
 import com.coniv.mait.domain.question.entity.QuestionSetEntity;
 import com.coniv.mait.domain.question.repository.QuestionEntityRepository;
 import com.coniv.mait.domain.question.repository.QuestionSetEntityRepository;
 import com.coniv.mait.domain.user.entity.UserEntity;
+import com.coniv.mait.domain.user.repository.UserEntityRepository;
 import com.coniv.mait.web.integration.BaseIntegrationTest;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 

@@ -15,16 +15,15 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.context.annotation.Import;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.coniv.mait.domain.auth.repository.UserEntityRepository;
 import com.coniv.mait.domain.team.entity.TeamEntity;
 import com.coniv.mait.domain.team.repository.TeamEntityRepository;
 import com.coniv.mait.domain.team.service.TeamService;
 import com.coniv.mait.domain.user.entity.UserEntity;
+import com.coniv.mait.domain.user.repository.UserEntityRepository;
 import com.coniv.mait.util.TemporaryPasswordGenerator;
 
 @SpringBootTest

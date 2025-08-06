@@ -19,7 +19,6 @@ import org.springframework.context.annotation.Import;
 import org.springframework.test.context.ActiveProfiles;
 
 import com.coniv.mait.config.TestRedisConfig;
-import com.coniv.mait.domain.auth.repository.UserEntityRepository;
 import com.coniv.mait.domain.question.entity.MultipleChoiceEntity;
 import com.coniv.mait.domain.question.entity.MultipleQuestionEntity;
 import com.coniv.mait.domain.question.entity.QuestionSetEntity;
@@ -33,6 +32,7 @@ import com.coniv.mait.domain.solve.repository.AnswerSubmitRecordEntityRepository
 import com.coniv.mait.domain.solve.repository.QuestionScorerEntityRepository;
 import com.coniv.mait.domain.solve.service.dto.MultipleQuestionSubmitAnswer;
 import com.coniv.mait.domain.user.entity.UserEntity;
+import com.coniv.mait.domain.user.repository.UserEntityRepository;
 
 @Disabled("동시성 테스트는 로컬에서만 실행 - CI 환경에서 불안정")
 @SpringBootTest

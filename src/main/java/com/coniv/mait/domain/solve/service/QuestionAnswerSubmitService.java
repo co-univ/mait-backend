@@ -3,7 +3,6 @@ package com.coniv.mait.domain.solve.service;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.coniv.mait.domain.auth.repository.UserEntityRepository;
 import com.coniv.mait.domain.question.entity.QuestionEntity;
 import com.coniv.mait.domain.question.repository.QuestionEntityRepository;
 import com.coniv.mait.domain.solve.entity.AnswerSubmitRecordEntity;
@@ -15,6 +14,7 @@ import com.coniv.mait.domain.solve.service.component.SubmitOrderGenerator;
 import com.coniv.mait.domain.solve.service.dto.AnswerSubmitDto;
 import com.coniv.mait.domain.solve.service.dto.SubmitAnswerDto;
 import com.coniv.mait.domain.user.entity.UserEntity;
+import com.coniv.mait.domain.user.repository.UserEntityRepository;
 import com.coniv.mait.global.exception.custom.ResourceNotBelongException;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
