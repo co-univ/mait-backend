@@ -629,10 +629,10 @@ class QuestionServiceTest {
 
 		// then
 		assertThat(result).isInstanceOf(com.coniv.mait.domain.question.service.dto.ShortQuestionDto.class);
-		
-		com.coniv.mait.domain.question.service.dto.ShortQuestionDto shortResult = 
-			(com.coniv.mait.domain.question.service.dto.ShortQuestionDto) result;
-		
+
+		com.coniv.mait.domain.question.service.dto.ShortQuestionDto shortResult =
+			(com.coniv.mait.domain.question.service.dto.ShortQuestionDto)result;
+
 		assertThat(shortResult.getShortAnswers()).isNull(); // 실시간 모드에서는 답안 숨김
 		assertThat(shortResult.getAnswerCount()).isEqualTo(3); // 개수 정보는 제공
 	}
@@ -657,7 +657,7 @@ class QuestionServiceTest {
 		FillBlankAnswerEntity answer1 = mock(FillBlankAnswerEntity.class);
 		FillBlankAnswerEntity answer2 = mock(FillBlankAnswerEntity.class);
 		FillBlankAnswerEntity answer3 = mock(FillBlankAnswerEntity.class);
-		
+
 		when(answer1.getNumber()).thenReturn(1L); // 첫 번째 빈칸
 		when(answer2.getNumber()).thenReturn(1L); // 첫 번째 빈칸의 다른 정답
 		when(answer3.getNumber()).thenReturn(2L); // 두 번째 빈칸
@@ -672,10 +672,10 @@ class QuestionServiceTest {
 
 		// then
 		assertThat(result).isInstanceOf(com.coniv.mait.domain.question.service.dto.FillBlankQuestionDto.class);
-		
-		com.coniv.mait.domain.question.service.dto.FillBlankQuestionDto fillBlankResult = 
-			(com.coniv.mait.domain.question.service.dto.FillBlankQuestionDto) result;
-		
+
+		com.coniv.mait.domain.question.service.dto.FillBlankQuestionDto fillBlankResult =
+			(com.coniv.mait.domain.question.service.dto.FillBlankQuestionDto)result;
+
 		assertThat(fillBlankResult.getFillBlankAnswers()).isNull(); // 실시간 모드에서는 답안 숨김
 		assertThat(fillBlankResult.getBlankCount()).isEqualTo(2); // 빈칸 개수는 제공 (number 1, 2)
 	}

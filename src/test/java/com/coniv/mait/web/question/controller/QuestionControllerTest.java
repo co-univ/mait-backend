@@ -26,7 +26,6 @@ import com.coniv.mait.domain.question.service.dto.MultipleChoiceDto;
 import com.coniv.mait.domain.question.service.dto.MultipleQuestionDto;
 import com.coniv.mait.domain.question.service.dto.OrderingQuestionOptionDto;
 import com.coniv.mait.domain.question.service.dto.ShortAnswerDto;
-import com.coniv.mait.domain.question.enums.DeliveryMode;
 import com.coniv.mait.global.exception.custom.ResourceNotBelongException;
 import com.coniv.mait.global.interceptor.idempotency.IdempotencyInterceptor;
 import com.coniv.mait.web.question.dto.CreateFillBlankQuestionApiRequest;
