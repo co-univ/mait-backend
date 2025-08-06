@@ -8,4 +8,6 @@ import com.coniv.mait.domain.question.entity.QuestionEntity;
 
 public interface QuestionEntityRepository extends JpaRepository<QuestionEntity, Long> {
 	List<QuestionEntity> findAllByQuestionSetId(final Long questionSetId);
+
+	long countByQuestionSetId(Long questionSetId);
 }
