@@ -62,4 +62,8 @@ public class QuestionSetParticipantEntity extends BaseTimeEntity {
 			.status(ParticipantStatus.ACTIVE)
 			.build();
 	}
+
+	public String getParticipantName() {
+		return user.getName();
+	}
 }

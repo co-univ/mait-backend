@@ -1,5 +1,7 @@
 package com.coniv.mait.web.question.controller;
 
+import java.util.List;
+
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
@@ -7,8 +9,10 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.coniv.mait.domain.question.dto.ParticipantDto;
 import com.coniv.mait.domain.question.enums.QuestionSetLiveStatus;
 import com.coniv.mait.domain.question.service.QuestionSetLiveControlService;
+import com.coniv.mait.web.question.dto.ActiveParticipantsResponse;
 import com.coniv.mait.web.question.dto.QuestionSetLiveStatusResponse;
 
 import io.swagger.v3.oas.annotations.Operation;
@@ -47,5 +51,13 @@ public class QuestionSetLiveController {
 		@PathVariable Long questionSetId) {
 		QuestionSetLiveStatus status = questionSetLiveControlService.getLiveStatus(questionSetId);
 		return ResponseEntity.ok(QuestionSetLiveStatusResponse.from(questionSetId, status));
+	}
+
+	@Operation(summary = "다음 문제 진출자 조회")
+	@GetMapping("/participants")
+	public ResponseEntity<ActiveParticipantsResponse> getActiveParticipants(
+		@PathVariable Long questionSetId) {
+		List<ParticipantDto> participants = questionSetLiveControlService.getActiveParticipants(questionSetId);
+		return ResponseEntity.ok(ActiveParticipantsResponse.from(participants));
 	}
 }

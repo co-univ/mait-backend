@@ -5,10 +5,12 @@ import java.util.List;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.coniv.mait.domain.question.dto.ParticipantDto;
 import com.coniv.mait.domain.question.dto.QuestionSetStatusMessage;
 import com.coniv.mait.domain.question.entity.QuestionSetEntity;
 import com.coniv.mait.domain.question.entity.QuestionSetParticipantEntity;
 import com.coniv.mait.domain.question.enums.DeliveryMode;
+import com.coniv.mait.domain.question.enums.ParticipantStatus;
 import com.coniv.mait.domain.question.enums.QuestionSetCommandType;
 import com.coniv.mait.domain.question.enums.QuestionSetLiveStatus;
 import com.coniv.mait.domain.question.repository.QuestionSetEntityRepository;
@@ -85,6 +87,16 @@ public class QuestionSetLiveControlService {
 	private List<UserEntity> findParticipantUsers(QuestionSetEntity questionSet) {
 		return teamUserRepository.findAllByTeamId(questionSet.getTeamId()).stream()
 			.map(TeamUserEntity::getUser)
+			.toList();
+	}
+
+	@Transactional(readOnly = true)
+	public List<ParticipantDto> getActiveParticipants(Long questionSetId) {
+		QuestionSetEntity questionSet = findQuestionSetById(questionSetId);
+
+		return questionSetParticipantRepository.findAllByQuestionSetWithFetchJoinUser(questionSet).stream()
+			.filter(participant -> participant.getStatus() == ParticipantStatus.ACTIVE)
+			.map(ParticipantDto::from)
 			.toList();
 	}
 }
