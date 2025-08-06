@@ -24,6 +24,7 @@ public class QuestionSetDto {
 	private QuestionSetVisibility visibility;
 	private DeliveryMode deliveryMode;
 	private Long teamId;
+	private Long questionCount;
 	private LocalDateTime createdAt;
 
 	public static QuestionSetDto from(final QuestionSetEntity questionSetEntity) {
@@ -36,6 +37,20 @@ public class QuestionSetDto {
 			.deliveryMode(questionSetEntity.getDeliveryMode())
 			.teamId(questionSetEntity.getTeamId())
 			.createdAt(questionSetEntity.getCreatedAt())
+			.build();
+	}
+
+	public static QuestionSetDto of(QuestionSetEntity questionSetEntity, long questionCount) {
+		return QuestionSetDto.builder()
+			.id(questionSetEntity.getId())
+			.subject(questionSetEntity.getSubject())
+			.title(questionSetEntity.getTitle())
+			.creationType(questionSetEntity.getCreationType())
+			.visibility(questionSetEntity.getVisibility())
+			.deliveryMode(questionSetEntity.getDeliveryMode())
+			.teamId(questionSetEntity.getTeamId())
+			.createdAt(questionSetEntity.getCreatedAt())
+			.questionCount(questionCount)
 			.build();
 	}
 }

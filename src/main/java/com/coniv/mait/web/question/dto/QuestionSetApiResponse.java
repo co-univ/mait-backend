@@ -24,6 +24,9 @@ public record QuestionSetApiResponse(
 	DeliveryMode deliveryMode,
 	@Schema(requiredMode = Schema.RequiredMode.REQUIRED)
 	Long teamId,
+
+	@Schema(requiredMode = Schema.RequiredMode.REQUIRED)
+	Long questionCount,
 	@Schema(requiredMode = Schema.RequiredMode.REQUIRED)
 	LocalDateTime createdAt
 
@@ -37,6 +40,7 @@ public record QuestionSetApiResponse(
 			.visibility(questionSetDto.getVisibility())
 			.deliveryMode(questionSetDto.getDeliveryMode())
 			.teamId(questionSetDto.getTeamId())
+			.questionCount(questionSetDto.getQuestionCount())
 			.createdAt(questionSetDto.getCreatedAt())
 			.build();
 	}
