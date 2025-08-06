@@ -7,6 +7,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import java.util.List;
 import java.util.stream.Stream;
 
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -22,6 +23,7 @@ import org.springframework.test.web.servlet.MockMvc;
 import com.coniv.mait.domain.question.enums.QuestionSetCreationType;
 import com.coniv.mait.domain.question.service.QuestionSetService;
 import com.coniv.mait.domain.question.service.dto.QuestionSetDto;
+import com.coniv.mait.global.interceptor.idempotency.IdempotencyInterceptor;
 import com.coniv.mait.web.question.dto.CreateQuestionSetApiRequest;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
@@ -37,6 +39,14 @@ class QuestionSetControllerTest {
 
 	@Autowired
 	private ObjectMapper objectMapper;
+
+	@MockitoBean
+	private IdempotencyInterceptor idempotencyInterceptor;
+
+	@BeforeEach
+	void setUp() throws Exception {
+		when(idempotencyInterceptor.preHandle(any(), any(), any())).thenReturn(true);
+	}
 
 	@Test
 	@DisplayName("문제 셋 생성 테스트")

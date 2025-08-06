@@ -55,7 +55,7 @@ public class QuestionSetController {
 	@Operation(summary = "문제 셋 단건 조회")
 	@GetMapping("/{questionSetId}")
 	public ResponseEntity<ApiResponse<QuestionSetApiResponse>> getQuestionSet(
-		@PathVariable Long questionSetId) {
+		@PathVariable("questionSetId") Long questionSetId) {
 		QuestionSetDto questionSetDto = questionSetService.getQuestionSet(questionSetId);
 		return ResponseEntity.ok(ApiResponse.ok(QuestionSetApiResponse.from(questionSetDto)));
 	}

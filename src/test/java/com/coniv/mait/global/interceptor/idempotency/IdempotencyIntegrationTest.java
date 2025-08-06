@@ -74,7 +74,8 @@ public class IdempotencyIntegrationTest extends BaseIntegrationTest {
 		node.put("userId", user.getId());
 		node.set("submitAnswers", objectMapper.valueToTree(List.of(1L)));
 
-		mockMvc.perform(post("/api/v1/question-sets/1/questions/1/submit")
+		mockMvc.perform(post("/api/v1/question-sets/{questionSetId}/questions/{questionId}/submit", questionSet.getId(),
+				multipleQuestion.getId())
 				.header("Idempotency-Key", idempotencyKey)
 				.contentType(MediaType.APPLICATION_JSON)
 				.content(objectMapper.writeValueAsString(node)))
@@ -111,7 +112,8 @@ public class IdempotencyIntegrationTest extends BaseIntegrationTest {
 		node.put("userId", user.getId());
 		node.set("submitAnswers", objectMapper.valueToTree(List.of(1L)));
 
-		mockMvc.perform(post("/api/v1/question-sets/1/questions/1/submit")
+		mockMvc.perform(post("/api/v1/question-sets/{questionSetId}/questions/{questionId}/submit", questionSet.getId(),
+				multipleQuestion.getId())
 				.header("Idempotency-Key", "abc123")
 				.contentType(MediaType.APPLICATION_JSON)
 				.content(objectMapper.writeValueAsString(node)))
