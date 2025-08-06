@@ -9,6 +9,8 @@ import com.coniv.mait.domain.question.repository.QuestionEntityRepository;
 import com.coniv.mait.domain.solve.entity.AnswerSubmitRecordEntity;
 import com.coniv.mait.domain.solve.repository.AnswerSubmitRecordEntityRepository;
 import com.coniv.mait.domain.solve.service.component.AnswerGrader;
+import com.coniv.mait.domain.solve.service.component.ScorerGenerator;
+import com.coniv.mait.domain.solve.service.component.ScorerProcessor;
 import com.coniv.mait.domain.solve.service.component.SubmitOrderGenerator;
 import com.coniv.mait.domain.solve.service.dto.AnswerSubmitDto;
 import com.coniv.mait.domain.solve.service.dto.SubmitAnswerDto;
@@ -34,6 +36,10 @@ public class QuestionAnswerSubmitService {
 
 	private final SubmitOrderGenerator submitOrderGenerator;
 
+	private final ScorerProcessor scorerProcessor;
+
+	private final ScorerGenerator scorerGenerator;
+
 	private final ObjectMapper objectMapper;
 
 	@Transactional
@@ -54,6 +60,11 @@ public class QuestionAnswerSubmitService {
 		}
 
 		final boolean isCorrect = answerGrader.gradeAnswer(question, submitAnswer);
+		// Todo: 이미 정답 기록이 있는지 확인
+
+		if (isCorrect && user.getId().equals(scorerProcessor.getScorer(questionId, user.getId(), submitOrder))) {
+			scorerGenerator.updateScorer(questionId, user.getId(), submitOrder);
+		}
 
 		AnswerSubmitRecordEntity submitRecord = AnswerSubmitRecordEntity.builder()
 			.userId(user.getId())
