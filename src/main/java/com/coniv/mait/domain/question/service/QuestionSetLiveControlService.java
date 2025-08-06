@@ -1,5 +1,6 @@
 package com.coniv.mait.domain.question.service;
 
+import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -8,6 +9,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.coniv.mait.domain.question.dto.ParticipantDto;
+import com.coniv.mait.domain.question.dto.QuestionSetActiveParticipantMessage;
 import com.coniv.mait.domain.question.dto.QuestionSetStatusMessage;
 import com.coniv.mait.domain.question.entity.QuestionSetEntity;
 import com.coniv.mait.domain.question.entity.QuestionSetParticipantEntity;
@@ -116,5 +118,28 @@ public class QuestionSetLiveControlService {
 				: ParticipantStatus.ELIMINATED;
 			p.updateStatus(newStatus);
 		});
+
+		// ACTIVE 상태인 참가자들만 필터링해서 메시지 전송
+		List<QuestionSetParticipantEntity> activeParticipants = allParticipants.stream()
+			.filter(participant -> participant.getStatus() == ParticipantStatus.ACTIVE)
+			.toList();
+		sendActiveParticipantsUpdateMessage(questionSetId, activeParticipants);
+	}
+
+	private void sendActiveParticipantsUpdateMessage(Long questionSetId,
+		List<QuestionSetParticipantEntity> activeParticipants) {
+		List<ParticipantDto> participants = activeParticipants.stream()
+			.map(ParticipantDto::from)
+			.sorted(Comparator.comparing(ParticipantDto::getParticipantName))
+			.toList();
+
+		QuestionSetStatusMessage message = QuestionSetActiveParticipantMessage.builder()
+			.questionSetId(questionSetId)
+			.commandType(QuestionSetCommandType.ACTIVE_PARTICIPANTS)
+			.activeParticipants(participants)
+			.build();
+
+		questionWebSocketSender.broadcastQuestionStatus(questionSetId, message);
+		log.info("Updated active participants for question set ID: {}", questionSetId);
 	}
 }

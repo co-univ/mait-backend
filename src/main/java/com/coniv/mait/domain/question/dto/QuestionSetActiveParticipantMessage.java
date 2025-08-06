@@ -1,6 +1,6 @@
 package com.coniv.mait.domain.question.dto;
 
-import com.coniv.mait.domain.question.enums.QuestionSetCommandType;
+import java.util.List;
 
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -9,7 +9,6 @@ import lombok.experimental.SuperBuilder;
 @Getter
 @NoArgsConstructor
 @SuperBuilder
-public class QuestionSetStatusMessage {
-	private Long questionSetId;
-	private QuestionSetCommandType commandType;
+public class QuestionSetActiveParticipantMessage extends QuestionSetStatusMessage {
+	private List<ParticipantDto> activeParticipants;
 }
