@@ -12,8 +12,10 @@ import org.springframework.web.filter.OncePerRequestFilter;
 
 import com.coniv.mait.domain.user.entity.UserEntity;
 import com.coniv.mait.domain.user.repository.UserEntityRepository;
+import com.coniv.mait.global.jwt.JwtAuthenticationEntryPoint;
 import com.coniv.mait.global.jwt.JwtTokenProvider;
 
+import io.jsonwebtoken.JwtException;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -32,6 +34,8 @@ public class JwtAuthorizationFilter extends OncePerRequestFilter {
 
 	private final JwtTokenProvider jwtTokenProvider;
 
+	private final JwtAuthenticationEntryPoint jwtAuthenticationEntryPoint;
+
 	private final UserEntityRepository userEntityRepository;
 
 	@Override
@@ -39,12 +43,17 @@ public class JwtAuthorizationFilter extends OncePerRequestFilter {
 		throws ServletException, IOException {
 		final String authorizationHeader = request.getHeader(AUTH_HEADER);
 		final String bearerToken = getBearerToken(authorizationHeader);
-		jwtTokenProvider.validateAccessToken(bearerToken);
-		final Long userId = jwtTokenProvider.getUserId(bearerToken);
-		UserEntity user = userEntityRepository.findById(userId).orElseThrow();
+		try {
+			jwtTokenProvider.validateAccessToken(bearerToken);
+			final Long userId = jwtTokenProvider.getUserId(bearerToken);
+			UserEntity user = userEntityRepository.findById(userId).orElseThrow();
 
-		setAuthentication(user);
-		filterChain.doFilter(request, response);
+			setAuthentication(user);
+			filterChain.doFilter(request, response);
+		} catch (BadCredentialsException | JwtException e) {
+			jwtAuthenticationEntryPoint.commence(request, response,
+				new BadCredentialsException("Invalid JWT token", e));
+		}
 	}
 
 	private void setAuthentication(UserEntity user) {

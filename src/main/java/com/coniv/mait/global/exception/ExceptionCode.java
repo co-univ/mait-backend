@@ -16,6 +16,7 @@ public enum ExceptionCode {
 	PROCESSING(HttpStatus.CONFLICT, "C-005", "이전 요청이 처리 중입니다."),
 
 	LOGIN_FAIL_EXCEPTION(HttpStatus.UNAUTHORIZED, "A-001", "로그인 실패"),
+	JWT_AUTH_EXCEPTION(HttpStatus.UNAUTHORIZED, "A-002", "JWT 인증 오류"),
 
 	UNEXPECTED_EXCEPTION(HttpStatus.INTERNAL_SERVER_ERROR, "S-000", "예기치 못한 오류가 발생했습니다.");
 
