@@ -148,7 +148,7 @@ class SubmitAnswerConcurrencyTest {
 	@Disabled
 	@Test
 	@DisplayName("멀티스레드_동시성_정답자_1명만_저장되는지_검증")
-	void 멀티스레드_동시성_정답자_1명만_저장되는지_검증() throws Exception {
+	void multi_thread_concurrencyTest() throws Exception {
 		ExecutorService executor = Executors.newFixedThreadPool(THREAD_COUNT);
 		CountDownLatch latch = new CountDownLatch(THREAD_COUNT);
 
