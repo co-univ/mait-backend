@@ -7,6 +7,7 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
 import com.coniv.mait.global.exception.ExceptionCode;
+import com.coniv.mait.global.exception.custom.LoginFailException;
 import com.coniv.mait.global.exception.custom.ResourceNotBelongException;
 import com.coniv.mait.global.exception.custom.UserParameterException;
 import com.coniv.mait.global.response.ErrorResponse;
@@ -17,6 +18,13 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 @RestControllerAdvice
 public class CustomExceptionHandler {
+
+	@ExceptionHandler(LoginFailException.class)
+	public ResponseEntity<ErrorResponse> handleLoginFailException(LoginFailException exception,
+		HttpServletRequest request) {
+		log.info("LoginFailException 발생: {}, {}", exception.getMessage(), request.getRequestURI());
+		return ResponseEntity.badRequest().body(ErrorResponse.from(ExceptionCode.LOGIN_FAIL_EXCEPTION));
+	}
 
 	@ExceptionHandler(UserParameterException.class)
 	public ResponseEntity<ErrorResponse> handleUserParameterException(UserParameterException exception,

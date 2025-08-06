@@ -8,4 +8,6 @@ import com.coniv.mait.domain.user.entity.UserEntity;
 
 public interface UserEntityRepository extends JpaRepository<UserEntity, Long> {
 	Optional<UserEntity> findByProviderId(String loginId);
+
+	Optional<UserEntity> findByEmail(String email);
 }
