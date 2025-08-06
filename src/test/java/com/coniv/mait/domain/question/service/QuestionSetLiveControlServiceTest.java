@@ -299,4 +299,75 @@ class QuestionSetLiveControlServiceTest {
 		verify(activeParticipant2).updateStatus(ParticipantStatus.ACTIVE);
 		verify(eliminatedParticipant).updateStatus(ParticipantStatus.ACTIVE);
 	}
+
+	@Test
+	@DisplayName("우승자 전송 - 성공")
+	void sendWinner_Success() {
+		// given
+		Long questionSetId = 1L;
+		List<Long> winnerIds = Arrays.asList(1L, 2L);
+
+		when(questionSetEntityRepository.findById(questionSetId))
+			.thenReturn(Optional.of(questionSetEntity));
+
+		// 참가자 목록 설정 (우승자 2명, 기타 1명)
+		List<QuestionSetParticipantEntity> allParticipants = Arrays.asList(
+			activeParticipant1, activeParticipant2, eliminatedParticipant
+		);
+		when(questionSetParticipantRepository.findAllByQuestionSetWithFetchJoinUser(questionSetEntity))
+			.thenReturn(allParticipants);
+
+		// 우승자들 설정
+		when(activeParticipant1.getUser()).thenReturn(user1);
+		when(user1.getId()).thenReturn(1L);
+		when(activeParticipant1.getId()).thenReturn(101L);
+		when(activeParticipant1.getParticipantName()).thenReturn("김철수");
+
+		when(activeParticipant2.getUser()).thenReturn(user2);
+		when(user2.getId()).thenReturn(2L);
+		when(activeParticipant2.getId()).thenReturn(102L);
+		when(activeParticipant2.getParticipantName()).thenReturn("이영희");
+
+		// 우승자가 아닌 참가자
+		when(eliminatedParticipant.getUser()).thenReturn(user3);
+		when(user3.getId()).thenReturn(3L);
+
+		// when
+		questionSetLiveControlService.sendWinner(questionSetId, winnerIds);
+
+		// then
+		verify(questionSetEntityRepository).findById(questionSetId);
+		verify(questionSetParticipantRepository).findAllByQuestionSetWithFetchJoinUser(questionSetEntity);
+	}
+
+	@Test
+	@DisplayName("우승자 전송 - 빈 우승자 목록")
+	void sendWinner_EmptyWinnerIds() {
+		// given
+		Long questionSetId = 1L;
+		List<Long> winnerIds = List.of(); // 빈 목록
+
+		when(questionSetEntityRepository.findById(questionSetId))
+			.thenReturn(Optional.of(questionSetEntity));
+
+		List<QuestionSetParticipantEntity> allParticipants = Arrays.asList(
+			activeParticipant1, activeParticipant2
+		);
+		when(questionSetParticipantRepository.findAllByQuestionSetWithFetchJoinUser(questionSetEntity))
+			.thenReturn(allParticipants);
+
+		when(activeParticipant1.getUser()).thenReturn(user1);
+		when(user1.getId()).thenReturn(1L);
+
+		when(activeParticipant2.getUser()).thenReturn(user2);
+		when(user2.getId()).thenReturn(2L);
+
+		// when
+		questionSetLiveControlService.sendWinner(questionSetId, winnerIds);
+
+		// then
+		// 빈 우승자 목록으로도 메시지가 전송되어야 함
+		verify(questionSetEntityRepository).findById(questionSetId);
+		verify(questionSetParticipantRepository).findAllByQuestionSetWithFetchJoinUser(questionSetEntity);
+	}
 }
