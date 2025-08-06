@@ -54,4 +54,12 @@ public class QuestionSetParticipantEntity extends BaseTimeEntity {
 	@Column(nullable = false)
 	@Builder.Default
 	private ParticipantStatus status = ParticipantStatus.ACTIVE;
+
+	public static QuestionSetParticipantEntity createActiveParticipant(QuestionSetEntity questionSet, UserEntity user) {
+		return QuestionSetParticipantEntity.builder()
+			.questionSet(questionSet)
+			.user(user)
+			.status(ParticipantStatus.ACTIVE)
+			.build();
+	}
 }
