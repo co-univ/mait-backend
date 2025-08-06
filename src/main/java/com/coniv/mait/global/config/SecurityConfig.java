@@ -26,13 +26,13 @@ public class SecurityConfig {
 			.cors(cors -> {
 			})
 			.authorizeHttpRequests(auth -> auth
-				.anyRequest().permitAll()) // 임시로 모든 요청 허용 TODO: 실제 서비스에서는 적절한 권한 설정 필요
-			.oauth2Login((oauth2) -> oauth2
-				.userInfoEndpoint(userInfoEndpoint -> userInfoEndpoint
-					.userService(oauth2UserService)
-				)
-				.successHandler(oauth2SuccessHandler)
-			);
+				.anyRequest().permitAll()); // 임시로 모든 요청 허용 TODO: 실제 서비스에서는 적절한 권한 설정 필요
+		// .oauth2Login((oauth2) -> oauth2
+		// 	.userInfoEndpoint(userInfoEndpoint -> userInfoEndpoint
+		// 		.userService(oauth2UserService)
+		// 	)
+		// 	.successHandler(oauth2SuccessHandler)
+		// );
 		return httpSecurity.build();
 	}
 }
