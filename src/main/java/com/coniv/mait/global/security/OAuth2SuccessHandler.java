@@ -34,13 +34,13 @@ public class OAuth2SuccessHandler implements AuthenticationSuccessHandler {
 		UserEntity user = oauthDetails.getUser();
 		Token token = jwtTokenProvider.createToken(user.getId());
 
-		String accessToken = token.getAccessToken();
+		String accessToken = token.accessToken();
 		response.addHeader(ACCESS_TOKEN, accessToken);
 
-		RefreshToken refreshToken = new RefreshToken(user.getId(), token.getRefreshToken());
+		RefreshToken refreshToken = new RefreshToken(user.getId(), token.refreshToken());
 		refreshTokenRepository.save(refreshToken);
 
-		Cookie cookie = CookieUtil.createRefreshCookie(token.getRefreshToken());
+		Cookie cookie = CookieUtil.createRefreshCookie(token.refreshToken());
 		response.addCookie(cookie);
 	}
 }
