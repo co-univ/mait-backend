@@ -32,6 +32,8 @@ spring:
           max-idle: 8
           min-idle: 0
 
+
+
 # 테스트에서 Swagger 비활성화
 springdoc:
   api-docs:

@@ -34,6 +34,7 @@ import com.coniv.mait.domain.solve.repository.QuestionScorerEntityRepository;
 import com.coniv.mait.domain.solve.service.dto.MultipleQuestionSubmitAnswer;
 import com.coniv.mait.domain.user.entity.UserEntity;
 
+@Disabled("GitHub Actions에서 embedded Redis 실행 불가 - 로컬에서만 실행")
 @SpringBootTest
 @ActiveProfiles("test")
 @Import(TestRedisConfig.class)
@@ -145,7 +146,6 @@ class SubmitAnswerConcurrencyTest {
 		this.userIds = users.stream().map(UserEntity::getId).toList();
 	}
 
-	@Disabled("GitHub Actions에서 embedded Redis 실행 불가")
 	@Test
 	@DisplayName("멀티스레드_동시성_정답자_1명만_저장되는지_검증")
 	void multi_thread_concurrencyTest() throws Exception {

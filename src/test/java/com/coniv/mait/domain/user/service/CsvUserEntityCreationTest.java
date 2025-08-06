@@ -27,7 +27,7 @@ import com.coniv.mait.domain.team.service.TeamService;
 import com.coniv.mait.domain.user.entity.UserEntity;
 import com.coniv.mait.util.TemporaryPasswordGenerator;
 
-@SpringBootTest
+@SpringBootTest(classes = com.coniv.mait.TestMaitApplication.class)
 @ActiveProfiles("test")
 @Transactional
 class CsvUserEntityCreationTest {
