@@ -9,6 +9,6 @@ import lombok.experimental.SuperBuilder;
 @Getter
 @NoArgsConstructor
 @SuperBuilder
-public class QuestionSetActiveParticipantMessage extends QuestionSetStatusMessage {
+public class QuestionSetParticipantsMessage extends QuestionSetStatusMessage {
 	private List<ParticipantDto> activeParticipants;
 }

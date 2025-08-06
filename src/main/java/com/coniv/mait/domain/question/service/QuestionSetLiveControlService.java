@@ -9,7 +9,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.coniv.mait.domain.question.dto.ParticipantDto;
-import com.coniv.mait.domain.question.dto.QuestionSetActiveParticipantMessage;
+import com.coniv.mait.domain.question.dto.QuestionSetParticipantsMessage;
 import com.coniv.mait.domain.question.dto.QuestionSetStatusMessage;
 import com.coniv.mait.domain.question.entity.QuestionSetEntity;
 import com.coniv.mait.domain.question.entity.QuestionSetParticipantEntity;
@@ -104,6 +104,29 @@ public class QuestionSetLiveControlService {
 			.toList();
 	}
 
+	@Transactional(readOnly = true)
+	public void sendWinner(Long questionSetId, List<Long> winnerIds) {
+		QuestionSetEntity questionSet = findQuestionSetById(questionSetId);
+
+		List<QuestionSetParticipantEntity> participants =
+			questionSetParticipantRepository.findAllByQuestionSetWithFetchJoinUser(questionSet);
+
+		List<ParticipantDto> winners = participants.stream()
+			.filter(participant -> winnerIds.contains(participant.getUser().getId()))
+			.map(ParticipantDto::from)
+			.sorted(Comparator.comparing(ParticipantDto::getParticipantName))
+			.toList();
+
+		QuestionSetStatusMessage message = QuestionSetParticipantsMessage.builder()
+			.questionSetId(questionSetId)
+			.commandType(QuestionSetCommandType.WINNER)
+			.activeParticipants(winners)
+			.build();
+
+		questionWebSocketSender.broadcastQuestionStatus(questionSetId, message);
+		log.info("Sent winners for question set ID: {}", questionSetId);
+	}
+
 	@Transactional
 	public void updateActiveParticipants(Long questionSetId, List<Long> activeUserIds) {
 		QuestionSetEntity questionSet = findQuestionSetById(questionSetId);
@@ -133,7 +156,7 @@ public class QuestionSetLiveControlService {
 			.sorted(Comparator.comparing(ParticipantDto::getParticipantName))
 			.toList();
 
-		QuestionSetStatusMessage message = QuestionSetActiveParticipantMessage.builder()
+		QuestionSetStatusMessage message = QuestionSetParticipantsMessage.builder()
 			.questionSetId(questionSetId)
 			.commandType(QuestionSetCommandType.ACTIVE_PARTICIPANTS)
 			.activeParticipants(participants)

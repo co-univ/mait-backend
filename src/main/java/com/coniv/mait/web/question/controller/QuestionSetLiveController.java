@@ -6,6 +6,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -16,6 +17,7 @@ import com.coniv.mait.domain.question.service.QuestionSetLiveControlService;
 import com.coniv.mait.global.response.ApiResponse;
 import com.coniv.mait.web.question.dto.ParticipantInfoResponse;
 import com.coniv.mait.web.question.dto.QuestionSetLiveStatusResponse;
+import com.coniv.mait.web.question.dto.SendWinnerRequest;
 import com.coniv.mait.web.question.dto.UpdateActiveParticipantsRequest;
 
 import io.swagger.v3.oas.annotations.Operation;
@@ -73,6 +75,15 @@ public class QuestionSetLiveController {
 		@PathVariable Long questionSetId,
 		@RequestBody UpdateActiveParticipantsRequest request) {
 		questionSetLiveControlService.updateActiveParticipants(questionSetId, request.activeUserIds());
+		return ResponseEntity.ok().build();
+	}
+
+	@Operation(summary = "우승자 전송")
+	@PostMapping("/winner")
+	public ResponseEntity<ApiResponse<Void>> sendWinner(
+		@PathVariable Long questionSetId,
+		@RequestBody SendWinnerRequest request) {
+		questionSetLiveControlService.sendWinner(questionSetId, request.winnerUserIds());
 		return ResponseEntity.ok().build();
 	}
 }
