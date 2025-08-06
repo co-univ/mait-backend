@@ -25,16 +25,16 @@ public class TestRedisConfig {
 			// 사용 가능한 포트 자동 찾기
 			redisPort = findAvailablePort();
 			System.out.println("Starting embedded Redis on port: " + redisPort);
-			
+
 			redisServer = RedisServer.builder()
 				.port(redisPort)
 				.setting("maxmemory 128M")
 				.build();
 			redisServer.start();
-			
+
 			// 시스템 프로퍼티에 포트 설정 (application-test.yml보다 우선)
 			System.setProperty("spring.data.redis.port", String.valueOf(redisPort));
-			
+
 		} catch (Exception e) {
 			System.err.println("Failed to start embedded Redis: " + e.getMessage());
 			System.err.println("Falling back to mock Redis behavior...");
