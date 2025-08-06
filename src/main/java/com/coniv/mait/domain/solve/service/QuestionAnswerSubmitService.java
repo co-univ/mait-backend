@@ -1,5 +1,10 @@
 package com.coniv.mait.domain.solve.service;
 
+import java.util.Comparator;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
+
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -12,6 +17,7 @@ import com.coniv.mait.domain.solve.service.component.ScorerGenerator;
 import com.coniv.mait.domain.solve.service.component.ScorerProcessor;
 import com.coniv.mait.domain.solve.service.component.SubmitOrderGenerator;
 import com.coniv.mait.domain.solve.service.dto.AnswerSubmitDto;
+import com.coniv.mait.domain.solve.service.dto.AnswerSubmitRecordDto;
 import com.coniv.mait.domain.solve.service.dto.SubmitAnswerDto;
 import com.coniv.mait.domain.user.entity.UserEntity;
 import com.coniv.mait.domain.user.repository.UserEntityRepository;
@@ -77,5 +83,24 @@ public class QuestionAnswerSubmitService {
 		answerSubmitRecordEntityRepository.save(submitRecord);
 
 		return AnswerSubmitDto.from(submitRecord);
+	}
+
+	public List<AnswerSubmitRecordDto> getSubmitRecords(final Long questionSetId, final Long questionId) {
+		final QuestionEntity question = questionEntityRepository.findById(questionId)
+			.orElseThrow(() -> new EntityNotFoundException("문제를 찾을 수 없습니다."));
+		if (!question.getQuestionSet().getId().equals(questionSetId)) {
+			throw new ResourceNotBelongException("문제 세트와 문제 ID가 일치하지 않습니다.");
+		}
+
+		List<AnswerSubmitRecordEntity> records = answerSubmitRecordEntityRepository.findAllByQuestionId(questionId);
+		List<Long> userIds = records.stream().map(AnswerSubmitRecordEntity::getUserId).toList();
+
+		Map<Long, UserEntity> userById = userEntityRepository.findAllById(userIds).stream()
+			.collect(Collectors.toUnmodifiableMap(UserEntity::getId, user -> user));
+
+		return records.stream()
+			.sorted(Comparator.comparing(AnswerSubmitRecordEntity::getSubmitOrder))
+			.map(record -> AnswerSubmitRecordDto.of(record, userById.get(record.getUserId())))
+			.toList();
 	}
 }
