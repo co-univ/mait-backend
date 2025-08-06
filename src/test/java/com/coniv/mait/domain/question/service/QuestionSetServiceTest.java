@@ -17,6 +17,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import com.coniv.mait.domain.question.entity.QuestionSetEntity;
 import com.coniv.mait.domain.question.enums.QuestionSetCreationType;
+import com.coniv.mait.domain.question.repository.QuestionEntityRepository;
 import com.coniv.mait.domain.question.repository.QuestionSetEntityRepository;
 import com.coniv.mait.domain.question.service.dto.QuestionSetDto;
 
@@ -28,6 +29,9 @@ class QuestionSetServiceTest {
 
 	@Mock
 	private QuestionSetEntityRepository questionSetEntityRepository;
+
+	@Mock
+	private QuestionEntityRepository questionEntityRepository;
 
 	@Test
 	@DisplayName("문제 셋 생성 테스트")
@@ -84,6 +88,8 @@ class QuestionSetServiceTest {
 
 		when(questionSetEntityRepository.findById(questionSetId))
 			.thenReturn(Optional.of(questionSetEntity));
+		when(questionEntityRepository.countByQuestionSetId(questionSetId))
+			.thenReturn(5L); // 예시로 5개의 문제를 가진다고 가정
 
 		// when
 		QuestionSetDto result = questionSetService.getQuestionSet(questionSetId);
