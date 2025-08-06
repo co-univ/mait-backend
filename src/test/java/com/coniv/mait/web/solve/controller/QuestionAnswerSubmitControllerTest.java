@@ -5,6 +5,8 @@ import static org.mockito.Mockito.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
+import java.util.List;
+
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -18,6 +20,7 @@ import org.springframework.test.web.servlet.MockMvc;
 import com.coniv.mait.domain.solve.service.QuestionAnswerSubmitService;
 import com.coniv.mait.domain.solve.service.QuestionScorerService;
 import com.coniv.mait.domain.solve.service.dto.AnswerSubmitDto;
+import com.coniv.mait.domain.solve.service.dto.AnswerSubmitRecordDto;
 import com.coniv.mait.domain.solve.service.dto.QuestionScorerDto;
 import com.coniv.mait.global.interceptor.idempotency.IdempotencyInterceptor;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -302,5 +305,60 @@ class QuestionAnswerSubmitControllerTest {
 			.andExpect(jsonPath("$.data.submitOrder").value(1));
 
 		verify(questionScorerService).getScorer(questionSetId, questionId);
+	}
+
+	@Test
+	@DisplayName("문제 풀이 정답 제출 기록 조회 API 성공 테스트")
+	void getSubmitRecords_Success() throws Exception {
+		// Given
+		Long questionSetId = 1L;
+		Long questionId = 1L;
+		Long userId1 = 1L;
+		Long userId2 = 2L;
+
+		List<AnswerSubmitRecordDto> mockRecords = List.of(
+			AnswerSubmitRecordDto.builder()
+				.id(1L)
+				.userId(userId1)
+				.userName("사용자1")
+				.questionId(questionId)
+				.isCorrect(true)
+				.submitOrder(1L)
+				.build(),
+			AnswerSubmitRecordDto.builder()
+				.id(2L)
+				.userId(userId2)
+				.userName("사용자2")
+				.questionId(questionId)
+				.isCorrect(false)
+				.submitOrder(2L)
+				.build()
+		);
+
+		// When & Then
+		when(questionAnswerSubmitService.getSubmitRecords(questionSetId, questionId))
+			.thenReturn(mockRecords);
+
+		mockMvc.perform(
+				get("/api/v1/question-sets/{questionSetId}/questions/{questionId}/submit-records",
+					questionSetId, questionId))
+			.andExpect(status().isOk())
+			.andExpect(jsonPath("$.isSuccess").value(true))
+			.andExpect(jsonPath("$.data").isArray())
+			.andExpect(jsonPath("$.data.length()").value(2))
+			.andExpect(jsonPath("$.data[0].id").value(1))
+			.andExpect(jsonPath("$.data[0].userId").value(userId1))
+			.andExpect(jsonPath("$.data[0].userName").value("사용자1"))
+			.andExpect(jsonPath("$.data[0].questionId").value(questionId))
+			.andExpect(jsonPath("$.data[0].isCorrect").value(true))
+			.andExpect(jsonPath("$.data[0].submitOrder").value(1))
+			.andExpect(jsonPath("$.data[1].id").value(2))
+			.andExpect(jsonPath("$.data[1].userId").value(userId2))
+			.andExpect(jsonPath("$.data[1].userName").value("사용자2"))
+			.andExpect(jsonPath("$.data[1].questionId").value(questionId))
+			.andExpect(jsonPath("$.data[1].isCorrect").value(false))
+			.andExpect(jsonPath("$.data[1].submitOrder").value(2));
+
+		verify(questionAnswerSubmitService).getSubmitRecords(questionSetId, questionId);
 	}
 }

@@ -21,7 +21,9 @@ import com.coniv.mait.domain.question.repository.OrderingOptionEntityRepository;
 import com.coniv.mait.domain.question.repository.QuestionEntityRepository;
 import com.coniv.mait.domain.question.repository.QuestionSetEntityRepository;
 import com.coniv.mait.domain.question.repository.ShortAnswerEntityRepository;
+import com.coniv.mait.domain.solve.entity.AnswerSubmitRecordEntity;
 import com.coniv.mait.domain.solve.entity.QuestionScorerEntity;
+import com.coniv.mait.domain.solve.repository.AnswerSubmitRecordEntityRepository;
 import com.coniv.mait.domain.solve.repository.QuestionScorerEntityRepository;
 import com.coniv.mait.domain.user.entity.UserEntity;
 import com.coniv.mait.domain.user.repository.UserEntityRepository;
@@ -62,8 +64,12 @@ public class QuestionAnswerSubmitApiIntegrationTest extends BaseIntegrationTest 
 	@Autowired
 	private QuestionScorerEntityRepository questionScorerEntityRepository;
 
+	@Autowired
+	private AnswerSubmitRecordEntityRepository answerSubmitRecordEntityRepository;
+
 	@BeforeEach
 	void clear() {
+		answerSubmitRecordEntityRepository.deleteAll();
 		questionScorerEntityRepository.deleteAll();
 		multipleChoiceEntityRepository.deleteAll();
 		fillBlankAnswerEntityRepository.deleteAll();
@@ -182,6 +188,74 @@ public class QuestionAnswerSubmitApiIntegrationTest extends BaseIntegrationTest 
 				jsonPath("$.data.userId").value(user.getId()),
 				jsonPath("$.data.userName").value("테스트사용자"),
 				jsonPath("$.data.submitOrder").value(1)
+			);
+	}
+
+	@Test
+	@DisplayName("문제 풀이 정답 제출 기록 조회 API 통합 테스트")
+	void getSubmitRecords_IntegrationTest() throws Exception {
+		// Given
+		UserEntity user1 = userEntityRepository.save(UserEntity.localLoginUser(
+			"user1@test.com", "password", "사용자1", "user1"));
+
+		UserEntity user2 = userEntityRepository.save(UserEntity.localLoginUser(
+			"user2@test.com", "password", "사용자2", "user2"));
+
+		QuestionSetEntity questionSet = questionSetEntityRepository.save(QuestionSetEntity.builder()
+			.title("테스트 문제집")
+			.subject("테스트 과목")
+			.build());
+
+		MultipleQuestionEntity multipleQuestion = questionEntityRepository.save(
+			MultipleQuestionEntity.builder()
+				.content("이것은 테스트 문제입니다.")
+				.number(1L)
+				.displayDelayMilliseconds(0)
+				.questionSet(questionSet)
+				.answerCount(4)
+				.build());
+
+		// 정답 제출 기록 생성
+		AnswerSubmitRecordEntity record1 = answerSubmitRecordEntityRepository.save(
+			AnswerSubmitRecordEntity.builder()
+				.userId(user1.getId())
+				.questionId(multipleQuestion.getId())
+				.submitOrder(1L)
+				.isCorrect(true)
+				.submittedAnswer("{\"answer\": \"A\"}")
+				.build()
+		);
+
+		AnswerSubmitRecordEntity record2 = answerSubmitRecordEntityRepository.save(
+			AnswerSubmitRecordEntity.builder()
+				.userId(user2.getId())
+				.questionId(multipleQuestion.getId())
+				.submitOrder(2L)
+				.isCorrect(false)
+				.submittedAnswer("{\"answer\": \"B\"}")
+				.build()
+		);
+
+		// When & Then
+		mockMvc.perform(get("/api/v1/question-sets/{questionSetId}/questions/{questionId}/submit-records",
+				questionSet.getId(), multipleQuestion.getId()))
+			.andExpect(status().isOk())
+			.andExpectAll(
+				jsonPath("$.isSuccess").value(true),
+				jsonPath("$.data").isArray(),
+				jsonPath("$.data.length()").value(2),
+				jsonPath("$.data[0].id").value(record1.getId()),
+				jsonPath("$.data[0].userId").value(user1.getId()),
+				jsonPath("$.data[0].userName").value("사용자1"),
+				jsonPath("$.data[0].questionId").value(multipleQuestion.getId()),
+				jsonPath("$.data[0].isCorrect").value(true),
+				jsonPath("$.data[0].submitOrder").value(1),
+				jsonPath("$.data[1].id").value(record2.getId()),
+				jsonPath("$.data[1].userId").value(user2.getId()),
+				jsonPath("$.data[1].userName").value("사용자2"),
+				jsonPath("$.data[1].questionId").value(multipleQuestion.getId()),
+				jsonPath("$.data[1].isCorrect").value(false),
+				jsonPath("$.data[1].submitOrder").value(2)
 			);
 	}
 }
