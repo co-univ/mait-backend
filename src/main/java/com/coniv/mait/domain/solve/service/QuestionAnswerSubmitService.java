@@ -9,6 +9,9 @@ import com.coniv.mait.domain.question.repository.QuestionEntityRepository;
 import com.coniv.mait.domain.solve.entity.AnswerSubmitRecordEntity;
 import com.coniv.mait.domain.solve.repository.AnswerSubmitRecordEntityRepository;
 import com.coniv.mait.domain.solve.service.component.AnswerGrader;
+import com.coniv.mait.domain.solve.service.component.ScorerGenerator;
+import com.coniv.mait.domain.solve.service.component.ScorerProcessor;
+import com.coniv.mait.domain.solve.service.component.SubmitOrderGenerator;
 import com.coniv.mait.domain.solve.service.dto.AnswerSubmitDto;
 import com.coniv.mait.domain.solve.service.dto.SubmitAnswerDto;
 import com.coniv.mait.domain.user.entity.UserEntity;
@@ -31,11 +34,18 @@ public class QuestionAnswerSubmitService {
 
 	private final AnswerGrader answerGrader;
 
+	private final SubmitOrderGenerator submitOrderGenerator;
+
+	private final ScorerProcessor scorerProcessor;
+
+	private final ScorerGenerator scorerGenerator;
+
 	private final ObjectMapper objectMapper;
 
 	@Transactional
 	public AnswerSubmitDto submitAnswer(final Long questionSetId, final Long questionId, final Long userId,
 		final SubmitAnswerDto<?> submitAnswer) throws JsonProcessingException {
+		final Long submitOrder = submitOrderGenerator.generateSubmitOrder(questionId);
 		final UserEntity user = userEntityRepository.findById(userId)
 			.orElseThrow(() -> new EntityNotFoundException("사용자를 찾을 수 없습니다."));
 
@@ -50,11 +60,17 @@ public class QuestionAnswerSubmitService {
 		}
 
 		final boolean isCorrect = answerGrader.gradeAnswer(question, submitAnswer);
+		// Todo: 이미 정답 기록이 있는지 확인
+
+		if (isCorrect && user.getId().equals(scorerProcessor.getScorer(questionId, user.getId(), submitOrder))) {
+			scorerGenerator.updateScorer(questionId, user.getId(), submitOrder);
+		}
 
 		AnswerSubmitRecordEntity submitRecord = AnswerSubmitRecordEntity.builder()
 			.userId(user.getId())
 			.questionId(question.getId())
 			.isCorrect(isCorrect)
+			.submitOrder(submitOrder)
 			.submittedAnswer(objectMapper.writeValueAsString(submitAnswer))
 			.build();
 

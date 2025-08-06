@@ -1,7 +1,5 @@
 package com.coniv.mait.domain.solve.entity;
 
-import com.coniv.mait.global.entity.BaseTimeEntity;
-
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
@@ -14,29 +12,29 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
-@Table(name = "answer_submit_records")
+@Table(name = "question_scorers")
 @Entity
 @Getter
 @Builder
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-public class AnswerSubmitRecordEntity extends BaseTimeEntity {
+public class QuestionScorerEntity {
 
 	@Id
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	private Long id;
 
-	private Long userId;
+	@Column(nullable = false, unique = true)
+	private Long questionId;
 
 	@Column(nullable = false)
-	private Long questionId;
+	private Long userId;
 
 	@Column(nullable = false)
 	private Long submitOrder;
 
-	@Column(nullable = false)
-	private boolean isCorrect;
-
-	@Column(columnDefinition = "json")
-	private String submittedAnswer;
+	public void updateScorer(Long userId, Long submitOrder) {
+		this.userId = userId;
+		this.submitOrder = submitOrder;
+	}
 }

@@ -6,11 +6,16 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.data.redis.connection.RedisConnectionFactory;
 import org.springframework.data.redis.connection.lettuce.LettuceConnectionFactory;
 import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.data.redis.core.StringRedisTemplate;
+import org.springframework.data.redis.core.script.DefaultRedisScript;
 import org.springframework.data.redis.serializer.Jackson2JsonRedisSerializer;
 import org.springframework.data.redis.serializer.StringRedisSerializer;
 
+import com.coniv.mait.domain.solve.service.component.ScorerLuaScript;
+
 @Configuration
 public class RedisConfig {
+
 	@Value("${spring.data.redis.host}")
 	private String host;
 
@@ -26,8 +31,30 @@ public class RedisConfig {
 	public RedisTemplate<String, Object> redisTemplate() {
 		RedisTemplate<String, Object> redisTemplate = new RedisTemplate<>();
 		redisTemplate.setConnectionFactory(redisConnectionFactory());
-		redisTemplate.setKeySerializer(new StringRedisSerializer());
-		redisTemplate.setValueSerializer(new Jackson2JsonRedisSerializer<>(Object.class));
+
+		StringRedisSerializer stringSerializer = new StringRedisSerializer();
+		Jackson2JsonRedisSerializer<Object> jsonSerializer = new Jackson2JsonRedisSerializer<>(Object.class);
+
+		redisTemplate.setKeySerializer(stringSerializer);
+		redisTemplate.setValueSerializer(jsonSerializer);
+		redisTemplate.setHashKeySerializer(stringSerializer);
+		redisTemplate.setHashValueSerializer(stringSerializer);
+
 		return redisTemplate;
+	}
+
+	@Bean
+	public StringRedisTemplate stringRedisTemplate() {
+		StringRedisTemplate stringRedisTemplate = new StringRedisTemplate();
+		stringRedisTemplate.setConnectionFactory(redisConnectionFactory());
+		return stringRedisTemplate;
+	}
+
+	@Bean
+	public DefaultRedisScript<String> winnerLuaScript() {
+		DefaultRedisScript<String> script = new DefaultRedisScript<>();
+		script.setScriptText(ScorerLuaScript.SCORER_CHECK_LUA_SCRIPT);
+		script.setResultType(String.class);
+		return script;
 	}
 }
