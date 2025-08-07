@@ -18,6 +18,7 @@ import com.coniv.mait.domain.question.entity.QuestionSetEntity;
 import com.coniv.mait.domain.question.enums.QuestionStatusType;
 import com.coniv.mait.domain.question.repository.QuestionEntityRepository;
 import com.coniv.mait.domain.question.service.component.QuestionWebSocketSender;
+import com.coniv.mait.global.exception.custom.QuestionSetLiveException;
 import com.coniv.mait.global.exception.custom.ResourceNotBelongException;
 
 import jakarta.persistence.EntityNotFoundException;
@@ -50,7 +51,7 @@ class QuestionControlServiceTest {
 		when(questionEntityRepository.findById(questionId)).thenReturn(Optional.of(questionEntity));
 		when(questionEntity.getQuestionSet()).thenReturn(questionSetEntity);
 		when(questionSetEntity.getId()).thenReturn(questionSetId);
-		//when(questionSetEntity.isOnLive()).thenReturn(true); //TODO: 비즈니스 익셉션 추가 후 주석 해제
+		when(questionSetEntity.isOnLive()).thenReturn(true);
 
 		// when
 		questionControlService.allowQuestionAccess(questionSetId, questionId);
@@ -71,7 +72,8 @@ class QuestionControlServiceTest {
 		when(questionEntityRepository.findById(questionId)).thenReturn(Optional.of(questionEntity));
 		when(questionEntity.getQuestionSet()).thenReturn(questionSetEntity);
 		when(questionSetEntity.getId()).thenReturn(questionSetId);
-		//when(questionSetEntity.isOnLive()).thenReturn(true); //TODO: 비즈니스 익셉션 추가 후 주석 해제
+		when(questionSetEntity.isOnLive()).thenReturn(true);
+		when(questionEntity.getQuestionStatus()).thenReturn(QuestionStatusType.ACCESS_PERMISSION);
 
 		// when
 		questionControlService.allowQuestionSolve(questionSetId, questionId);
@@ -120,6 +122,7 @@ class QuestionControlServiceTest {
 
 		when(questionEntityRepository.findById(questionId)).thenReturn(Optional.of(questionEntity));
 		when(questionEntity.getQuestionSet()).thenReturn(questionSetEntity);
+		when(questionSetEntity.isOnLive()).thenReturn(true);
 		when(questionSetEntity.getId()).thenReturn(differentQuestionSetId);
 
 		// when & then
@@ -137,6 +140,7 @@ class QuestionControlServiceTest {
 
 		when(questionEntityRepository.findById(questionId)).thenReturn(Optional.of(questionEntity));
 		when(questionEntity.getQuestionSet()).thenReturn(questionSetEntity);
+		when(questionSetEntity.isOnLive()).thenReturn(true);
 		when(questionSetEntity.getId()).thenReturn(differentQuestionSetId);
 
 		// when & then
@@ -144,8 +148,7 @@ class QuestionControlServiceTest {
 			questionControlService.allowQuestionSolve(questionSetId, questionId));
 	}
 
-	//TODO: 비즈니스 익셉션 추가 후 주석 해제
-	/*@Test
+	@Test
 	@DisplayName("문제 접근 허용 실패 - QuestionSet이 라이브 상태가 아님")
 	void allowQuestionAccess_QuestionSetNotOnLive() {
 		// given
@@ -158,11 +161,11 @@ class QuestionControlServiceTest {
 		when(questionSetEntity.isOnLive()).thenReturn(false);
 
 		// when & then
-		assertThrows(IllegalArgumentException.class, () ->
+		assertThrows(QuestionSetLiveException.class, () ->
 			questionControlService.allowQuestionAccess(questionSetId, questionId));
-	}*/
+	}
 
-/*	@Test
+	@Test
 	@DisplayName("문제 풀이 허용 실패 - QuestionSet이 라이브 상태가 아님")
 	void allowQuestionSolve_QuestionSetNotOnLive() {
 		// given
@@ -175,7 +178,25 @@ class QuestionControlServiceTest {
 		when(questionSetEntity.isOnLive()).thenReturn(false);
 
 		// when & then
-		assertThrows(IllegalArgumentException.class, () ->
+		assertThrows(QuestionSetLiveException.class, () ->
 			questionControlService.allowQuestionSolve(questionSetId, questionId));
-	}*/
+	}
+
+	@Test
+	@DisplayName("문제 풀이 허용 실패 - 문제가 ACCESS_PERMISSION 상태가 아님")
+	void allowQuestionSolve_QuestionNotInAccessPermission() {
+		// given
+		Long questionSetId = 1L;
+		Long questionId = 1L;
+
+		when(questionEntityRepository.findById(questionId)).thenReturn(Optional.of(questionEntity));
+		when(questionEntity.getQuestionSet()).thenReturn(questionSetEntity);
+		when(questionSetEntity.getId()).thenReturn(questionSetId);
+		when(questionSetEntity.isOnLive()).thenReturn(true);
+		when(questionEntity.getQuestionStatus()).thenReturn(QuestionStatusType.NOT_OPEN);
+
+		// when & then
+		assertThrows(QuestionSetLiveException.class, () ->
+			questionControlService.allowQuestionSolve(questionSetId, questionId));
+	}
 }
