@@ -14,8 +14,11 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.coniv.mait.domain.question.enums.QuestionSetLiveStatus;
 import com.coniv.mait.domain.question.service.QuestionRankService;
+import com.coniv.mait.domain.question.service.QuestionService;
 import com.coniv.mait.domain.question.service.QuestionSetLiveControlService;
+import com.coniv.mait.domain.question.service.dto.CurrentQuestionDto;
 import com.coniv.mait.global.response.ApiResponse;
+import com.coniv.mait.web.question.dto.CurrentQuestionApiResponse;
 import com.coniv.mait.web.question.dto.ParticipantInfoResponse;
 import com.coniv.mait.web.question.dto.ParticipantsCorrectAnswerRankResponse;
 import com.coniv.mait.web.question.dto.QuestionSetLiveStatusResponse;
@@ -35,6 +38,8 @@ import lombok.extern.slf4j.Slf4j;
 public class QuestionSetLiveController {
 
 	private final QuestionSetLiveControlService questionSetLiveControlService;
+
+	private final QuestionService questionService;
 
 	private final QuestionRankService questionRankService;
 
@@ -98,5 +103,13 @@ public class QuestionSetLiveController {
 		ParticipantsCorrectAnswerRankResponse response = ParticipantsCorrectAnswerRankResponse.from(
 			questionRankService.getParticipantCorrectRank(questionSetId));
 		return ResponseEntity.ok(ApiResponse.ok(response));
+	}
+
+	@Operation(summary = "실시간 진행중 문제")
+	@GetMapping("/current-question")
+	public ResponseEntity<ApiResponse<CurrentQuestionApiResponse>> getCurrentQuestionId(
+		@PathVariable Long questionSetId) {
+		CurrentQuestionDto dto = questionService.findCurrentQuestion(questionSetId);
+		return ResponseEntity.ok(ApiResponse.ok(CurrentQuestionApiResponse.from(dto)));
 	}
 }
