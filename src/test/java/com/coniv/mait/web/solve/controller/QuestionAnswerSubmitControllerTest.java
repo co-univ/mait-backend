@@ -17,6 +17,7 @@ import org.springframework.test.web.servlet.MockMvc;
 
 import com.coniv.mait.domain.solve.service.QuestionAnswerSubmitService;
 import com.coniv.mait.domain.solve.service.dto.AnswerSubmitDto;
+import com.coniv.mait.global.filter.JwtAuthorizationFilter;
 import com.coniv.mait.global.interceptor.idempotency.IdempotencyInterceptor;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
@@ -36,6 +37,9 @@ class QuestionAnswerSubmitControllerTest {
 
 	@MockitoBean
 	private IdempotencyInterceptor idempotencyInterceptor;
+
+	@MockitoBean
+	private JwtAuthorizationFilter jwtAuthorizationFilter;
 
 	@BeforeEach
 	void setUp() throws Exception {
