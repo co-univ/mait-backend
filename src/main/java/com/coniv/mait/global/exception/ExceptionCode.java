@@ -14,6 +14,7 @@ public enum ExceptionCode {
 	RESOURCE_NOT_BELONG_EXCEPTION(HttpStatus.BAD_REQUEST, "C-004", "리소스가 소속되지 않았습니다."),
 
 	PROCESSING(HttpStatus.CONFLICT, "C-005", "이전 요청이 처리 중입니다."),
+	Question_SET_LIVE_EXCEPTION(HttpStatus.BAD_REQUEST, "C-006", "실시간 문제 세트에서 오류가 발생했습니다."),
 
 	LOGIN_FAIL_EXCEPTION(HttpStatus.UNAUTHORIZED, "A-001", "로그인 실패"),
 
