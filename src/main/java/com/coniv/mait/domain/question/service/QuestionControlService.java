@@ -11,6 +11,7 @@ import com.coniv.mait.domain.question.repository.QuestionEntityRepository;
 import com.coniv.mait.domain.question.service.component.QuestionWebSocketSender;
 import com.coniv.mait.global.exception.custom.QuestionSetLiveException;
 import com.coniv.mait.global.exception.custom.ResourceNotBelongException;
+import com.coniv.mait.global.util.ThreadUtil;
 
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
@@ -61,6 +62,8 @@ public class QuestionControlService {
 		if (question.getQuestionStatus() != QuestionStatusType.ACCESS_PERMISSION) {
 			throw new QuestionSetLiveException("Question must be in ACCESS_PERMISSION status before solving.");
 		}
+
+		ThreadUtil.sleep(question.getDisplayDelayMilliseconds());
 
 		closeAllQuestionStatus(questionSetId);
 
