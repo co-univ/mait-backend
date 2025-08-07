@@ -20,9 +20,9 @@ import org.springframework.test.web.servlet.MockMvc;
 import com.coniv.mait.domain.solve.service.QuestionAnswerSubmitService;
 import com.coniv.mait.domain.solve.service.QuestionScorerService;
 import com.coniv.mait.domain.solve.service.dto.AnswerSubmitDto;
-import com.coniv.mait.global.filter.JwtAuthorizationFilter;
 import com.coniv.mait.domain.solve.service.dto.AnswerSubmitRecordDto;
 import com.coniv.mait.domain.solve.service.dto.QuestionScorerDto;
+import com.coniv.mait.global.filter.JwtAuthorizationFilter;
 import com.coniv.mait.global.interceptor.idempotency.IdempotencyInterceptor;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
