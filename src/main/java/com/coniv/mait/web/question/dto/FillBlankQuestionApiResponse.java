@@ -33,6 +33,7 @@ public class FillBlankQuestionApiResponse extends QuestionApiResponse {
 			.content(dto.getContent())
 			.explanation(dto.getExplanation())
 			.number(dto.getNumber())
+			.questionStatusType(dto.getQuestionStatus())
 			.type(QuestionType.FILL_BLANK)
 			.answers(answers)
 			.blankCount(dto.getBlankCount())

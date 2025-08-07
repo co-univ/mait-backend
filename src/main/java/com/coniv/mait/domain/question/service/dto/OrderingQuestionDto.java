@@ -36,6 +36,7 @@ public class OrderingQuestionDto extends QuestionDto {
 			.content(orderingQuestion.getContent())
 			.explanation(orderingQuestion.getExplanation())
 			.number(orderingQuestion.getNumber())
+			.questionStatus(orderingQuestion.getQuestionStatus())
 			.options(optionDtos)
 			.build();
 	}
