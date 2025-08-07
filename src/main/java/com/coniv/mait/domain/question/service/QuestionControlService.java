@@ -8,6 +8,7 @@ import com.coniv.mait.domain.question.entity.QuestionEntity;
 import com.coniv.mait.domain.question.enums.QuestionStatusType;
 import com.coniv.mait.domain.question.repository.QuestionEntityRepository;
 import com.coniv.mait.domain.question.service.component.QuestionWebSocketSender;
+import com.coniv.mait.global.exception.custom.QuestionSetLiveException;
 import com.coniv.mait.global.exception.custom.ResourceNotBelongException;
 
 import jakarta.persistence.EntityNotFoundException;
@@ -51,6 +52,9 @@ public class QuestionControlService {
 	public void allowQuestionSolve(Long questionSetId, Long questionId) {
 		QuestionEntity question = questionEntityRepository.findById(questionId)
 			.orElseThrow(() -> new EntityNotFoundException("Question not found with id: " + questionId));
+		if (question.getQuestionStatus() != QuestionStatusType.ACCESS_PERMISSION) {
+			throw new QuestionSetLiveException("Question must be in ACCESS_PERMISSION status before solving.");
+		}
 		checkQuestionBelongsToSet(questionSetId, question);
 		// checkQuestionSetIsOnLive(question.getQuestionSet()); //TODO: 비즈니스 익셉션 추가 후 주석 해제
 
