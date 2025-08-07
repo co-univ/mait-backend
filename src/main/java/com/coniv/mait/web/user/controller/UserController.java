@@ -10,7 +10,7 @@ import com.coniv.mait.domain.user.entity.UserEntity;
 import com.coniv.mait.domain.user.service.UserService;
 import com.coniv.mait.domain.user.service.dto.UserDto;
 import com.coniv.mait.global.response.ApiResponse;
-import com.coniv.mait.web.user.dto.UserInfoResponse;
+import com.coniv.mait.web.user.dto.UserInfoApiResponse;
 
 import io.swagger.v3.oas.annotations.Operation;
 import lombok.RequiredArgsConstructor;
@@ -24,8 +24,8 @@ public class UserController {
 
 	@Operation(summary = "사용자 정보 반환")
 	@GetMapping("/me")
-	public ResponseEntity<ApiResponse<UserInfoResponse>> getUserInfo(@AuthenticationPrincipal UserEntity user) {
+	public ResponseEntity<ApiResponse<UserInfoApiResponse>> getUserInfo(@AuthenticationPrincipal UserEntity user) {
 		UserDto dto = userService.getUserInfo(user);
-		return ResponseEntity.ok(ApiResponse.ok(UserInfoResponse.from(dto)));
+		return ResponseEntity.ok(ApiResponse.ok(UserInfoApiResponse.from(dto)));
 	}
 }

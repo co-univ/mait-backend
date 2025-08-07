@@ -4,7 +4,7 @@ import com.coniv.mait.domain.user.service.dto.UserDto;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 
-public record UserInfoResponse(
+public record UserInfoApiResponse(
 
 	@Schema(description = "사용자 ID")
 	Long id,
@@ -19,8 +19,8 @@ public record UserInfoResponse(
 	String nickname
 ) {
 
-	public static UserInfoResponse from(UserDto userDto) {
-		return new UserInfoResponse(
+	public static UserInfoApiResponse from(UserDto userDto) {
+		return new UserInfoApiResponse(
 			userDto.getId(),
 			userDto.getName(),
 			userDto.getEmail(),
