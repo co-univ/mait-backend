@@ -2,6 +2,7 @@ package com.coniv.mait.domain.question.service;
 
 import java.util.Comparator;
 import java.util.List;
+import java.util.Optional;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -17,6 +18,7 @@ import com.coniv.mait.domain.question.entity.QuestionSetEntity;
 import com.coniv.mait.domain.question.entity.ShortAnswerEntity;
 import com.coniv.mait.domain.question.entity.ShortQuestionEntity;
 import com.coniv.mait.domain.question.enums.DeliveryMode;
+import com.coniv.mait.domain.question.enums.QuestionStatusType;
 import com.coniv.mait.domain.question.enums.QuestionType;
 import com.coniv.mait.domain.question.repository.FillBlankAnswerEntityRepository;
 import com.coniv.mait.domain.question.repository.MultipleChoiceEntityRepository;
@@ -28,6 +30,7 @@ import com.coniv.mait.domain.question.service.component.FillBlankQuestionFactory
 import com.coniv.mait.domain.question.service.component.MultipleQuestionFactory;
 import com.coniv.mait.domain.question.service.component.OrderingQuestionFactory;
 import com.coniv.mait.domain.question.service.component.ShortQuestionFactory;
+import com.coniv.mait.domain.question.service.dto.CurrentQuestionDto;
 import com.coniv.mait.domain.question.service.dto.FillBlankQuestionDto;
 import com.coniv.mait.domain.question.service.dto.MultipleQuestionDto;
 import com.coniv.mait.domain.question.service.dto.OrderingQuestionDto;
@@ -128,6 +131,21 @@ public class QuestionService {
 
 		boolean answerVisible = mode == null || mode.isAnswerVisible();
 		return mapToQuestionDto(question, answerVisible);
+	}
+
+	public CurrentQuestionDto findCurrentQuestion(final Long questionSetId) {
+		QuestionSetEntity questionSet = questionSetEntityRepository.findById(questionSetId)
+			.orElseThrow(() -> new EntityNotFoundException("QuestionSet not found with id: " + questionSetId));
+
+		Optional<QuestionEntity> mayBeOpenQuestion = questionEntityRepository.findFirstByQuestionSetAndQuestionStatusIn(
+			questionSet, List.of(QuestionStatusType.ACCESS_PERMISSION, QuestionStatusType.SOLVE_PERMISSION));
+
+		if (mayBeOpenQuestion.isPresent()) {
+			QuestionEntity question = mayBeOpenQuestion.get();
+			return CurrentQuestionDto.of(questionSetId, question.getId(), question.getQuestionStatus());
+		}
+
+		return CurrentQuestionDto.notOpenQuestion(questionSetId);
 	}
 
 	public List<QuestionDto> getQuestions(final Long questionSetId) {

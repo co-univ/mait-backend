@@ -35,7 +35,8 @@ public class WebSocketSubscriptionHandler {
 			Matcher matcher = QUESTION_TOPIC_PATTERN.matcher(destination);
 			if (matcher.matches()) {
 				Long questionSetId = Long.parseLong(matcher.group(1));
-				questionSetLiveControlService.sendCurrentQuestionStatus(questionSetId, sessionId);
+				// TODO 개별 구독자에게 전송 가능하면 주석 해제
+				//questionSetLiveControlService.sendCurrentQuestionStatus(questionSetId, sessionId);
 			}
 		}
 	}
