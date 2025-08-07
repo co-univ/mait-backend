@@ -40,6 +40,7 @@ public class MultipleQuestionDto extends QuestionDto {
 			.content(multipleQuestion.getContent())
 			.explanation(multipleQuestion.getExplanation())
 			.number(multipleQuestion.getNumber())
+			.questionStatus(multipleQuestion.getQuestionStatus())
 			.choices(choiceDtos)
 			.build();
 	}

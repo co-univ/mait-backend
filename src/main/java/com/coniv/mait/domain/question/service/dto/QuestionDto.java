@@ -1,5 +1,7 @@
 package com.coniv.mait.domain.question.service.dto;
 
+import com.coniv.mait.domain.question.enums.QuestionStatusType;
+
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
@@ -22,6 +24,8 @@ public abstract class QuestionDto {
 	@NotNull(message = "문제의 번호는 필수입니다.")
 	@Min(value = 1, message = "문제의 번호는 1 이상이어야 합니다.")
 	private Long number;
+
+	private QuestionStatusType questionStatus;
 
 	public abstract QuestionDto toQuestionDto();
 }

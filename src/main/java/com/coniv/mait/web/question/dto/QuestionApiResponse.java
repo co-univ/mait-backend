@@ -1,5 +1,6 @@
 package com.coniv.mait.web.question.dto;
 
+import com.coniv.mait.domain.question.enums.QuestionStatusType;
 import com.coniv.mait.domain.question.enums.QuestionType;
 import com.coniv.mait.domain.question.service.dto.FillBlankQuestionDto;
 import com.coniv.mait.domain.question.service.dto.MultipleQuestionDto;
@@ -39,6 +40,8 @@ public abstract class QuestionApiResponse {
 
 	@Schema(requiredMode = Schema.RequiredMode.REQUIRED)
 	private QuestionType type;
+
+	private QuestionStatusType questionStatusType;
 
 	public static QuestionApiResponse from(QuestionDto questionDto) {
 		return switch (questionDto) {
