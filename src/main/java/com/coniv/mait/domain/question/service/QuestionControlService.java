@@ -5,6 +5,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.coniv.mait.domain.question.dto.QuestionStatusMessage;
 import com.coniv.mait.domain.question.entity.QuestionEntity;
+import com.coniv.mait.domain.question.entity.QuestionSetEntity;
 import com.coniv.mait.domain.question.enums.QuestionStatusType;
 import com.coniv.mait.domain.question.repository.QuestionEntityRepository;
 import com.coniv.mait.domain.question.service.component.QuestionWebSocketSender;
@@ -30,8 +31,9 @@ public class QuestionControlService {
 	public void allowQuestionAccess(Long questionSetId, Long questionId) {
 		QuestionEntity question = questionEntityRepository.findById(questionId)
 			.orElseThrow(() -> new EntityNotFoundException("Question not found with id: " + questionId));
+
+		checkQuestionSetIsOnLive(question.getQuestionSet());
 		checkQuestionBelongsToSet(questionSetId, question);
-		// checkQuestionSetIsOnLive(question.getQuestionSet()); //TODO: 비즈니스 익셉션 추가 후 주석 해제
 
 		closeAllQuestionStatus(questionSetId);
 
@@ -52,11 +54,12 @@ public class QuestionControlService {
 	public void allowQuestionSolve(Long questionSetId, Long questionId) {
 		QuestionEntity question = questionEntityRepository.findById(questionId)
 			.orElseThrow(() -> new EntityNotFoundException("Question not found with id: " + questionId));
+
+		checkQuestionSetIsOnLive(question.getQuestionSet());
 		if (question.getQuestionStatus() != QuestionStatusType.ACCESS_PERMISSION) {
 			throw new QuestionSetLiveException("Question must be in ACCESS_PERMISSION status before solving.");
 		}
 		checkQuestionBelongsToSet(questionSetId, question);
-		// checkQuestionSetIsOnLive(question.getQuestionSet()); //TODO: 비즈니스 익셉션 추가 후 주석 해제
 
 		closeAllQuestionStatus(questionSetId);
 
@@ -85,12 +88,12 @@ public class QuestionControlService {
 			.forEach(question -> question.updateQuestionStatus(QuestionStatusType.NOT_OPEN));
 	}
 
-	//TODO: 비즈니스 익셉션 추가 후 주석 해제
-	/*private void checkQuestionSetIsOnLive(QuestionSetEntity questionSet) {
+	private void checkQuestionSetIsOnLive(QuestionSetEntity questionSet) {
+		log.info(questionSet.isOnLive() ? "QuestionSet is on live." : "QuestionSet is not on live.");
 		if (!questionSet.isOnLive()) {
-			throw new IllegalArgumentException("QuestionSet with id " + questionSet.getId() + " is not on live.");
+			throw new QuestionSetLiveException("QuestionSet with id " + questionSet.getId() + " is not on live.");
 		}
-	}*/
+	}
 
 	//TODO: 신청 관리자가 해당 팀의 관리자인지 확인하는 로직 추가 필요
 }
