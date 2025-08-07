@@ -32,6 +32,8 @@ public class QuestionControlService {
 		checkQuestionBelongsToSet(questionSetId, question);
 		// checkQuestionSetIsOnLive(question.getQuestionSet()); //TODO: 비즈니스 익셉션 추가 후 주석 해제
 
+		closeAllQuestionStatus(questionSetId);
+
 		question.updateQuestionStatus(QuestionStatusType.ACCESS_PERMISSION);
 		QuestionStatusMessage message = QuestionStatusMessage.builder()
 			.questionSetId(questionSetId)
@@ -52,6 +54,8 @@ public class QuestionControlService {
 		checkQuestionBelongsToSet(questionSetId, question);
 		// checkQuestionSetIsOnLive(question.getQuestionSet()); //TODO: 비즈니스 익셉션 추가 후 주석 해제
 
+		closeAllQuestionStatus(questionSetId);
+
 		question.updateQuestionStatus(QuestionStatusType.SOLVE_PERMISSION);
 		QuestionStatusMessage message = QuestionStatusMessage.builder()
 			.questionSetId(questionSetId)
@@ -69,6 +73,12 @@ public class QuestionControlService {
 					+ questionSetId
 			);
 		}
+	}
+
+	private void closeAllQuestionStatus(Long questionSetId) {
+		// 모든 문제의 상태를 초기화
+		questionEntityRepository.findAllByQuestionSetId(questionSetId)
+			.forEach(question -> question.updateQuestionStatus(QuestionStatusType.NOT_OPEN));
 	}
 
 	//TODO: 비즈니스 익셉션 추가 후 주석 해제
