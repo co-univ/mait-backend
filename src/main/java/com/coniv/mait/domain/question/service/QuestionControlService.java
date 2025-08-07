@@ -56,10 +56,11 @@ public class QuestionControlService {
 			.orElseThrow(() -> new EntityNotFoundException("Question not found with id: " + questionId));
 
 		checkQuestionSetIsOnLive(question.getQuestionSet());
+		checkQuestionBelongsToSet(questionSetId, question);
+
 		if (question.getQuestionStatus() != QuestionStatusType.ACCESS_PERMISSION) {
 			throw new QuestionSetLiveException("Question must be in ACCESS_PERMISSION status before solving.");
 		}
-		checkQuestionBelongsToSet(questionSetId, question);
 
 		closeAllQuestionStatus(questionSetId);
 
