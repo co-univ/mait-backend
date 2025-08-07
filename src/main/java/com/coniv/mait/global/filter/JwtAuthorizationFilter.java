@@ -71,4 +71,9 @@ public class JwtAuthorizationFilter extends OncePerRequestFilter {
 		return authorizationHeader.replace(BEARER, "");
 	}
 
+	@Override
+	protected boolean shouldNotFilter(HttpServletRequest request) throws ServletException {
+		// Todo: 인증 필요한 경로만 필터하도록 등록
+		return true;
+	}
 }
