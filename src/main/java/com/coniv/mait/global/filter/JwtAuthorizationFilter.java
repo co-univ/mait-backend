@@ -8,6 +8,7 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
+import org.springframework.util.AntPathMatcher;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import com.coniv.mait.domain.user.entity.UserEntity;
@@ -37,6 +38,8 @@ public class JwtAuthorizationFilter extends OncePerRequestFilter {
 	private final JwtAuthenticationEntryPoint jwtAuthenticationEntryPoint;
 
 	private final UserEntityRepository userEntityRepository;
+
+	private final AntPathMatcher pathMatcher = new AntPathMatcher();
 
 	@Override
 	protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
@@ -73,7 +76,13 @@ public class JwtAuthorizationFilter extends OncePerRequestFilter {
 
 	@Override
 	protected boolean shouldNotFilter(HttpServletRequest request) throws ServletException {
-		// Todo: 인증 필요한 경로만 필터하도록 등록
+		String path = request.getRequestURI();
+		String method = request.getMethod();
+
+		if ("GET".equals(method) && pathMatcher.match("/api/v1/users/me", path)) {
+			return false; // 필터를 실행
+		}
+
 		return true;
 	}
 }
