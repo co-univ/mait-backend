@@ -13,9 +13,11 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.coniv.mait.domain.question.enums.QuestionSetLiveStatus;
+import com.coniv.mait.domain.question.service.QuestionRankService;
 import com.coniv.mait.domain.question.service.QuestionSetLiveControlService;
 import com.coniv.mait.global.response.ApiResponse;
 import com.coniv.mait.web.question.dto.ParticipantInfoResponse;
+import com.coniv.mait.web.question.dto.ParticipantsCorrectAnswerRankResponse;
 import com.coniv.mait.web.question.dto.QuestionSetLiveStatusResponse;
 import com.coniv.mait.web.question.dto.SendWinnerRequest;
 import com.coniv.mait.web.question.dto.UpdateActiveParticipantsRequest;
@@ -33,6 +35,8 @@ import lombok.extern.slf4j.Slf4j;
 public class QuestionSetLiveController {
 
 	private final QuestionSetLiveControlService questionSetLiveControlService;
+
+	private final QuestionRankService questionRankService;
 
 	@Operation(summary = "실시간 문제셋 시작")
 	@PatchMapping("/start")
@@ -85,5 +89,14 @@ public class QuestionSetLiveController {
 		@RequestBody SendWinnerRequest request) {
 		questionSetLiveControlService.sendWinner(questionSetId, request.winnerUserIds());
 		return ResponseEntity.ok().build();
+	}
+
+	@Operation(summary = "실시간 문제셋 정답자 랭킹")
+	@GetMapping("/rank/correct")
+	public ResponseEntity<ApiResponse<ParticipantsCorrectAnswerRankResponse>> getCorrectAnswerRank(
+		@PathVariable Long questionSetId) {
+		ParticipantsCorrectAnswerRankResponse response = ParticipantsCorrectAnswerRankResponse.from(
+			questionRankService.getParticipantCorrectRank(questionSetId));
+		return ResponseEntity.ok(ApiResponse.ok(response));
 	}
 }
