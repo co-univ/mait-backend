@@ -23,6 +23,7 @@ import org.springframework.test.web.servlet.MockMvc;
 import com.coniv.mait.domain.question.enums.QuestionSetCreationType;
 import com.coniv.mait.domain.question.service.QuestionSetService;
 import com.coniv.mait.domain.question.service.dto.QuestionSetDto;
+import com.coniv.mait.global.filter.JwtAuthorizationFilter;
 import com.coniv.mait.global.interceptor.idempotency.IdempotencyInterceptor;
 import com.coniv.mait.web.question.dto.CreateQuestionSetApiRequest;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -42,6 +43,9 @@ class QuestionSetControllerTest {
 
 	@MockitoBean
 	private IdempotencyInterceptor idempotencyInterceptor;
+
+	@MockitoBean
+	private JwtAuthorizationFilter jwtAuthorizationFilter;
 
 	@BeforeEach
 	void setUp() throws Exception {

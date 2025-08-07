@@ -27,6 +27,7 @@ import com.coniv.mait.domain.question.service.dto.MultipleQuestionDto;
 import com.coniv.mait.domain.question.service.dto.OrderingQuestionOptionDto;
 import com.coniv.mait.domain.question.service.dto.ShortAnswerDto;
 import com.coniv.mait.global.exception.custom.ResourceNotBelongException;
+import com.coniv.mait.global.filter.JwtAuthorizationFilter;
 import com.coniv.mait.global.interceptor.idempotency.IdempotencyInterceptor;
 import com.coniv.mait.web.question.dto.CreateFillBlankQuestionApiRequest;
 import com.coniv.mait.web.question.dto.CreateMultipleQuestionApiRequest;
@@ -51,6 +52,9 @@ class QuestionControllerTest {
 
 	@MockitoBean
 	private IdempotencyInterceptor idempotencyInterceptor;
+
+	@MockitoBean
+	private JwtAuthorizationFilter jwtAuthorizationFilter;
 
 	@BeforeEach
 	void setUp() throws Exception {
