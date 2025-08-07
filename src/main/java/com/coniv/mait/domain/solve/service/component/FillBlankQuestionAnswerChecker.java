@@ -13,6 +13,7 @@ import com.coniv.mait.domain.question.enums.QuestionType;
 import com.coniv.mait.domain.question.repository.FillBlankAnswerEntityRepository;
 import com.coniv.mait.domain.solve.service.dto.FillBlankSubmitAnswer;
 import com.coniv.mait.domain.solve.service.dto.SubmitAnswerDto;
+import com.coniv.mait.domain.solve.util.AnswerProcessUtil;
 
 import lombok.RequiredArgsConstructor;
 
@@ -33,7 +34,7 @@ public class FillBlankQuestionAnswerChecker implements AnswerChecker<FillBlankSu
 				question.getId())
 			.stream()
 			.collect(Collectors.groupingBy(FillBlankAnswerEntity::getNumber,
-				Collectors.mapping(FillBlankAnswerEntity::getAnswer, Collectors.toSet())));
+				Collectors.mapping(entity -> AnswerProcessUtil.processAnswer(entity.getAnswer()), Collectors.toSet())));
 
 		List<FillBlankSubmitAnswer> submitAnswers = answers.getSubmitAnswers();
 
@@ -44,7 +45,8 @@ public class FillBlankQuestionAnswerChecker implements AnswerChecker<FillBlankSu
 				return false;
 			}
 
-			if (!correctAnswers.contains(submitAnswer.answer())) {
+			String processedSubmitAnswer = AnswerProcessUtil.processAnswer(submitAnswer.answer());
+			if (!correctAnswers.contains(processedSubmitAnswer)) {
 				return false;
 			}
 		}

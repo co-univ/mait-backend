@@ -12,6 +12,7 @@ import com.coniv.mait.domain.question.entity.ShortAnswerEntity;
 import com.coniv.mait.domain.question.enums.QuestionType;
 import com.coniv.mait.domain.question.repository.ShortAnswerEntityRepository;
 import com.coniv.mait.domain.solve.service.dto.SubmitAnswerDto;
+import com.coniv.mait.domain.solve.util.AnswerProcessUtil;
 
 import lombok.RequiredArgsConstructor;
 
@@ -33,7 +34,7 @@ public class ShortQuestionAnswerChecker implements AnswerChecker<String> {
 			.collect(Collectors.groupingBy(
 				ShortAnswerEntity::getNumber,
 				Collectors.mapping(
-					ShortAnswerEntity::getAnswer,
+					shortAnswerEntity -> AnswerProcessUtil.processAnswer(shortAnswerEntity.getAnswer()),
 					Collectors.toSet()
 				)
 			));
@@ -46,11 +47,12 @@ public class ShortQuestionAnswerChecker implements AnswerChecker<String> {
 			.collect(Collectors.toMap(Function.identity(), value -> false));
 
 		for (String submitAnswer : answers.getSubmitAnswers()) {
+			String processedSubmitAnswer = AnswerProcessUtil.processAnswer(submitAnswer);
 			for (Long number : shortAnswersByNumber.keySet()) {
 				if (shortAnswersByNumberChecked.get(number)) {
 					continue;
 				}
-				boolean contains = shortAnswersByNumber.get(number).contains(submitAnswer);
+				boolean contains = shortAnswersByNumber.get(number).contains(processedSubmitAnswer);
 				shortAnswersByNumberChecked.put(number, contains);
 			}
 		}
