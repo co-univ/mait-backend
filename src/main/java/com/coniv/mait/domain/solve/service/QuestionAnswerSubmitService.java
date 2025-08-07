@@ -65,8 +65,11 @@ public class QuestionAnswerSubmitService {
 			throw new ResourceNotBelongException("문제 세트와 문제 ID가 일치하지 않습니다.");
 		}
 
+		if (answerSubmitRecordEntityRepository.existsByUserIdAndQuestionIdAndIsCorrectTrue(user.getId(), questionId)) {
+			throw new IllegalArgumentException("이미 해당 문제에 대해 정답을 제출한 기록이 있습니다.");
+		}
+
 		final boolean isCorrect = answerGrader.gradeAnswer(question, submitAnswer);
-		// Todo: 이미 정답 기록이 있는지 확인
 
 		if (isCorrect && user.getId().equals(scorerProcessor.getScorer(questionId, user.getId(), submitOrder))) {
 			scorerGenerator.updateScorer(questionId, user.getId(), submitOrder);
