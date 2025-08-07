@@ -10,4 +10,6 @@ public interface AnswerSubmitRecordEntityRepository extends JpaRepository<Answer
 	List<AnswerSubmitRecordEntity> findAllByQuestionId(Long questionId);
 
 	List<AnswerSubmitRecordEntity> findAllByQuestionIdInAndIsCorrect(List<Long> questionIds, boolean isCorrect);
+
+	boolean existsByUserIdAndQuestionIdAndIsCorrectTrue(Long id, Long questionId);
 }
