@@ -28,7 +28,6 @@ import com.coniv.mait.domain.user.repository.UserEntityRepository;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 @ExtendWith(MockitoExtension.class)
-@DisplayName("QuestionAnswerSubmitService 중복 제출 방지 테스트")
 class QuestionAnswerSubmitServiceTest {
 
 	@InjectMocks
@@ -68,19 +67,15 @@ class QuestionAnswerSubmitServiceTest {
 		MultipleQuestionSubmitAnswer submitAnswer = new MultipleQuestionSubmitAnswer(List.of(1L));
 
 		UserEntity mockUser = mock(UserEntity.class);
+		QuestionSetEntity mockQuestionSet = mock(QuestionSetEntity.class);
+		MultipleQuestionEntity mockQuestion = mock(MultipleQuestionEntity.class);
 		when(mockUser.getId()).thenReturn(userId);
 
-		QuestionSetEntity mockQuestionSet = mock(QuestionSetEntity.class);
-		when(mockQuestionSet.getId()).thenReturn(questionSetId);
-
-		MultipleQuestionEntity mockQuestion = mock(MultipleQuestionEntity.class);
-		when(mockQuestion.getId()).thenReturn(questionId);
-		when(mockQuestion.getQuestionSet()).thenReturn(mockQuestionSet);
-
-		// 필수 Mock 설정
 		when(userEntityRepository.findById(userId)).thenReturn(Optional.of(mockUser));
 		when(questionEntityRepository.findById(questionId)).thenReturn(Optional.of(mockQuestion));
-		// 핵심: 이미 정답 기록이 있다고 설정
+		when(mockQuestion.getQuestionSet()).thenReturn(mockQuestionSet);
+		when(mockQuestionSet.getId()).thenReturn(questionSetId);
+
 		when(answerSubmitRecordEntityRepository.existsByUserIdAndQuestionIdAndIsCorrectTrue(userId, questionId))
 			.thenReturn(true);
 
@@ -90,9 +85,9 @@ class QuestionAnswerSubmitServiceTest {
 			.isInstanceOf(IllegalArgumentException.class)
 			.hasMessage("이미 해당 문제에 대해 정답을 제출한 기록이 있습니다.");
 
-		// 중복 체크 후 더 이상 진행되지 않아야 함
 		verify(answerGrader, never()).gradeAnswer(any(), any());
 		verify(answerSubmitRecordEntityRepository, never()).save(any());
 		verify(scorerGenerator, never()).updateScorer(any(), any(), any());
 	}
+
 }
