@@ -5,6 +5,7 @@ import com.coniv.mait.domain.question.enums.QuestionSetCreationType;
 import com.coniv.mait.domain.question.enums.QuestionSetLiveStatus;
 import com.coniv.mait.domain.question.enums.QuestionSetVisibility;
 import com.coniv.mait.global.entity.BaseTimeEntity;
+import com.coniv.mait.global.exception.custom.QuestionSetLiveException;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -77,7 +78,7 @@ public class QuestionSetEntity extends BaseTimeEntity {
 	public void startLiveQuestionSet() {
 		checkLiveDeliveryMode();
 		if (liveStatus != QuestionSetLiveStatus.BEFORE_LIVE) {
-			throw new IllegalStateException("BEFORE_LIVE 상태에서만 실시간 문제를 시작할 수 있습니다. 현재 상태: " + liveStatus);
+			throw new QuestionSetLiveException("BEFORE_LIVE 상태에서만 실시간 문제를 시작할 수 있습니다. 현재 상태: " + liveStatus);
 		}
 		this.liveStatus = QuestionSetLiveStatus.LIVE;
 	}
@@ -85,14 +86,14 @@ public class QuestionSetEntity extends BaseTimeEntity {
 	public void endLiveQuestionSet() {
 		checkLiveDeliveryMode();
 		if (liveStatus != QuestionSetLiveStatus.LIVE) {
-			throw new IllegalStateException("LIVE 상태에서만 실시간 문제를 종료할 수 있습니다. 현재 상태: " + liveStatus);
+			throw new QuestionSetLiveException("LIVE 상태에서만 실시간 문제를 종료할 수 있습니다. 현재 상태: " + liveStatus);
 		}
 		this.liveStatus = QuestionSetLiveStatus.AFTER_LIVE;
 	}
 
 	private void checkLiveDeliveryMode() {
 		if (deliveryMode != DeliveryMode.LIVE_TIME) {
-			throw new IllegalStateException("LIVE_TIME 모드가 아닌 문제셋은 실시간 시작할 수 없습니다.");
+			throw new QuestionSetLiveException("LIVE_TIME 모드가 아닌 문제셋은 실시간 시작할 수 없습니다. 현재 모드: " + deliveryMode);
 		}
 	}
 }
