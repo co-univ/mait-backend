@@ -27,8 +27,8 @@ import com.coniv.mait.domain.user.repository.UserEntityRepository;
 import com.coniv.mait.util.TemporaryPasswordGenerator;
 
 @SpringBootTest
+//@ActiveProfiles("production") //TODO: 프로덕션 yml파일 만들어야함 + 활성화
 @ActiveProfiles("test")
-@Transactional
 class CsvUserEntityCreationTest {
 
 	private final String inputFileName = "cotato-users.csv";
@@ -44,6 +44,7 @@ class CsvUserEntityCreationTest {
 	@Autowired
 	private TeamService teamService;
 
+	@Transactional
 	public List<UserEntity> readUsersFromCsv(String csvFileName, String excelOutputPath) throws IOException {
 		List<UserEntity> users = new ArrayList<>();
 		List<UserData> userData = new ArrayList<>();
@@ -111,7 +112,7 @@ class CsvUserEntityCreationTest {
 		}
 	}
 
-	@Disabled("실제 CSV 파일을 읽고 엑셀 파일을 생성하는 테스트는 수동으로 실행")
+	@Disabled("실제 CSV 파일을 읽고 엑셀 파일을 생성하는 테스트는 수동으로 실행") //TODO 실제 테스트 시 삭제해야함
 	@Test
 	@DisplayName("CSV에서 사용자를 생성하고 팀과 연결")
 	void integrationTestWithTeamService() throws IOException {
