@@ -27,7 +27,8 @@ import com.coniv.mait.domain.user.repository.UserEntityRepository;
 import com.coniv.mait.util.TemporaryPasswordGenerator;
 
 @SpringBootTest
-@ActiveProfiles("production") //TODO: 프로덕션 yml파일 만들어야함
+//@ActiveProfiles("production") //TODO: 프로덕션 yml파일 만들어야함 + 활성화
+@ActiveProfiles("test")
 class CsvUserEntityCreationTest {
 
 	private final String inputFileName = "cotato-users.csv";
