@@ -41,6 +41,6 @@ public class AuthController {
 		Cookie refreshTokenCookie = CookieUtil.createRefreshCookie(token.refreshToken());
 		httpServletResponse.addCookie(refreshTokenCookie);
 
-		return ResponseEntity.ok().build();
+		return ResponseEntity.ok(ApiResponse.noContent());
 	}
 }
