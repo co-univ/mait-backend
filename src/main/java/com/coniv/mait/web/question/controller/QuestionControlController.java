@@ -29,7 +29,7 @@ public class QuestionControlController {
 		@PathVariable Long questionId) {
 
 		questionControlService.allowQuestionAccess(questionSetId, questionId);
-		return ResponseEntity.ok().build();
+		return ResponseEntity.ok(ApiResponse.noContent());
 	}
 
 	/**
@@ -41,6 +41,6 @@ public class QuestionControlController {
 		@PathVariable Long questionId) {
 
 		questionControlService.allowQuestionSolve(questionSetId, questionId);
-		return ResponseEntity.ok().build();
+		return ResponseEntity.ok(ApiResponse.noContent());
 	}
 }

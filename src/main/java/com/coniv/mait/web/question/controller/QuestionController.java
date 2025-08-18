@@ -38,7 +38,7 @@ public class QuestionController {
 		@Valid @RequestBody CreateQuestionApiRequest request,
 		@PathVariable("questionSetId") final Long questionSetId) {
 		questionService.createQuestion(questionSetId, type, request.toQuestionDto());
-		return ResponseEntity.ok(ApiResponse.ok(null));
+		return ResponseEntity.ok(ApiResponse.noContent());
 	}
 
 	@Operation(summary = "문제 조회 API")

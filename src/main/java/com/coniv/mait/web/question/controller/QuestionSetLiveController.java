@@ -48,7 +48,7 @@ public class QuestionSetLiveController {
 	public ResponseEntity<ApiResponse<Void>> startLiveQuestionSet(
 		@PathVariable Long questionSetId) {
 		questionSetLiveControlService.startLiveQuestionSet(questionSetId);
-		return ResponseEntity.ok().build();
+		return ResponseEntity.ok(ApiResponse.noContent());
 	}
 
 	@Operation(summary = "실시간 문제셋 종료")
@@ -56,7 +56,7 @@ public class QuestionSetLiveController {
 	public ResponseEntity<ApiResponse<Void>> endLiveQuestionSet(
 		@PathVariable Long questionSetId) {
 		questionSetLiveControlService.endLiveQuestionSet(questionSetId);
-		return ResponseEntity.ok().build();
+		return ResponseEntity.ok(ApiResponse.noContent());
 	}
 
 	@Operation(summary = "실시간 문제셋 상태 조회")
@@ -84,7 +84,7 @@ public class QuestionSetLiveController {
 		@PathVariable Long questionSetId,
 		@RequestBody UpdateActiveParticipantsRequest request) {
 		questionSetLiveControlService.updateActiveParticipants(questionSetId, request.activeUserIds());
-		return ResponseEntity.ok().build();
+		return ResponseEntity.ok(ApiResponse.noContent());
 	}
 
 	@Operation(summary = "우승자 전송")
@@ -93,7 +93,7 @@ public class QuestionSetLiveController {
 		@PathVariable Long questionSetId,
 		@RequestBody SendWinnerRequest request) {
 		questionSetLiveControlService.sendWinner(questionSetId, request.winnerUserIds());
-		return ResponseEntity.ok().build();
+		return ResponseEntity.ok(ApiResponse.noContent());
 	}
 
 	@Operation(summary = "실시간 문제셋 정답자 랭킹")
