@@ -31,13 +31,13 @@ public class SecurityConfig {
 			.httpBasic(AbstractHttpConfigurer::disable) // 기본 HTTP Basic 인증 비활성화
 			.exceptionHandling(exception -> exception.authenticationEntryPoint(jwtAuthenticationEntryPoint))
 			.authorizeHttpRequests(auth -> auth.requestMatchers("/api/v1/auth/login").permitAll() // 로그인 엔드포인트는 인증 없이 허용
-				.anyRequest().permitAll()); // 임시로 모든 요청 허용 TODO: 실제 서비스에서는 적절한 권한 설정 필요
-		// .oauth2Login((oauth2) -> oauth2
-		// 	.userInfoEndpoint(userInfoEndpoint -> userInfoEndpoint
-		// 		.userService(oauth2UserService)
-		// 	)
-		// 	.successHandler(oauth2SuccessHandler)
-		// );
+				.anyRequest().permitAll()) // 임시로 모든 요청 허용 TODO: 실제 서비스에서는 적절한 권한 설정 필요
+			.oauth2Login((oauth2) -> oauth2
+				.userInfoEndpoint(userInfoEndpoint -> userInfoEndpoint
+					.userService(oauth2UserService)
+				)
+				.successHandler(oauth2SuccessHandler)
+			);
 		return httpSecurity.build();
 	}
 }
