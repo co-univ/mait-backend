@@ -1,6 +1,8 @@
-package com.coniv.mait.global.security;
+package com.coniv.mait.global.oauth;
 
 import static com.coniv.mait.global.jwt.constant.TokenConstants.*;
+
+import java.io.IOException;
 
 import org.springframework.security.core.Authentication;
 import org.springframework.security.web.authentication.AuthenticationSuccessHandler;
@@ -12,6 +14,7 @@ import com.coniv.mait.global.jwt.JwtTokenProvider;
 import com.coniv.mait.global.jwt.RefreshToken;
 import com.coniv.mait.global.jwt.Token;
 import com.coniv.mait.global.jwt.repository.RefreshTokenRepository;
+import com.coniv.mait.global.oauth.constant.AuthConstant;
 import com.coniv.mait.global.util.CookieUtil;
 
 import jakarta.servlet.http.Cookie;
@@ -28,7 +31,7 @@ public class OAuth2SuccessHandler implements AuthenticationSuccessHandler {
 
 	@Override
 	public void onAuthenticationSuccess(HttpServletRequest request, HttpServletResponse response,
-		Authentication authentication) {
+		Authentication authentication) throws IOException {
 
 		Oauth2UserDetails oauthDetails = (Oauth2UserDetails)authentication.getPrincipal();
 		UserEntity user = oauthDetails.getUser();
@@ -42,5 +45,7 @@ public class OAuth2SuccessHandler implements AuthenticationSuccessHandler {
 
 		Cookie cookie = CookieUtil.createRefreshCookie(token.refreshToken());
 		response.addCookie(cookie);
+
+		response.sendRedirect(AuthConstant.OAUTH_SUCCESS_REDIRECT_URL + "?accessToken=" + accessToken);
 	}
 }

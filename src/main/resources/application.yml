@@ -41,6 +41,9 @@ jwt:
   refresh:
     expiration: ${JWT_REFRESH_TOKEN_EXPIRATION}
 
+mait:
+  front-base-url: ${MAIT_FRONT_BASE_URL:http://localhost:3000}
+
 springdoc:
   api-docs:
     path: /api-docs
