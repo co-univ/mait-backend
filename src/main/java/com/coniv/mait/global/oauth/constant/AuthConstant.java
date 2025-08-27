@@ -1,11 +1,20 @@
 package com.coniv.mait.global.oauth.constant;
 
-import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Component;
 
+import com.coniv.mait.global.config.property.MaitProperty;
+
+import lombok.Getter;
+import lombok.RequiredArgsConstructor;
+
+@Getter
+@Component
+@RequiredArgsConstructor
 public final class AuthConstant {
 
-	@Value("${mait.front-base-url}")
-	public static String frontendBaseUrl;
+	private final MaitProperty maitProperty;
 
-	public static final String OAUTH_SUCCESS_REDIRECT_URL = frontendBaseUrl + "/oauth/success";
+	public String getOAuthSuccessRedirectUrl() {
+		return maitProperty.getBaseUrl() + "/oauth/success";
+	}
 }

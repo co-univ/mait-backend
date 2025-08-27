@@ -28,6 +28,7 @@ public class OAuth2SuccessHandler implements AuthenticationSuccessHandler {
 
 	private final JwtTokenProvider jwtTokenProvider;
 	private final RefreshTokenRepository refreshTokenRepository;
+	private final AuthConstant authConstant;
 
 	@Override
 	public void onAuthenticationSuccess(HttpServletRequest request, HttpServletResponse response,
@@ -46,6 +47,6 @@ public class OAuth2SuccessHandler implements AuthenticationSuccessHandler {
 		Cookie cookie = CookieUtil.createRefreshCookie(token.refreshToken());
 		response.addCookie(cookie);
 
-		response.sendRedirect(AuthConstant.OAUTH_SUCCESS_REDIRECT_URL + "?accessToken=" + accessToken);
+		response.sendRedirect(authConstant.getOAuthSuccessRedirectUrl() + "?accessToken=" + accessToken);
 	}
 }
