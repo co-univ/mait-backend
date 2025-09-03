@@ -25,7 +25,9 @@ public class OauthAccessCodeRedisRepository {
 	}
 
 	public String findByCode(String code) {
-		return redisTemplate.opsForValue().get(generateKey(code));
+		String accessToken = redisTemplate.opsForValue().get(generateKey(code));
+		deleteByCode(code);
+		return accessToken;
 	}
 
 	public void deleteByCode(String code) {

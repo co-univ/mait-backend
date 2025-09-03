@@ -1,9 +1,11 @@
 package com.coniv.mait.web.auth.controller;
 
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.coniv.mait.domain.auth.service.AuthService;
@@ -42,5 +44,11 @@ public class AuthController {
 		httpServletResponse.addCookie(refreshTokenCookie);
 
 		return ResponseEntity.ok(ApiResponse.noContent());
+	}
+
+	@Operation(summary = "Access token 반환 API", description = "Oauth 로그인 후 access token을 반환하는 API")
+	@GetMapping("/access-token")
+	public ResponseEntity<ApiResponse<String>> getAccessToken(@RequestParam("code") String code) {
+		return ResponseEntity.ok(ApiResponse.ok(authService.getAccessTokenFromCode(code)));
 	}
 }

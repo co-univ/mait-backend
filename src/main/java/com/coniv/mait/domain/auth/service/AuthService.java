@@ -8,6 +8,7 @@ import com.coniv.mait.domain.user.repository.UserEntityRepository;
 import com.coniv.mait.global.exception.custom.LoginFailException;
 import com.coniv.mait.global.jwt.JwtTokenProvider;
 import com.coniv.mait.global.jwt.Token;
+import com.coniv.mait.global.jwt.cache.OauthAccessCodeRedisRepository;
 
 import lombok.RequiredArgsConstructor;
 
@@ -21,6 +22,8 @@ public class AuthService {
 
 	private final JwtTokenProvider jwtTokenProvider;
 
+	private final OauthAccessCodeRedisRepository oauthAccessCodeRedisRepository;
+
 	public Token login(final String email, final String password) {
 		UserEntity user = userEntityRepository.findByEmail(email)
 			.orElseThrow(() -> new LoginFailException("해당 이메일을 가진 유저를 찾을 수 없습니다."));
@@ -29,5 +32,13 @@ public class AuthService {
 			throw new LoginFailException("비밀번호가 일치하지 않습니다.");
 		}
 		return jwtTokenProvider.createToken(user.getId());
+	}
+
+	public String getAccessTokenFromCode(String code) {
+		String mayBeAccessToken = oauthAccessCodeRedisRepository.findByCode(code);
+		if (mayBeAccessToken == null) {
+			throw new LoginFailException("유효하지 않은 코드입니다.");
+		}
+		return mayBeAccessToken;
 	}
 }
