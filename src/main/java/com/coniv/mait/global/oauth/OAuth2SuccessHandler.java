@@ -3,6 +3,7 @@ package com.coniv.mait.global.oauth;
 import static com.coniv.mait.global.jwt.constant.TokenConstants.*;
 
 import java.io.IOException;
+import java.util.UUID;
 
 import org.springframework.security.core.Authentication;
 import org.springframework.security.web.authentication.AuthenticationSuccessHandler;
@@ -13,6 +14,7 @@ import com.coniv.mait.domain.user.entity.UserEntity;
 import com.coniv.mait.global.jwt.JwtTokenProvider;
 import com.coniv.mait.global.jwt.RefreshToken;
 import com.coniv.mait.global.jwt.Token;
+import com.coniv.mait.global.jwt.cache.OauthAccessCodeRedisRepository;
 import com.coniv.mait.global.jwt.repository.RefreshTokenRepository;
 import com.coniv.mait.global.oauth.constant.AuthConstant;
 import com.coniv.mait.global.util.CookieUtil;
@@ -29,6 +31,7 @@ public class OAuth2SuccessHandler implements AuthenticationSuccessHandler {
 	private final JwtTokenProvider jwtTokenProvider;
 	private final RefreshTokenRepository refreshTokenRepository;
 	private final AuthConstant authConstant;
+	private final OauthAccessCodeRedisRepository oauthAccessCodeRedisRepository;
 
 	@Override
 	public void onAuthenticationSuccess(HttpServletRequest request, HttpServletResponse response,
@@ -41,12 +44,14 @@ public class OAuth2SuccessHandler implements AuthenticationSuccessHandler {
 		String accessToken = token.accessToken();
 		response.addHeader(ACCESS_TOKEN, accessToken);
 
+		String code = UUID.randomUUID().toString();
+		oauthAccessCodeRedisRepository.save(code, accessToken);
+
 		RefreshToken refreshToken = new RefreshToken(user.getId(), token.refreshToken());
 		refreshTokenRepository.save(refreshToken);
 
 		Cookie cookie = CookieUtil.createRefreshCookie(token.refreshToken());
 		response.addCookie(cookie);
-
-		response.sendRedirect(authConstant.getOAuthSuccessRedirectUrl() + "?accessToken=" + accessToken);
+		response.sendRedirect(authConstant.getOAuthSuccessRedirectUrl() + "?code=" + code);
 	}
 }
