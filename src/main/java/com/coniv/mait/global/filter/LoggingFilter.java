@@ -14,13 +14,17 @@ import jakarta.servlet.http.HttpServletResponse;
 
 @Component
 public class LoggingFilter extends OncePerRequestFilter {
+
+	private static final String REQUEST_ID = "requestId";
+
 	@Override
 	protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response,
 		FilterChain filterChain) throws ServletException, IOException {
 
+		// Todo : Request 및 헤더 정보 로깅이 필요하면 현재 위치에 추가
 		String requestId = UUID.randomUUID().toString();
 
-		MDC.put("requestId", requestId);
+		MDC.put(REQUEST_ID, requestId);
 
 		try {
 			filterChain.doFilter(request, response);
