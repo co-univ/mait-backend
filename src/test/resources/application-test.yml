@@ -45,4 +45,6 @@ springdoc:
   api-docs:
     enabled: false
   swagger-ui:
-    enabled: false 
+    enabled: false
+mait:
+  base-url: http://localhost:3000

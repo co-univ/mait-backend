@@ -1,0 +1,8 @@
+mait:
+  base-url: "https://dev.mait.kr"
+  cookie:
+    path: "/"
+    max-age: 259200  # 3 days
+    http-only: true
+    secure: true
+    same-site: "None"
