@@ -2,3 +2,10 @@ spring:
   config:
     import:
       classpath:variables/variable-prod.yml
+
+  security:
+    oauth2:
+      client:
+        registration:
+          google:
+            redirect-uri: "https://api.dev.mait.kr/login/oauth2/code/google"
