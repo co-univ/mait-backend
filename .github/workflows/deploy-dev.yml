@@ -79,7 +79,6 @@ jobs:
             JWT_REFRESH_TOKEN_EXPIRATION=${{ secrets.JWT_REFRESH_TOKEN_EXPIRATION }}
             GOOGLE_CLIENT_ID=${{ secrets.GOOGLE_CLIENT_ID }}
             GOOGLE_CLIENT_SECRET=${{ secrets.GOOGLE_CLIENT_SECRET }}
-            MAIT_FRONT_BASE_URL=${{ secrets.MAIT_FRONT_BASE_URL }}
             EOL
             
             # Clean up existing deployment
