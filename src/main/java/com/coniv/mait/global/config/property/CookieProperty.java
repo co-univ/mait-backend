@@ -12,6 +12,7 @@ import lombok.Setter;
 @Setter
 public class CookieProperty {
 
+	private String domain;
 	private String path = "/";
 	private long maxAge = 60 * 60 * 24 * 3; // 3 days
 	private boolean httpOnly = true;

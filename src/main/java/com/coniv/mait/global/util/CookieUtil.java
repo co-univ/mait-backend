@@ -18,6 +18,7 @@ public final class CookieUtil {
 
 	public ResponseCookie createRefreshResponseCookie(final String refreshToken) {
 		return ResponseCookie.from(REFRESH_TOKEN, refreshToken)
+			.domain(cookieProperty.getDomain())
 			.path(cookieProperty.getPath())
 			.maxAge(cookieProperty.getMaxAge())
 			.httpOnly(cookieProperty.isHttpOnly())
