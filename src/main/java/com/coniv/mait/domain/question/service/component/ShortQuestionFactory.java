@@ -39,9 +39,9 @@ public class ShortQuestionFactory implements QuestionFactory<ShortQuestionDto> {
 	@Override
 	public void save(ShortQuestionDto questionDto, QuestionSetEntity questionSetEntity) {
 		ShortQuestionEntity question = create(questionDto, questionSetEntity);
-		List<ShortAnswerEntity> shortAnswers = createShortAnswers(questionDto.getShortAnswers(), question);
-
 		questionEntityRepository.save(question);
+		
+		List<ShortAnswerEntity> shortAnswers = createShortAnswers(questionDto.getShortAnswers(), question);
 		shortAnswerEntityRepository.saveAll(shortAnswers);
 	}
 

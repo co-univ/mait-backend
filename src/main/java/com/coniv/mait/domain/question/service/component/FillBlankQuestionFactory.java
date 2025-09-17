@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.coniv.mait.domain.question.entity.FillBlankAnswerEntity;
 import com.coniv.mait.domain.question.entity.FillBlankQuestionEntity;
@@ -35,13 +36,14 @@ public class FillBlankQuestionFactory implements QuestionFactory<FillBlankQuesti
 		return QuestionType.FILL_BLANK;
 	}
 
+	@Transactional
 	@Override
 	public void save(FillBlankQuestionDto questionDto, QuestionSetEntity questionSetEntity) {
 		FillBlankQuestionEntity question = create(questionDto, questionSetEntity);
+		questionEntityRepository.save(question);
+		
 		List<FillBlankAnswerEntity> fillBlankAnswers = createFillBlankAnswers(questionDto.getFillBlankAnswers(),
 			question);
-
-		questionEntityRepository.save(question);
 		fillBlankAnswerEntityRepository.saveAll(fillBlankAnswers);
 	}
 

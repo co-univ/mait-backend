@@ -36,9 +36,9 @@ public class OrderingQuestionFactory implements QuestionFactory<OrderingQuestion
 	@Override
 	public void save(OrderingQuestionDto questionDto, QuestionSetEntity questionSetEntity) {
 		OrderingQuestionEntity question = create(questionDto, questionSetEntity);
-		List<OrderingOptionEntity> options = createOrderingQuestionOptions(questionDto.getOptions(), question);
-
 		questionEntityRepository.save(question);
+		
+		List<OrderingOptionEntity> options = createOrderingQuestionOptions(questionDto.getOptions(), question);
 		orderingOptionEntityRepository.saveAll(options);
 	}
 
