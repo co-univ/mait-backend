@@ -11,5 +11,5 @@ public interface QuestionFactory<T extends QuestionDto> {
 
 	void save(T questionDto, QuestionSetEntity questionSetEntity);
 
-	T getQuestion(QuestionEntity question, boolean answerVisible);
+	QuestionDto getQuestion(QuestionEntity question, boolean answerVisible);
 }

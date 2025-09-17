@@ -5,4 +5,6 @@ public final class QuestionConstant {
 	public static final String MULTIPLE = "MULTIPLE";
 	public static final String ORDERING = "ORDERING";
 	public static final String FILL_BLANK = "FILL_BLANK";
+
+	public static final int MAX_DISPLAY_DELAY_MILLISECONDS = 5000;
 }

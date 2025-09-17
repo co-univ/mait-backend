@@ -34,7 +34,7 @@ public class FillBlankQuestionDto extends QuestionDto {
 			.build();
 	}
 
-	public static QuestionDto of(FillBlankQuestionEntity fillBlankQuestion,
+	public static FillBlankQuestionDto of(FillBlankQuestionEntity fillBlankQuestion,
 		List<FillBlankAnswerEntity> fillBlankAnswers, boolean answerVisible) {
 		List<FillBlankAnswerDto> fillBlankAnswerDtos = answerVisible
 			? fillBlankAnswers.stream()

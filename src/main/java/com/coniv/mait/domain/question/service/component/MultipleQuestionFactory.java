@@ -1,14 +1,22 @@
 package com.coniv.mait.domain.question.service.component;
 
+import static com.coniv.mait.domain.question.constant.QuestionConstant.*;
+
 import java.util.List;
 
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.coniv.mait.domain.question.entity.MultipleChoiceEntity;
 import com.coniv.mait.domain.question.entity.MultipleQuestionEntity;
+import com.coniv.mait.domain.question.entity.QuestionEntity;
 import com.coniv.mait.domain.question.entity.QuestionSetEntity;
+import com.coniv.mait.domain.question.enums.QuestionType;
+import com.coniv.mait.domain.question.repository.MultipleChoiceEntityRepository;
+import com.coniv.mait.domain.question.repository.QuestionEntityRepository;
 import com.coniv.mait.domain.question.service.dto.MultipleChoiceDto;
 import com.coniv.mait.domain.question.service.dto.MultipleQuestionDto;
+import com.coniv.mait.domain.question.service.dto.QuestionDto;
 import com.coniv.mait.global.exception.custom.UserParameterException;
 import com.coniv.mait.global.util.RandomUtil;
 
@@ -16,11 +24,34 @@ import lombok.RequiredArgsConstructor;
 
 @Component
 @RequiredArgsConstructor
-public class MultipleQuestionFactory {
+public class MultipleQuestionFactory implements QuestionFactory<MultipleQuestionDto> {
 
-	private static final int MAX_DISPLAY_DELAY_MILLISECONDS = 5000;
+	private final QuestionEntityRepository questionEntityRepository;
 
-	public MultipleQuestionEntity create(MultipleQuestionDto dto, QuestionSetEntity questionSet) {
+	private final MultipleChoiceEntityRepository multipleChoiceEntityRepository;
+
+	@Override
+	public QuestionType getQuestionType() {
+		return QuestionType.MULTIPLE;
+	}
+
+	@Transactional
+	@Override
+	public void save(MultipleQuestionDto questionDto, QuestionSetEntity questionSetEntity) {
+		MultipleQuestionEntity question = createQuestion(questionDto, questionSetEntity);
+		List<MultipleChoiceEntity> choices = createChoices(questionDto.getChoices(), question);
+
+		questionEntityRepository.save(question);
+		multipleChoiceEntityRepository.saveAll(choices);
+	}
+
+	@Override
+	public QuestionDto getQuestion(QuestionEntity question, boolean answerVisible) {
+		List<MultipleChoiceEntity> choices = multipleChoiceEntityRepository.findAllByQuestionId(question.getId());
+		return MultipleQuestionDto.of((MultipleQuestionEntity)question, choices, answerVisible);
+	}
+
+	public MultipleQuestionEntity createQuestion(MultipleQuestionDto dto, QuestionSetEntity questionSet) {
 		return MultipleQuestionEntity.builder()
 			.content(dto.getContent())
 			.explanation(dto.getExplanation())
@@ -62,6 +93,6 @@ public class MultipleQuestionFactory {
 	}
 
 	private int calculateAnswerCount(List<MultipleChoiceDto> choices) {
-		return (int)choices.stream().filter(choice -> choice.getIsCorrect()).count();
+		return (int)choices.stream().filter(MultipleChoiceDto::getIsCorrect).count();
 	}
 }
