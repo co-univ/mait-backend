@@ -41,7 +41,7 @@ public class FillBlankQuestionFactory implements QuestionFactory<FillBlankQuesti
 	public void save(FillBlankQuestionDto questionDto, QuestionSetEntity questionSetEntity) {
 		FillBlankQuestionEntity question = create(questionDto, questionSetEntity);
 		questionEntityRepository.save(question);
-		
+
 		List<FillBlankAnswerEntity> fillBlankAnswers = createFillBlankAnswers(questionDto.getFillBlankAnswers(),
 			question);
 		fillBlankAnswerEntityRepository.saveAll(fillBlankAnswers);

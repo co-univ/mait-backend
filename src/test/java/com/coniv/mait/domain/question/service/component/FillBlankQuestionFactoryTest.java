@@ -149,7 +149,7 @@ class FillBlankQuestionFactoryTest {
 		// Mock 설정 제거 - 예외가 먼저 발생해서 getId() 호출되지 않음
 
 		// when & then
-		assertThrows(UserParameterException.class, 
+		assertThrows(UserParameterException.class,
 			() -> fillBlankQuestionFactory.createFillBlankAnswers(answers, question));
 	}
 
@@ -166,7 +166,7 @@ class FillBlankQuestionFactoryTest {
 		// Mock 설정 제거 - 예외가 먼저 발생해서 getId() 호출되지 않음
 
 		// when & then
-		assertThrows(UserParameterException.class, 
+		assertThrows(UserParameterException.class,
 			() -> fillBlankQuestionFactory.createFillBlankAnswers(answers, question));
 	}
 }

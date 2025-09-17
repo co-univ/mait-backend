@@ -3,6 +3,7 @@ package com.coniv.mait.domain.question.service.component;
 import java.util.List;
 
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.coniv.mait.domain.question.constant.QuestionConstant;
 import com.coniv.mait.domain.question.entity.OrderingOptionEntity;
@@ -33,11 +34,12 @@ public class OrderingQuestionFactory implements QuestionFactory<OrderingQuestion
 		return QuestionType.ORDERING;
 	}
 
+	@Transactional
 	@Override
 	public void save(OrderingQuestionDto questionDto, QuestionSetEntity questionSetEntity) {
 		OrderingQuestionEntity question = create(questionDto, questionSetEntity);
 		questionEntityRepository.save(question);
-		
+
 		List<OrderingOptionEntity> options = createOrderingQuestionOptions(questionDto.getOptions(), question);
 		orderingOptionEntityRepository.saveAll(options);
 	}
