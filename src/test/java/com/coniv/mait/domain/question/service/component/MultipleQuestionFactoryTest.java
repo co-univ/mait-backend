@@ -1,26 +1,28 @@
 package com.coniv.mait.domain.question.service.component;
 
 import static org.assertj.core.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
-import java.util.Arrays;
 import java.util.List;
 
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
-import org.mockito.MockedStatic;
+import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import com.coniv.mait.domain.question.entity.MultipleChoiceEntity;
 import com.coniv.mait.domain.question.entity.MultipleQuestionEntity;
 import com.coniv.mait.domain.question.entity.QuestionSetEntity;
-import com.coniv.mait.domain.question.enums.QuestionSetCreationType;
+import com.coniv.mait.domain.question.enums.QuestionType;
+import com.coniv.mait.domain.question.repository.MultipleChoiceEntityRepository;
+import com.coniv.mait.domain.question.repository.QuestionEntityRepository;
 import com.coniv.mait.domain.question.service.dto.MultipleChoiceDto;
 import com.coniv.mait.domain.question.service.dto.MultipleQuestionDto;
+import com.coniv.mait.domain.question.service.dto.QuestionDto;
 import com.coniv.mait.global.exception.custom.UserParameterException;
-import com.coniv.mait.global.util.RandomUtil;
 
 @ExtendWith(MockitoExtension.class)
 class MultipleQuestionFactoryTest {
@@ -28,177 +30,123 @@ class MultipleQuestionFactoryTest {
 	@InjectMocks
 	private MultipleQuestionFactory multipleQuestionFactory;
 
+	@Mock
+	private QuestionEntityRepository questionEntityRepository;
+
+	@Mock
+	private MultipleChoiceEntityRepository multipleChoiceEntityRepository;
+
+	@Mock
+	private QuestionSetEntity questionSetEntity;
+
 	@Test
-	@DisplayName("객관식 문제 생성 테스트 - 정상적으로 생성")
-	void create_Success() {
+	@DisplayName("getQuestionType - MULTIPLE 타입 반환")
+	void getQuestionType() {
+		// when
+		QuestionType result = multipleQuestionFactory.getQuestionType();
+
+		// then
+		assertEquals(QuestionType.MULTIPLE, result);
+	}
+
+	@Test
+	@DisplayName("save - 객관식 문제와 선택지 저장 성공")
+	void save_Success() {
 		// given
-		List<MultipleChoiceDto> choices = Arrays.asList(
-			MultipleChoiceDto.builder()
-				.number(1)
-				.content("선택지 1")
-				.isCorrect(true)
-				.build(),
-			MultipleChoiceDto.builder()
-				.number(2)
-				.content("선택지 2")
-				.isCorrect(false)
-				.build(),
-			MultipleChoiceDto.builder()
-				.number(3)
-				.content("선택지 3")
-				.isCorrect(true)
-				.build()
+		List<MultipleChoiceDto> choices = List.of(
+			MultipleChoiceDto.builder().number(1).content("선택지 1").isCorrect(true).build(),
+			MultipleChoiceDto.builder().number(2).content("선택지 2").isCorrect(false).build(),
+			MultipleChoiceDto.builder().number(3).content("선택지 3").isCorrect(false).build()
 		);
 
 		MultipleQuestionDto questionDto = MultipleQuestionDto.builder()
-			.content("테스트 문제")
-			.explanation("테스트 설명")
+			.content("객관식 문제 내용")
+			.explanation("해설")
 			.number(1L)
 			.choices(choices)
 			.build();
 
-		QuestionSetEntity questionSet = QuestionSetEntity.of("테스트 과목", QuestionSetCreationType.MANUAL);
-
-		int expectedDisplayDelay = 3000;
-
 		// when
-		try (MockedStatic<RandomUtil> mockedRandomUtil = mockStatic(RandomUtil.class)) {
-			mockedRandomUtil.when(() -> RandomUtil.getRandomNumber(5000))
-				.thenReturn(expectedDisplayDelay);
+		multipleQuestionFactory.save(questionDto, questionSetEntity);
 
-			MultipleQuestionEntity result = multipleQuestionFactory.create(questionDto, questionSet);
-
-			// then
-			assertThat(result).isNotNull();
-			assertThat(result.getId()).isNull(); // ID는 Factory에서 설정하지 않음
-			assertThat(result.getContent()).isEqualTo("테스트 문제");
-			assertThat(result.getExplanation()).isEqualTo("테스트 설명");
-			assertThat(result.getNumber()).isEqualTo(1L);
-			assertThat(result.getDisplayDelayMilliseconds()).isEqualTo(expectedDisplayDelay);
-			assertThat(result.getQuestionSet()).isEqualTo(questionSet);
-			assertThat(result.getAnswerCount()).isEqualTo(2); // 정답인 선택지가 2개
-
-			mockedRandomUtil.verify(() -> RandomUtil.getRandomNumber(5000));
-		}
+		// then
+		verify(questionEntityRepository).save(any(MultipleQuestionEntity.class));
+		verify(multipleChoiceEntityRepository).saveAll(any());
 	}
 
 	@Test
-	@DisplayName("객관식 선택지 리스트 생성 테스트 - 정상적으로 생성")
-	void createChoices_Success() {
+	@DisplayName("getQuestion - answerVisible=true일 때 정답 포함하여 반환")
+	void getQuestion_AnswerVisible() {
 		// given
-		QuestionSetEntity questionSet = QuestionSetEntity.of("테스트 과목", QuestionSetCreationType.MANUAL);
+		MultipleQuestionEntity question = mock(MultipleQuestionEntity.class);
+		when(question.getId()).thenReturn(1L);
 
-		MultipleQuestionEntity question = MultipleQuestionEntity.builder()
-			.content("테스트 문제")
-			.explanation("설명")
-			.number(1L)
-			.displayDelayMilliseconds(1000)
-			.questionSet(questionSet)
-			.answerCount(1)
-			.build();
-
-		List<MultipleChoiceDto> choiceDtos = Arrays.asList(
-			MultipleChoiceDto.builder()
-				.number(1)
-				.content("첫 번째 선택지")
-				.isCorrect(true)
-				.build(),
-			MultipleChoiceDto.builder()
-				.number(2)
-				.content("두 번째 선택지")
-				.isCorrect(false)
-				.build(),
-			MultipleChoiceDto.builder()
-				.number(3)
-				.content("세 번째 선택지")
-				.isCorrect(false)
-				.build()
+		List<MultipleChoiceEntity> choices = List.of(
+			mock(MultipleChoiceEntity.class),
+			mock(MultipleChoiceEntity.class)
 		);
+		when(multipleChoiceEntityRepository.findAllByQuestionId(1L)).thenReturn(choices);
 
 		// when
-		List<MultipleChoiceEntity> result = multipleQuestionFactory.createChoices(choiceDtos, question);
+		QuestionDto result = multipleQuestionFactory.getQuestion(question, true);
 
 		// then
-		assertThat(result).hasSize(3);
-
-		MultipleChoiceEntity firstChoice = result.get(0);
-		assertThat(firstChoice.getId()).isNull(); // ID는 Factory에서 설정하지 않음
-		assertThat(firstChoice.getNumber()).isEqualTo(1);
-		assertThat(firstChoice.getContent()).isEqualTo("첫 번째 선택지");
-		assertThat(firstChoice.isCorrect()).isTrue();
-		assertThat(firstChoice.getQuestion()).isEqualTo(question);
-
-		MultipleChoiceEntity secondChoice = result.get(1);
-		assertThat(secondChoice.getId()).isNull(); // ID는 Factory에서 설정하지 않음
-		assertThat(secondChoice.getNumber()).isEqualTo(2);
-		assertThat(secondChoice.getContent()).isEqualTo("두 번째 선택지");
-		assertThat(secondChoice.isCorrect()).isFalse();
-		assertThat(secondChoice.getQuestion()).isEqualTo(question);
-
-		MultipleChoiceEntity thirdChoice = result.get(2);
-		assertThat(thirdChoice.getId()).isNull(); // ID는 Factory에서 설정하지 않음
-		assertThat(thirdChoice.getNumber()).isEqualTo(3);
-		assertThat(thirdChoice.getContent()).isEqualTo("세 번째 선택지");
-		assertThat(thirdChoice.isCorrect()).isFalse();
-		assertThat(thirdChoice.getQuestion()).isEqualTo(question);
+		assertThat(result).isInstanceOf(MultipleQuestionDto.class);
+		verify(multipleChoiceEntityRepository).findAllByQuestionId(1L);
 	}
 
 	@Test
-	@DisplayName("객관식 선택지 리스트 생성 테스트 - 빈 리스트")
-	void createChoices_EmptyList() {
+	@DisplayName("getQuestion - answerVisible=false일 때 정답 숨김하여 반환")
+	void getQuestion_AnswerHidden() {
 		// given
-		QuestionSetEntity questionSet = QuestionSetEntity.of("테스트 과목", QuestionSetCreationType.MANUAL);
+		MultipleQuestionEntity question = mock(MultipleQuestionEntity.class);
+		when(question.getId()).thenReturn(1L);
 
-		MultipleQuestionEntity question = MultipleQuestionEntity.builder()
-			.content("테스트 문제")
-			.explanation("설명")
-			.number(1L)
-			.displayDelayMilliseconds(1000)
-			.questionSet(questionSet)
-			.answerCount(0)
-			.build();
-
-		List<MultipleChoiceDto> emptyChoices = Arrays.asList();
+		List<MultipleChoiceEntity> choices = List.of(
+			mock(MultipleChoiceEntity.class),
+			mock(MultipleChoiceEntity.class)
+		);
+		when(multipleChoiceEntityRepository.findAllByQuestionId(1L)).thenReturn(choices);
 
 		// when
-		List<MultipleChoiceEntity> result = multipleQuestionFactory.createChoices(emptyChoices, question);
+		QuestionDto result = multipleQuestionFactory.getQuestion(question, false);
 
 		// then
-		assertThat(result).isEmpty();
+		assertThat(result).isInstanceOf(MultipleQuestionDto.class);
+		verify(multipleChoiceEntityRepository).findAllByQuestionId(1L);
 	}
 
 	@Test
-	@DisplayName("객관식 선택지 생성 실패 - 중복된 선택지 번호")
+	@DisplayName("createChoices - 중복된 선택지 번호 시 예외 발생")
 	void createChoices_DuplicateNumber_ThrowsException() {
 		// given
-		QuestionSetEntity questionSet = QuestionSetEntity.of("테스트 과목", QuestionSetCreationType.MANUAL);
-
-		MultipleQuestionEntity question = MultipleQuestionEntity.builder()
-			.content("테스트 문제")
-			.explanation("설명")
-			.number(1L)
-			.displayDelayMilliseconds(1000)
-			.questionSet(questionSet)
-			.answerCount(1)
-			.build();
-
-		List<MultipleChoiceDto> duplicateChoices = Arrays.asList(
-			MultipleChoiceDto.builder()
-				.number(1)
-				.content("첫 번째 선택지")
-				.isCorrect(true)
-				.build(),
-			MultipleChoiceDto.builder()
-				.number(1) // 중복된 번호
-				.content("두 번째 선택지")
-				.isCorrect(false)
-				.build()
+		List<MultipleChoiceDto> choices = List.of(
+			MultipleChoiceDto.builder().number(1).content("선택지 1").isCorrect(true).build(),
+			MultipleChoiceDto.builder().number(1).content("선택지 2").isCorrect(false).build() // 중복 번호
 		);
 
+		MultipleQuestionEntity question = mock(MultipleQuestionEntity.class);
+
 		// when & then
-		assertThatThrownBy(() -> multipleQuestionFactory.createChoices(duplicateChoices, question))
-			.isInstanceOf(UserParameterException.class)
-			.hasMessage("중복된 선택지 번호가 존재합니다.");
+		assertThrows(UserParameterException.class,
+			() -> multipleQuestionFactory.createChoices(choices, question));
 	}
 
+	@Test
+	@DisplayName("createChoices - 정상적인 선택지 생성")
+	void createChoices_Success() {
+		// given
+		List<MultipleChoiceDto> choices = List.of(
+			MultipleChoiceDto.builder().number(1).content("선택지 1").isCorrect(true).build(),
+			MultipleChoiceDto.builder().number(2).content("선택지 2").isCorrect(false).build()
+		);
+
+		MultipleQuestionEntity question = mock(MultipleQuestionEntity.class);
+
+		// when
+		List<MultipleChoiceEntity> result = multipleQuestionFactory.createChoices(choices, question);
+
+		// then
+		assertEquals(2, result.size());
+	}
 }

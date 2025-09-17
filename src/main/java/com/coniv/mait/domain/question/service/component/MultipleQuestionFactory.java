@@ -38,7 +38,7 @@ public class MultipleQuestionFactory implements QuestionFactory<MultipleQuestion
 	@Transactional
 	@Override
 	public void save(MultipleQuestionDto questionDto, QuestionSetEntity questionSetEntity) {
-		MultipleQuestionEntity question = createQuestion(questionDto, questionSetEntity);
+		MultipleQuestionEntity question = create(questionDto, questionSetEntity);
 		List<MultipleChoiceEntity> choices = createChoices(questionDto.getChoices(), question);
 
 		questionEntityRepository.save(question);
@@ -51,7 +51,7 @@ public class MultipleQuestionFactory implements QuestionFactory<MultipleQuestion
 		return MultipleQuestionDto.of((MultipleQuestionEntity)question, choices, answerVisible);
 	}
 
-	public MultipleQuestionEntity createQuestion(MultipleQuestionDto dto, QuestionSetEntity questionSet) {
+	public MultipleQuestionEntity create(MultipleQuestionDto dto, QuestionSetEntity questionSet) {
 		return MultipleQuestionEntity.builder()
 			.content(dto.getContent())
 			.explanation(dto.getExplanation())
