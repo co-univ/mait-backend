@@ -62,8 +62,8 @@ class QuestionSetServiceTest {
 
 		when(older.getId()).thenReturn(1L);
 		when(newer.getId()).thenReturn(2L);
-		when(older.getCreatedAt()).thenReturn(now.minusDays(1));
-		when(newer.getCreatedAt()).thenReturn(now.plusDays(1));
+		when(older.getModifiedAt()).thenReturn(now.minusDays(1));
+		when(newer.getModifiedAt()).thenReturn(now.plusDays(1));
 
 		when(questionSetEntityRepository.findAllByTeamIdAndDeliveryMode(teamId, mode))
 			.thenReturn(List.of(older, newer));
