@@ -40,7 +40,7 @@ public class ShortQuestionFactory implements QuestionFactory<ShortQuestionDto> {
 	public void save(ShortQuestionDto questionDto, QuestionSetEntity questionSetEntity) {
 		ShortQuestionEntity question = create(questionDto, questionSetEntity);
 		questionEntityRepository.save(question);
-		
+
 		List<ShortAnswerEntity> shortAnswers = createShortAnswers(questionDto.getShortAnswers(), question);
 		shortAnswerEntityRepository.saveAll(shortAnswers);
 	}
