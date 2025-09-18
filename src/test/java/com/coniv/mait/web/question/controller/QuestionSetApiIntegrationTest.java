@@ -71,6 +71,7 @@ public class QuestionSetApiIntegrationTest extends BaseIntegrationTest {
 		// when
 		mockMvc.perform(get("/api/v1/question-sets")
 				.param("teamId", String.valueOf(team.getId()))
+				.param("mode", "LIVE_TIME")
 				.accept(MediaType.APPLICATION_JSON))
 			.andExpect(status().isOk())
 			.andExpect(jsonPath("$.data.length()").value(2))

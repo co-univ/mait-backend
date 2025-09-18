@@ -16,6 +16,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import com.coniv.mait.domain.question.entity.QuestionSetEntity;
+import com.coniv.mait.domain.question.enums.DeliveryMode;
 import com.coniv.mait.domain.question.enums.QuestionSetCreationType;
 import com.coniv.mait.domain.question.repository.QuestionEntityRepository;
 import com.coniv.mait.domain.question.repository.QuestionSetEntityRepository;
@@ -55,6 +56,7 @@ class QuestionSetServiceTest {
 		// given
 		final Long teamId = 1L;
 		final LocalDateTime now = LocalDateTime.now();
+		final DeliveryMode mode = DeliveryMode.LIVE_TIME;
 		QuestionSetEntity older = mock(QuestionSetEntity.class);
 		QuestionSetEntity newer = mock(QuestionSetEntity.class);
 
@@ -63,18 +65,18 @@ class QuestionSetServiceTest {
 		when(older.getCreatedAt()).thenReturn(now.minusDays(1));
 		when(newer.getCreatedAt()).thenReturn(now.plusDays(1));
 
-		when(questionSetEntityRepository.findAllByTeamId(teamId))
+		when(questionSetEntityRepository.findAllByTeamIdAndDeliveryMode(teamId, mode))
 			.thenReturn(List.of(older, newer));
 
 		// when
-		List<QuestionSetDto> result = questionSetService.getQuestionSets(teamId);
+		List<QuestionSetDto> result = questionSetService.getQuestionSets(teamId, mode);
 
 		// then
 		assertThat(result).hasSize(2);
 		assertThat(result.get(0).getId()).isEqualTo(2L); // 최신 것이 먼저
 		assertThat(result.get(1).getId()).isEqualTo(1L);
 
-		verify(questionSetEntityRepository, times(1)).findAllByTeamId(teamId);
+		verify(questionSetEntityRepository, times(1)).findAllByTeamIdAndDeliveryMode(teamId, mode);
 	}
 
 	@Test
