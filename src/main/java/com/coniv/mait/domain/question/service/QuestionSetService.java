@@ -32,6 +32,7 @@ public class QuestionSetService {
 		return QuestionSetDto.builder()
 			.id(questionSetEntity.getId())
 			.subject(questionSetEntity.getSubject())
+			.title(questionSetEntity.getTitle())
 			.build();
 	}
 
@@ -53,5 +54,9 @@ public class QuestionSetService {
 		long questionCount = questionEntityRepository.countByQuestionSetId(questionSetEntity.getId());
 
 		return QuestionSetDto.of(questionSetEntity, questionCount);
+	}
+
+	public void saveQuestionSets(final Long questionSetId) {
+
 	}
 }

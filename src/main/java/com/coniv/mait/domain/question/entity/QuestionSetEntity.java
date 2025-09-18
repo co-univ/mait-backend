@@ -35,7 +35,8 @@ public class QuestionSetEntity extends BaseTimeEntity {
 
 	private String subject;
 
-	private String title;
+	@Builder.Default
+	private String title = "문제 셋";
 
 	@Enumerated(EnumType.STRING)
 	@Column(nullable = false)
