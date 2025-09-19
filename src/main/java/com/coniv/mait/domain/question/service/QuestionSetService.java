@@ -39,11 +39,12 @@ public class QuestionSetService {
 			.build();
 	}
 
-	public List<QuestionSetDto> getQuestionSets(final Long teamId) {
+	public List<QuestionSetDto> getQuestionSets(final Long teamId, final DeliveryMode mode) {
 		// Todo: 조회하려는 유저와 팀이 일치하는지 확인
-		return questionSetEntityRepository.findAllByTeamId(teamId).stream()
+
+		return questionSetEntityRepository.findAllByTeamIdAndDeliveryMode(teamId, mode).stream()
 			.sorted(Comparator.comparing(
-				QuestionSetEntity::getCreatedAt,
+				QuestionSetEntity::getModifiedAt,
 				Comparator.nullsLast(Comparator.naturalOrder())
 			).reversed())
 			.map(QuestionSetDto::from)

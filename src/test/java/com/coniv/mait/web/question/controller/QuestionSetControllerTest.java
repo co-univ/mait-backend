@@ -150,11 +150,14 @@ class QuestionSetControllerTest {
 		Long teamId = 1L;
 		QuestionSetDto questionSet1 = QuestionSetDto.builder().id(1L).subject("Subject 1").build();
 		QuestionSetDto questionSet2 = QuestionSetDto.builder().id(2L).subject("Subject 2").build();
-		when(questionSetService.getQuestionSets(teamId)).thenReturn(List.of(questionSet1, questionSet2));
+		final DeliveryMode mode = DeliveryMode.LIVE_TIME;
+		when(questionSetService.getQuestionSets(teamId, DeliveryMode.LIVE_TIME)).thenReturn(
+			List.of(questionSet1, questionSet2));
 
 		// when & then
 		mockMvc.perform(get("/api/v1/question-sets")
-				.param("teamId", String.valueOf(teamId)))
+				.param("teamId", String.valueOf(teamId))
+				.param("mode", mode.name()))
 			.andExpect(status().isOk())
 			.andExpect(jsonPath("$.data.length()").value(2))
 			.andExpect(jsonPath("$.data[0].id").value(1L))
@@ -162,7 +165,7 @@ class QuestionSetControllerTest {
 			.andExpect(jsonPath("$.data[1].id").value(2L))
 			.andExpect(jsonPath("$.data[1].subject").value("Subject 2"));
 
-		verify(questionSetService).getQuestionSets(teamId);
+		verify(questionSetService).getQuestionSets(teamId, mode);
 	}
 
 	@Test

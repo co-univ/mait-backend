@@ -13,6 +13,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.coniv.mait.domain.question.enums.DeliveryMode;
 import com.coniv.mait.domain.question.service.QuestionSetService;
 import com.coniv.mait.domain.question.service.dto.QuestionSetDto;
 import com.coniv.mait.global.response.ApiResponse;
@@ -46,8 +47,9 @@ public class QuestionSetController {
 	@Operation(summary = "문제 셋 목록 조회")
 	@GetMapping
 	public ResponseEntity<ApiResponse<List<QuestionSetApiResponse>>> getQuestionSets(
+		@RequestParam(value = "mode") DeliveryMode mode,
 		@RequestParam("teamId") Long teamId) {
-		List<QuestionSetApiResponse> responses = questionSetService.getQuestionSets(teamId)
+		List<QuestionSetApiResponse> responses = questionSetService.getQuestionSets(teamId, mode)
 			.stream()
 			.map(QuestionSetApiResponse::from)
 			.toList();

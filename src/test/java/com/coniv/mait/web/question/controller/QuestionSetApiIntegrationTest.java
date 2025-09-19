@@ -64,9 +64,18 @@ public class QuestionSetApiIntegrationTest extends BaseIntegrationTest {
 		TeamEntity team = teamEntityRepository.save(TeamEntity.builder().name("코니브").build());
 		String subject1 = "Subject 1";
 		String subject2 = "Subject 2";
+		final DeliveryMode deliveryMode = DeliveryMode.LIVE_TIME;
 
-		QuestionSetEntity questionSet1 = QuestionSetEntity.builder().subject(subject1).teamId(team.getId()).build();
-		QuestionSetEntity questionSet2 = QuestionSetEntity.builder().subject(subject2).teamId(team.getId()).build();
+		QuestionSetEntity questionSet1 = QuestionSetEntity.builder()
+			.subject(subject1)
+			.teamId(team.getId())
+			.deliveryMode(deliveryMode)
+			.build();
+		QuestionSetEntity questionSet2 = QuestionSetEntity.builder()
+			.subject(subject2)
+			.teamId(team.getId())
+			.deliveryMode(deliveryMode)
+			.build();
 
 		questionSetEntityRepository.save(questionSet1);
 		questionSetEntityRepository.save(questionSet2);
@@ -74,6 +83,7 @@ public class QuestionSetApiIntegrationTest extends BaseIntegrationTest {
 		// when
 		mockMvc.perform(get("/api/v1/question-sets")
 				.param("teamId", String.valueOf(team.getId()))
+				.param("mode", deliveryMode.name())
 				.accept(MediaType.APPLICATION_JSON))
 			.andExpect(status().isOk())
 			.andExpect(jsonPath("$.data.length()").value(2))

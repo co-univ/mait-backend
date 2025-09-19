@@ -30,7 +30,7 @@ public record QuestionSetApiResponse(
 	@Schema(requiredMode = Schema.RequiredMode.NOT_REQUIRED)
 	String levelDescription,
 	@Schema(requiredMode = Schema.RequiredMode.REQUIRED)
-	LocalDateTime createdAt
+	LocalDateTime updatedAt
 
 ) {
 	public static QuestionSetApiResponse from(final QuestionSetDto questionSetDto) {
@@ -44,7 +44,7 @@ public record QuestionSetApiResponse(
 			.teamId(questionSetDto.getTeamId())
 			.questionCount(questionSetDto.getQuestionCount())
 			.levelDescription(questionSetDto.getLevelDescription())
-			.createdAt(questionSetDto.getCreatedAt())
+			.updatedAt(questionSetDto.getUpdatedAt())
 			.build();
 	}
 }
