@@ -149,7 +149,8 @@ class QuestionSetControllerTest {
 		QuestionSetDto questionSet1 = QuestionSetDto.builder().id(1L).subject("Subject 1").build();
 		QuestionSetDto questionSet2 = QuestionSetDto.builder().id(2L).subject("Subject 2").build();
 		final DeliveryMode mode = DeliveryMode.LIVE_TIME;
-		when(questionSetService.getQuestionSets(teamId, DeliveryMode.LIVE_TIME)).thenReturn(List.of(questionSet1, questionSet2));
+		when(questionSetService.getQuestionSets(teamId, DeliveryMode.LIVE_TIME)).thenReturn(
+			List.of(questionSet1, questionSet2));
 
 		// when & then
 		mockMvc.perform(get("/api/v1/question-sets")

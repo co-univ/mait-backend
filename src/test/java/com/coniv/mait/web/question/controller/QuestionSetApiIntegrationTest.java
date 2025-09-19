@@ -64,8 +64,16 @@ public class QuestionSetApiIntegrationTest extends BaseIntegrationTest {
 		String subject2 = "Subject 2";
 		final DeliveryMode deliveryMode = DeliveryMode.LIVE_TIME;
 
-		QuestionSetEntity questionSet1 = QuestionSetEntity.builder().subject(subject1).teamId(team.getId()).deliveryMode(deliveryMode).build();
-		QuestionSetEntity questionSet2 = QuestionSetEntity.builder().subject(subject2).teamId(team.getId()).deliveryMode(deliveryMode).build();
+		QuestionSetEntity questionSet1 = QuestionSetEntity.builder()
+			.subject(subject1)
+			.teamId(team.getId())
+			.deliveryMode(deliveryMode)
+			.build();
+		QuestionSetEntity questionSet2 = QuestionSetEntity.builder()
+			.subject(subject2)
+			.teamId(team.getId())
+			.deliveryMode(deliveryMode)
+			.build();
 
 		questionSetEntityRepository.save(questionSet1);
 		questionSetEntityRepository.save(questionSet2);
