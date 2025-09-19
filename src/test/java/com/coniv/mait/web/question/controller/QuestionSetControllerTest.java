@@ -20,12 +20,15 @@ import org.springframework.http.MediaType;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
+import com.coniv.mait.domain.question.enums.DeliveryMode;
 import com.coniv.mait.domain.question.enums.QuestionSetCreationType;
+import com.coniv.mait.domain.question.enums.QuestionSetVisibility;
 import com.coniv.mait.domain.question.service.QuestionSetService;
 import com.coniv.mait.domain.question.service.dto.QuestionSetDto;
 import com.coniv.mait.global.filter.JwtAuthorizationFilter;
 import com.coniv.mait.global.interceptor.idempotency.IdempotencyInterceptor;
 import com.coniv.mait.web.question.dto.CreateQuestionSetApiRequest;
+import com.coniv.mait.web.question.dto.UpdateQuestionSetApiRequest;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 @WebMvcTest(controllers = QuestionSetController.class)
@@ -182,5 +185,112 @@ class QuestionSetControllerTest {
 			.andExpect(jsonPath("$.data.subject").value(subject));
 
 		verify(questionSetService).getQuestionSet(questionSetId);
+	}
+
+	@Test
+	@DisplayName("문제 셋 저장 테스트")
+	void updateQuestionSets() throws Exception {
+		// given
+		final Long questionSetId = 1L;
+		final String subject = "Updated Subject";
+		final String title = "Updated Title";
+		final DeliveryMode mode = DeliveryMode.REVIEW;
+		final String levelDescription = "Intermediate";
+		final QuestionSetVisibility visibility = QuestionSetVisibility.PRIVATE;
+
+		var request = new UpdateQuestionSetApiRequest(title, subject, mode, levelDescription, visibility);
+
+		QuestionSetDto questionSetDto = QuestionSetDto.builder()
+			.id(questionSetId)
+			.subject(subject)
+			.title(title)
+			.deliveryMode(mode)
+			.levelDescription(levelDescription)
+			.visibility(visibility)
+			.build();
+
+		when(questionSetService.completeQuestionSet(questionSetId, title, subject, mode, levelDescription, visibility))
+			.thenReturn(questionSetDto);
+
+		// when & then
+		mockMvc.perform(put("/api/v1/question-sets/{questionSetId}", questionSetId)
+				.contentType(MediaType.APPLICATION_JSON)
+				.content(objectMapper.writeValueAsString(request)))
+			.andExpect(status().isOk())
+			.andExpect(jsonPath("$.data.id").value(questionSetId))
+			.andExpect(jsonPath("$.data.subject").value(subject))
+			.andExpect(jsonPath("$.data.title").value(title))
+			.andExpect(jsonPath("$.data.deliveryMode").value(mode.name()))
+			.andExpect(jsonPath("$.data.levelDescription").value(levelDescription))
+			.andExpect(jsonPath("$.data.visibility").value(visibility.name()));
+
+		verify(questionSetService).completeQuestionSet(questionSetId, title, subject, mode, levelDescription,
+			visibility);
+	}
+
+	@ParameterizedTest(name = "{index} - {0}")
+	@DisplayName("문제 셋 최종 저장 테스트 - 유효하지 않은 요청")
+	@MethodSource("invalidUpdateQuestionSetRequests")
+	void updateQuestionSets_InvalidRequest(String testName, UpdateQuestionSetApiRequest request,
+		List<String> expectedErrorMessages) throws Exception {
+		// given
+		final Long questionSetId = 1L;
+
+		// when & then
+		mockMvc.perform(put("/api/v1/question-sets/{questionSetId}", questionSetId)
+				.contentType(MediaType.APPLICATION_JSON)
+				.content(objectMapper.writeValueAsString(request)))
+			.andExpectAll(
+				status().isBadRequest(),
+				jsonPath("$.isSuccess").value(false),
+				jsonPath("$.code").value("C-001"),
+				jsonPath("$.message").value("사용자 입력 오류입니다."),
+				jsonPath("$.reasons").isArray(),
+				jsonPath("$.reasons.length()").value(expectedErrorMessages.size()),
+				jsonPath("$.reasons[*]").value(org.hamcrest.Matchers.hasItems(
+					expectedErrorMessages.toArray(new String[0])
+				))
+			);
+
+		verify(questionSetService, never()).completeQuestionSet(anyLong(), anyString(), anyString(), any(), anyString(),
+			any());
+	}
+
+	static Stream<Arguments> invalidUpdateQuestionSetRequests() {
+		return Stream.of(
+			Arguments.of(
+				"제목과 주제가 빈 문자열",
+				new UpdateQuestionSetApiRequest("", "", DeliveryMode.LIVE_TIME, "설명", QuestionSetVisibility.GROUP),
+				List.of("제목을 입력해주세요", "주제를 입력해주세요")
+			),
+			Arguments.of(
+				"제목만 빈 문자열",
+				new UpdateQuestionSetApiRequest("", "유효한 주제", DeliveryMode.REVIEW, "설명", QuestionSetVisibility.PRIVATE),
+				List.of("제목을 입력해주세요")
+			),
+			Arguments.of(
+				"주제만 빈 문자열",
+				new UpdateQuestionSetApiRequest("유효한 제목", "", DeliveryMode.LIVE_TIME, "설명",
+					QuestionSetVisibility.GROUP),
+				List.of("주제를 입력해주세요")
+			),
+			Arguments.of(
+				"제목과 주제가 null",
+				new UpdateQuestionSetApiRequest(null, null, DeliveryMode.REVIEW, "설명", QuestionSetVisibility.GROUP),
+				List.of("제목을 입력해주세요", "주제를 입력해주세요")
+			),
+			Arguments.of(
+				"제목이 공백만 포함",
+				new UpdateQuestionSetApiRequest("   ", "유효한 주제", DeliveryMode.LIVE_TIME, "설명",
+					QuestionSetVisibility.PRIVATE),
+				List.of("제목을 입력해주세요")
+			),
+			Arguments.of(
+				"주제가 공백만 포함",
+				new UpdateQuestionSetApiRequest("유효한 제목", "   ", DeliveryMode.REVIEW, "설명",
+					QuestionSetVisibility.GROUP),
+				List.of("주제를 입력해주세요")
+			)
+		);
 	}
 }
