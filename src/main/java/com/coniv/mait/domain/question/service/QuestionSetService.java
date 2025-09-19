@@ -7,6 +7,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.coniv.mait.domain.question.entity.QuestionSetEntity;
+import com.coniv.mait.domain.question.enums.DeliveryMode;
 import com.coniv.mait.domain.question.enums.QuestionSetCreationType;
 import com.coniv.mait.domain.question.repository.QuestionEntityRepository;
 import com.coniv.mait.domain.question.repository.QuestionSetEntityRepository;
@@ -35,11 +36,12 @@ public class QuestionSetService {
 			.build();
 	}
 
-	public List<QuestionSetDto> getQuestionSets(final Long teamId) {
+	public List<QuestionSetDto> getQuestionSets(final Long teamId, final DeliveryMode mode) {
 		// Todo: 조회하려는 유저와 팀이 일치하는지 확인
-		return questionSetEntityRepository.findAllByTeamId(teamId).stream()
+
+		return questionSetEntityRepository.findAllByTeamIdAndDeliveryMode(teamId, mode).stream()
 			.sorted(Comparator.comparing(
-				QuestionSetEntity::getCreatedAt,
+				QuestionSetEntity::getModifiedAt,
 				Comparator.nullsLast(Comparator.naturalOrder())
 			).reversed())
 			.map(QuestionSetDto::from)

@@ -28,7 +28,7 @@ public record QuestionSetApiResponse(
 	@Schema(requiredMode = Schema.RequiredMode.REQUIRED)
 	Long questionCount,
 	@Schema(requiredMode = Schema.RequiredMode.REQUIRED)
-	LocalDateTime createdAt
+	LocalDateTime updatedAt
 
 ) {
 	public static QuestionSetApiResponse from(final QuestionSetDto questionSetDto) {
@@ -41,7 +41,7 @@ public record QuestionSetApiResponse(
 			.deliveryMode(questionSetDto.getDeliveryMode())
 			.teamId(questionSetDto.getTeamId())
 			.questionCount(questionSetDto.getQuestionCount())
-			.createdAt(questionSetDto.getCreatedAt())
+			.updatedAt(questionSetDto.getUpdatedAt())
 			.build();
 	}
 }

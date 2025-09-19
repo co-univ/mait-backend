@@ -25,7 +25,7 @@ public class QuestionSetDto {
 	private DeliveryMode deliveryMode;
 	private Long teamId;
 	private Long questionCount;
-	private LocalDateTime createdAt;
+	private LocalDateTime updatedAt;
 
 	public static QuestionSetDto from(final QuestionSetEntity questionSetEntity) {
 		return QuestionSetDto.builder()
@@ -36,7 +36,7 @@ public class QuestionSetDto {
 			.visibility(questionSetEntity.getVisibility())
 			.deliveryMode(questionSetEntity.getDeliveryMode())
 			.teamId(questionSetEntity.getTeamId())
-			.createdAt(questionSetEntity.getCreatedAt())
+			.updatedAt(questionSetEntity.getModifiedAt())
 			.build();
 	}
 
@@ -49,7 +49,7 @@ public class QuestionSetDto {
 			.visibility(questionSetEntity.getVisibility())
 			.deliveryMode(questionSetEntity.getDeliveryMode())
 			.teamId(questionSetEntity.getTeamId())
-			.createdAt(questionSetEntity.getCreatedAt())
+			.updatedAt(questionSetEntity.getModifiedAt())
 			.questionCount(questionCount)
 			.build();
 	}

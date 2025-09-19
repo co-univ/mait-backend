@@ -6,6 +6,7 @@ import lombok.Getter;
 @Getter
 @AllArgsConstructor
 public enum DeliveryMode {
+	MAKING("문제 제작"),
 	LIVE_TIME("실시간"),
 	REVIEW("복습");
 
