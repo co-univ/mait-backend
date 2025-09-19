@@ -60,6 +60,8 @@ public class QuestionSetEntity extends BaseTimeEntity {
 	@Builder.Default
 	private QuestionSetLiveStatus liveStatus = QuestionSetLiveStatus.BEFORE_LIVE;
 
+	private String levelDescription;
+
 	private QuestionSetEntity(String subject, QuestionSetCreationType creationType) {
 		this.subject = subject;
 		this.creationType = creationType;
@@ -96,5 +98,14 @@ public class QuestionSetEntity extends BaseTimeEntity {
 		if (deliveryMode != DeliveryMode.LIVE_TIME) {
 			throw new QuestionSetLiveException("LIVE_TIME 모드가 아닌 문제셋은 실시간 시작할 수 없습니다. 현재 모드: " + deliveryMode);
 		}
+	}
+
+	public void completeQuestionSet(String title, String subject, DeliveryMode mode, String levelDescription,
+		QuestionSetVisibility visibility) {
+		this.title = title;
+		this.subject = subject;
+		this.deliveryMode = mode;
+		this.levelDescription = levelDescription;
+		this.visibility = visibility;
 	}
 }

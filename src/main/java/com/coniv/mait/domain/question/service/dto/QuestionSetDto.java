@@ -25,6 +25,7 @@ public class QuestionSetDto {
 	private DeliveryMode deliveryMode;
 	private Long teamId;
 	private Long questionCount;
+	private String levelDescription;
 	private LocalDateTime createdAt;
 
 	public static QuestionSetDto from(final QuestionSetEntity questionSetEntity) {
@@ -36,6 +37,7 @@ public class QuestionSetDto {
 			.visibility(questionSetEntity.getVisibility())
 			.deliveryMode(questionSetEntity.getDeliveryMode())
 			.teamId(questionSetEntity.getTeamId())
+			.levelDescription(questionSetEntity.getLevelDescription())
 			.createdAt(questionSetEntity.getCreatedAt())
 			.build();
 	}
