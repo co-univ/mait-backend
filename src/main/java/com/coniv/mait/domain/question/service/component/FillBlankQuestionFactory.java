@@ -1,22 +1,58 @@
 package com.coniv.mait.domain.question.service.component;
 
+import static com.coniv.mait.domain.question.constant.QuestionConstant.*;
+
 import java.util.List;
 import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.coniv.mait.domain.question.entity.FillBlankAnswerEntity;
 import com.coniv.mait.domain.question.entity.FillBlankQuestionEntity;
+import com.coniv.mait.domain.question.entity.QuestionEntity;
 import com.coniv.mait.domain.question.entity.QuestionSetEntity;
+import com.coniv.mait.domain.question.enums.QuestionType;
+import com.coniv.mait.domain.question.repository.FillBlankAnswerEntityRepository;
+import com.coniv.mait.domain.question.repository.QuestionEntityRepository;
 import com.coniv.mait.domain.question.service.dto.FillBlankAnswerDto;
 import com.coniv.mait.domain.question.service.dto.FillBlankQuestionDto;
+import com.coniv.mait.domain.question.service.dto.QuestionDto;
 import com.coniv.mait.global.exception.custom.UserParameterException;
 import com.coniv.mait.global.util.RandomUtil;
 
-@Component
-public class FillBlankQuestionFactory {
+import lombok.RequiredArgsConstructor;
 
-	private static final int MAX_DISPLAY_DELAY_MILLISECONDS = 5000;
+@Component
+@RequiredArgsConstructor
+public class FillBlankQuestionFactory implements QuestionFactory<FillBlankQuestionDto> {
+
+	private final QuestionEntityRepository questionEntityRepository;
+
+	private final FillBlankAnswerEntityRepository fillBlankAnswerEntityRepository;
+
+	@Override
+	public QuestionType getQuestionType() {
+		return QuestionType.FILL_BLANK;
+	}
+
+	@Transactional
+	@Override
+	public void save(FillBlankQuestionDto questionDto, QuestionSetEntity questionSetEntity) {
+		FillBlankQuestionEntity question = create(questionDto, questionSetEntity);
+		questionEntityRepository.save(question);
+
+		List<FillBlankAnswerEntity> fillBlankAnswers = createFillBlankAnswers(questionDto.getFillBlankAnswers(),
+			question);
+		fillBlankAnswerEntityRepository.saveAll(fillBlankAnswers);
+	}
+
+	@Override
+	public QuestionDto getQuestion(QuestionEntity question, boolean answerVisible) {
+		List<FillBlankAnswerEntity> fillBlankAnswers = fillBlankAnswerEntityRepository
+			.findAllByFillBlankQuestionId(question.getId());
+		return FillBlankQuestionDto.of((FillBlankQuestionEntity)question, fillBlankAnswers, answerVisible);
+	}
 
 	public FillBlankQuestionEntity create(FillBlankQuestionDto dto, QuestionSetEntity questionSetEntity) {
 		return FillBlankQuestionEntity.builder()

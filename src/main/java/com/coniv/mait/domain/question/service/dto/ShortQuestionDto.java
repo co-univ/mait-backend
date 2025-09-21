@@ -34,7 +34,7 @@ public class ShortQuestionDto extends QuestionDto {
 			.build();
 	}
 
-	public static QuestionDto of(ShortQuestionEntity shortQuestion, List<ShortAnswerEntity> shortAnswers,
+	public static ShortQuestionDto of(ShortQuestionEntity shortQuestion, List<ShortAnswerEntity> shortAnswers,
 		boolean answerVisible) {
 		List<ShortAnswerDto> shortAnswerDtos = answerVisible
 			? shortAnswers.stream()

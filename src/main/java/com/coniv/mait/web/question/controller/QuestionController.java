@@ -19,6 +19,8 @@ import com.coniv.mait.web.question.dto.CreateQuestionApiRequest;
 import com.coniv.mait.web.question.dto.QuestionApiResponse;
 
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -31,10 +33,10 @@ public class QuestionController {
 
 	private final QuestionService questionService;
 
-	@Operation(summary = "문제 셋에 주관식 문제 저장 API")
+	@Operation(summary = "문제 셋에 문제 저장 API", description = "문제 셋에 문제를 유형별로 단건 업로드 한다.")
 	@PostMapping
 	public ResponseEntity<ApiResponse<Void>> createShortQuestion(
-		@RequestParam("type") QuestionType type,
+		@Parameter(required = true, schema = @Schema(enumAsRef = true)) @RequestParam("type") QuestionType type,
 		@Valid @RequestBody CreateQuestionApiRequest request,
 		@PathVariable("questionSetId") final Long questionSetId) {
 		questionService.createQuestion(questionSetId, type, request.toQuestionDto());

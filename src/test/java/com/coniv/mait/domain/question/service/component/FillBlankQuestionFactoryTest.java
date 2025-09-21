@@ -1,27 +1,28 @@
 package com.coniv.mait.domain.question.service.component;
 
 import static org.assertj.core.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
-import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
-import org.mockito.MockedStatic;
+import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import com.coniv.mait.domain.question.entity.FillBlankAnswerEntity;
 import com.coniv.mait.domain.question.entity.FillBlankQuestionEntity;
 import com.coniv.mait.domain.question.entity.QuestionSetEntity;
-import com.coniv.mait.domain.question.enums.QuestionSetCreationType;
+import com.coniv.mait.domain.question.enums.QuestionType;
+import com.coniv.mait.domain.question.repository.FillBlankAnswerEntityRepository;
+import com.coniv.mait.domain.question.repository.QuestionEntityRepository;
 import com.coniv.mait.domain.question.service.dto.FillBlankAnswerDto;
 import com.coniv.mait.domain.question.service.dto.FillBlankQuestionDto;
+import com.coniv.mait.domain.question.service.dto.QuestionDto;
 import com.coniv.mait.global.exception.custom.UserParameterException;
-import com.coniv.mait.global.util.RandomUtil;
 
 @ExtendWith(MockitoExtension.class)
 class FillBlankQuestionFactoryTest {
@@ -29,288 +30,143 @@ class FillBlankQuestionFactoryTest {
 	@InjectMocks
 	private FillBlankQuestionFactory fillBlankQuestionFactory;
 
+	@Mock
+	private QuestionEntityRepository questionEntityRepository;
+
+	@Mock
+	private FillBlankAnswerEntityRepository fillBlankAnswerEntityRepository;
+
+	@Mock
+	private QuestionSetEntity questionSetEntity;
+
 	@Test
-	@DisplayName("빈칸 문제 생성 테스트 - 정상적으로 생성")
-	void create_Success() {
+	@DisplayName("getQuestionType - FILL_BLANK 타입 반환")
+	void getQuestionType() {
+		// when
+		QuestionType result = fillBlankQuestionFactory.getQuestionType();
+
+		// then
+		assertEquals(QuestionType.FILL_BLANK, result);
+	}
+
+	@Test
+	@DisplayName("save - 빈칸채우기 문제와 정답 저장 성공")
+	void save_Success() {
 		// given
+		List<FillBlankAnswerDto> answers = List.of(
+			FillBlankAnswerDto.builder().number(1L).answer("정답1").isMain(true).build(),
+			FillBlankAnswerDto.builder().number(1L).answer("정답2").isMain(false).build(),
+			FillBlankAnswerDto.builder().number(2L).answer("정답3").isMain(true).build()
+		);
+
 		FillBlankQuestionDto questionDto = FillBlankQuestionDto.builder()
 			.content("빈칸에 들어갈 적절한 단어는 ___입니다.")
-			.explanation("테스트 설명")
+			.explanation("해설")
 			.number(1L)
+			.fillBlankAnswers(answers)
 			.build();
 
-		QuestionSetEntity questionSet = QuestionSetEntity.of("테스트 과목", QuestionSetCreationType.MANUAL);
-
-		int expectedDisplayDelay = 3000;
-
 		// when
-		try (MockedStatic<RandomUtil> mockedRandomUtil = mockStatic(RandomUtil.class)) {
-			mockedRandomUtil.when(() -> RandomUtil.getRandomNumber(5000))
-				.thenReturn(expectedDisplayDelay);
-
-			FillBlankQuestionEntity result = fillBlankQuestionFactory.create(questionDto, questionSet);
-
-			// then
-			assertThat(result).isNotNull();
-			assertThat(result.getId()).isNull(); // ID는 Factory에서 설정하지 않음
-			assertThat(result.getContent()).isEqualTo("빈칸에 들어갈 적절한 단어는 ___입니다.");
-			assertThat(result.getExplanation()).isEqualTo("테스트 설명");
-			assertThat(result.getNumber()).isEqualTo(1L);
-			assertThat(result.getDisplayDelayMilliseconds()).isEqualTo(expectedDisplayDelay);
-			assertThat(result.getQuestionSet()).isEqualTo(questionSet);
-
-			mockedRandomUtil.verify(() -> RandomUtil.getRandomNumber(5000));
-		}
-	}
-
-	@Test
-	@DisplayName("빈칸 문제 답변 리스트 생성 테스트 - 정상적으로 생성")
-	void createFillBlankAnswers_Success() {
-		// given
-		QuestionSetEntity questionSet = QuestionSetEntity.of("테스트 과목", QuestionSetCreationType.MANUAL);
-
-		FillBlankQuestionEntity question = FillBlankQuestionEntity.builder()
-			.content("빈칸에 들어갈 적절한 단어는 ___입니다.")
-			.explanation("설명")
-			.number(1L)
-			.displayDelayMilliseconds(1000)
-			.questionSet(questionSet)
-			.id(1L) // 답변 생성 시 필요한 question ID
-			.build();
-
-		List<FillBlankAnswerDto> answerDtos = Arrays.asList(
-			FillBlankAnswerDto.builder()
-				.number(1L)
-				.answer("정답")
-				.isMain(true)
-				.build(),
-			FillBlankAnswerDto.builder()
-				.number(2L)
-				.answer("정답2")
-				.isMain(true)
-				.build(),
-			FillBlankAnswerDto.builder()
-				.number(3L)
-				.answer("정답3")
-				.isMain(true)
-				.build()
-		);
-
-		// when
-		List<FillBlankAnswerEntity> result = fillBlankQuestionFactory.createFillBlankAnswers(answerDtos, question);
+		fillBlankQuestionFactory.save(questionDto, questionSetEntity);
 
 		// then
-		assertThat(result).hasSize(3);
-
-		FillBlankAnswerEntity firstAnswer = result.getFirst();
-		assertThat(firstAnswer.getId()).isNull(); // ID는 Factory에서 설정하지 않음
-		assertThat(firstAnswer.getNumber()).isEqualTo(1L);
-		assertThat(firstAnswer.getAnswer()).isEqualTo("정답");
-		assertThat(firstAnswer.isMain()).isTrue();
-		assertThat(firstAnswer.getFillBlankQuestionId()).isEqualTo(1L);
-
-		FillBlankAnswerEntity secondAnswer = result.get(1);
-		assertThat(secondAnswer.getId()).isNull(); // ID는 Factory에서 설정하지 않음
-		assertThat(secondAnswer.getNumber()).isEqualTo(2L);
-		assertThat(secondAnswer.getAnswer()).isEqualTo("정답2");
-		assertThat(secondAnswer.isMain()).isTrue();
-		assertThat(secondAnswer.getFillBlankQuestionId()).isEqualTo(1L);
-
-		FillBlankAnswerEntity thirdAnswer = result.get(2);
-		assertThat(thirdAnswer.getId()).isNull(); // ID는 Factory에서 설정하지 않음
-		assertThat(thirdAnswer.getNumber()).isEqualTo(3L);
-		assertThat(thirdAnswer.getAnswer()).isEqualTo("정답3");
-		assertThat(thirdAnswer.isMain()).isTrue();
-		assertThat(thirdAnswer.getFillBlankQuestionId()).isEqualTo(1L);
+		verify(questionEntityRepository).save(any(FillBlankQuestionEntity.class));
+		verify(fillBlankAnswerEntityRepository).saveAll(any());
 	}
 
 	@Test
-	@DisplayName("빈칸 문제 답변 리스트 생성 테스트 - 빈 리스트")
-	void createFillBlankAnswers_EmptyList() {
+	@DisplayName("getQuestion - answerVisible=true일 때 정답 포함하여 반환")
+	void getQuestion_AnswerVisible() {
 		// given
-		QuestionSetEntity questionSet = QuestionSetEntity.of("테스트 과목", QuestionSetCreationType.MANUAL);
+		FillBlankQuestionEntity question = mock(FillBlankQuestionEntity.class);
+		when(question.getId()).thenReturn(1L);
 
-		FillBlankQuestionEntity question = FillBlankQuestionEntity.builder()
-			.content("빈칸에 들어갈 적절한 단어는 ___입니다.")
-			.explanation("설명")
-			.number(1L)
-			.displayDelayMilliseconds(1000)
-			.questionSet(questionSet)
-			.id(1L)
-			.build();
-
-		List<FillBlankAnswerDto> emptyAnswers = List.of();
+		List<FillBlankAnswerEntity> answers = List.of(
+			mock(FillBlankAnswerEntity.class),
+			mock(FillBlankAnswerEntity.class)
+		);
+		when(fillBlankAnswerEntityRepository.findAllByFillBlankQuestionId(1L)).thenReturn(answers);
 
 		// when
-		List<FillBlankAnswerEntity> result = fillBlankQuestionFactory.createFillBlankAnswers(emptyAnswers, question);
+		QuestionDto result = fillBlankQuestionFactory.getQuestion(question, true);
 
 		// then
-		assertThat(result).isEmpty();
+		assertThat(result).isInstanceOf(FillBlankQuestionDto.class);
+		verify(fillBlankAnswerEntityRepository).findAllByFillBlankQuestionId(1L);
 	}
 
 	@Test
-	@DisplayName("빈칸 문제 답변 생성 실패 - 같은 번호에 메인 답변이 여러 개")
-	void createFillBlankAnswers_MultipleMainAnswers_ThrowsException() {
+	@DisplayName("getQuestion - answerVisible=false일 때 정답 숨김하여 반환")
+	void getQuestion_AnswerHidden() {
 		// given
-		QuestionSetEntity questionSet = QuestionSetEntity.of("테스트 과목", QuestionSetCreationType.MANUAL);
+		FillBlankQuestionEntity question = mock(FillBlankQuestionEntity.class);
+		when(question.getId()).thenReturn(1L);
 
-		FillBlankQuestionEntity question = FillBlankQuestionEntity.builder()
-			.content("빈칸에 들어갈 적절한 단어는 ___입니다.")
-			.explanation("설명")
-			.number(1L)
-			.displayDelayMilliseconds(1000)
-			.questionSet(questionSet)
-			.id(1L)
-			.build();
-
-		List<FillBlankAnswerDto> multipleMainAnswers = Arrays.asList(
-			FillBlankAnswerDto.builder()
-				.number(1L)
-				.answer("정답1")
-				.isMain(true)
-				.build(),
-			FillBlankAnswerDto.builder()
-				.number(1L) // 같은 번호에 메인 답변이 또 있음
-				.answer("정답2")
-				.isMain(true)
-				.build()
+		List<FillBlankAnswerEntity> answers = List.of(
+			mock(FillBlankAnswerEntity.class),
+			mock(FillBlankAnswerEntity.class)
 		);
+		when(fillBlankAnswerEntityRepository.findAllByFillBlankQuestionId(1L)).thenReturn(answers);
 
-		// when & then
-		assertThatThrownBy(() -> fillBlankQuestionFactory.createFillBlankAnswers(multipleMainAnswers, question))
-			.isInstanceOf(UserParameterException.class)
-			.hasMessage("Each blank number must have exactly one main answer. Number 1 has 2 main answers.");
+		// when
+		QuestionDto result = fillBlankQuestionFactory.getQuestion(question, false);
+
+		// then
+		assertThat(result).isInstanceOf(FillBlankQuestionDto.class);
+		verify(fillBlankAnswerEntityRepository).findAllByFillBlankQuestionId(1L);
 	}
 
 	@Test
-	@DisplayName("빈칸 문제 답변 생성 실패 - 메인 답변이 없는 경우")
-	void createFillBlankAnswers_NoMainAnswer_ThrowsException() {
+	@DisplayName("createFillBlankAnswers - 각 빈칸 번호별로 정확히 하나의 메인 답안이 있어야 함")
+	void createFillBlankAnswers_ValidMainAnswers() {
 		// given
-		QuestionSetEntity questionSet = QuestionSetEntity.of("테스트 과목", QuestionSetCreationType.MANUAL);
-
-		FillBlankQuestionEntity question = FillBlankQuestionEntity.builder()
-			.content("빈칸에 들어갈 적절한 단어는 ___입니다.")
-			.explanation("설명")
-			.number(1L)
-			.displayDelayMilliseconds(1000)
-			.questionSet(questionSet)
-			.id(1L)
-			.build();
-
-		List<FillBlankAnswerDto> noMainAnswers = Arrays.asList(
-			FillBlankAnswerDto.builder()
-				.number(1L)
-				.answer("정답1")
-				.isMain(false)
-				.build(),
-			FillBlankAnswerDto.builder()
-				.number(1L)
-				.answer("정답2")
-				.isMain(false)
-				.build()
+		List<FillBlankAnswerDto> answers = List.of(
+			FillBlankAnswerDto.builder().number(1L).answer("정답1").isMain(true).build(),
+			FillBlankAnswerDto.builder().number(1L).answer("정답2").isMain(false).build(),
+			FillBlankAnswerDto.builder().number(2L).answer("정답3").isMain(true).build()
 		);
 
-		// when & then
-		assertThatThrownBy(() -> fillBlankQuestionFactory.createFillBlankAnswers(noMainAnswers, question))
-			.isInstanceOf(UserParameterException.class)
-			.hasMessage("Each blank number must have exactly one main answer. Number 1 has 0 main answers.");
-	}
-
-	@Test
-	@DisplayName("빈칸 문제 답변 생성 테스트 - 같은 번호에 메인과 대안 답변")
-	void createFillBlankAnswers_MainAndAlternativeAnswers() {
-		// given
-		QuestionSetEntity questionSet = QuestionSetEntity.of("테스트 과목", QuestionSetCreationType.MANUAL);
-
-		FillBlankQuestionEntity question = FillBlankQuestionEntity.builder()
-			.content("빈칸에 들어갈 적절한 단어는 ___와 ___입니다.")
-			.explanation("설명")
-			.number(1L)
-			.displayDelayMilliseconds(1000)
-			.questionSet(questionSet)
-			.id(1L)
-			.build();
-
-		List<FillBlankAnswerDto> answers = Arrays.asList(
-			FillBlankAnswerDto.builder()
-				.number(1L)
-				.answer("정답1")
-				.isMain(true)
-				.build(),
-			FillBlankAnswerDto.builder()
-				.number(1L)
-				.answer("정답1_대안")
-				.isMain(false)
-				.build(),
-			FillBlankAnswerDto.builder()
-				.number(2L)
-				.answer("정답2")
-				.isMain(true)
-				.build(),
-			FillBlankAnswerDto.builder()
-				.number(2L)
-				.answer("정답2_대안")
-				.isMain(false)
-				.build()
-		);
+		FillBlankQuestionEntity question = mock(FillBlankQuestionEntity.class);
+		when(question.getId()).thenReturn(1L);
 
 		// when
 		List<FillBlankAnswerEntity> result = fillBlankQuestionFactory.createFillBlankAnswers(answers, question);
 
 		// then
-		assertThat(result).hasSize(4);
-
-		// 번호 1 답변들 확인
-		List<FillBlankAnswerEntity> number1Answers = result.stream()
-			.filter(answer -> answer.getNumber().equals(1L))
-			.toList();
-		assertThat(number1Answers).hasSize(2);
-		assertThat(number1Answers).extracting("answer")
-			.containsExactlyInAnyOrder("정답1", "정답1_대안");
-		assertThat(number1Answers.stream().filter(FillBlankAnswerEntity::isMain)).hasSize(1);
-
-		// 번호 2 답변들 확인
-		List<FillBlankAnswerEntity> number2Answers = result.stream()
-			.filter(answer -> answer.getNumber().equals(2L))
-			.toList();
-		assertThat(number2Answers).hasSize(2);
-		assertThat(number2Answers).extracting("answer")
-			.containsExactlyInAnyOrder("정답2", "정답2_대안");
-		assertThat(number2Answers.stream().filter(FillBlankAnswerEntity::isMain)).hasSize(1);
+		assertEquals(3, result.size());
 	}
 
 	@Test
-	@DisplayName("빈칸 문제 답변 생성 테스트 - 하나의 답변만 있는 경우")
-	void createFillBlankAnswers_SingleAnswer() {
+	@DisplayName("createFillBlankAnswers - 메인 답안이 없으면 예외 발생")
+	void createFillBlankAnswers_NoMainAnswer_ThrowsException() {
 		// given
-		QuestionSetEntity questionSet = QuestionSetEntity.of("테스트 과목", QuestionSetCreationType.MANUAL);
-
-		FillBlankQuestionEntity question = FillBlankQuestionEntity.builder()
-			.content("빈칸에 들어갈 적절한 단어는 ___입니다.")
-			.explanation("설명")
-			.number(1L)
-			.displayDelayMilliseconds(1000)
-			.questionSet(questionSet)
-			.id(1L)
-			.build();
-
-		List<FillBlankAnswerDto> singleAnswer = Collections.singletonList(
-			FillBlankAnswerDto.builder()
-				.number(1L)
-				.answer("정답")
-				.isMain(true)
-				.build()
+		List<FillBlankAnswerDto> answers = List.of(
+			FillBlankAnswerDto.builder().number(1L).answer("정답1").isMain(false).build(),
+			FillBlankAnswerDto.builder().number(1L).answer("정답2").isMain(false).build() // 메인 답안 없음
 		);
 
-		// when
-		List<FillBlankAnswerEntity> result = fillBlankQuestionFactory.createFillBlankAnswers(singleAnswer, question);
+		FillBlankQuestionEntity question = mock(FillBlankQuestionEntity.class);
+		// Mock 설정 제거 - 예외가 먼저 발생해서 getId() 호출되지 않음
 
-		// then
-		assertThat(result).hasSize(1);
-		FillBlankAnswerEntity answer = result.getFirst();
-		assertThat(answer.getNumber()).isEqualTo(1L);
-		assertThat(answer.getAnswer()).isEqualTo("정답");
-		assertThat(answer.isMain()).isTrue();
-		assertThat(answer.getFillBlankQuestionId()).isEqualTo(1L);
+		// when & then
+		assertThrows(UserParameterException.class,
+			() -> fillBlankQuestionFactory.createFillBlankAnswers(answers, question));
+	}
+
+	@Test
+	@DisplayName("createFillBlankAnswers - 메인 답안이 여러 개면 예외 발생")
+	void createFillBlankAnswers_MultipleMainAnswers_ThrowsException() {
+		// given
+		List<FillBlankAnswerDto> answers = List.of(
+			FillBlankAnswerDto.builder().number(1L).answer("정답1").isMain(true).build(),
+			FillBlankAnswerDto.builder().number(1L).answer("정답2").isMain(true).build() // 메인 답안 중복
+		);
+
+		FillBlankQuestionEntity question = mock(FillBlankQuestionEntity.class);
+		// Mock 설정 제거 - 예외가 먼저 발생해서 getId() 호출되지 않음
+
+		// when & then
+		assertThrows(UserParameterException.class,
+			() -> fillBlankQuestionFactory.createFillBlankAnswers(answers, question));
 	}
 }

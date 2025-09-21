@@ -2,123 +2,60 @@ package com.coniv.mait.domain.question.service;
 
 import java.util.Comparator;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
-import com.coniv.mait.domain.question.entity.FillBlankAnswerEntity;
-import com.coniv.mait.domain.question.entity.FillBlankQuestionEntity;
-import com.coniv.mait.domain.question.entity.MultipleChoiceEntity;
-import com.coniv.mait.domain.question.entity.MultipleQuestionEntity;
-import com.coniv.mait.domain.question.entity.OrderingOptionEntity;
-import com.coniv.mait.domain.question.entity.OrderingQuestionEntity;
 import com.coniv.mait.domain.question.entity.QuestionEntity;
 import com.coniv.mait.domain.question.entity.QuestionSetEntity;
-import com.coniv.mait.domain.question.entity.ShortAnswerEntity;
-import com.coniv.mait.domain.question.entity.ShortQuestionEntity;
 import com.coniv.mait.domain.question.enums.DeliveryMode;
 import com.coniv.mait.domain.question.enums.QuestionStatusType;
 import com.coniv.mait.domain.question.enums.QuestionType;
-import com.coniv.mait.domain.question.repository.FillBlankAnswerEntityRepository;
-import com.coniv.mait.domain.question.repository.MultipleChoiceEntityRepository;
-import com.coniv.mait.domain.question.repository.OrderingOptionEntityRepository;
 import com.coniv.mait.domain.question.repository.QuestionEntityRepository;
 import com.coniv.mait.domain.question.repository.QuestionSetEntityRepository;
-import com.coniv.mait.domain.question.repository.ShortAnswerEntityRepository;
-import com.coniv.mait.domain.question.service.component.FillBlankQuestionFactory;
-import com.coniv.mait.domain.question.service.component.MultipleQuestionFactory;
-import com.coniv.mait.domain.question.service.component.OrderingQuestionFactory;
-import com.coniv.mait.domain.question.service.component.ShortQuestionFactory;
+import com.coniv.mait.domain.question.service.component.QuestionFactory;
 import com.coniv.mait.domain.question.service.dto.CurrentQuestionDto;
-import com.coniv.mait.domain.question.service.dto.FillBlankQuestionDto;
-import com.coniv.mait.domain.question.service.dto.MultipleQuestionDto;
-import com.coniv.mait.domain.question.service.dto.OrderingQuestionDto;
 import com.coniv.mait.domain.question.service.dto.QuestionDto;
-import com.coniv.mait.domain.question.service.dto.ShortQuestionDto;
 import com.coniv.mait.global.exception.custom.ResourceNotBelongException;
 
 import jakarta.persistence.EntityNotFoundException;
-import lombok.RequiredArgsConstructor;
 
 @Service
-@RequiredArgsConstructor
 public class QuestionService {
 
 	private final QuestionEntityRepository questionEntityRepository;
 
 	private final QuestionSetEntityRepository questionSetEntityRepository;
 
-	private final MultipleChoiceEntityRepository multipleChoiceEntityRepository;
+	private final Map<QuestionType, QuestionFactory<?>> questionFactories;
 
-	private final MultipleQuestionFactory multipleQuestionFactory;
+	@Autowired
+	public QuestionService(
+		List<QuestionFactory<?>> factories,
+		QuestionEntityRepository questionEntityRepository,
+		QuestionSetEntityRepository questionSetEntityRepository
+	) {
+		questionFactories = factories.stream()
+			.collect(Collectors.toUnmodifiableMap(QuestionFactory::getQuestionType, Function.identity()));
+		this.questionEntityRepository = questionEntityRepository;
+		this.questionSetEntityRepository = questionSetEntityRepository;
+	}
 
-	private final ShortQuestionFactory shortQuestionFactory;
-
-	private final OrderingQuestionFactory orderingQuestionFactory;
-
-	private final OrderingOptionEntityRepository orderingOptionEntityRepository;
-
-	private final ShortAnswerEntityRepository shortAnswerEntityRepository;
-
-	private final FillBlankQuestionFactory fillBlankQuestionFactory;
-
-	private final FillBlankAnswerEntityRepository fillBlankAnswerEntityRepository;
-
-	@Transactional
-	public void createQuestion(
+	public <T extends QuestionDto> void createQuestion(
 		final Long questionSetId,
 		final QuestionType type,
-		final QuestionDto questionDto
+		final T questionDto
 	) {
 		QuestionSetEntity questionSetEntity = questionSetEntityRepository.findById(questionSetId)
 			.orElseThrow(() -> new EntityNotFoundException("QuestionSet not found with id: " + questionSetId));
 
-		switch (type) {
-			case MULTIPLE -> {
-				MultipleQuestionDto multipleQuestionsDto = (MultipleQuestionDto)questionDto.toQuestionDto();
-				MultipleQuestionEntity multipleQuestion = multipleQuestionFactory.create(multipleQuestionsDto,
-					questionSetEntity);
+		QuestionFactory<QuestionDto> questionFactory = getQuestionFactory(type);
 
-				questionEntityRepository.save(multipleQuestion);
-
-				List<MultipleChoiceEntity> choices = multipleQuestionFactory.createChoices(
-					multipleQuestionsDto.getChoices(),
-					multipleQuestion);
-
-				multipleChoiceEntityRepository.saveAll(choices);
-			}
-			case SHORT -> {
-				ShortQuestionDto shortQuestionDto = (ShortQuestionDto)questionDto.toQuestionDto();
-				ShortQuestionEntity shortQuestionEntity = shortQuestionFactory.create(shortQuestionDto,
-					questionSetEntity);
-
-				questionEntityRepository.save(shortQuestionEntity);
-				List<ShortAnswerEntity> shortAnswers = shortQuestionFactory.createShortAnswers(
-					shortQuestionDto.getShortAnswers(), shortQuestionEntity);
-				shortAnswerEntityRepository.saveAll(shortAnswers);
-			}
-			case ORDERING -> {
-				OrderingQuestionDto orderingQuestionDto = (OrderingQuestionDto)questionDto.toQuestionDto();
-				OrderingQuestionEntity orderingQuestionEntity = orderingQuestionFactory.create(orderingQuestionDto,
-					questionSetEntity);
-				questionEntityRepository.save(orderingQuestionEntity);
-				List<OrderingOptionEntity> orderingOptions = orderingQuestionFactory
-					.createOrderingQuestionOptions(orderingQuestionDto.getOptions(), orderingQuestionEntity);
-				orderingOptionEntityRepository.saveAll(orderingOptions);
-			}
-			case FILL_BLANK -> {
-				FillBlankQuestionDto fillBlankQuestionDto = (FillBlankQuestionDto)questionDto.toQuestionDto();
-				FillBlankQuestionEntity fillBlankQuestionEntity = fillBlankQuestionFactory.create(fillBlankQuestionDto,
-					questionSetEntity);
-				questionEntityRepository.save(fillBlankQuestionEntity);
-
-				List<FillBlankAnswerEntity> fillBlankAnswers = fillBlankQuestionFactory.createFillBlankAnswers(
-					fillBlankQuestionDto.getFillBlankAnswers(), fillBlankQuestionEntity);
-				fillBlankAnswerEntityRepository.saveAll(fillBlankAnswers);
-			}
-			default -> throw new IllegalArgumentException("Unsupported question type: " + type);
-		}
+		questionFactory.save(questionDto, questionSetEntity);
 	}
 
 	public QuestionDto getQuestion(final Long questionSetId, final Long questionId, final DeliveryMode mode) {
@@ -130,7 +67,27 @@ public class QuestionService {
 		}
 
 		boolean answerVisible = mode == null || mode.isAnswerVisible();
-		return mapToQuestionDto(question, answerVisible);
+
+		return questionFactories.get(question.getType()).getQuestion(question, answerVisible);
+	}
+
+	// Todo: 조회 성능 개선
+	public List<QuestionDto> getQuestions(final Long questionSetId) {
+		return questionEntityRepository.findAllByQuestionSetId(questionSetId).stream()
+			.sorted(Comparator.comparingLong(QuestionEntity::getNumber))
+			.map(question -> getQuestionFactory(question.getType()).getQuestion(question, true))
+			.toList();
+	}
+
+	@SuppressWarnings("unchecked")
+	private <T extends QuestionDto> QuestionFactory<T> getQuestionFactory(
+		final QuestionType type
+	) {
+		QuestionFactory<T> factory = (QuestionFactory<T>)questionFactories.get(type);
+		if (factory == null) {
+			throw new IllegalArgumentException("지원하지 않는 문제 타입입니다: " + type);
+		}
+		return factory;
 	}
 
 	public CurrentQuestionDto findCurrentQuestion(final Long questionSetId) {
@@ -146,39 +103,5 @@ public class QuestionService {
 		}
 
 		return CurrentQuestionDto.notOpenQuestion(questionSetId);
-	}
-
-	public List<QuestionDto> getQuestions(final Long questionSetId) {
-		return questionEntityRepository.findAllByQuestionSetId(questionSetId).stream()
-			.sorted(Comparator.comparingLong(QuestionEntity::getNumber))
-			.map(question -> mapToQuestionDto(question, true))
-			.toList();
-	}
-
-	private QuestionDto mapToQuestionDto(final QuestionEntity question, final boolean answerVisible) {
-		switch (question) {
-			case MultipleQuestionEntity multipleQuestion -> {
-				List<MultipleChoiceEntity> choices = multipleChoiceEntityRepository.findAllByQuestionId(
-					multipleQuestion.getId());
-				return MultipleQuestionDto.of(multipleQuestion, choices, answerVisible);
-			}
-			case ShortQuestionEntity shortQuestion -> {
-				List<ShortAnswerEntity> shortAnswers = shortAnswerEntityRepository.findAllByShortQuestionId(
-					shortQuestion.getId());
-				return ShortQuestionDto.of(shortQuestion, shortAnswers, answerVisible);
-			}
-			case OrderingQuestionEntity orderingQuestion -> {
-				List<OrderingOptionEntity> options = orderingOptionEntityRepository.findAllByOrderingQuestionId(
-					orderingQuestion.getId());
-				return OrderingQuestionDto.of(orderingQuestion, options, answerVisible);
-			}
-			case FillBlankQuestionEntity fillBlankQuestion -> {
-				List<FillBlankAnswerEntity> fillBlankAnswers = fillBlankAnswerEntityRepository
-					.findAllByFillBlankQuestionId(fillBlankQuestion.getId());
-				return FillBlankQuestionDto.of(fillBlankQuestion, fillBlankAnswers, answerVisible);
-			}
-			default ->
-				throw new IllegalStateException("Unsupported question type: " + question.getClass().getSimpleName());
-		}
 	}
 }
