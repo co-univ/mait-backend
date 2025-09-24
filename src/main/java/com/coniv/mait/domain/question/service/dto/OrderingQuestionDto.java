@@ -4,6 +4,7 @@ import java.util.List;
 
 import com.coniv.mait.domain.question.entity.OrderingOptionEntity;
 import com.coniv.mait.domain.question.entity.OrderingQuestionEntity;
+import com.coniv.mait.domain.question.enums.QuestionType;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -19,6 +20,11 @@ import lombok.experimental.SuperBuilder;
 public class OrderingQuestionDto extends QuestionDto {
 
 	private List<OrderingQuestionOptionDto> options;
+
+	@Override
+	public QuestionType getType() {
+		return QuestionType.ORDERING;
+	}
 
 	@Override
 	public OrderingQuestionDto toQuestionDto() {

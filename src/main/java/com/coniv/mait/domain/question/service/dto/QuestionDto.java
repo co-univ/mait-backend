@@ -1,6 +1,7 @@
 package com.coniv.mait.domain.question.service.dto;
 
 import com.coniv.mait.domain.question.enums.QuestionStatusType;
+import com.coniv.mait.domain.question.enums.QuestionType;
 
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotNull;
@@ -28,4 +29,6 @@ public abstract class QuestionDto {
 	private QuestionStatusType questionStatus;
 
 	public abstract QuestionDto toQuestionDto();
+
+	public abstract QuestionType getType();
 }

@@ -4,6 +4,7 @@ import java.util.List;
 
 import com.coniv.mait.domain.question.entity.MultipleChoiceEntity;
 import com.coniv.mait.domain.question.entity.MultipleQuestionEntity;
+import com.coniv.mait.domain.question.enums.QuestionType;
 
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
@@ -27,6 +28,11 @@ public class MultipleQuestionDto extends QuestionDto {
 	@Override
 	public QuestionDto toQuestionDto() {
 		return this;
+	}
+
+	@Override
+	public QuestionType getType() {
+		return QuestionType.MULTIPLE;
 	}
 
 	public static MultipleQuestionDto of(MultipleQuestionEntity multipleQuestion, List<MultipleChoiceEntity> choices,

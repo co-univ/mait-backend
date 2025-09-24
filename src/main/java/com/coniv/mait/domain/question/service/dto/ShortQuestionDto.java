@@ -4,6 +4,7 @@ import java.util.List;
 
 import com.coniv.mait.domain.question.entity.ShortAnswerEntity;
 import com.coniv.mait.domain.question.entity.ShortQuestionEntity;
+import com.coniv.mait.domain.question.enums.QuestionType;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -21,6 +22,11 @@ public class ShortQuestionDto extends QuestionDto {
 	private List<ShortAnswerDto> shortAnswers;
 
 	private Integer answerCount;
+
+	@Override
+	public QuestionType getType() {
+		return QuestionType.SHORT;
+	}
 
 	@Override
 	public ShortQuestionDto toQuestionDto() {
