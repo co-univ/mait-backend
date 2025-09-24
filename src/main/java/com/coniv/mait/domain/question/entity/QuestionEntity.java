@@ -79,4 +79,12 @@ public abstract class QuestionEntity {
 			default -> throw new IllegalArgumentException("지원하지 않는 문제 유형입니다: " + this.getClass().getSimpleName());
 		}
 	}
+
+	public void updateContent(final String content) {
+		this.content = content;
+	}
+
+	public void updateExplanation(final String explanation) {
+		this.explanation = explanation;
+	}
 }

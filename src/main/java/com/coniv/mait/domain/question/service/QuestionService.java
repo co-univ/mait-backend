@@ -9,6 +9,7 @@ import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.coniv.mait.domain.question.entity.QuestionEntity;
 import com.coniv.mait.domain.question.entity.QuestionSetEntity;
@@ -103,5 +104,24 @@ public class QuestionService {
 		}
 
 		return CurrentQuestionDto.notOpenQuestion(questionSetId);
+	}
+
+	@Transactional
+	public void updateQuestion(final Long questionId, final Long questionSetId, final QuestionDto questionDto) {
+		QuestionEntity question = questionEntityRepository.findById(questionId)
+			.orElseThrow(() -> new EntityNotFoundException("Question not found with id: " + questionId));
+
+		if (!question.getQuestionSet().getId().equals(questionSetId)) {
+			throw new ResourceNotBelongException("해당 문제 셋에 속한 문제가 아닙니다.");
+		}
+
+		question.updateContent(questionDto.getContent());
+		question.updateExplanation(questionDto.getExplanation());
+
+		QuestionFactory<QuestionDto> questionFactory = getQuestionFactory(question.getType());
+
+		questionFactory.deleteSubEntities(question);
+
+		questionFactory.createSubEntities(questionDto, question);
 	}
 }
