@@ -107,7 +107,7 @@ public class QuestionService {
 	}
 
 	@Transactional
-	public QuestionDto updateQuestion(final Long questionId, final Long questionSetId, final QuestionDto questionDto) {
+	public QuestionDto updateQuestion(final Long questionSetId, final Long questionId, final QuestionDto questionDto) {
 		QuestionEntity question = questionEntityRepository.findById(questionId)
 			.orElseThrow(() -> new EntityNotFoundException("Question not found with id: " + questionId));
 

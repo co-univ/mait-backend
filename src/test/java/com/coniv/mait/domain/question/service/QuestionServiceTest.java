@@ -410,7 +410,7 @@ class QuestionServiceTest {
 		when(questionEntityRepository.findById(questionId)).thenReturn(Optional.of(existingQuestion));
 
 		// when
-		QuestionDto result = questionService.updateQuestion(questionId, questionSetId, questionDto);
+		QuestionDto result = questionService.updateQuestion(questionSetId, questionId, questionDto);
 
 		// then
 		assertNotNull(result);
@@ -456,7 +456,7 @@ class QuestionServiceTest {
 		when(questionEntityRepository.findById(questionId)).thenReturn(Optional.of(existingQuestion));
 
 		// when
-		QuestionDto result = questionService.updateQuestion(questionId, questionSetId, questionDto);
+		QuestionDto result = questionService.updateQuestion(questionSetId, questionId, questionDto);
 
 		// then
 		assertNotNull(result);
@@ -489,7 +489,7 @@ class QuestionServiceTest {
 
 		// when & then
 		EntityNotFoundException exception = assertThrows(EntityNotFoundException.class,
-			() -> questionService.updateQuestion(questionId, questionSetId, questionDto));
+			() -> questionService.updateQuestion(questionSetId, questionId, questionDto));
 
 		assertEquals("Question not found with id: " + questionId, exception.getMessage());
 
@@ -525,7 +525,7 @@ class QuestionServiceTest {
 
 		// when & then
 		ResourceNotBelongException exception = assertThrows(ResourceNotBelongException.class,
-			() -> questionService.updateQuestion(questionId, questionSetId, questionDto));
+			() -> questionService.updateQuestion(questionSetId, questionId, questionDto));
 
 		assertEquals("해당 문제 셋에 속한 문제가 아닙니다.", exception.getMessage());
 
