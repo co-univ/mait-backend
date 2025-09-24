@@ -67,11 +67,11 @@ public class QuestionController {
 
 	@Operation(summary = "문제 단건 수정 API", description = "문제 셋에 속한 문제 수정")
 	@PutMapping("/{questionId}")
-	public ResponseEntity<ApiResponse<Void>> updateQuestion(
+	public ResponseEntity<ApiResponse<QuestionApiResponse>> updateQuestion(
 		@PathVariable("questionSetId") final Long questionSetId,
 		@PathVariable("questionId") final Long questionId,
 		@Valid @RequestBody UpdateQuestionApiRequest request) {
-		questionService.updateQuestion(questionSetId, questionId, request.toQuestionDto());
-		return ResponseEntity.ok(ApiResponse.noContent());
+		return ResponseEntity.ok(ApiResponse.ok(QuestionApiResponse.from(
+			questionService.updateQuestion(questionSetId, questionId, request.toQuestionDto()))));
 	}
 }
