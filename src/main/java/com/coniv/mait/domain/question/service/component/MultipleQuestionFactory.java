@@ -37,11 +37,12 @@ public class MultipleQuestionFactory implements QuestionFactory<MultipleQuestion
 
 	@Transactional
 	@Override
-	public void save(MultipleQuestionDto questionDto, QuestionSetEntity questionSetEntity) {
+	public QuestionEntity save(MultipleQuestionDto questionDto, QuestionSetEntity questionSetEntity) {
 		MultipleQuestionEntity question = create(questionDto, questionSetEntity);
 		questionEntityRepository.save(question);
 
 		createSubEntities(questionDto, question);
+		return question;
 	}
 
 	@Override

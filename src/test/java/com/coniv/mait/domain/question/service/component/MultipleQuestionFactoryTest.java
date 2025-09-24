@@ -1,6 +1,7 @@
 package com.coniv.mait.domain.question.service.component;
 
 import static org.assertj.core.api.Assertions.*;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
@@ -15,6 +16,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import com.coniv.mait.domain.question.entity.MultipleChoiceEntity;
 import com.coniv.mait.domain.question.entity.MultipleQuestionEntity;
+import com.coniv.mait.domain.question.entity.QuestionEntity;
 import com.coniv.mait.domain.question.entity.QuestionSetEntity;
 import com.coniv.mait.domain.question.enums.QuestionType;
 import com.coniv.mait.domain.question.repository.MultipleChoiceEntityRepository;
@@ -67,9 +69,11 @@ class MultipleQuestionFactoryTest {
 			.build();
 
 		// when
-		multipleQuestionFactory.save(questionDto, questionSetEntity);
+		QuestionEntity result = multipleQuestionFactory.save(questionDto, questionSetEntity);
 
 		// then
+		assertThat(result).isNotNull();
+		assertThat(result).isInstanceOf(MultipleQuestionEntity.class);
 		verify(questionEntityRepository).save(any(MultipleQuestionEntity.class));
 		verify(multipleChoiceEntityRepository).saveAll(any());
 	}

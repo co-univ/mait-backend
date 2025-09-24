@@ -38,11 +38,12 @@ public class FillBlankQuestionFactory implements QuestionFactory<FillBlankQuesti
 
 	@Transactional
 	@Override
-	public void save(FillBlankQuestionDto questionDto, QuestionSetEntity questionSetEntity) {
+	public QuestionEntity save(FillBlankQuestionDto questionDto, QuestionSetEntity questionSetEntity) {
 		FillBlankQuestionEntity question = create(questionDto, questionSetEntity);
 		questionEntityRepository.save(question);
 
 		createSubEntities(questionDto, question);
+		return question;
 	}
 
 	@Override

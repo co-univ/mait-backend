@@ -37,11 +37,12 @@ public class ShortQuestionFactory implements QuestionFactory<ShortQuestionDto> {
 
 	@Transactional
 	@Override
-	public void save(ShortQuestionDto questionDto, QuestionSetEntity questionSetEntity) {
+	public QuestionEntity save(ShortQuestionDto questionDto, QuestionSetEntity questionSetEntity) {
 		ShortQuestionEntity question = create(questionDto, questionSetEntity);
 		questionEntityRepository.save(question);
 
 		createSubEntities(questionDto, question);
+		return question;
 	}
 
 	@Override

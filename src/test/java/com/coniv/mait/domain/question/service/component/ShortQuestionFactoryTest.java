@@ -1,6 +1,7 @@
 package com.coniv.mait.domain.question.service.component;
 
 import static org.assertj.core.api.Assertions.*;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
@@ -13,6 +14,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import com.coniv.mait.domain.question.entity.QuestionEntity;
 import com.coniv.mait.domain.question.entity.QuestionSetEntity;
 import com.coniv.mait.domain.question.entity.ShortAnswerEntity;
 import com.coniv.mait.domain.question.entity.ShortQuestionEntity;
@@ -66,9 +68,11 @@ class ShortQuestionFactoryTest {
 			.build();
 
 		// when
-		shortQuestionFactory.save(questionDto, questionSetEntity);
+		QuestionEntity result = shortQuestionFactory.save(questionDto, questionSetEntity);
 
 		// then
+		assertThat(result).isNotNull();
+		assertThat(result).isInstanceOf(ShortQuestionEntity.class);
 		verify(questionEntityRepository).save(any(ShortQuestionEntity.class));
 		verify(shortAnswerEntityRepository).saveAll(any());
 	}

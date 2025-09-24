@@ -1,6 +1,7 @@
 package com.coniv.mait.domain.question.service.component;
 
 import static org.assertj.core.api.Assertions.*;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
@@ -15,6 +16,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import com.coniv.mait.domain.question.entity.OrderingOptionEntity;
 import com.coniv.mait.domain.question.entity.OrderingQuestionEntity;
+import com.coniv.mait.domain.question.entity.QuestionEntity;
 import com.coniv.mait.domain.question.entity.QuestionSetEntity;
 import com.coniv.mait.domain.question.enums.QuestionType;
 import com.coniv.mait.domain.question.repository.OrderingOptionEntityRepository;
@@ -67,9 +69,11 @@ class OrderingQuestionFactoryTest {
 			.build();
 
 		// when
-		orderingQuestionFactory.save(questionDto, questionSetEntity);
+		QuestionEntity result = orderingQuestionFactory.save(questionDto, questionSetEntity);
 
 		// then
+		assertThat(result).isNotNull();
+		assertThat(result).isInstanceOf(OrderingQuestionEntity.class);
 		verify(questionEntityRepository).save(any(OrderingQuestionEntity.class));
 		verify(orderingOptionEntityRepository).saveAll(any());
 	}

@@ -36,11 +36,12 @@ public class OrderingQuestionFactory implements QuestionFactory<OrderingQuestion
 
 	@Transactional
 	@Override
-	public void save(OrderingQuestionDto questionDto, QuestionSetEntity questionSetEntity) {
+	public QuestionEntity save(OrderingQuestionDto questionDto, QuestionSetEntity questionSetEntity) {
 		OrderingQuestionEntity question = create(questionDto, questionSetEntity);
 		questionEntityRepository.save(question);
 
 		createSubEntities(questionDto, question);
+		return question;
 	}
 
 	@Override
