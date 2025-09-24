@@ -65,7 +65,7 @@ public class QuestionController {
 		return ResponseEntity.ok(ApiResponse.ok(result));
 	}
 
-	@Operation(summary = "문제 단건 수정 API", description = "문제 셋에 속한 문제 수정")
+	@Operation(summary = "문제 단건 수정 API", description = "문제 셋의 특정 번호의 문제를 수정")
 	@PutMapping("/{questionId}")
 	public ResponseEntity<ApiResponse<QuestionApiResponse>> updateQuestion(
 		@PathVariable("questionSetId") final Long questionSetId,
