@@ -9,4 +9,6 @@ import com.coniv.mait.domain.question.entity.OrderingOptionEntity;
 public interface OrderingOptionEntityRepository extends JpaRepository<OrderingOptionEntity, Long> {
 
 	List<OrderingOptionEntity> findAllByOrderingQuestionId(Long orderingQuestionId);
+
+	void deleteAllByOrderingQuestionId(Long questionId);
 }

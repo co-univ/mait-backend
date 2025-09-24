@@ -12,4 +12,8 @@ public interface QuestionFactory<T extends QuestionDto> {
 	void save(T questionDto, QuestionSetEntity questionSetEntity);
 
 	QuestionDto getQuestion(QuestionEntity question, boolean answerVisible);
+
+	void deleteSubEntities(QuestionEntity question);
+
+	void createSubEntities(T questionDto, QuestionEntity question);
 }

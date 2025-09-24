@@ -39,16 +39,26 @@ public class MultipleQuestionFactory implements QuestionFactory<MultipleQuestion
 	@Override
 	public void save(MultipleQuestionDto questionDto, QuestionSetEntity questionSetEntity) {
 		MultipleQuestionEntity question = create(questionDto, questionSetEntity);
-		List<MultipleChoiceEntity> choices = createChoices(questionDto.getChoices(), question);
-
 		questionEntityRepository.save(question);
-		multipleChoiceEntityRepository.saveAll(choices);
+
+		createSubEntities(questionDto, question);
 	}
 
 	@Override
 	public QuestionDto getQuestion(QuestionEntity question, boolean answerVisible) {
 		List<MultipleChoiceEntity> choices = multipleChoiceEntityRepository.findAllByQuestionId(question.getId());
 		return MultipleQuestionDto.of((MultipleQuestionEntity)question, choices, answerVisible);
+	}
+
+	@Override
+	public void deleteSubEntities(QuestionEntity question) {
+		multipleChoiceEntityRepository.deleteAllByQuestionId(question.getId());
+	}
+
+	@Override
+	public void createSubEntities(MultipleQuestionDto questionDto, QuestionEntity question) {
+		List<MultipleChoiceEntity> choices = createChoices(questionDto.getChoices(), (MultipleQuestionEntity)question);
+		multipleChoiceEntityRepository.saveAll(choices);
 	}
 
 	public MultipleQuestionEntity create(MultipleQuestionDto dto, QuestionSetEntity questionSet) {

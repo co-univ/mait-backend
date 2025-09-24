@@ -42,9 +42,7 @@ public class FillBlankQuestionFactory implements QuestionFactory<FillBlankQuesti
 		FillBlankQuestionEntity question = create(questionDto, questionSetEntity);
 		questionEntityRepository.save(question);
 
-		List<FillBlankAnswerEntity> fillBlankAnswers = createFillBlankAnswers(questionDto.getFillBlankAnswers(),
-			question);
-		fillBlankAnswerEntityRepository.saveAll(fillBlankAnswers);
+		createSubEntities(questionDto, question);
 	}
 
 	@Override
@@ -52,6 +50,18 @@ public class FillBlankQuestionFactory implements QuestionFactory<FillBlankQuesti
 		List<FillBlankAnswerEntity> fillBlankAnswers = fillBlankAnswerEntityRepository
 			.findAllByFillBlankQuestionId(question.getId());
 		return FillBlankQuestionDto.of((FillBlankQuestionEntity)question, fillBlankAnswers, answerVisible);
+	}
+
+	@Override
+	public void deleteSubEntities(QuestionEntity question) {
+		fillBlankAnswerEntityRepository.deleteAllByFillBlankQuestionId(question.getId());
+	}
+
+	@Override
+	public void createSubEntities(FillBlankQuestionDto questionDto, QuestionEntity question) {
+		List<FillBlankAnswerEntity> fillBlankAnswers = createFillBlankAnswers(questionDto.getFillBlankAnswers(),
+			(FillBlankQuestionEntity)question);
+		fillBlankAnswerEntityRepository.saveAll(fillBlankAnswers);
 	}
 
 	public FillBlankQuestionEntity create(FillBlankQuestionDto dto, QuestionSetEntity questionSetEntity) {

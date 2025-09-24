@@ -41,8 +41,7 @@ public class ShortQuestionFactory implements QuestionFactory<ShortQuestionDto> {
 		ShortQuestionEntity question = create(questionDto, questionSetEntity);
 		questionEntityRepository.save(question);
 
-		List<ShortAnswerEntity> shortAnswers = createShortAnswers(questionDto.getShortAnswers(), question);
-		shortAnswerEntityRepository.saveAll(shortAnswers);
+		createSubEntities(questionDto, question);
 	}
 
 	@Override
@@ -50,6 +49,18 @@ public class ShortQuestionFactory implements QuestionFactory<ShortQuestionDto> {
 		List<ShortAnswerEntity> shortAnswers = shortAnswerEntityRepository.findAllByShortQuestionId(
 			question.getId());
 		return ShortQuestionDto.of((ShortQuestionEntity)question, shortAnswers, answerVisible);
+	}
+
+	@Override
+	public void deleteSubEntities(QuestionEntity question) {
+		shortAnswerEntityRepository.deleteAllByShortQuestionId(question.getId());
+	}
+
+	@Override
+	public void createSubEntities(ShortQuestionDto questionDto, QuestionEntity question) {
+		List<ShortAnswerEntity> shortAnswers = createShortAnswers(questionDto.getShortAnswers(),
+			(ShortQuestionEntity)question);
+		shortAnswerEntityRepository.saveAll(shortAnswers);
 	}
 
 	public ShortQuestionEntity create(ShortQuestionDto dto, QuestionSetEntity questionSetEntity) {

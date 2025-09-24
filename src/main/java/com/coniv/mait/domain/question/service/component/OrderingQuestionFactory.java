@@ -40,8 +40,7 @@ public class OrderingQuestionFactory implements QuestionFactory<OrderingQuestion
 		OrderingQuestionEntity question = create(questionDto, questionSetEntity);
 		questionEntityRepository.save(question);
 
-		List<OrderingOptionEntity> options = createOrderingQuestionOptions(questionDto.getOptions(), question);
-		orderingOptionEntityRepository.saveAll(options);
+		createSubEntities(questionDto, question);
 	}
 
 	@Override
@@ -49,6 +48,18 @@ public class OrderingQuestionFactory implements QuestionFactory<OrderingQuestion
 		List<OrderingOptionEntity> options = orderingOptionEntityRepository.findAllByOrderingQuestionId(
 			question.getId());
 		return OrderingQuestionDto.of((OrderingQuestionEntity)question, options, answerVisible);
+	}
+
+	@Override
+	public void deleteSubEntities(QuestionEntity question) {
+		orderingOptionEntityRepository.deleteAllByOrderingQuestionId(question.getId());
+	}
+
+	@Override
+	public void createSubEntities(OrderingQuestionDto questionDto, QuestionEntity question) {
+		List<OrderingOptionEntity> options = createOrderingQuestionOptions(questionDto.getOptions(),
+			(OrderingQuestionEntity)question);
+		orderingOptionEntityRepository.saveAll(options);
 	}
 
 	public OrderingQuestionEntity create(OrderingQuestionDto dto, QuestionSetEntity questionSetEntity) {
