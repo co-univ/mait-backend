@@ -59,6 +59,9 @@ public class MultipleQuestionFactory implements QuestionFactory<MultipleQuestion
 	public void createSubEntities(MultipleQuestionDto questionDto, QuestionEntity question) {
 		List<MultipleChoiceEntity> choices = createChoices(questionDto.getChoices(), (MultipleQuestionEntity)question);
 		multipleChoiceEntityRepository.saveAll(choices);
+
+		MultipleQuestionEntity multipleQuestion = (MultipleQuestionEntity)question;
+		multipleQuestion.updateAnswerCount(calculateAnswerCount(questionDto.getChoices()));
 	}
 
 	public MultipleQuestionEntity create(MultipleQuestionDto dto, QuestionSetEntity questionSet) {

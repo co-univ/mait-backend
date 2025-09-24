@@ -56,11 +56,15 @@ public class ShortQuestionFactory implements QuestionFactory<ShortQuestionDto> {
 		shortAnswerEntityRepository.deleteAllByShortQuestionId(question.getId());
 	}
 
+	@Transactional
 	@Override
 	public void createSubEntities(ShortQuestionDto questionDto, QuestionEntity question) {
 		List<ShortAnswerEntity> shortAnswers = createShortAnswers(questionDto.getShortAnswers(),
 			(ShortQuestionEntity)question);
 		shortAnswerEntityRepository.saveAll(shortAnswers);
+
+		ShortQuestionEntity shortQuestionEntity = (ShortQuestionEntity)question;
+		shortQuestionEntity.updateAnswerCount(shortAnswers.size());
 	}
 
 	public ShortQuestionEntity create(ShortQuestionDto dto, QuestionSetEntity questionSetEntity) {

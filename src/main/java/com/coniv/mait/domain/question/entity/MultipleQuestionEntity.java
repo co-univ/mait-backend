@@ -17,4 +17,11 @@ import lombok.experimental.SuperBuilder;
 public class MultipleQuestionEntity extends QuestionEntity {
 
 	private int answerCount;
+
+	public void updateAnswerCount(int answerCount) {
+		if (answerCount < 0) {
+			throw new IllegalArgumentException("Answer count cannot be negative");
+		}
+		this.answerCount = answerCount;
+	}
 }
