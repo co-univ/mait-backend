@@ -167,4 +167,41 @@ class OrderingQuestionFactoryTest {
 		// then
 		assertEquals(2, result.size());
 	}
+
+	@Test
+	@DisplayName("deleteSubEntities - 하위 엔티티들을 삭제한다")
+	void deleteSubEntities() {
+		// given
+		OrderingQuestionEntity question = mock(OrderingQuestionEntity.class);
+		when(question.getId()).thenReturn(1L);
+
+		// when
+		orderingQuestionFactory.deleteSubEntities(question);
+
+		// then
+		verify(orderingOptionEntityRepository).deleteAllByOrderingQuestionId(1L);
+	}
+
+	@Test
+	@DisplayName("createSubEntities - 하위 엔티티들을 생성하여 저장한다")
+	void createSubEntities() {
+		// given
+		List<OrderingQuestionOptionDto> options = List.of(
+			OrderingQuestionOptionDto.builder().content("옵션 1").originOrder(1).answerOrder(2).build(),
+			OrderingQuestionOptionDto.builder().content("옵션 2").originOrder(2).answerOrder(1).build()
+		);
+
+		OrderingQuestionDto questionDto = OrderingQuestionDto.builder()
+			.content("순서배열 문제")
+			.options(options)
+			.build();
+
+		OrderingQuestionEntity question = mock(OrderingQuestionEntity.class);
+
+		// when
+		orderingQuestionFactory.createSubEntities(questionDto, question);
+
+		// then
+		verify(orderingOptionEntityRepository).saveAll(any(List.class));
+	}
 }

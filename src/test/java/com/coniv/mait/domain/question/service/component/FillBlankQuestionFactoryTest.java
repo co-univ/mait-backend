@@ -169,4 +169,41 @@ class FillBlankQuestionFactoryTest {
 		assertThrows(UserParameterException.class,
 			() -> fillBlankQuestionFactory.createFillBlankAnswers(answers, question));
 	}
+
+	@Test
+	@DisplayName("deleteSubEntities - 하위 엔티티들을 삭제한다")
+	void deleteSubEntities() {
+		// given
+		FillBlankQuestionEntity question = mock(FillBlankQuestionEntity.class);
+		when(question.getId()).thenReturn(1L);
+
+		// when
+		fillBlankQuestionFactory.deleteSubEntities(question);
+
+		// then
+		verify(fillBlankAnswerEntityRepository).deleteAllByFillBlankQuestionId(1L);
+	}
+
+	@Test
+	@DisplayName("createSubEntities - 하위 엔티티들을 생성하여 저장한다")
+	void createSubEntities() {
+		// given
+		List<FillBlankAnswerDto> answers = List.of(
+			FillBlankAnswerDto.builder().number(1L).answer("정답1").isMain(true).build(),
+			FillBlankAnswerDto.builder().number(2L).answer("정답2").isMain(true).build()
+		);
+
+		FillBlankQuestionDto questionDto = FillBlankQuestionDto.builder()
+			.content("빈칸채우기 문제")
+			.fillBlankAnswers(answers)
+			.build();
+
+		FillBlankQuestionEntity question = mock(FillBlankQuestionEntity.class);
+
+		// when
+		fillBlankQuestionFactory.createSubEntities(questionDto, question);
+
+		// then
+		verify(fillBlankAnswerEntityRepository).saveAll(any(List.class));
+	}
 }

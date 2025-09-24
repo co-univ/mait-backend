@@ -168,4 +168,41 @@ class ShortQuestionFactoryTest {
 		assertThrows(UserParameterException.class,
 			() -> shortQuestionFactory.createShortAnswers(answers, question));
 	}
+
+	@Test
+	@DisplayName("deleteSubEntities - 하위 엔티티들을 삭제한다")
+	void deleteSubEntities() {
+		// given
+		ShortQuestionEntity question = mock(ShortQuestionEntity.class);
+		when(question.getId()).thenReturn(1L);
+
+		// when
+		shortQuestionFactory.deleteSubEntities(question);
+
+		// then
+		verify(shortAnswerEntityRepository).deleteAllByShortQuestionId(1L);
+	}
+
+	@Test
+	@DisplayName("createSubEntities - 하위 엔티티들을 생성하여 저장한다")
+	void createSubEntities() {
+		// given
+		List<ShortAnswerDto> answers = List.of(
+			ShortAnswerDto.builder().number(1L).answer("정답1").isMain(true).build(),
+			ShortAnswerDto.builder().number(2L).answer("정답2").isMain(true).build()
+		);
+
+		ShortQuestionDto questionDto = ShortQuestionDto.builder()
+			.content("주관식 문제")
+			.shortAnswers(answers)
+			.build();
+
+		ShortQuestionEntity question = mock(ShortQuestionEntity.class);
+
+		// when
+		shortQuestionFactory.createSubEntities(questionDto, question);
+
+		// then
+		verify(shortAnswerEntityRepository).saveAll(any(List.class));
+	}
 }
