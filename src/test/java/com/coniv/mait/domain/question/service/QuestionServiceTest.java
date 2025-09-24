@@ -383,4 +383,161 @@ class QuestionServiceTest {
 		// then - answerVisible = true로 호출되어야 함
 		verify(shortQuestionFactory).getQuestion(shortQuestion, true);
 	}
+
+	@Test
+	@DisplayName("문제 수정 성공 - 같은 유형으로 변경")
+	void updateQuestion_SameType_Success() {
+		// given
+		final Long questionId = 1L;
+		final Long questionSetId = 1L;
+
+		QuestionSetEntity questionSetEntity = mock(QuestionSetEntity.class);
+		when(questionSetEntity.getId()).thenReturn(questionSetId);
+
+		MultipleQuestionEntity existingQuestion = mock(MultipleQuestionEntity.class);
+		lenient().when(existingQuestion.getId()).thenReturn(questionId);
+		when(existingQuestion.getQuestionSet()).thenReturn(questionSetEntity);
+		when(existingQuestion.getType()).thenReturn(QuestionType.MULTIPLE);
+
+		MultipleQuestionDto questionDto = mock(MultipleQuestionDto.class);
+		when(questionDto.getType()).thenReturn(QuestionType.MULTIPLE);
+		when(questionDto.getContent()).thenReturn("수정된 문제 내용");
+		when(questionDto.getExplanation()).thenReturn("수정된 해설");
+
+		MultipleQuestionDto expectedResult = mock(MultipleQuestionDto.class);
+		when(multipleQuestionFactory.getQuestion(existingQuestion, true)).thenReturn(expectedResult);
+
+		when(questionEntityRepository.findById(questionId)).thenReturn(Optional.of(existingQuestion));
+
+		// when
+		QuestionDto result = questionService.updateQuestion(questionId, questionSetId, questionDto);
+
+		// then
+		assertNotNull(result);
+		assertEquals(expectedResult, result);
+
+		// 같은 타입 수정 로직 검증
+		verify(questionEntityRepository).findById(questionId);
+		verify(existingQuestion).updateContent(questionDto.getContent());
+		verify(existingQuestion).updateExplanation(questionDto.getExplanation());
+		verify(multipleQuestionFactory).deleteSubEntities(existingQuestion);
+		verify(multipleQuestionFactory).createSubEntities(questionDto, existingQuestion);
+		verify(multipleQuestionFactory).getQuestion(existingQuestion, true);
+
+		// delete와 save는 호출되지 않아야 함
+		verify(questionEntityRepository, never()).delete(any());
+		verify(multipleQuestionFactory, never()).save(any(), any());
+	}
+
+	@Test
+	@DisplayName("문제 수정 성공 - 다른 유형으로 변경")
+	void updateQuestion_DifferentType_Success() {
+		// given
+		final Long questionId = 1L;
+		final Long questionSetId = 1L;
+
+		QuestionSetEntity questionSetEntity = mock(QuestionSetEntity.class);
+		when(questionSetEntity.getId()).thenReturn(questionSetId);
+
+		MultipleQuestionEntity existingQuestion = mock(MultipleQuestionEntity.class);
+		lenient().when(existingQuestion.getId()).thenReturn(questionId);
+		when(existingQuestion.getQuestionSet()).thenReturn(questionSetEntity);
+		when(existingQuestion.getType()).thenReturn(QuestionType.MULTIPLE);
+
+		ShortQuestionDto questionDto = mock(ShortQuestionDto.class);
+		when(questionDto.getType()).thenReturn(QuestionType.SHORT);
+
+		ShortQuestionEntity newQuestion = mock(ShortQuestionEntity.class);
+		when(shortQuestionFactory.save(questionDto, questionSetEntity)).thenReturn(newQuestion);
+
+		ShortQuestionDto expectedResult = mock(ShortQuestionDto.class);
+		when(shortQuestionFactory.getQuestion(newQuestion, true)).thenReturn(expectedResult);
+
+		when(questionEntityRepository.findById(questionId)).thenReturn(Optional.of(existingQuestion));
+
+		// when
+		QuestionDto result = questionService.updateQuestion(questionId, questionSetId, questionDto);
+
+		// then
+		assertNotNull(result);
+		assertEquals(expectedResult, result);
+
+		// 다른 타입 수정 로직 검증
+		verify(questionEntityRepository).findById(questionId);
+		verify(multipleQuestionFactory).deleteSubEntities(existingQuestion); // 기존 타입의 팩토리
+		verify(questionEntityRepository).delete(existingQuestion);
+		verify(shortQuestionFactory).save(questionDto, questionSetEntity); // 새로운 타입의 팩토리
+		verify(shortQuestionFactory).getQuestion(newQuestion, true);
+
+		// 같은 타입 수정 메서드들은 호출되지 않아야 함
+		verify(existingQuestion, never()).updateContent(anyString());
+		verify(existingQuestion, never()).updateExplanation(anyString());
+		verify(multipleQuestionFactory, never()).createSubEntities(any(), any());
+	}
+
+	@Test
+	@DisplayName("문제 수정 실패 - 존재하지 않는 문제")
+	void updateQuestion_QuestionNotFound() {
+		// given
+		final Long questionId = 999L;
+		final Long questionSetId = 1L;
+
+		MultipleQuestionDto questionDto = mock(MultipleQuestionDto.class);
+		lenient().when(questionDto.getType()).thenReturn(QuestionType.MULTIPLE);
+
+		when(questionEntityRepository.findById(questionId)).thenReturn(Optional.empty());
+
+		// when & then
+		EntityNotFoundException exception = assertThrows(EntityNotFoundException.class,
+			() -> questionService.updateQuestion(questionId, questionSetId, questionDto));
+
+		assertEquals("Question not found with id: " + questionId, exception.getMessage());
+
+		verify(questionEntityRepository).findById(questionId);
+
+		// 다른 작업들은 호출되지 않아야 함
+		verify(multipleQuestionFactory, never()).deleteSubEntities(any());
+		verify(multipleQuestionFactory, never()).createSubEntities(any(), any());
+		verify(multipleQuestionFactory, never()).save(any(), any());
+		verify(multipleQuestionFactory, never()).getQuestion(any(), anyBoolean());
+		verify(questionEntityRepository, never()).delete(any());
+	}
+
+	@Test
+	@DisplayName("문제 수정 실패 - 해당 문제셋에 속하지 않는 문제")
+	void updateQuestion_QuestionNotBelongToQuestionSet() {
+		// given
+		final Long questionId = 1L;
+		final Long questionSetId = 1L;
+		final Long differentQuestionSetId = 2L;
+
+		QuestionSetEntity differentQuestionSet = mock(QuestionSetEntity.class);
+		when(differentQuestionSet.getId()).thenReturn(differentQuestionSetId);
+
+		MultipleQuestionEntity existingQuestion = mock(MultipleQuestionEntity.class);
+		lenient().when(existingQuestion.getId()).thenReturn(questionId);
+		when(existingQuestion.getQuestionSet()).thenReturn(differentQuestionSet);
+
+		MultipleQuestionDto questionDto = mock(MultipleQuestionDto.class);
+		lenient().when(questionDto.getType()).thenReturn(QuestionType.MULTIPLE);
+
+		when(questionEntityRepository.findById(questionId)).thenReturn(Optional.of(existingQuestion));
+
+		// when & then
+		ResourceNotBelongException exception = assertThrows(ResourceNotBelongException.class,
+			() -> questionService.updateQuestion(questionId, questionSetId, questionDto));
+
+		assertEquals("해당 문제 셋에 속한 문제가 아닙니다.", exception.getMessage());
+
+		verify(questionEntityRepository).findById(questionId);
+
+		// 다른 작업들은 호출되지 않아야 함
+		verify(multipleQuestionFactory, never()).deleteSubEntities(any());
+		verify(multipleQuestionFactory, never()).createSubEntities(any(), any());
+		verify(multipleQuestionFactory, never()).save(any(), any());
+		verify(multipleQuestionFactory, never()).getQuestion(any(), anyBoolean());
+		verify(questionEntityRepository, never()).delete(any());
+		verify(existingQuestion, never()).updateContent(anyString());
+		verify(existingQuestion, never()).updateExplanation(anyString());
+	}
 }
