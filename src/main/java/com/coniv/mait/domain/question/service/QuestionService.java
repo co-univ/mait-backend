@@ -107,7 +107,7 @@ public class QuestionService {
 	}
 
 	@Transactional
-	public void updateQuestion(final Long questionId, final Long questionSetId, final QuestionDto questionDto) {
+	public QuestionDto updateQuestion(final Long questionId, final Long questionSetId, final QuestionDto questionDto) {
 		QuestionEntity question = questionEntityRepository.findById(questionId)
 			.orElseThrow(() -> new EntityNotFoundException("Question not found with id: " + questionId));
 
@@ -115,13 +115,23 @@ public class QuestionService {
 			throw new ResourceNotBelongException("해당 문제 셋에 속한 문제가 아닙니다.");
 		}
 
-		question.updateContent(questionDto.getContent());
-		question.updateExplanation(questionDto.getExplanation());
+		QuestionFactory<QuestionDto> questionFactory = getQuestionFactory(questionDto.getType());
 
-		QuestionFactory<QuestionDto> questionFactory = getQuestionFactory(question.getType());
+		if (question.getType() == questionDto.getType()) {
+			question.updateContent(questionDto.getContent());
+			question.updateExplanation(questionDto.getExplanation());
 
-		questionFactory.deleteSubEntities(question);
+			questionFactory.deleteSubEntities(question);
+			questionFactory.createSubEntities(questionDto, question);
+			return questionFactory.getQuestion(question, true);
+		}
 
-		questionFactory.createSubEntities(questionDto, question);
+		QuestionFactory<QuestionDto> oldQuestionFactory = getQuestionFactory(question.getType());
+		oldQuestionFactory.deleteSubEntities(question);
+		questionEntityRepository.delete(question);
+
+		QuestionEntity createdQuestion = questionFactory.save(questionDto, question.getQuestionSet());
+
+		return questionFactory.getQuestion(createdQuestion, true);
 	}
 }

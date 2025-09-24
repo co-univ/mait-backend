@@ -11,8 +11,7 @@ import lombok.Data;
 
 @JsonTypeInfo(
 	use = JsonTypeInfo.Id.NAME,
-	property = "type",
-	include = JsonTypeInfo.As.EXISTING_PROPERTY
+	property = "type"
 )
 @JsonSubTypes({
 	@JsonSubTypes.Type(value = UpdateShortQuestionApiRequest.class, name = QuestionConstant.SHORT),
