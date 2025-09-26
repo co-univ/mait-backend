@@ -4,6 +4,7 @@ import java.util.List;
 
 import com.coniv.mait.domain.question.entity.FillBlankAnswerEntity;
 import com.coniv.mait.domain.question.entity.FillBlankQuestionEntity;
+import com.coniv.mait.domain.question.enums.QuestionType;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -21,6 +22,11 @@ public class FillBlankQuestionDto extends QuestionDto {
 	private List<FillBlankAnswerDto> fillBlankAnswers;
 
 	private Integer blankCount;
+
+	@Override
+	public QuestionType getType() {
+		return QuestionType.FILL_BLANK;
+	}
 
 	@Override
 	public FillBlankQuestionDto toQuestionDto() {

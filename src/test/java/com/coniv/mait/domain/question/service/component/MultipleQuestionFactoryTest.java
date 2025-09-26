@@ -15,6 +15,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import com.coniv.mait.domain.question.entity.MultipleChoiceEntity;
 import com.coniv.mait.domain.question.entity.MultipleQuestionEntity;
+import com.coniv.mait.domain.question.entity.QuestionEntity;
 import com.coniv.mait.domain.question.entity.QuestionSetEntity;
 import com.coniv.mait.domain.question.enums.QuestionType;
 import com.coniv.mait.domain.question.repository.MultipleChoiceEntityRepository;
@@ -67,9 +68,11 @@ class MultipleQuestionFactoryTest {
 			.build();
 
 		// when
-		multipleQuestionFactory.save(questionDto, questionSetEntity);
+		QuestionEntity result = multipleQuestionFactory.save(questionDto, questionSetEntity);
 
 		// then
+		assertThat(result).isNotNull();
+		assertThat(result).isInstanceOf(MultipleQuestionEntity.class);
 		verify(questionEntityRepository).save(any(MultipleQuestionEntity.class));
 		verify(multipleChoiceEntityRepository).saveAll(any());
 	}
@@ -148,5 +151,42 @@ class MultipleQuestionFactoryTest {
 
 		// then
 		assertEquals(2, result.size());
+	}
+
+	@Test
+	@DisplayName("deleteSubEntities - 하위 엔티티들을 삭제한다")
+	void deleteSubEntities() {
+		// given
+		MultipleQuestionEntity question = mock(MultipleQuestionEntity.class);
+		when(question.getId()).thenReturn(1L);
+
+		// when
+		multipleQuestionFactory.deleteSubEntities(question);
+
+		// then
+		verify(multipleChoiceEntityRepository).deleteAllByQuestionId(1L);
+	}
+
+	@Test
+	@DisplayName("createSubEntities - 하위 엔티티들을 생성하여 저장한다")
+	void createSubEntities() {
+		// given
+		List<MultipleChoiceDto> choices = List.of(
+			MultipleChoiceDto.builder().number(1).content("선택지 1").isCorrect(true).build(),
+			MultipleChoiceDto.builder().number(2).content("선택지 2").isCorrect(false).build()
+		);
+
+		MultipleQuestionDto questionDto = MultipleQuestionDto.builder()
+			.content("문제 내용")
+			.choices(choices)
+			.build();
+
+		MultipleQuestionEntity question = mock(MultipleQuestionEntity.class);
+
+		// when
+		multipleQuestionFactory.createSubEntities(questionDto, question);
+
+		// then
+		verify(multipleChoiceEntityRepository).saveAll(any(List.class));
 	}
 }

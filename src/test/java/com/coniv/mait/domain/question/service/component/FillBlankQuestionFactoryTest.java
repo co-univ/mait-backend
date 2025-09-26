@@ -15,6 +15,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import com.coniv.mait.domain.question.entity.FillBlankAnswerEntity;
 import com.coniv.mait.domain.question.entity.FillBlankQuestionEntity;
+import com.coniv.mait.domain.question.entity.QuestionEntity;
 import com.coniv.mait.domain.question.entity.QuestionSetEntity;
 import com.coniv.mait.domain.question.enums.QuestionType;
 import com.coniv.mait.domain.question.repository.FillBlankAnswerEntityRepository;
@@ -67,9 +68,11 @@ class FillBlankQuestionFactoryTest {
 			.build();
 
 		// when
-		fillBlankQuestionFactory.save(questionDto, questionSetEntity);
+		QuestionEntity result = fillBlankQuestionFactory.save(questionDto, questionSetEntity);
 
 		// then
+		assertThat(result).isNotNull();
+		assertThat(result).isInstanceOf(FillBlankQuestionEntity.class);
 		verify(questionEntityRepository).save(any(FillBlankQuestionEntity.class));
 		verify(fillBlankAnswerEntityRepository).saveAll(any());
 	}
@@ -168,5 +171,42 @@ class FillBlankQuestionFactoryTest {
 		// when & then
 		assertThrows(UserParameterException.class,
 			() -> fillBlankQuestionFactory.createFillBlankAnswers(answers, question));
+	}
+
+	@Test
+	@DisplayName("deleteSubEntities - 하위 엔티티들을 삭제한다")
+	void deleteSubEntities() {
+		// given
+		FillBlankQuestionEntity question = mock(FillBlankQuestionEntity.class);
+		when(question.getId()).thenReturn(1L);
+
+		// when
+		fillBlankQuestionFactory.deleteSubEntities(question);
+
+		// then
+		verify(fillBlankAnswerEntityRepository).deleteAllByFillBlankQuestionId(1L);
+	}
+
+	@Test
+	@DisplayName("createSubEntities - 하위 엔티티들을 생성하여 저장한다")
+	void createSubEntities() {
+		// given
+		List<FillBlankAnswerDto> answers = List.of(
+			FillBlankAnswerDto.builder().number(1L).answer("정답1").isMain(true).build(),
+			FillBlankAnswerDto.builder().number(2L).answer("정답2").isMain(true).build()
+		);
+
+		FillBlankQuestionDto questionDto = FillBlankQuestionDto.builder()
+			.content("빈칸채우기 문제")
+			.fillBlankAnswers(answers)
+			.build();
+
+		FillBlankQuestionEntity question = mock(FillBlankQuestionEntity.class);
+
+		// when
+		fillBlankQuestionFactory.createSubEntities(questionDto, question);
+
+		// then
+		verify(fillBlankAnswerEntityRepository).saveAll(any(List.class));
 	}
 }

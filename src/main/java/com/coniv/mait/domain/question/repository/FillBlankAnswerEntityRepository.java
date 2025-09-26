@@ -8,4 +8,6 @@ import com.coniv.mait.domain.question.entity.FillBlankAnswerEntity;
 
 public interface FillBlankAnswerEntityRepository extends JpaRepository<FillBlankAnswerEntity, Long> {
 	List<FillBlankAnswerEntity> findAllByFillBlankQuestionId(Long fillBlankQuestionId);
+
+	void deleteAllByFillBlankQuestionId(Long questionId);
 }

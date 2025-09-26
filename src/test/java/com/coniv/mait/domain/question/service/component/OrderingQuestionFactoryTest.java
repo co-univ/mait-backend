@@ -15,6 +15,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import com.coniv.mait.domain.question.entity.OrderingOptionEntity;
 import com.coniv.mait.domain.question.entity.OrderingQuestionEntity;
+import com.coniv.mait.domain.question.entity.QuestionEntity;
 import com.coniv.mait.domain.question.entity.QuestionSetEntity;
 import com.coniv.mait.domain.question.enums.QuestionType;
 import com.coniv.mait.domain.question.repository.OrderingOptionEntityRepository;
@@ -67,9 +68,11 @@ class OrderingQuestionFactoryTest {
 			.build();
 
 		// when
-		orderingQuestionFactory.save(questionDto, questionSetEntity);
+		QuestionEntity result = orderingQuestionFactory.save(questionDto, questionSetEntity);
 
 		// then
+		assertThat(result).isNotNull();
+		assertThat(result).isInstanceOf(OrderingQuestionEntity.class);
 		verify(questionEntityRepository).save(any(OrderingQuestionEntity.class));
 		verify(orderingOptionEntityRepository).saveAll(any());
 	}
@@ -166,5 +169,42 @@ class OrderingQuestionFactoryTest {
 
 		// then
 		assertEquals(2, result.size());
+	}
+
+	@Test
+	@DisplayName("deleteSubEntities - 하위 엔티티들을 삭제한다")
+	void deleteSubEntities() {
+		// given
+		OrderingQuestionEntity question = mock(OrderingQuestionEntity.class);
+		when(question.getId()).thenReturn(1L);
+
+		// when
+		orderingQuestionFactory.deleteSubEntities(question);
+
+		// then
+		verify(orderingOptionEntityRepository).deleteAllByOrderingQuestionId(1L);
+	}
+
+	@Test
+	@DisplayName("createSubEntities - 하위 엔티티들을 생성하여 저장한다")
+	void createSubEntities() {
+		// given
+		List<OrderingQuestionOptionDto> options = List.of(
+			OrderingQuestionOptionDto.builder().content("옵션 1").originOrder(1).answerOrder(2).build(),
+			OrderingQuestionOptionDto.builder().content("옵션 2").originOrder(2).answerOrder(1).build()
+		);
+
+		OrderingQuestionDto questionDto = OrderingQuestionDto.builder()
+			.content("순서배열 문제")
+			.options(options)
+			.build();
+
+		OrderingQuestionEntity question = mock(OrderingQuestionEntity.class);
+
+		// when
+		orderingQuestionFactory.createSubEntities(questionDto, question);
+
+		// then
+		verify(orderingOptionEntityRepository).saveAll(any(List.class));
 	}
 }

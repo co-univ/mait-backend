@@ -9,7 +9,11 @@ public interface QuestionFactory<T extends QuestionDto> {
 
 	QuestionType getQuestionType();
 
-	void save(T questionDto, QuestionSetEntity questionSetEntity);
+	QuestionEntity save(T questionDto, QuestionSetEntity questionSetEntity);
 
 	QuestionDto getQuestion(QuestionEntity question, boolean answerVisible);
+
+	void deleteSubEntities(QuestionEntity question);
+
+	void createSubEntities(T questionDto, QuestionEntity question);
 }

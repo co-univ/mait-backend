@@ -26,6 +26,7 @@ import com.coniv.mait.domain.question.service.dto.MultipleChoiceDto;
 import com.coniv.mait.domain.question.service.dto.MultipleQuestionDto;
 import com.coniv.mait.domain.question.service.dto.OrderingQuestionOptionDto;
 import com.coniv.mait.domain.question.service.dto.ShortAnswerDto;
+import com.coniv.mait.domain.question.service.dto.ShortQuestionDto;
 import com.coniv.mait.global.exception.custom.ResourceNotBelongException;
 import com.coniv.mait.global.filter.JwtAuthorizationFilter;
 import com.coniv.mait.global.interceptor.idempotency.IdempotencyInterceptor;
@@ -33,6 +34,10 @@ import com.coniv.mait.web.question.dto.CreateFillBlankQuestionApiRequest;
 import com.coniv.mait.web.question.dto.CreateMultipleQuestionApiRequest;
 import com.coniv.mait.web.question.dto.CreateOrderingQuestionApiRequest;
 import com.coniv.mait.web.question.dto.CreateShortQuestionApiRequest;
+import com.coniv.mait.web.question.dto.UpdateFillBlankQuestionApiRequest;
+import com.coniv.mait.web.question.dto.UpdateMultipleQuestionApiRequest;
+import com.coniv.mait.web.question.dto.UpdateOrderingQuestionApiRequest;
+import com.coniv.mait.web.question.dto.UpdateShortQuestionApiRequest;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import jakarta.persistence.EntityNotFoundException;
@@ -674,4 +679,469 @@ class QuestionControllerTest {
 
 		verify(questionService).getQuestions(questionSetId);
 	}
+
+	@Test
+	@DisplayName("단답형 문제 수정 API 테스트 - 성공")
+	void updateShortQuestionTest() throws Exception {
+		// given
+		Long questionSetId = 1L;
+		Long questionId = 1L;
+
+		var shortAnswers = List.of(
+			ShortAnswerDto.builder()
+				.answer("수정된 정답1")
+				.isMain(true)
+				.number(1L)
+				.build(),
+			ShortAnswerDto.builder()
+				.answer("수정된 정답2")
+				.isMain(false)
+				.number(2L)
+				.build()
+		);
+
+		UpdateShortQuestionApiRequest request = new UpdateShortQuestionApiRequest();
+		request.setId(questionId);
+		request.setContent("수정된 주관식 문제 내용");
+		request.setExplanation("수정된 문제 해설");
+		request.setNumber(1L);
+		request.setType("SHORT");
+		request.setShortAnswers(shortAnswers);
+
+		String json = objectMapper.writeValueAsString(request);
+		// Mock 응답 설정
+		ShortQuestionDto mockResponse =
+			com.coniv.mait.domain.question.service.dto.ShortQuestionDto.builder()
+				.id(questionId)
+				.content(request.getContent())
+				.explanation(request.getExplanation())
+				.number(request.getNumber())
+				.shortAnswers(request.getShortAnswers())
+				.build();
+
+		when(questionService.updateQuestion(eq(questionSetId), eq(questionId), any())).thenReturn(mockResponse);
+
+		// when & then
+		mockMvc.perform(put("/api/v1/question-sets/{questionSetId}/questions/{questionId}", questionSetId, questionId)
+				.contentType(MediaType.APPLICATION_JSON)
+				.content(json))
+			.andExpect(status().isOk());
+
+		verify(questionService).updateQuestion(eq(questionSetId), eq(questionId), any());
+	}
+
+	@Test
+	@DisplayName("객관식 문제 수정 API 테스트 - 성공")
+	void updateMultipleQuestionTest() throws Exception {
+		// given
+		Long questionSetId = 1L;
+		Long questionId = 1L;
+
+		List<MultipleChoiceDto> choices = List.of(
+			MultipleChoiceDto.builder()
+				.number(1)
+				.content("수정된 선택지 1")
+				.isCorrect(true)
+				.build(),
+			MultipleChoiceDto.builder()
+				.number(2)
+				.content("수정된 선택지 2")
+				.isCorrect(false)
+				.build(),
+			MultipleChoiceDto.builder()
+				.number(3)
+				.content("수정된 선택지 3")
+				.isCorrect(false)
+				.build()
+		);
+
+		UpdateMultipleQuestionApiRequest request = new UpdateMultipleQuestionApiRequest();
+		request.setId(questionId);
+		request.setContent("수정된 객관식 문제 내용");
+		request.setExplanation("수정된 문제 해설");
+		request.setNumber(1L);
+		request.setType("MULTIPLE");
+		request.setChoices(choices);
+
+		String json = objectMapper.writeValueAsString(request);
+
+		// Mock 응답 설정
+		MultipleQuestionDto mockResponse = MultipleQuestionDto.builder()
+			.id(questionId)
+			.content(request.getContent())
+			.explanation(request.getExplanation())
+			.number(request.getNumber())
+			.choices(request.getChoices())
+			.build();
+
+		when(questionService.updateQuestion(eq(questionSetId), eq(questionId), any())).thenReturn(mockResponse);
+
+		// when & then
+		mockMvc.perform(put("/api/v1/question-sets/{questionSetId}/questions/{questionId}", questionSetId, questionId)
+				.contentType(MediaType.APPLICATION_JSON)
+				.content(json))
+			.andExpect(status().isOk());
+
+		verify(questionService).updateQuestion(eq(questionSetId), eq(questionId), any());
+	}
+
+	@Test
+	@DisplayName("순서맞추기 문제 수정 API 테스트 - 성공")
+	void updateOrderingQuestionTest() throws Exception {
+		// given
+		Long questionSetId = 1L;
+		Long questionId = 1L;
+
+		var options = List.of(
+			OrderingQuestionOptionDto.builder()
+				.content("수정된 첫 번째 옵션")
+				.originOrder(1)
+				.answerOrder(3)
+				.build(),
+			OrderingQuestionOptionDto.builder()
+				.content("수정된 두 번째 옵션")
+				.originOrder(2)
+				.answerOrder(1)
+				.build(),
+			OrderingQuestionOptionDto.builder()
+				.content("수정된 세 번째 옵션")
+				.originOrder(3)
+				.answerOrder(2)
+				.build()
+		);
+
+		UpdateOrderingQuestionApiRequest request = new UpdateOrderingQuestionApiRequest();
+		request.setId(questionId);
+		request.setContent("수정된 순서맞추기 문제 내용");
+		request.setExplanation("수정된 문제 해설");
+		request.setNumber(1L);
+		request.setType("ORDERING");
+		request.setOptions(options);
+
+		String json = objectMapper.writeValueAsString(request);
+
+		// Mock 응답 설정
+		com.coniv.mait.domain.question.service.dto.OrderingQuestionDto mockResponse =
+			com.coniv.mait.domain.question.service.dto.OrderingQuestionDto.builder()
+				.id(questionId)
+				.content(request.getContent())
+				.explanation(request.getExplanation())
+				.number(request.getNumber())
+				.options(request.getOptions())
+				.build();
+
+		when(questionService.updateQuestion(eq(questionSetId), eq(questionId), any())).thenReturn(mockResponse);
+
+		// when & then
+		mockMvc.perform(put("/api/v1/question-sets/{questionSetId}/questions/{questionId}", questionSetId, questionId)
+				.contentType(MediaType.APPLICATION_JSON)
+				.content(json))
+			.andExpect(status().isOk());
+
+		verify(questionService).updateQuestion(eq(questionSetId), eq(questionId), any());
+	}
+
+	@Test
+	@DisplayName("빈칸채우기 문제 수정 API 테스트 - 성공")
+	void updateFillBlankQuestionTest() throws Exception {
+		// given
+		Long questionSetId = 1L;
+		Long questionId = 1L;
+
+		var fillBlankAnswers = List.of(
+			FillBlankAnswerDto.builder()
+				.answer("수정된 정답1")
+				.isMain(true)
+				.number(1L)
+				.build(),
+			FillBlankAnswerDto.builder()
+				.answer("수정된 정답2")
+				.isMain(false)
+				.number(2L)
+				.build()
+		);
+
+		UpdateFillBlankQuestionApiRequest request = new UpdateFillBlankQuestionApiRequest();
+		request.setId(questionId);
+		request.setContent("수정된 빈칸에 들어갈 적절한 단어는 ___입니다.");
+		request.setExplanation("수정된 문제 해설");
+		request.setNumber(1L);
+		request.setType("FILL_BLANK");
+		request.setFillBlankAnswers(fillBlankAnswers);
+
+		String json = objectMapper.writeValueAsString(request);
+
+		// Mock 응답 설정
+		com.coniv.mait.domain.question.service.dto.FillBlankQuestionDto mockResponse =
+			com.coniv.mait.domain.question.service.dto.FillBlankQuestionDto.builder()
+				.id(questionId)
+				.content(request.getContent())
+				.explanation(request.getExplanation())
+				.number(request.getNumber())
+				.fillBlankAnswers(request.getFillBlankAnswers())
+				.build();
+
+		when(questionService.updateQuestion(eq(questionSetId), eq(questionId), any())).thenReturn(mockResponse);
+
+		// when & then
+		mockMvc.perform(put("/api/v1/question-sets/{questionSetId}/questions/{questionId}", questionSetId, questionId)
+				.contentType(MediaType.APPLICATION_JSON)
+				.content(json))
+			.andExpect(status().isOk());
+
+		verify(questionService).updateQuestion(eq(questionSetId), eq(questionId), any());
+	}
+
+	@ParameterizedTest(name = "{index} - {0}")
+	@DisplayName("단답형 문제 수정 실패 테스트 - 유효하지 않은 요청")
+	@MethodSource("invalidUpdateShortQuestionRequests")
+	void updateShortQuestionInvalidRequestTest(String testName, UpdateShortQuestionApiRequest request,
+		String expectedMessage) throws Exception {
+		// given
+		Long questionSetId = 1L;
+		Long questionId = 1L;
+
+		// 문제 유형 누락 테스트가 아닌 경우에만 type 필드 설정
+		if (!testName.contains("문제 유형 누락")) {
+			request.setType("SHORT");
+		}
+
+		String json = objectMapper.writeValueAsString(request);
+
+		// when & then
+		mockMvc.perform(put("/api/v1/question-sets/{questionSetId}/questions/{questionId}", questionSetId, questionId)
+				.contentType(MediaType.APPLICATION_JSON)
+				.content(json))
+			.andExpectAll(
+				status().isBadRequest(),
+				jsonPath("$.isSuccess").value(false),
+				jsonPath("$.code").value("C-001"),
+				jsonPath("$.message").value("사용자 입력 오류입니다."),
+				jsonPath("$.reasons").isArray(),
+				jsonPath("$.reasons[0]").value(expectedMessage)
+			);
+
+		verify(questionService, never()).updateQuestion(anyLong(), anyLong(), any());
+	}
+
+	static Stream<Arguments> invalidUpdateShortQuestionRequests() {
+		// 문제 번호 누락 요청
+		UpdateShortQuestionApiRequest noNumberRequest = new UpdateShortQuestionApiRequest();
+		noNumberRequest.setId(1L);
+		noNumberRequest.setContent("단답형 문제 내용");
+		noNumberRequest.setExplanation("문제 해설");
+		noNumberRequest.setShortAnswers(List.of(
+			ShortAnswerDto.builder().answer("정답1").isMain(true).number(1L).build()
+		));
+		noNumberRequest.setNumber(null);
+
+		// 정답 리스트 빈 배열 요청
+		UpdateShortQuestionApiRequest emptyAnswersRequest = new UpdateShortQuestionApiRequest();
+		emptyAnswersRequest.setId(1L);
+		emptyAnswersRequest.setContent("단답형 문제 내용");
+		emptyAnswersRequest.setExplanation("문제 해설");
+		emptyAnswersRequest.setNumber(1L);
+		emptyAnswersRequest.setShortAnswers(List.of());
+
+		// 문제 유형 누락 요청
+		UpdateShortQuestionApiRequest noTypeRequest = new UpdateShortQuestionApiRequest();
+		noTypeRequest.setId(1L);
+		noTypeRequest.setContent("단답형 문제 내용");
+		noTypeRequest.setExplanation("문제 해설");
+		noTypeRequest.setNumber(1L);
+		noTypeRequest.setShortAnswers(List.of(
+			ShortAnswerDto.builder().answer("정답1").isMain(true).number(1L).build()
+		));
+
+		return Stream.of(
+			Arguments.of("문제 번호 누락", noNumberRequest, "문제 번호는 필수입니다."),
+			Arguments.of("정답 리스트 빈 배열", emptyAnswersRequest, "정답은 최소 1개 이상이어야 합니다."),
+			Arguments.of("문제 유형 누락", noTypeRequest, "문제 유형은 필수입니다.")
+		);
+	}
+
+	@ParameterizedTest(name = "{index} - {0}")
+	@DisplayName("객관식 문제 수정 실패 테스트 - 유효하지 않은 요청")
+	@MethodSource("invalidUpdateMultipleQuestionRequests")
+	void updateMultipleQuestionInvalidRequestTest(String testName, UpdateMultipleQuestionApiRequest request,
+		String expectedMessage) throws Exception {
+		// given
+		Long questionSetId = 1L;
+		Long questionId = 1L;
+
+		// 문제 유형 누락 테스트가 아닌 경우에만 type 필드 설정
+		if (!testName.contains("문제 유형 누락")) {
+			request.setType("MULTIPLE");
+		}
+
+		String json = objectMapper.writeValueAsString(request);
+
+		// when & then
+		mockMvc.perform(put("/api/v1/question-sets/{questionSetId}/questions/{questionId}", questionSetId, questionId)
+				.contentType(MediaType.APPLICATION_JSON)
+				.content(json))
+			.andExpectAll(
+				status().isBadRequest(),
+				jsonPath("$.isSuccess").value(false),
+				jsonPath("$.code").value("C-001"),
+				jsonPath("$.message").value("사용자 입력 오류입니다."),
+				jsonPath("$.reasons").isArray(),
+				jsonPath("$.reasons[0]").value(expectedMessage)
+			);
+
+		verify(questionService, never()).updateQuestion(anyLong(), anyLong(), any());
+	}
+
+	static Stream<Arguments> invalidUpdateMultipleQuestionRequests() {
+		// 선택지 null 요청
+		UpdateMultipleQuestionApiRequest nullChoicesRequest = new UpdateMultipleQuestionApiRequest();
+		nullChoicesRequest.setId(1L);
+		nullChoicesRequest.setContent("객관식 문제 내용");
+		nullChoicesRequest.setExplanation("문제 해설");
+		nullChoicesRequest.setNumber(1L);
+		nullChoicesRequest.setChoices(null);
+
+		// 선택지 1개 요청
+		UpdateMultipleQuestionApiRequest oneChoiceRequest = new UpdateMultipleQuestionApiRequest();
+		oneChoiceRequest.setId(1L);
+		oneChoiceRequest.setContent("객관식 문제 내용");
+		oneChoiceRequest.setExplanation("문제 해설");
+		oneChoiceRequest.setNumber(1L);
+		oneChoiceRequest.setChoices(List.of(
+			MultipleChoiceDto.builder()
+				.number(1)
+				.content("선택지 1")
+				.isCorrect(true)
+				.build()
+		));
+
+		// 문제 유형 누락 요청
+		UpdateMultipleQuestionApiRequest noTypeRequest = new UpdateMultipleQuestionApiRequest();
+		noTypeRequest.setId(1L);
+		noTypeRequest.setContent("객관식 문제 내용");
+		noTypeRequest.setExplanation("문제 해설");
+		noTypeRequest.setNumber(1L);
+		noTypeRequest.setChoices(List.of(
+			MultipleChoiceDto.builder().number(1).content("선택지 1").isCorrect(true).build(),
+			MultipleChoiceDto.builder().number(2).content("선택지 2").isCorrect(false).build()
+		));
+
+		return Stream.of(
+			Arguments.of("선택지 null", nullChoicesRequest, "객관식 문제에는 반드시 선지가 있어야 합니다."),
+			Arguments.of("선택지 1개", oneChoiceRequest, "객관식 문제는 최소 2개, 최대 8개의 선택지를 가져야 합니다."),
+			Arguments.of("문제 유형 누락", noTypeRequest, "문제 유형은 필수입니다.")
+		);
+	}
+
+	@Test
+	@DisplayName("문제 수정 API 테스트 - 같은 유형으로 수정 성공 (객관식 -> 객관식)")
+	void updateQuestionSameTypeTest() throws Exception {
+		// given
+		Long questionSetId = 1L;
+		Long questionId = 1L;
+
+		List<MultipleChoiceDto> choices = List.of(
+			MultipleChoiceDto.builder()
+				.number(1)
+				.content("수정된 선택지 1")
+				.isCorrect(true)
+				.build(),
+			MultipleChoiceDto.builder()
+				.number(2)
+				.content("수정된 선택지 2")
+				.isCorrect(false)
+				.build()
+		);
+
+		UpdateMultipleQuestionApiRequest request = new UpdateMultipleQuestionApiRequest();
+		request.setId(questionId);
+		request.setContent("수정된 객관식 문제 내용");
+		request.setExplanation("수정된 문제 해설");
+		request.setNumber(1L);
+		request.setType("MULTIPLE");
+		request.setChoices(choices);
+
+		String json = objectMapper.writeValueAsString(request);
+
+		// Mock 반환값 설정
+		MultipleQuestionDto mockResponse = MultipleQuestionDto.builder()
+			.id(questionId)
+			.content("수정된 객관식 문제 내용")
+			.explanation("수정된 문제 해설")
+			.number(1L)
+			.choices(choices)
+			.build();
+
+		when(questionService.updateQuestion(eq(questionSetId), eq(questionId), any())).thenReturn(mockResponse);
+
+		// when & then
+		mockMvc.perform(put("/api/v1/question-sets/{questionSetId}/questions/{questionId}", questionSetId, questionId)
+				.contentType(MediaType.APPLICATION_JSON)
+				.content(json))
+			.andExpectAll(
+				status().isOk(),
+				jsonPath("$.isSuccess").value(true),
+				jsonPath("$.data.content").value("수정된 객관식 문제 내용"),
+				jsonPath("$.data.explanation").value("수정된 문제 해설")
+			);
+
+		verify(questionService).updateQuestion(eq(questionSetId), eq(questionId), any());
+	}
+
+	@Test
+	@DisplayName("문제 수정 API 테스트 - 다른 유형으로 변경 성공 (객관식 -> 주관식)")
+	void updateQuestionDifferentTypeTest() throws Exception {
+		// given
+		Long questionSetId = 1L;
+		Long questionId = 1L;
+
+		var shortAnswers = List.of(
+			ShortAnswerDto.builder()
+				.answer("변경된 정답1")
+				.isMain(true)
+				.number(1L)
+				.build(),
+			ShortAnswerDto.builder()
+				.answer("변경된 정답2")
+				.isMain(false)
+				.number(2L)
+				.build()
+		);
+
+		UpdateShortQuestionApiRequest request = new UpdateShortQuestionApiRequest();
+		request.setId(questionId);
+		request.setContent("객관식에서 주관식으로 변경된 문제");
+		request.setExplanation("변경된 해설");
+		request.setNumber(1L);
+		request.setType("SHORT");
+		request.setShortAnswers(shortAnswers);
+
+		String json = objectMapper.writeValueAsString(request);
+
+		// Mock 반환값 설정 - 주관식 DTO 반환
+		com.coniv.mait.domain.question.service.dto.ShortQuestionDto mockResponse =
+			com.coniv.mait.domain.question.service.dto.ShortQuestionDto.builder()
+				.id(questionId)
+				.content("객관식에서 주관식으로 변경된 문제")
+				.explanation("변경된 해설")
+				.number(1L)
+				.shortAnswers(shortAnswers)
+				.build();
+
+		when(questionService.updateQuestion(eq(questionSetId), eq(questionId), any())).thenReturn(mockResponse);
+
+		// when & then
+		mockMvc.perform(put("/api/v1/question-sets/{questionSetId}/questions/{questionId}", questionSetId, questionId)
+				.contentType(MediaType.APPLICATION_JSON)
+				.content(json))
+			.andExpectAll(
+				status().isOk(),
+				jsonPath("$.isSuccess").value(true),
+				jsonPath("$.data.content").value("객관식에서 주관식으로 변경된 문제"),
+				jsonPath("$.data.explanation").value("변경된 해설")
+			);
+
+		verify(questionService).updateQuestion(eq(questionSetId), eq(questionId), any());
+	}
+
 }

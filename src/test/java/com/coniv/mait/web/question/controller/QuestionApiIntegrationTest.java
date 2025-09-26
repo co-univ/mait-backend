@@ -38,6 +38,10 @@ import com.coniv.mait.web.question.dto.CreateFillBlankQuestionApiRequest;
 import com.coniv.mait.web.question.dto.CreateMultipleQuestionApiRequest;
 import com.coniv.mait.web.question.dto.CreateOrderingQuestionApiRequest;
 import com.coniv.mait.web.question.dto.CreateShortQuestionApiRequest;
+import com.coniv.mait.web.question.dto.UpdateFillBlankQuestionApiRequest;
+import com.coniv.mait.web.question.dto.UpdateMultipleQuestionApiRequest;
+import com.coniv.mait.web.question.dto.UpdateOrderingQuestionApiRequest;
+import com.coniv.mait.web.question.dto.UpdateShortQuestionApiRequest;
 
 public class QuestionApiIntegrationTest extends BaseIntegrationTest {
 
@@ -780,5 +784,352 @@ public class QuestionApiIntegrationTest extends BaseIntegrationTest {
 				jsonPath("$.data").isArray(),
 				jsonPath("$.data.length()").value(0)
 			);
+	}
+
+	@Test
+	@DisplayName("단답형 문제 수정 API 성공 테스트")
+	void updateShortQuestionApiSuccess() throws Exception {
+		// given - 문제셋과 기존 문제 생성
+		QuestionSetEntity questionSet = QuestionSetEntity.of("Sample Subject", QuestionSetCreationType.MANUAL);
+		QuestionSetEntity savedQuestionSet = questionSetEntityRepository.save(questionSet);
+
+		ShortQuestionEntity originalQuestion = ShortQuestionEntity.builder()
+			.content("원본 주관식 문제 내용")
+			.explanation("원본 문제 해설")
+			.number(1L)
+			.questionSet(savedQuestionSet)
+			.build();
+		ShortQuestionEntity savedQuestion = questionEntityRepository.save(originalQuestion);
+
+		List<ShortAnswerEntity> originalAnswers = List.of(
+			ShortAnswerEntity.builder()
+				.shortQuestionId(savedQuestion.getId())
+				.answer("원본 정답1")
+				.isMain(true)
+				.number(1L)
+				.build()
+		);
+		shortAnswerEntityRepository.saveAll(originalAnswers);
+
+		// 수정할 데이터 준비 - 같은 number에 main과 일반 답안 설정
+		List<ShortAnswerDto> updatedAnswers = List.of(
+			ShortAnswerDto.builder()
+				.answer("수정된 정답1")
+				.isMain(true)
+				.number(1L)
+				.build(),
+			ShortAnswerDto.builder()
+				.answer("수정된 정답2")
+				.isMain(false)
+				.number(1L)  // number 1로 변경하여 같은 번호에 main/일반 답안 구성
+				.build()
+		);
+
+		UpdateShortQuestionApiRequest request = new UpdateShortQuestionApiRequest();
+		request.setId(savedQuestion.getId());
+		request.setContent("수정된 주관식 문제 내용");
+		request.setExplanation("수정된 문제 해설");
+		request.setNumber(1L);
+		request.setType("SHORT");
+		request.setShortAnswers(updatedAnswers);
+
+		String json = objectMapper.writeValueAsString(request);
+
+		// when
+		mockMvc.perform(put("/api/v1/question-sets/{questionSetId}/questions/{questionId}",
+				savedQuestionSet.getId(), savedQuestion.getId())
+				.contentType(MediaType.APPLICATION_JSON)
+				.content(json))
+			.andExpect(status().isOk())
+			.andExpect(jsonPath("$.isSuccess").value(true))
+			.andExpect(jsonPath("$.data").exists())
+			.andExpect(jsonPath("$.data.content").value("수정된 주관식 문제 내용"))
+			.andExpect(jsonPath("$.data.explanation").value("수정된 문제 해설"));
+
+		// then - 수정된 문제 확인
+		ShortQuestionEntity updatedQuestion = (ShortQuestionEntity)questionEntityRepository
+			.findById(savedQuestion.getId()).orElseThrow();
+
+		assertThat(updatedQuestion.getContent()).isEqualTo("수정된 주관식 문제 내용");
+		assertThat(updatedQuestion.getExplanation()).isEqualTo("수정된 문제 해설");
+		assertThat(updatedQuestion.getNumber()).isEqualTo(1L);
+
+		List<ShortAnswerEntity> updatedAnswerEntities = shortAnswerEntityRepository.findAll();
+		assertThat(updatedAnswerEntities).hasSize(2);
+		assertThat(updatedAnswerEntities).extracting("answer")
+			.containsExactlyInAnyOrder("수정된 정답1", "수정된 정답2");
+	}
+
+	@Test
+	@DisplayName("객관식 문제 수정 API 성공 테스트")
+	void updateMultipleQuestionApiSuccess() throws Exception {
+		// given - 문제셋과 기존 문제 생성
+		QuestionSetEntity questionSet = QuestionSetEntity.of("Sample Subject", QuestionSetCreationType.MANUAL);
+		QuestionSetEntity savedQuestionSet = questionSetEntityRepository.save(questionSet);
+
+		MultipleQuestionEntity originalQuestion = MultipleQuestionEntity.builder()
+			.content("원본 객관식 문제 내용")
+			.explanation("원본 문제 해설")
+			.number(1L)
+			.questionSet(savedQuestionSet)
+			.build();
+		MultipleQuestionEntity savedQuestion = questionEntityRepository.save(originalQuestion);
+
+		List<MultipleChoiceEntity> originalChoices = List.of(
+			MultipleChoiceEntity.builder()
+				.question(savedQuestion)
+				.number(1)
+				.content("원본 선택지 1")
+				.isCorrect(true)
+				.build(),
+			MultipleChoiceEntity.builder()
+				.question(savedQuestion)
+				.number(2)
+				.content("원본 선택지 2")
+				.isCorrect(false)
+				.build()
+		);
+		multipleChoiceEntityRepository.saveAll(originalChoices);
+
+		// 수정할 데이터 준비
+		List<MultipleChoiceDto> updatedChoices = List.of(
+			MultipleChoiceDto.builder()
+				.number(1)
+				.content("수정된 선택지 1")
+				.isCorrect(false)
+				.build(),
+			MultipleChoiceDto.builder()
+				.number(2)
+				.content("수정된 선택지 2")
+				.isCorrect(true)
+				.build(),
+			MultipleChoiceDto.builder()
+				.number(3)
+				.content("새로운 선택지 3")
+				.isCorrect(false)
+				.build()
+		);
+
+		UpdateMultipleQuestionApiRequest request = new UpdateMultipleQuestionApiRequest();
+		request.setId(savedQuestion.getId());
+		request.setContent("수정된 객관식 문제 내용");
+		request.setExplanation("수정된 문제 해설");
+		request.setNumber(1L);
+		request.setType("MULTIPLE");
+		request.setChoices(updatedChoices);
+
+		String json = objectMapper.writeValueAsString(request);
+
+		// when
+		mockMvc.perform(put("/api/v1/question-sets/{questionSetId}/questions/{questionId}",
+				savedQuestionSet.getId(), savedQuestion.getId())
+				.contentType(MediaType.APPLICATION_JSON)
+				.content(json))
+			.andExpect(status().isOk())
+			.andExpect(jsonPath("$.isSuccess").value(true))
+			.andExpect(jsonPath("$.data").exists())
+			.andExpect(jsonPath("$.data.content").value("수정된 객관식 문제 내용"))
+			.andExpect(jsonPath("$.data.explanation").value("수정된 문제 해설"));
+
+		// then - 수정된 문제 확인
+		MultipleQuestionEntity updatedQuestion = (MultipleQuestionEntity)questionEntityRepository
+			.findById(savedQuestion.getId()).orElseThrow();
+
+		assertThat(updatedQuestion.getContent()).isEqualTo("수정된 객관식 문제 내용");
+		assertThat(updatedQuestion.getExplanation()).isEqualTo("수정된 문제 해설");
+		assertThat(updatedQuestion.getNumber()).isEqualTo(1L);
+
+		List<MultipleChoiceEntity> updatedChoiceEntities = multipleChoiceEntityRepository.findAll();
+		assertThat(updatedChoiceEntities).hasSize(3);
+		assertThat(updatedChoiceEntities).extracting("content")
+			.containsExactlyInAnyOrder("수정된 선택지 1", "수정된 선택지 2", "새로운 선택지 3");
+
+		// 정답이 2번으로 변경되었는지 확인
+		long correctCount = updatedChoiceEntities.stream()
+			.mapToLong(choice -> choice.isCorrect() ? 1 : 0)
+			.sum();
+		assertThat(correctCount).isEqualTo(1);
+
+		MultipleChoiceEntity correctChoice = updatedChoiceEntities.stream()
+			.filter(MultipleChoiceEntity::isCorrect)
+			.findFirst().orElseThrow();
+		assertThat(correctChoice.getNumber()).isEqualTo(2);
+		assertThat(correctChoice.getContent()).isEqualTo("수정된 선택지 2");
+	}
+
+	@Test
+	@DisplayName("순서맞추기 문제 수정 API 성공 테스트")
+	void updateOrderingQuestionApiSuccess() throws Exception {
+		// given - 문제셋과 기존 문제 생성
+		QuestionSetEntity questionSet = QuestionSetEntity.of("Sample Subject", QuestionSetCreationType.MANUAL);
+		QuestionSetEntity savedQuestionSet = questionSetEntityRepository.save(questionSet);
+
+		OrderingQuestionEntity originalQuestion = OrderingQuestionEntity.builder()
+			.content("원본 순서맞추기 문제 내용")
+			.explanation("원본 문제 해설")
+			.number(1L)
+			.questionSet(savedQuestionSet)
+			.build();
+		OrderingQuestionEntity savedQuestion = questionEntityRepository.save(originalQuestion);
+
+		List<OrderingOptionEntity> originalOptions = List.of(
+			OrderingOptionEntity.builder()
+				.orderingQuestionId(savedQuestion.getId())
+				.content("원본 첫 번째 단계")
+				.originOrder(1)
+				.answerOrder(1)
+				.build(),
+			OrderingOptionEntity.builder()
+				.orderingQuestionId(savedQuestion.getId())
+				.content("원본 두 번째 단계")
+				.originOrder(2)
+				.answerOrder(2)
+				.build()
+		);
+		orderingOptionEntityRepository.saveAll(originalOptions);
+
+		// 수정할 데이터 준비
+		List<OrderingQuestionOptionDto> updatedOptions = List.of(
+			OrderingQuestionOptionDto.builder()
+				.content("수정된 첫 번째 단계")
+				.originOrder(1)
+				.answerOrder(3)
+				.build(),
+			OrderingQuestionOptionDto.builder()
+				.content("수정된 두 번째 단계")
+				.originOrder(2)
+				.answerOrder(1)
+				.build(),
+			OrderingQuestionOptionDto.builder()
+				.content("새로운 세 번째 단계")
+				.originOrder(3)
+				.answerOrder(2)
+				.build()
+		);
+
+		UpdateOrderingQuestionApiRequest request = new UpdateOrderingQuestionApiRequest();
+		request.setId(savedQuestion.getId());
+		request.setContent("수정된 순서맞추기 문제 내용");
+		request.setExplanation("수정된 문제 해설");
+		request.setNumber(1L);
+		request.setType("ORDERING");
+		request.setOptions(updatedOptions);
+
+		String json = objectMapper.writeValueAsString(request);
+
+		// when
+		mockMvc.perform(put("/api/v1/question-sets/{questionSetId}/questions/{questionId}",
+				savedQuestionSet.getId(), savedQuestion.getId())
+				.contentType(MediaType.APPLICATION_JSON)
+				.content(json))
+			.andExpect(status().isOk())
+			.andExpect(jsonPath("$.isSuccess").value(true))
+			.andExpect(jsonPath("$.data").exists())
+			.andExpect(jsonPath("$.data.content").value("수정된 순서맞추기 문제 내용"))
+			.andExpect(jsonPath("$.data.explanation").value("수정된 문제 해설"));
+
+		// then - 수정된 문제 확인
+		OrderingQuestionEntity updatedQuestion = (OrderingQuestionEntity)questionEntityRepository
+			.findById(savedQuestion.getId()).orElseThrow();
+
+		assertThat(updatedQuestion.getContent()).isEqualTo("수정된 순서맞추기 문제 내용");
+		assertThat(updatedQuestion.getExplanation()).isEqualTo("수정된 문제 해설");
+		assertThat(updatedQuestion.getNumber()).isEqualTo(1L);
+
+		List<OrderingOptionEntity> updatedOptionEntities = orderingOptionEntityRepository.findAll();
+		assertThat(updatedOptionEntities).hasSize(3);
+		assertThat(updatedOptionEntities).extracting("content")
+			.containsExactlyInAnyOrder("수정된 첫 번째 단계", "수정된 두 번째 단계", "새로운 세 번째 단계");
+		assertThat(updatedOptionEntities).extracting("originOrder")
+			.containsExactlyInAnyOrder(1, 2, 3);
+		assertThat(updatedOptionEntities).extracting("answerOrder")
+			.containsExactlyInAnyOrder(3, 1, 2);
+	}
+
+	@Test
+	@DisplayName("빈칸채우기 문제 수정 API 성공 테스트")
+	void updateFillBlankQuestionApiSuccess() throws Exception {
+		// given - 문제셋과 기존 문제 생성
+		QuestionSetEntity questionSet = QuestionSetEntity.of("Sample Subject", QuestionSetCreationType.MANUAL);
+		QuestionSetEntity savedQuestionSet = questionSetEntityRepository.save(questionSet);
+
+		FillBlankQuestionEntity originalQuestion = FillBlankQuestionEntity.builder()
+			.content("원본 빈칸에 들어갈 적절한 단어는 ___입니다.")
+			.explanation("원본 문제 해설")
+			.number(1L)
+			.questionSet(savedQuestionSet)
+			.build();
+		FillBlankQuestionEntity savedQuestion = questionEntityRepository.save(originalQuestion);
+
+		List<FillBlankAnswerEntity> originalAnswers = List.of(
+			FillBlankAnswerEntity.builder()
+				.fillBlankQuestionId(savedQuestion.getId())
+				.answer("원본정답1")
+				.isMain(true)
+				.number(1L)
+				.build()
+		);
+		fillBlankAnswerEntityRepository.saveAll(originalAnswers);
+
+		// 수정할 데이터 준비
+		List<FillBlankAnswerDto> updatedAnswers = List.of(
+			FillBlankAnswerDto.builder()
+				.answer("수정된정답1")
+				.isMain(true)
+				.number(1L)
+				.build(),
+			FillBlankAnswerDto.builder()
+				.answer("수정된정답1_대안")
+				.isMain(false)
+				.number(1L)
+				.build(),
+			FillBlankAnswerDto.builder()
+				.answer("수정된정답2")
+				.isMain(true)
+				.number(2L)
+				.build()
+		);
+
+		UpdateFillBlankQuestionApiRequest request = new UpdateFillBlankQuestionApiRequest();
+		request.setId(savedQuestion.getId());
+		request.setContent("수정된 빈칸에 들어갈 적절한 단어는 ___와 ___입니다.");
+		request.setExplanation("수정된 문제 해설");
+		request.setNumber(1L);
+		request.setType("FILL_BLANK");
+		request.setFillBlankAnswers(updatedAnswers);
+
+		String json = objectMapper.writeValueAsString(request);
+
+		// when
+		mockMvc.perform(put("/api/v1/question-sets/{questionSetId}/questions/{questionId}",
+				savedQuestionSet.getId(), savedQuestion.getId())
+				.contentType(MediaType.APPLICATION_JSON)
+				.content(json))
+			.andExpect(status().isOk())
+			.andExpect(jsonPath("$.isSuccess").value(true))
+			.andExpect(jsonPath("$.data").exists())
+			.andExpect(jsonPath("$.data.content").value("수정된 빈칸에 들어갈 적절한 단어는 ___와 ___입니다."))
+			.andExpect(jsonPath("$.data.explanation").value("수정된 문제 해설"));
+
+		// then - 수정된 문제 확인
+		FillBlankQuestionEntity updatedQuestion = (FillBlankQuestionEntity)questionEntityRepository
+			.findById(savedQuestion.getId()).orElseThrow();
+
+		assertThat(updatedQuestion.getContent()).isEqualTo("수정된 빈칸에 들어갈 적절한 단어는 ___와 ___입니다.");
+		assertThat(updatedQuestion.getExplanation()).isEqualTo("수정된 문제 해설");
+		assertThat(updatedQuestion.getNumber()).isEqualTo(1L);
+
+		List<FillBlankAnswerEntity> updatedAnswerEntities = fillBlankAnswerEntityRepository.findAll();
+		assertThat(updatedAnswerEntities).hasSize(3);
+		assertThat(updatedAnswerEntities).extracting("answer")
+			.containsExactlyInAnyOrder("수정된정답1", "수정된정답1_대안", "수정된정답2");
+		assertThat(updatedAnswerEntities).extracting("number")
+			.containsExactlyInAnyOrder(1L, 1L, 2L);
+
+		// 메인 답변이 각 번호별로 하나씩 있는지 확인
+		long mainAnswerCount = updatedAnswerEntities.stream()
+			.mapToLong(answer -> answer.isMain() ? 1 : 0)
+			.sum();
+		assertThat(mainAnswerCount).isEqualTo(2); // 번호 1, 2 각각에 메인 답변 하나씩
 	}
 }
