@@ -18,9 +18,12 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import com.coniv.mait.domain.question.entity.QuestionSetEntity;
 import com.coniv.mait.domain.question.enums.DeliveryMode;
 import com.coniv.mait.domain.question.enums.QuestionSetCreationType;
+import com.coniv.mait.domain.question.enums.QuestionSetVisibility;
 import com.coniv.mait.domain.question.repository.QuestionEntityRepository;
 import com.coniv.mait.domain.question.repository.QuestionSetEntityRepository;
 import com.coniv.mait.domain.question.service.dto.QuestionSetDto;
+
+import jakarta.persistence.EntityNotFoundException;
 
 @ExtendWith(MockitoExtension.class)
 class QuestionSetServiceTest {
@@ -115,6 +118,77 @@ class QuestionSetServiceTest {
 		// when & then
 		assertThatThrownBy(() -> questionSetService.getQuestionSet(questionSetId))
 			.isInstanceOf(IllegalArgumentException.class)
+			.hasMessage("Question set not found");
+
+		verify(questionSetEntityRepository, times(1)).findById(questionSetId);
+	}
+
+	@Test
+	@DisplayName("문제 셋 완료 처리 테스트")
+	void completeQuestionSetTest() {
+		// given
+		final Long questionSetId = 1L;
+		final String originalSubject = "원래 주제";
+		final String newTitle = "변경할 제목";
+		final String newSubject = "변경할 주제";
+		final DeliveryMode newMode = DeliveryMode.REVIEW;
+		final String levelDescription = "난이도 설명";
+		final QuestionSetVisibility newVisibility = QuestionSetVisibility.GROUP;
+
+		QuestionSetEntity questionSetEntity = QuestionSetEntity.builder()
+			.subject(originalSubject)
+			.title("원래 제목")
+			.deliveryMode(DeliveryMode.LIVE_TIME)
+			.visibility(QuestionSetVisibility.GROUP)
+			.build();
+
+		when(questionSetEntityRepository.findById(questionSetId)).thenReturn(Optional.of(questionSetEntity));
+
+		// when
+		QuestionSetDto result = questionSetService.completeQuestionSet(
+			questionSetId,
+			newTitle,
+			newSubject,
+			newMode,
+			levelDescription,
+			newVisibility
+		);
+
+		// then
+		verify(questionSetEntityRepository, times(1)).findById(questionSetId);
+
+		assertThat(questionSetEntity.getTitle()).isEqualTo(newTitle);
+		assertThat(questionSetEntity.getSubject()).isEqualTo(newSubject);
+		assertThat(questionSetEntity.getDeliveryMode()).isEqualTo(newMode);
+		assertThat(questionSetEntity.getLevelDescription()).isEqualTo(levelDescription);
+		assertThat(questionSetEntity.getVisibility()).isEqualTo(newVisibility);
+
+		assertThat(result).isNotNull();
+		assertThat(result.getTitle()).isEqualTo(newTitle);
+		assertThat(result.getSubject()).isEqualTo(newSubject);
+		assertThat(result.getDeliveryMode()).isEqualTo(newMode);
+		assertThat(result.getLevelDescription()).isEqualTo(levelDescription);
+		assertThat(result.getVisibility()).isEqualTo(newVisibility);
+	}
+
+	@Test
+	@DisplayName("문제 셋 완료 처리 테스트 - 실패 (존재하지 않는 문제셋)")
+	void completeQuestionSetTest_Fail_NotFound() {
+		// given
+		final Long questionSetId = 999L;
+		when(questionSetEntityRepository.findById(questionSetId))
+			.thenReturn(Optional.empty());
+
+		// when & then
+		assertThatThrownBy(() -> questionSetService.completeQuestionSet(
+			questionSetId,
+			"제목",
+			"주제",
+			DeliveryMode.LIVE_TIME,
+			"설명",
+			QuestionSetVisibility.GROUP
+		))
+			.isInstanceOf(EntityNotFoundException.class)
 			.hasMessage("Question set not found");
 
 		verify(questionSetEntityRepository, times(1)).findById(questionSetId);

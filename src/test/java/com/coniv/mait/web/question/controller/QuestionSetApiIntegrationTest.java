@@ -13,11 +13,13 @@ import org.springframework.http.MediaType;
 import com.coniv.mait.domain.question.entity.QuestionSetEntity;
 import com.coniv.mait.domain.question.enums.DeliveryMode;
 import com.coniv.mait.domain.question.enums.QuestionSetCreationType;
+import com.coniv.mait.domain.question.enums.QuestionSetVisibility;
 import com.coniv.mait.domain.question.repository.QuestionSetEntityRepository;
 import com.coniv.mait.domain.team.entity.TeamEntity;
 import com.coniv.mait.domain.team.repository.TeamEntityRepository;
 import com.coniv.mait.web.integration.BaseIntegrationTest;
 import com.coniv.mait.web.question.dto.CreateQuestionSetApiRequest;
+import com.coniv.mait.web.question.dto.UpdateQuestionSetApiRequest;
 
 public class QuestionSetApiIntegrationTest extends BaseIntegrationTest {
 
@@ -106,5 +108,34 @@ public class QuestionSetApiIntegrationTest extends BaseIntegrationTest {
 			.andExpect(status().isOk())
 			.andExpect(jsonPath("$.data.id").value(questionSet.getId()))
 			.andExpect(jsonPath("$.data.subject").value(subject));
+	}
+
+	@Test
+	@DisplayName("문제 셋 최종 저장 API 성공 테스트")
+	void updateQuestionSetsApiSuccess() throws Exception {
+		// given
+		UpdateQuestionSetApiRequest request = new UpdateQuestionSetApiRequest(
+			"Updated Title",
+			"Updated Subject",
+			DeliveryMode.LIVE_TIME,
+			"중급",
+			QuestionSetVisibility.GROUP
+		);
+
+		QuestionSetEntity questionSet = questionSetEntityRepository.save(
+			QuestionSetEntity.builder()
+				.subject("Initial Subject")
+				.creationType(QuestionSetCreationType.MANUAL)
+				.build());
+
+		// when & then
+		mockMvc.perform(put("/api/v1/question-sets/{questionSetId}", questionSet.getId())
+				.contentType(MediaType.APPLICATION_JSON)
+				.content(objectMapper.writeValueAsString(request)))
+			.andExpect(status().isOk())
+			.andExpect(jsonPath("$.data.id").value(questionSet.getId()))
+			.andExpect(jsonPath("$.data.title").value("Updated Title"))
+			.andExpect(jsonPath("$.data.subject").value("Updated Subject"))
+			.andExpect(jsonPath("$.data.deliveryMode").value(DeliveryMode.LIVE_TIME.name()));
 	}
 }

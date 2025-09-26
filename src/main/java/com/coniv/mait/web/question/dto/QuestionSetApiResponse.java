@@ -27,6 +27,8 @@ public record QuestionSetApiResponse(
 
 	@Schema(requiredMode = Schema.RequiredMode.REQUIRED)
 	Long questionCount,
+	@Schema(requiredMode = Schema.RequiredMode.NOT_REQUIRED)
+	String levelDescription,
 	@Schema(requiredMode = Schema.RequiredMode.REQUIRED)
 	LocalDateTime updatedAt
 
@@ -41,6 +43,7 @@ public record QuestionSetApiResponse(
 			.deliveryMode(questionSetDto.getDeliveryMode())
 			.teamId(questionSetDto.getTeamId())
 			.questionCount(questionSetDto.getQuestionCount())
+			.levelDescription(questionSetDto.getLevelDescription())
 			.updatedAt(questionSetDto.getUpdatedAt())
 			.build();
 	}

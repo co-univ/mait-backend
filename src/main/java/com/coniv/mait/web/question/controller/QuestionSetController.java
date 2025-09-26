@@ -7,6 +7,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -19,6 +20,7 @@ import com.coniv.mait.global.response.ApiResponse;
 import com.coniv.mait.web.question.dto.CreateQuestionSetApiRequest;
 import com.coniv.mait.web.question.dto.CreateQuestionSetApiResponse;
 import com.coniv.mait.web.question.dto.QuestionSetApiResponse;
+import com.coniv.mait.web.question.dto.UpdateQuestionSetApiRequest;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -60,5 +62,15 @@ public class QuestionSetController {
 		@PathVariable("questionSetId") Long questionSetId) {
 		QuestionSetDto questionSetDto = questionSetService.getQuestionSet(questionSetId);
 		return ResponseEntity.ok(ApiResponse.ok(QuestionSetApiResponse.from(questionSetDto)));
+	}
+
+	@Operation(summary = "문제 셋을 최종 저장 API", description = "문제 셋을 제작 완료 상태로 변경")
+	@PutMapping("/{questionSetId}")
+	public ResponseEntity<ApiResponse<QuestionSetApiResponse>> updateQuestionSets(
+		@PathVariable("questionSetId") Long questionSetId,
+		@Valid @RequestBody UpdateQuestionSetApiRequest request) {
+		return ResponseEntity.ok(ApiResponse.ok(QuestionSetApiResponse.from(
+			questionSetService.completeQuestionSet(questionSetId, request.title(), request.subject(), request.mode(),
+				request.levelDescription(), request.visibility()))));
 	}
 }
