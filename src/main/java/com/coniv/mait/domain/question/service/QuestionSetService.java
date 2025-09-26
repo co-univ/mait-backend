@@ -76,4 +76,12 @@ public class QuestionSetService {
 		questionSet.completeQuestionSet(title, subject, mode, levelDescription, visibility);
 		return QuestionSetDto.from(questionSet);
 	}
+
+	@Transactional
+	public void updateQuestionSetField(final Long questionSetId, final String title) {
+		QuestionSetEntity questionSet = questionSetEntityRepository.findById(questionSetId)
+			.orElseThrow(() -> new EntityNotFoundException("Question set not found"));
+
+		questionSet.updateTitle(title);
+	}
 }

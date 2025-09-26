@@ -5,6 +5,7 @@ import java.util.List;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
@@ -21,6 +22,7 @@ import com.coniv.mait.web.question.dto.CreateQuestionSetApiRequest;
 import com.coniv.mait.web.question.dto.CreateQuestionSetApiResponse;
 import com.coniv.mait.web.question.dto.QuestionSetApiResponse;
 import com.coniv.mait.web.question.dto.UpdateQuestionSetApiRequest;
+import com.coniv.mait.web.question.dto.UpdateQuestionSetFieldApiRequest;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -66,11 +68,19 @@ public class QuestionSetController {
 
 	@Operation(summary = "문제 셋을 최종 저장 API", description = "문제 셋을 제작 완료 상태로 변경")
 	@PutMapping("/{questionSetId}")
-	public ResponseEntity<ApiResponse<QuestionSetApiResponse>> updateQuestionSets(
+	public ResponseEntity<ApiResponse<QuestionSetApiResponse>> completeQuestionSet(
 		@PathVariable("questionSetId") Long questionSetId,
 		@Valid @RequestBody UpdateQuestionSetApiRequest request) {
 		return ResponseEntity.ok(ApiResponse.ok(QuestionSetApiResponse.from(
 			questionSetService.completeQuestionSet(questionSetId, request.title(), request.subject(), request.mode(),
 				request.levelDescription(), request.visibility()))));
+	}
+
+	@Operation(summary = "문제 셋 제목 단건 수정 API", description = "연필 버튼 클릭을 통한 문제 셋 단건 수정")
+	@PatchMapping("/{questionSetId}")
+	public ResponseEntity<ApiResponse<Void>> updateQuestionSet(@RequestBody UpdateQuestionSetFieldApiRequest request,
+		@PathVariable("questionSetId") Long questionSetId) {
+		questionSetService.updateQuestionSetField(questionSetId, request.title());
+		return ResponseEntity.ok(ApiResponse.noContent());
 	}
 }

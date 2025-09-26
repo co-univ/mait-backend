@@ -108,4 +108,8 @@ public class QuestionSetEntity extends BaseTimeEntity {
 		this.levelDescription = levelDescription;
 		this.visibility = visibility;
 	}
+
+	public void updateTitle(String title) {
+		this.title = title;
+	}
 }
