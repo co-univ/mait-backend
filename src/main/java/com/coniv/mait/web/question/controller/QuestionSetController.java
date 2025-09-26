@@ -78,7 +78,8 @@ public class QuestionSetController {
 
 	@Operation(summary = "문제 셋 제목 단건 수정 API", description = "연필 버튼 클릭을 통한 문제 셋 단건 수정")
 	@PatchMapping("/{questionSetId}")
-	public ResponseEntity<ApiResponse<Void>> updateQuestionSet(@RequestBody UpdateQuestionSetFieldApiRequest request,
+	public ResponseEntity<ApiResponse<Void>> updateQuestionSet(
+		@RequestBody @Valid UpdateQuestionSetFieldApiRequest request,
 		@PathVariable("questionSetId") Long questionSetId) {
 		questionSetService.updateQuestionSetField(questionSetId, request.title());
 		return ResponseEntity.ok(ApiResponse.noContent());
