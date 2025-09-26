@@ -20,6 +20,7 @@ import com.coniv.mait.domain.team.repository.TeamEntityRepository;
 import com.coniv.mait.web.integration.BaseIntegrationTest;
 import com.coniv.mait.web.question.dto.CreateQuestionSetApiRequest;
 import com.coniv.mait.web.question.dto.UpdateQuestionSetApiRequest;
+import com.coniv.mait.web.question.dto.UpdateQuestionSetFieldApiRequest;
 
 public class QuestionSetApiIntegrationTest extends BaseIntegrationTest {
 
@@ -137,5 +138,28 @@ public class QuestionSetApiIntegrationTest extends BaseIntegrationTest {
 			.andExpect(jsonPath("$.data.title").value("Updated Title"))
 			.andExpect(jsonPath("$.data.subject").value("Updated Subject"))
 			.andExpect(jsonPath("$.data.deliveryMode").value(DeliveryMode.LIVE_TIME.name()));
+	}
+
+	@Test
+	@DisplayName("문제 셋 제목 변경 API 성공 테스트")
+	void updateQuestionSetTitleApiSuccess() throws Exception {
+		// given
+		final String title = "Updated Title";
+		UpdateQuestionSetFieldApiRequest request = new UpdateQuestionSetFieldApiRequest(title);
+		QuestionSetEntity questionSet = questionSetEntityRepository.save(
+			QuestionSetEntity.builder()
+				.subject("Initial Subject")
+				.creationType(QuestionSetCreationType.MANUAL)
+				.build());
+
+		// when & then
+		mockMvc.perform(patch("/api/v1/question-sets/{questionSetId}", questionSet.getId())
+				.contentType(MediaType.APPLICATION_JSON)
+				.content(objectMapper.writeValueAsString(request)))
+			.andExpectAll(status().isOk(),
+				jsonPath("$.isSuccess").value(true));
+
+		QuestionSetEntity findSet = questionSetEntityRepository.findById(questionSet.getId()).get();
+		assertThat(findSet.getTitle()).isEqualTo(title);
 	}
 }
