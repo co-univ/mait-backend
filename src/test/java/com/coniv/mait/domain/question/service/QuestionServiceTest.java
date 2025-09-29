@@ -10,9 +10,11 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import com.coniv.mait.domain.question.constant.QuestionConstant;
 import com.coniv.mait.domain.question.entity.FillBlankQuestionEntity;
 import com.coniv.mait.domain.question.entity.MultipleQuestionEntity;
 import com.coniv.mait.domain.question.entity.OrderingQuestionEntity;
@@ -563,5 +565,49 @@ class QuestionServiceTest {
 		verify(questionEntityRepository).findById(questionId);
 		verify(multipleQuestionFactory).deleteSubEntities(existingQuestion);
 		verify(questionEntityRepository).deleteById(questionId);
+	}
+
+	@Test
+	@DisplayName("기본 문제 생성 성공")
+	void createDefaultQuestion_Success() {
+		// given
+		final Long questionSetId = 1L;
+		final Long number = 1L;
+
+		QuestionSetEntity questionSetEntity = mock(QuestionSetEntity.class);
+		when(questionSetEntityRepository.findById(questionSetId)).thenReturn(Optional.of(questionSetEntity));
+
+		// ArgumentCaptor로 save된 QuestionEntity 캡처
+		ArgumentCaptor<QuestionEntity> questionCaptor = ArgumentCaptor.forClass(QuestionEntity.class);
+		when(questionEntityRepository.save(questionCaptor.capture())).thenAnswer(
+			invocation -> invocation.getArgument(0));
+
+		// multipleQuestionFactory.getQuestion() mock 설정
+		MultipleQuestionDto expectedQuestionDto = mock(MultipleQuestionDto.class);
+		when(expectedQuestionDto.getNumber()).thenReturn(number);
+		when(expectedQuestionDto.getType()).thenReturn(QuestionType.MULTIPLE);
+		when(expectedQuestionDto.getContent()).thenReturn(QuestionConstant.DEFAULT_QUESTION_CONTENT);
+
+		when(multipleQuestionFactory.getQuestion(any(QuestionEntity.class), eq(true))).thenReturn(expectedQuestionDto);
+
+		// when
+		QuestionDto result = questionService.createDefaultQuestion(questionSetId, number);
+
+		// then
+		assertNotNull(result);
+		assertEquals(number, result.getNumber());
+		assertEquals(QuestionType.MULTIPLE, result.getType());
+		assertEquals(QuestionConstant.DEFAULT_QUESTION_CONTENT, result.getContent());
+
+		QuestionEntity savedQuestion = questionCaptor.getValue();
+		assertNotNull(savedQuestion);
+		assertEquals(number, savedQuestion.getNumber());
+		assertEquals(QuestionConstant.DEFAULT_QUESTION_CONTENT, savedQuestion.getContent());
+		assertEquals(questionSetEntity, savedQuestion.getQuestionSet());
+		assertEquals(QuestionConstant.MAX_DISPLAY_DELAY_MILLISECONDS, savedQuestion.getDisplayDelayMilliseconds());
+
+		verify(questionSetEntityRepository).findById(questionSetId);
+		verify(questionEntityRepository).save(any(QuestionEntity.class));
+		verify(multipleQuestionFactory).getQuestion(any(QuestionEntity.class), eq(true));
 	}
 }
