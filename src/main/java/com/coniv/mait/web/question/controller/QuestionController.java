@@ -39,7 +39,7 @@ public class QuestionController {
 
 	@Operation(summary = "문제 셋에 문제 저장 API", description = "문제 셋에 문제를 유형별로 단건 업로드 한다.")
 	@PostMapping
-	public ResponseEntity<ApiResponse<Void>> createShortQuestion(
+	public ResponseEntity<ApiResponse<Void>> createQuestion(
 		@Parameter(required = true, schema = @Schema(enumAsRef = true)) @RequestParam("type") QuestionType type,
 		@Valid @RequestBody CreateQuestionApiRequest request,
 		@PathVariable("questionSetId") final Long questionSetId) {
