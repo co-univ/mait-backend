@@ -29,6 +29,7 @@ import com.coniv.mait.global.filter.JwtAuthorizationFilter;
 import com.coniv.mait.global.interceptor.idempotency.IdempotencyInterceptor;
 import com.coniv.mait.web.question.dto.CreateQuestionSetApiRequest;
 import com.coniv.mait.web.question.dto.UpdateQuestionSetApiRequest;
+import com.coniv.mait.web.question.dto.UpdateQuestionSetFieldApiRequest;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 @WebMvcTest(controllers = QuestionSetController.class)
@@ -295,5 +296,44 @@ class QuestionSetControllerTest {
 				List.of("주제를 입력해주세요")
 			)
 		);
+	}
+
+	@Test
+	@DisplayName("문제 셋 수정 성공 테스트")
+	void updateQuestionSetTitle_isSuccess() throws Exception {
+		// given
+		final Long questionSetId = 1L;
+		final String newTitle = "New Title";
+		UpdateQuestionSetFieldApiRequest request = new UpdateQuestionSetFieldApiRequest(newTitle);
+
+		// when & then
+		mockMvc.perform(patch("/api/v1/question-sets/{questionSetId}", questionSetId)
+				.contentType(MediaType.APPLICATION_JSON)
+				.content(objectMapper.writeValueAsString(request)))
+			.andExpect(status().isOk())
+			.andExpect(jsonPath("$.isSuccess").value(true))
+			.andExpect(jsonPath("$.data").doesNotExist());
+
+		// then
+		verify(questionSetService).updateQuestionSetField(questionSetId, newTitle);
+	}
+
+	@Test
+	@DisplayName("문제 셋 수정 실패 테스트 - 유효하지 않은 dto")
+	void updateQuestionSetTitle_fail() throws Exception {
+		// given
+		final Long questionSetId = 1L;
+		final String newTitle = "";
+		UpdateQuestionSetFieldApiRequest request = new UpdateQuestionSetFieldApiRequest(newTitle);
+
+		// when & then
+		mockMvc.perform(patch("/api/v1/question-sets/{questionSetId}", questionSetId)
+				.contentType(MediaType.APPLICATION_JSON)
+				.content(objectMapper.writeValueAsString(request)))
+			.andExpectAll(status().is4xxClientError(),
+				jsonPath("$.isSuccess").value(false),
+				jsonPath("$.code").value("C-001"),
+				jsonPath("$.reasons[0]").value("문제 셋 제목은 비어있을 수 없습니다.")
+			);
 	}
 }

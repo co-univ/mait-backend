@@ -193,4 +193,29 @@ class QuestionSetServiceTest {
 
 		verify(questionSetEntityRepository, times(1)).findById(questionSetId);
 	}
+
+	@Test
+	@DisplayName("문제 셋 제목 수정 테스트")
+	void updateQuestionSetFieldTest() {
+		// given
+		final Long questionSetId = 1L;
+		final String originalTitle = "원래 제목";
+		final String newTitle = "새로운 제목";
+
+		QuestionSetEntity questionSetEntity = QuestionSetEntity.builder()
+			.subject("주제")
+			.title(originalTitle)
+			.deliveryMode(DeliveryMode.LIVE_TIME)
+			.visibility(QuestionSetVisibility.GROUP)
+			.build();
+
+		when(questionSetEntityRepository.findById(questionSetId)).thenReturn(Optional.of(questionSetEntity));
+
+		// when
+		questionSetService.updateQuestionSetField(questionSetId, newTitle);
+
+		// then
+		verify(questionSetEntityRepository, times(1)).findById(questionSetId);
+		assertThat(questionSetEntity.getTitle()).isEqualTo(newTitle);
+	}
 }
