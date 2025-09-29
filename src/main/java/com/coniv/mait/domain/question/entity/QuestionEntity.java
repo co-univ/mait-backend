@@ -1,5 +1,6 @@
 package com.coniv.mait.domain.question.entity;
 
+import com.coniv.mait.domain.question.constant.QuestionConstant;
 import com.coniv.mait.domain.question.enums.QuestionStatusType;
 import com.coniv.mait.domain.question.enums.QuestionType;
 
@@ -57,6 +58,15 @@ public abstract class QuestionEntity {
 	@ManyToOne(fetch = FetchType.LAZY)
 	@JoinColumn(name = "question_set_id")
 	private QuestionSetEntity questionSet;
+
+	public static QuestionEntity createDefaultQuestion(QuestionSetEntity questionSet, Long number) {
+		return MultipleQuestionEntity.builder()
+			.number(number)
+			.questionSet(questionSet)
+			.content(QuestionConstant.DEFAULT_QUESTION_CONTENT)
+			.displayDelayMilliseconds(QuestionConstant.MAX_DISPLAY_DELAY_MILLISECONDS)
+			.build();
+	}
 
 	public void updateQuestionStatus(QuestionStatusType questionStatus) {
 		this.questionStatus = questionStatus;

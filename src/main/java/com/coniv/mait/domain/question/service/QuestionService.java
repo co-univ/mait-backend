@@ -28,6 +28,8 @@ import jakarta.persistence.EntityNotFoundException;
 @Service
 public class QuestionService {
 
+	private static final QuestionType DEFAULT_QUESTION_TYPE = QuestionType.MULTIPLE;
+
 	private final QuestionEntityRepository questionEntityRepository;
 
 	private final QuestionSetEntityRepository questionSetEntityRepository;
@@ -57,6 +59,17 @@ public class QuestionService {
 		QuestionFactory<QuestionDto> questionFactory = getQuestionFactory(type);
 
 		questionFactory.save(questionDto, questionSetEntity);
+	}
+
+	@Transactional
+	public QuestionDto createDefaultQuestion(final Long questionSetId, final Long number) {
+		QuestionSetEntity questionSet = questionSetEntityRepository.findById(questionSetId)
+			.orElseThrow(() -> new EntityNotFoundException("QuestionSet not found with id: " + questionSetId));
+
+		QuestionEntity defaultQuestion = QuestionEntity.createDefaultQuestion(questionSet, number);
+		questionEntityRepository.save(defaultQuestion);
+
+		return getQuestionFactory(DEFAULT_QUESTION_TYPE).getQuestion(defaultQuestion, true);
 	}
 
 	public QuestionDto getQuestion(final Long questionSetId, final Long questionId, final DeliveryMode mode) {
