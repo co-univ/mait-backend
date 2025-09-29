@@ -3,6 +3,7 @@ package com.coniv.mait.web.question.controller;
 import java.util.List;
 
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -73,5 +74,13 @@ public class QuestionController {
 		@Valid @RequestBody UpdateQuestionApiRequest request) {
 		return ResponseEntity.ok(ApiResponse.ok(QuestionApiResponse.from(
 			questionService.updateQuestion(questionSetId, questionId, request.toQuestionDto()))));
+	}
+
+	@Operation(summary = "문제 단건 삭제 API", description = "생성 중인 문제 단건 삭제를 진행")
+	@DeleteMapping("/{questionId}")
+	public ResponseEntity<ApiResponse<Void>> deleteQuestion(@PathVariable("questionSetId") final Long questionSetId,
+		@PathVariable("questionId") final Long questionId) {
+		questionService.deleteQuestion(questionSetId, questionId);
+		return ResponseEntity.ok(ApiResponse.noContent());
 	}
 }

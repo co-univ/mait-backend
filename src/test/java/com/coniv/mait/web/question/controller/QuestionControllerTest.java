@@ -1144,4 +1144,21 @@ class QuestionControllerTest {
 		verify(questionService).updateQuestion(eq(questionSetId), eq(questionId), any());
 	}
 
+	@Test
+	@DisplayName("문제 단건 삭제 API 테스트")
+	void deleteQuestionTest() throws Exception {
+		// given
+		Long questionSetId = 1L;
+		Long questionId = 1L;
+
+		doNothing().when(questionService).deleteQuestion(questionSetId, questionId);
+
+		// when & then
+		mockMvc.perform(
+				delete("/api/v1/question-sets/{questionSetId}/questions/{questionId}", questionSetId, questionId)
+					.contentType(MediaType.APPLICATION_JSON))
+			.andExpect(status().isOk());
+
+		verify(questionService).deleteQuestion(questionSetId, questionId);
+	}
 }

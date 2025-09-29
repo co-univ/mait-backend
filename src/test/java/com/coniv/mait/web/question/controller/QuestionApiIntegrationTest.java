@@ -1132,4 +1132,51 @@ public class QuestionApiIntegrationTest extends BaseIntegrationTest {
 			.sum();
 		assertThat(mainAnswerCount).isEqualTo(2); // 번호 1, 2 각각에 메인 답변 하나씩
 	}
+
+	@Test
+	@DisplayName("문제 단건 삭제 API 성공 테스트")
+	void deleteQuestionApiSuccess() throws Exception {
+		// given - 문제셋과 기존 문제 생성
+		QuestionSetEntity questionSet = QuestionSetEntity.of("Sample Subject", QuestionSetCreationType.MANUAL);
+		QuestionSetEntity savedQuestionSet = questionSetEntityRepository.save(questionSet);
+
+		MultipleQuestionEntity question = MultipleQuestionEntity.builder()
+			.content("삭제할 객관식 문제 내용")
+			.explanation("삭제할 문제 해설")
+			.number(1L)
+			.questionSet(savedQuestionSet)
+			.build();
+		MultipleQuestionEntity savedQuestion = questionEntityRepository.save(question);
+
+		List<MultipleChoiceEntity> choices = List.of(
+			MultipleChoiceEntity.builder()
+				.question(savedQuestion)
+				.number(1)
+				.content("선택지 1")
+				.isCorrect(true)
+				.build(),
+			MultipleChoiceEntity.builder()
+				.question(savedQuestion)
+				.number(2)
+				.content("선택지 2")
+				.isCorrect(false)
+				.build()
+		);
+		multipleChoiceEntityRepository.saveAll(choices);
+
+		// when
+		mockMvc.perform(delete("/api/v1/question-sets/{questionSetId}/questions/{questionId}",
+				savedQuestionSet.getId(), savedQuestion.getId())
+				.contentType(MediaType.APPLICATION_JSON))
+			.andExpect(status().isOk())
+			.andExpect(jsonPath("$.isSuccess").value(true))
+			.andExpect(jsonPath("$.data").doesNotExist());
+
+		// then - 문제와 관련된 선택지도 함께 삭제되었는지 확인
+		boolean questionExists = questionEntityRepository.existsById(savedQuestion.getId());
+		assertThat(questionExists).isFalse();
+
+		List<MultipleChoiceEntity> remainingChoices = multipleChoiceEntityRepository.findAll();
+		assertThat(remainingChoices).isEmpty();
+	}
 }
