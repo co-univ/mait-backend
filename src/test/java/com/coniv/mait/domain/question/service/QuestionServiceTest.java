@@ -515,11 +515,9 @@ class QuestionServiceTest {
 		when(differentQuestionSet.getId()).thenReturn(differentQuestionSetId);
 
 		MultipleQuestionEntity existingQuestion = mock(MultipleQuestionEntity.class);
-		lenient().when(existingQuestion.getId()).thenReturn(questionId);
 		when(existingQuestion.getQuestionSet()).thenReturn(differentQuestionSet);
 
 		MultipleQuestionDto questionDto = mock(MultipleQuestionDto.class);
-		lenient().when(questionDto.getType()).thenReturn(QuestionType.MULTIPLE);
 
 		when(questionEntityRepository.findById(questionId)).thenReturn(Optional.of(existingQuestion));
 
@@ -539,5 +537,31 @@ class QuestionServiceTest {
 		verify(questionEntityRepository, never()).delete(any());
 		verify(existingQuestion, never()).updateContent(anyString());
 		verify(existingQuestion, never()).updateExplanation(anyString());
+	}
+
+	@Test
+	@DisplayName("문제 단건 삭제 성공 테스트")
+	void deleteQuestion_Success() {
+		// given
+		final Long questionSetId = 1L;
+		final Long questionId = 1L;
+
+		QuestionSetEntity questionSetEntity = mock(QuestionSetEntity.class);
+		when(questionSetEntity.getId()).thenReturn(questionSetId);
+
+		MultipleQuestionEntity existingQuestion = mock(MultipleQuestionEntity.class);
+		when(existingQuestion.getId()).thenReturn(questionId);
+		when(existingQuestion.getQuestionSet()).thenReturn(questionSetEntity);
+		when(existingQuestion.getType()).thenReturn(QuestionType.MULTIPLE);
+
+		when(questionEntityRepository.findById(questionId)).thenReturn(Optional.of(existingQuestion));
+
+		// when
+		questionService.deleteQuestion(questionSetId, questionId);
+
+		// then
+		verify(questionEntityRepository).findById(questionId);
+		verify(multipleQuestionFactory).deleteSubEntities(existingQuestion);
+		verify(questionEntityRepository).deleteById(questionId);
 	}
 }

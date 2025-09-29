@@ -134,4 +134,18 @@ public class QuestionService {
 
 		return questionFactory.getQuestion(createdQuestion, true);
 	}
+
+	@Transactional
+	public void deleteQuestion(final Long questionSetId, final Long questionId) {
+		QuestionEntity question = questionEntityRepository.findById(questionId)
+			.orElseThrow(() -> new EntityNotFoundException("Question not found with id: " + questionId));
+
+		if (!question.getQuestionSet().getId().equals(questionSetId)) {
+			throw new ResourceNotBelongException("해당 문제 셋에 속한 문제가 아닙니다.");
+		}
+
+		QuestionFactory<?> questionFactory = questionFactories.get(question.getType());
+		questionFactory.deleteSubEntities(question);
+		questionEntityRepository.deleteById(question.getId());
+	}
 }
