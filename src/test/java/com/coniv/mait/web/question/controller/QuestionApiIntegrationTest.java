@@ -12,12 +12,14 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
 
+import com.coniv.mait.domain.question.constant.QuestionConstant;
 import com.coniv.mait.domain.question.entity.FillBlankAnswerEntity;
 import com.coniv.mait.domain.question.entity.FillBlankQuestionEntity;
 import com.coniv.mait.domain.question.entity.MultipleChoiceEntity;
 import com.coniv.mait.domain.question.entity.MultipleQuestionEntity;
 import com.coniv.mait.domain.question.entity.OrderingOptionEntity;
 import com.coniv.mait.domain.question.entity.OrderingQuestionEntity;
+import com.coniv.mait.domain.question.entity.QuestionEntity;
 import com.coniv.mait.domain.question.entity.QuestionSetEntity;
 import com.coniv.mait.domain.question.entity.ShortAnswerEntity;
 import com.coniv.mait.domain.question.entity.ShortQuestionEntity;
@@ -34,6 +36,7 @@ import com.coniv.mait.domain.question.service.dto.MultipleChoiceDto;
 import com.coniv.mait.domain.question.service.dto.OrderingQuestionOptionDto;
 import com.coniv.mait.domain.question.service.dto.ShortAnswerDto;
 import com.coniv.mait.web.integration.BaseIntegrationTest;
+import com.coniv.mait.web.question.dto.CreateDefaultQuestionApiRequest;
 import com.coniv.mait.web.question.dto.CreateFillBlankQuestionApiRequest;
 import com.coniv.mait.web.question.dto.CreateMultipleQuestionApiRequest;
 import com.coniv.mait.web.question.dto.CreateOrderingQuestionApiRequest;
@@ -1178,5 +1181,37 @@ public class QuestionApiIntegrationTest extends BaseIntegrationTest {
 
 		List<MultipleChoiceEntity> remainingChoices = multipleChoiceEntityRepository.findAll();
 		assertThat(remainingChoices).isEmpty();
+	}
+
+	@Test
+	@DisplayName("기본 문제 생성 API 통합 테스트")
+	void createBasicQuestionApiSuccess() throws Exception {
+		// given
+		final Long number = 1L;
+		QuestionSetEntity questionSet = questionSetEntityRepository.save(
+			QuestionSetEntity.of("Sample Subject", QuestionSetCreationType.MANUAL));
+
+		CreateDefaultQuestionApiRequest request = new CreateDefaultQuestionApiRequest(number);
+
+		// when
+		mockMvc.perform(post("/api/v1/question-sets/{questionSetId}/questions/default", questionSet.getId())
+				.contentType(MediaType.APPLICATION_JSON)
+				.content(objectMapper.writeValueAsString(request)))
+			.andExpectAll(status().isOk(),
+				jsonPath("$.isSuccess").value(true),
+				jsonPath("$.data").exists(),
+				jsonPath("$.data.content").value(QuestionConstant.DEFAULT_QUESTION_CONTENT),
+				jsonPath("$.data.number").value(number),
+				jsonPath("$.data.type").value(QuestionType.MULTIPLE.name()));
+
+		// then - DB에 문제 저장되었는지 확인
+		List<QuestionEntity> questions = questionEntityRepository.findAll();
+		assertThat(questions).hasSize(1);
+
+		QuestionEntity savedQuestion = questions.get(0);
+		assertThat(savedQuestion.getContent()).isEqualTo(QuestionConstant.DEFAULT_QUESTION_CONTENT);
+		assertThat(savedQuestion.getNumber()).isEqualTo(1L);
+		assertThat(savedQuestion.getQuestionSet().getId()).isEqualTo(questionSet.getId());
+		assertThat(savedQuestion).isInstanceOf(MultipleQuestionEntity.class);
 	}
 }
