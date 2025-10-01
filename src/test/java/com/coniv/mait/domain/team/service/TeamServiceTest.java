@@ -13,6 +13,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import com.coniv.mait.domain.team.entity.TeamEntity;
+import com.coniv.mait.domain.team.entity.TeamUserEntity;
 import com.coniv.mait.domain.team.repository.TeamEntityRepository;
 import com.coniv.mait.domain.team.repository.TeamUserEntityRepository;
 import com.coniv.mait.domain.user.entity.UserEntity;
@@ -31,18 +32,23 @@ class TeamServiceTest {
 	private TeamService teamService;
 
 	@Test
-	@DisplayName("팀 생성 시 TeamEntity가 저장되는지 확인")
+	@DisplayName("팀 생성 시 TeamEntity와 Owner TeamUserEntity가 올바르게 저장된다")
 	void createTeam_SavesTeamEntity() {
 		// given
 		String teamName = "테스트 팀";
 		TeamEntity mockTeamEntity = TeamEntity.of(teamName);
+		UserEntity owner = UserEntity.socialLoginUser("email", "닉네임", "socialId", LoginProvider.GOOGLE);
+		TeamUserEntity ownerTeamUser = TeamUserEntity.createOwnerUser(owner, mockTeamEntity);
+
 		when(teamEntityRepository.save(any(TeamEntity.class))).thenReturn(mockTeamEntity);
+		when(teamUserEntityRepository.save(any(TeamUserEntity.class))).thenReturn(ownerTeamUser);
 
 		// when
-		teamService.createTeam(teamName);
+		teamService.createTeam(teamName, owner);
 
 		// then
 		verify(teamEntityRepository, times(1)).save(any(TeamEntity.class));
+		verify(teamUserEntityRepository, times(1)).save(any(TeamUserEntity.class));
 	}
 
 	@Test
@@ -62,3 +68,4 @@ class TeamServiceTest {
 		verify(teamUserEntityRepository, times(1)).saveAll(anyList());
 	}
 }
+
