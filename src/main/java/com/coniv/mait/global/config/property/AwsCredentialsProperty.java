@@ -9,7 +9,7 @@ import lombok.Setter;
 @Getter
 @Setter
 @Component
-@ConfigurationProperties(prefix = "cloud.aws.credentials")
+@ConfigurationProperties(prefix = "spring.cloud.aws.credentials")
 public class AwsCredentialsProperty {
 	private String accessKey;
 	private String secretKey;
