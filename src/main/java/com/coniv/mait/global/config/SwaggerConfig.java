@@ -8,11 +8,9 @@ import org.springframework.context.annotation.Profile;
 import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.info.Info;
 import io.swagger.v3.oas.models.servers.Server;
-import lombok.RequiredArgsConstructor;
 
 @Configuration
 @Profile({"dev", "local"})
-@RequiredArgsConstructor
 public class SwaggerConfig {
 
 	@Value("${server.domain}")
