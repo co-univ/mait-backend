@@ -21,10 +21,9 @@ public class TeamService {
 	private final TeamUserEntityRepository teamUserEntityRepository;
 
 	@Transactional
-	public void createTeam(final String teamName) {
+	public void createTeam(final String teamName, final UserEntity owner) {
 		TeamEntity teamEntity = teamEntityRepository.save(TeamEntity.of(teamName));
-
-		//TODO: 추후 UserEntity와 연동하여 TeamMemberEntity를 생성하는 로직 추가
+		teamUserEntityRepository.save(TeamUserEntity.createOwnerUser(owner, teamEntity));
 	}
 
 	@Transactional

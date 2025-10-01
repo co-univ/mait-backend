@@ -48,4 +48,8 @@ public class TeamUserEntity extends BaseTimeEntity {
 	public static TeamUserEntity createPlayerUser(UserEntity user, TeamEntity team) {
 		return new TeamUserEntity(user, team, TeamUserRole.PLAYER);
 	}
+
+	public static TeamUserEntity createOwnerUser(UserEntity user, TeamEntity team) {
+		return new TeamUserEntity(user, team, TeamUserRole.OWNER);
+	}
 }
