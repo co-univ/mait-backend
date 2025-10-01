@@ -2,6 +2,7 @@ package com.coniv.mait.web.question.controller;
 
 import java.util.List;
 
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -101,7 +102,7 @@ public class QuestionController {
 	}
 
 	@Operation(summary = "문제 이미지 업로드 API", description = "문제에 이미지를 업로드합니다.")
-	@PostMapping("/{questionId}/images")
+	@PostMapping(value = "/{questionId}/images", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
 	public ResponseEntity<ApiResponse<ImageInfoApiResponse>> uploadImage(
 		@PathVariable("questionId") final Long questionId,
 		@RequestParam("image") MultipartFile image
