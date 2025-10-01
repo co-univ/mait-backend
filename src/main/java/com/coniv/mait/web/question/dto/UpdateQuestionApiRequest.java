@@ -12,7 +12,8 @@ import lombok.Data;
 
 @JsonTypeInfo(
 	use = JsonTypeInfo.Id.NAME,
-	property = "type"
+	property = "type",
+	visible = true
 )
 @JsonSubTypes({
 	@JsonSubTypes.Type(value = UpdateShortQuestionApiRequest.class, name = QuestionConstant.SHORT),
@@ -34,16 +35,5 @@ public abstract class UpdateQuestionApiRequest {
 	@Min(value = 1, message = "문제 번호는 1 이상이어야 합니다.")
 	private Long number;
 
-	@NotNull(message = "문제 유형은 필수입니다.")
-	private String type;
-
 	public abstract QuestionDto toQuestionDto();
-
-	protected void validateType(String expectedType) {
-		if (!expectedType.equals(this.type)) {
-			throw new IllegalArgumentException(
-				String.format("문제 유형이 일치하지 않습니다. 예상: %s, 실제: %s", expectedType, this.type)
-			);
-		}
-	}
 }

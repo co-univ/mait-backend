@@ -2,7 +2,6 @@ package com.coniv.mait.web.question.dto;
 
 import java.util.List;
 
-import com.coniv.mait.domain.question.constant.QuestionConstant;
 import com.coniv.mait.domain.question.service.dto.QuestionDto;
 import com.coniv.mait.domain.question.service.dto.ShortAnswerDto;
 import com.coniv.mait.domain.question.service.dto.ShortQuestionDto;
@@ -22,7 +21,6 @@ public class UpdateShortQuestionApiRequest extends UpdateQuestionApiRequest {
 
 	@Override
 	public QuestionDto toQuestionDto() {
-		validateType(QuestionConstant.SHORT);
 		return ShortQuestionDto.builder()
 			.id(getId())
 			.content(getContent())

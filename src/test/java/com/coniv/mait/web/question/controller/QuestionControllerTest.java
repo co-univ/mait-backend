@@ -706,7 +706,6 @@ class QuestionControllerTest {
 		request.setContent("수정된 주관식 문제 내용");
 		request.setExplanation("수정된 문제 해설");
 		request.setNumber(1L);
-		request.setType("SHORT");
 		request.setShortAnswers(shortAnswers);
 
 		String json = objectMapper.writeValueAsString(request);
@@ -761,7 +760,6 @@ class QuestionControllerTest {
 		request.setContent("수정된 객관식 문제 내용");
 		request.setExplanation("수정된 문제 해설");
 		request.setNumber(1L);
-		request.setType("MULTIPLE");
 		request.setChoices(choices);
 
 		String json = objectMapper.writeValueAsString(request);
@@ -816,7 +814,6 @@ class QuestionControllerTest {
 		request.setContent("수정된 순서맞추기 문제 내용");
 		request.setExplanation("수정된 문제 해설");
 		request.setNumber(1L);
-		request.setType("ORDERING");
 		request.setOptions(options);
 
 		String json = objectMapper.writeValueAsString(request);
@@ -867,7 +864,6 @@ class QuestionControllerTest {
 		request.setContent("수정된 빈칸에 들어갈 적절한 단어는 ___입니다.");
 		request.setExplanation("수정된 문제 해설");
 		request.setNumber(1L);
-		request.setType("FILL_BLANK");
 		request.setFillBlankAnswers(fillBlankAnswers);
 
 		String json = objectMapper.writeValueAsString(request);
@@ -901,11 +897,6 @@ class QuestionControllerTest {
 		// given
 		Long questionSetId = 1L;
 		Long questionId = 1L;
-
-		// 문제 유형 누락 테스트가 아닌 경우에만 type 필드 설정
-		if (!testName.contains("문제 유형 누락")) {
-			request.setType("SHORT");
-		}
 
 		String json = objectMapper.writeValueAsString(request);
 
@@ -944,20 +935,9 @@ class QuestionControllerTest {
 		emptyAnswersRequest.setNumber(1L);
 		emptyAnswersRequest.setShortAnswers(List.of());
 
-		// 문제 유형 누락 요청
-		UpdateShortQuestionApiRequest noTypeRequest = new UpdateShortQuestionApiRequest();
-		noTypeRequest.setId(1L);
-		noTypeRequest.setContent("단답형 문제 내용");
-		noTypeRequest.setExplanation("문제 해설");
-		noTypeRequest.setNumber(1L);
-		noTypeRequest.setShortAnswers(List.of(
-			ShortAnswerDto.builder().answer("정답1").isMain(true).number(1L).build()
-		));
-
 		return Stream.of(
 			Arguments.of("문제 번호 누락", noNumberRequest, "문제 번호는 필수입니다."),
-			Arguments.of("정답 리스트 빈 배열", emptyAnswersRequest, "정답은 최소 1개 이상이어야 합니다."),
-			Arguments.of("문제 유형 누락", noTypeRequest, "문제 유형은 필수입니다.")
+			Arguments.of("정답 리스트 빈 배열", emptyAnswersRequest, "정답은 최소 1개 이상이어야 합니다.")
 		);
 	}
 
@@ -969,11 +949,6 @@ class QuestionControllerTest {
 		// given
 		Long questionSetId = 1L;
 		Long questionId = 1L;
-
-		// 문제 유형 누락 테스트가 아닌 경우에만 type 필드 설정
-		if (!testName.contains("문제 유형 누락")) {
-			request.setType("MULTIPLE");
-		}
 
 		String json = objectMapper.writeValueAsString(request);
 
@@ -1016,21 +991,9 @@ class QuestionControllerTest {
 				.build()
 		));
 
-		// 문제 유형 누락 요청
-		UpdateMultipleQuestionApiRequest noTypeRequest = new UpdateMultipleQuestionApiRequest();
-		noTypeRequest.setId(1L);
-		noTypeRequest.setContent("객관식 문제 내용");
-		noTypeRequest.setExplanation("문제 해설");
-		noTypeRequest.setNumber(1L);
-		noTypeRequest.setChoices(List.of(
-			MultipleChoiceDto.builder().number(1).content("선택지 1").isCorrect(true).build(),
-			MultipleChoiceDto.builder().number(2).content("선택지 2").isCorrect(false).build()
-		));
-
 		return Stream.of(
 			Arguments.of("선택지 null", nullChoicesRequest, "객관식 문제에는 반드시 선지가 있어야 합니다."),
-			Arguments.of("선택지 1개", oneChoiceRequest, "객관식 문제는 최소 2개, 최대 8개의 선택지를 가져야 합니다."),
-			Arguments.of("문제 유형 누락", noTypeRequest, "문제 유형은 필수입니다.")
+			Arguments.of("선택지 1개", oneChoiceRequest, "객관식 문제는 최소 2개, 최대 8개의 선택지를 가져야 합니다.")
 		);
 	}
 
@@ -1059,7 +1022,6 @@ class QuestionControllerTest {
 		request.setContent("수정된 객관식 문제 내용");
 		request.setExplanation("수정된 문제 해설");
 		request.setNumber(1L);
-		request.setType("MULTIPLE");
 		request.setChoices(choices);
 
 		String json = objectMapper.writeValueAsString(request);
@@ -1114,7 +1076,6 @@ class QuestionControllerTest {
 		request.setContent("객관식에서 주관식으로 변경된 문제");
 		request.setExplanation("변경된 해설");
 		request.setNumber(1L);
-		request.setType("SHORT");
 		request.setShortAnswers(shortAnswers);
 
 		String json = objectMapper.writeValueAsString(request);
