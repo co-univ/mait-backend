@@ -1,3 +1,6 @@
+server:
+  domain: "https://api.mait.kr"
+
 mait:
   base-url: "https://dev.mait.kr"
   cookie:
