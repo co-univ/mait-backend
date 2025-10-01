@@ -33,10 +33,9 @@ public class QuestionImageService {
 
 		QuestionImageEntity questionImage = QuestionImageEntity.builder()
 			.question(question)
-			.key(imageInfo.getKey())
+			.imageKey(imageInfo.getKey())
 			.url(imageInfo.getUrl())
 			.bucket(imageInfo.getBucket())
-			// .used(true)
 			.build();
 
 		questionImageEntityRepository.save(questionImage);

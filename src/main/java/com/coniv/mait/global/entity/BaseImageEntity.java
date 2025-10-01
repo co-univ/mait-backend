@@ -17,8 +17,8 @@ public abstract class BaseImageEntity extends BaseTimeEntity {
 	@Column(updatable = false)
 	private String url;
 
-	@Column(updatable = false)
-	private String key;
+	@Column(name = "image_key", updatable = false)
+	private String imageKey;
 
 	@Column(updatable = false)
 	private String bucket;
