@@ -2,7 +2,6 @@ package com.coniv.mait.web.question.dto;
 
 import java.util.List;
 
-import com.coniv.mait.domain.question.constant.QuestionConstant;
 import com.coniv.mait.domain.question.service.dto.OrderingQuestionDto;
 import com.coniv.mait.domain.question.service.dto.OrderingQuestionOptionDto;
 import com.coniv.mait.domain.question.service.dto.QuestionDto;
@@ -22,7 +21,6 @@ public class UpdateOrderingQuestionApiRequest extends UpdateQuestionApiRequest {
 
 	@Override
 	public QuestionDto toQuestionDto() {
-		validateType(QuestionConstant.ORDERING);
 		return OrderingQuestionDto.builder()
 			.id(getId())
 			.content(getContent())

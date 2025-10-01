@@ -2,7 +2,6 @@ package com.coniv.mait.web.question.dto;
 
 import java.util.List;
 
-import com.coniv.mait.domain.question.constant.QuestionConstant;
 import com.coniv.mait.domain.question.service.dto.FillBlankAnswerDto;
 import com.coniv.mait.domain.question.service.dto.FillBlankQuestionDto;
 import com.coniv.mait.domain.question.service.dto.QuestionDto;
@@ -22,7 +21,6 @@ public class UpdateFillBlankQuestionApiRequest extends UpdateQuestionApiRequest 
 
 	@Override
 	public QuestionDto toQuestionDto() {
-		validateType(QuestionConstant.FILL_BLANK);
 		return FillBlankQuestionDto.builder()
 			.id(getId())
 			.content(getContent())

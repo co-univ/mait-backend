@@ -2,7 +2,6 @@ package com.coniv.mait.web.question.dto;
 
 import java.util.List;
 
-import com.coniv.mait.domain.question.constant.QuestionConstant;
 import com.coniv.mait.domain.question.service.dto.MultipleChoiceDto;
 import com.coniv.mait.domain.question.service.dto.MultipleQuestionDto;
 import com.coniv.mait.domain.question.service.dto.QuestionDto;
@@ -24,7 +23,6 @@ public class UpdateMultipleQuestionApiRequest extends UpdateQuestionApiRequest {
 
 	@Override
 	public QuestionDto toQuestionDto() {
-		validateType(QuestionConstant.MULTIPLE);
 		return MultipleQuestionDto.builder()
 			.id(getId())
 			.content(getContent())
