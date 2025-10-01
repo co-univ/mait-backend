@@ -33,6 +33,9 @@ spring:
             scope:
               - email
               - profile
+  servlet:
+    multipart:
+      max-file-size: 10MB
 
 jwt:
   secretKey: ${JWT_SECRET_KEY}
@@ -40,6 +43,16 @@ jwt:
     expiration: ${JWT_ACCESS_TOKEN_EXPIRATION}
   refresh:
     expiration: ${JWT_REFRESH_TOKEN_EXPIRATION}
+
+cloud:
+  aws:
+    credentials:
+      access-key: ${AWS_ACCESS_KEY_ID:}
+      secret-key: ${AWS_SECRET_ACCESS_KEY:}
+    s3:
+      bucket: ${AWS_S3_BUCKET:}
+    stack:
+      auto: false
 
 springdoc:
   api-docs:
