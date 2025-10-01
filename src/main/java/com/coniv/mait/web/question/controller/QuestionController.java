@@ -12,13 +12,16 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.multipart.MultipartFile;
 
 import com.coniv.mait.domain.question.enums.DeliveryMode;
 import com.coniv.mait.domain.question.enums.QuestionType;
+import com.coniv.mait.domain.question.service.QuestionImageService;
 import com.coniv.mait.domain.question.service.QuestionService;
 import com.coniv.mait.global.response.ApiResponse;
 import com.coniv.mait.web.question.dto.CreateDefaultQuestionApiRequest;
 import com.coniv.mait.web.question.dto.CreateQuestionApiRequest;
+import com.coniv.mait.web.question.dto.ImageInfoApiResponse;
 import com.coniv.mait.web.question.dto.QuestionApiResponse;
 import com.coniv.mait.web.question.dto.UpdateQuestionApiRequest;
 
@@ -36,6 +39,8 @@ import lombok.RequiredArgsConstructor;
 public class QuestionController {
 
 	private final QuestionService questionService;
+
+	private final QuestionImageService questionImageService;
 
 	@Operation(summary = "문제 셋에 문제 저장 API", description = "문제 셋에 문제를 유형별로 단건 업로드 한다.")
 	@PostMapping
@@ -93,5 +98,15 @@ public class QuestionController {
 		@PathVariable("questionId") final Long questionId) {
 		questionService.deleteQuestion(questionSetId, questionId);
 		return ResponseEntity.ok(ApiResponse.noContent());
+	}
+
+	@Operation(summary = "문제 이미지 업로드 API", description = "문제에 이미지를 업로드합니다.")
+	@PostMapping("/{questionId}/images")
+	public ResponseEntity<ApiResponse<ImageInfoApiResponse>> uploadImage(
+		@PathVariable("questionId") final Long questionId,
+		@RequestParam("image") MultipartFile image
+	) {
+		return ResponseEntity.ok(
+			ApiResponse.ok(ImageInfoApiResponse.from(questionImageService.uploadImage(questionId, image).getUrl())));
 	}
 }
