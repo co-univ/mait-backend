@@ -2,7 +2,7 @@ server:
   domain: "https://api.mait.kr"
 
 mait:
-  base-url: "https://dev.mait.kr"
+  base-url: "https://mait.kr"
   cookie:
     domain: ".mait.kr"
     path: "/"
