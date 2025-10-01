@@ -833,7 +833,6 @@ public class QuestionApiIntegrationTest extends BaseIntegrationTest {
 		request.setContent("수정된 주관식 문제 내용");
 		request.setExplanation("수정된 문제 해설");
 		request.setNumber(1L);
-		request.setType("SHORT");
 		request.setShortAnswers(updatedAnswers);
 
 		String json = objectMapper.writeValueAsString(request);
@@ -918,7 +917,6 @@ public class QuestionApiIntegrationTest extends BaseIntegrationTest {
 		request.setContent("수정된 객관식 문제 내용");
 		request.setExplanation("수정된 문제 해설");
 		request.setNumber(1L);
-		request.setType("MULTIPLE");
 		request.setChoices(updatedChoices);
 
 		String json = objectMapper.writeValueAsString(request);
@@ -1015,7 +1013,6 @@ public class QuestionApiIntegrationTest extends BaseIntegrationTest {
 		request.setContent("수정된 순서맞추기 문제 내용");
 		request.setExplanation("수정된 문제 해설");
 		request.setNumber(1L);
-		request.setType("ORDERING");
 		request.setOptions(updatedOptions);
 
 		String json = objectMapper.writeValueAsString(request);
@@ -1098,7 +1095,6 @@ public class QuestionApiIntegrationTest extends BaseIntegrationTest {
 		request.setContent("수정된 빈칸에 들어갈 적절한 단어는 ___와 ___입니다.");
 		request.setExplanation("수정된 문제 해설");
 		request.setNumber(1L);
-		request.setType("FILL_BLANK");
 		request.setFillBlankAnswers(updatedAnswers);
 
 		String json = objectMapper.writeValueAsString(request);
