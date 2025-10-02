@@ -1,7 +1,8 @@
 package com.coniv.mait.global.util;
 
-import com.coniv.mait.global.enums.FileExtension;
 import org.springframework.util.StringUtils;
+
+import com.coniv.mait.global.enums.FileExtension;
 
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
