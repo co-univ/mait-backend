@@ -20,6 +20,7 @@ import org.springframework.http.MediaType;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
+import com.coniv.mait.domain.question.service.QuestionImageService;
 import com.coniv.mait.domain.question.service.QuestionService;
 import com.coniv.mait.domain.question.service.dto.FillBlankAnswerDto;
 import com.coniv.mait.domain.question.service.dto.MultipleChoiceDto;
@@ -61,6 +62,9 @@ class QuestionControllerTest {
 
 	@MockitoBean
 	private JwtAuthorizationFilter jwtAuthorizationFilter;
+
+	@MockitoBean
+	private QuestionImageService questionImageService;
 
 	@BeforeEach
 	void setUp() throws Exception {
