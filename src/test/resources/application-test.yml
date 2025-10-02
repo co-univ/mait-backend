@@ -32,6 +32,18 @@ spring:
           max-idle: 8
           min-idle: 0
 
+  cloud:
+    aws:
+      credentials:
+        access-key: ${AWS_ACCESS_KEY_ID:}
+        secret-key: ${AWS_SECRET_ACCESS_KEY:}
+      s3:
+        bucket: mait-dev
+      region:
+        static: ap-northeast-2
+      stack:
+        auto: false
+
 # 테스트용 JWT 설정
 jwt:
   secretKey: test-secret-key-for-testing-purposes-only-minimum-256-bits-required
