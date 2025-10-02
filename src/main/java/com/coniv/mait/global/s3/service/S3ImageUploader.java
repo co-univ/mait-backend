@@ -9,6 +9,8 @@ import com.coniv.mait.global.component.ImageUploader;
 import com.coniv.mait.global.component.dto.ImageInfo;
 import com.coniv.mait.global.config.property.S3Property;
 import com.coniv.mait.global.enums.FileExtension;
+import com.coniv.mait.global.exception.code.S3ImageRequestCode;
+import com.coniv.mait.global.exception.custom.S3ImageException;
 import com.coniv.mait.global.util.FileUtil;
 
 import lombok.RequiredArgsConstructor;
@@ -60,8 +62,8 @@ public class S3ImageUploader implements ImageUploader {
 		try {
 			s3Client.putObject(putObjectRequest, RequestBody.fromInputStream(file.getInputStream(), file.getSize()));
 		} catch (IOException e) {
-			log.info("[S3 사진 업로드 과정에서의 에러] bucket: {}, key: {}", putObjectRequest.bucket(), putObjectRequest.key());
-			throw new RuntimeException("이미지 업로드에 실패했습니다.", e);
+			log.error("[S3 사진 업로드 과정에서의 에러] bucket: {}, key: {}", putObjectRequest.bucket(), putObjectRequest.key());
+			throw new S3ImageException(S3ImageRequestCode.PUT, putObjectRequest.bucket(), putObjectRequest.key());
 		}
 	}
 }
