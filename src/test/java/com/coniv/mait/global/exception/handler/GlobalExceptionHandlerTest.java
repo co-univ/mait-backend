@@ -206,7 +206,7 @@ class GlobalExceptionHandlerTest {
 
 	@Test
 	@DisplayName("SQLException 처리 - 데이터베이스 오류")
-	void handleSQLException() {
+	void handleSqlException() {
 		// Given
 		String requestUri = "/api/test";
 		String sqlErrorMessage = "Database error";
@@ -215,7 +215,7 @@ class GlobalExceptionHandlerTest {
 		when(httpServletRequest.getRequestURI()).thenReturn(requestUri);
 
 		// When
-		ResponseEntity<ErrorResponse> response = globalExceptionHandler.handleSQLException(
+		ResponseEntity<ErrorResponse> response = globalExceptionHandler.handleSqlException(
 			new java.sql.SQLException(sqlErrorMessage), httpServletRequest);
 
 		// Then

@@ -58,7 +58,7 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
 	}
 
 	@ExceptionHandler(SQLException.class)
-	public ResponseEntity<ErrorResponse> handleSQLException(SQLException exception, HttpServletRequest request) {
+	public ResponseEntity<ErrorResponse> handleSqlException(SQLException exception, HttpServletRequest request) {
 		log.error("SQLException 발생: {}, 경로: {}", exception.getMessage(), request.getRequestURI());
 		return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
 			.body(ErrorResponse.of(ExceptionCode.DATABASE_ERROR, List.of(exception.getMessage())));
