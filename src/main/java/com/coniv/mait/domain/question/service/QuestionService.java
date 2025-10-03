@@ -11,11 +11,14 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.coniv.mait.domain.question.entity.MultipleChoiceEntity;
+import com.coniv.mait.domain.question.entity.MultipleQuestionEntity;
 import com.coniv.mait.domain.question.entity.QuestionEntity;
 import com.coniv.mait.domain.question.entity.QuestionSetEntity;
 import com.coniv.mait.domain.question.enums.DeliveryMode;
 import com.coniv.mait.domain.question.enums.QuestionStatusType;
 import com.coniv.mait.domain.question.enums.QuestionType;
+import com.coniv.mait.domain.question.repository.MultipleChoiceEntityRepository;
 import com.coniv.mait.domain.question.repository.QuestionEntityRepository;
 import com.coniv.mait.domain.question.repository.QuestionSetEntityRepository;
 import com.coniv.mait.domain.question.service.component.QuestionFactory;
@@ -35,17 +38,19 @@ public class QuestionService {
 	private final QuestionSetEntityRepository questionSetEntityRepository;
 
 	private final Map<QuestionType, QuestionFactory<?>> questionFactories;
+	private final MultipleChoiceEntityRepository multipleChoiceEntityRepository;
 
 	@Autowired
 	public QuestionService(
 		List<QuestionFactory<?>> factories,
 		QuestionEntityRepository questionEntityRepository,
-		QuestionSetEntityRepository questionSetEntityRepository
-	) {
+		QuestionSetEntityRepository questionSetEntityRepository,
+		MultipleChoiceEntityRepository multipleChoiceEntityRepository) {
 		questionFactories = factories.stream()
 			.collect(Collectors.toUnmodifiableMap(QuestionFactory::getQuestionType, Function.identity()));
 		this.questionEntityRepository = questionEntityRepository;
 		this.questionSetEntityRepository = questionSetEntityRepository;
+		this.multipleChoiceEntityRepository = multipleChoiceEntityRepository;
 	}
 
 	public <T extends QuestionDto> void createQuestion(
@@ -62,12 +67,18 @@ public class QuestionService {
 	}
 
 	@Transactional
-	public QuestionDto createDefaultQuestion(final Long questionSetId, final Long number) {
+	public QuestionDto createDefaultQuestion(final Long questionSetId) {
 		QuestionSetEntity questionSet = questionSetEntityRepository.findById(questionSetId)
 			.orElseThrow(() -> new EntityNotFoundException("QuestionSet not found with id: " + questionSetId));
 
+		long number = questionEntityRepository.findMaxNumberByQuestionSetId(questionSetId) + 1;
+
 		QuestionEntity defaultQuestion = QuestionEntity.createDefaultQuestion(questionSet, number);
 		questionEntityRepository.save(defaultQuestion);
+
+		List<MultipleChoiceEntity> defaultSubEntities = QuestionFactory.createDefaultSubEntities(
+			(MultipleQuestionEntity)defaultQuestion);
+		multipleChoiceEntityRepository.saveAll(defaultSubEntities);
 
 		return getQuestionFactory(DEFAULT_QUESTION_TYPE).getQuestion(defaultQuestion, true);
 	}
