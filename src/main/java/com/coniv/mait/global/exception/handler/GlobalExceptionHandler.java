@@ -1,5 +1,6 @@
 package com.coniv.mait.global.exception.handler;
 
+import java.sql.SQLException;
 import java.util.List;
 
 import org.springframework.context.support.DefaultMessageSourceResolvable;
@@ -54,5 +55,12 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
 		log.error("[unexpected error]", exception);
 		return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
 			.body(ErrorResponse.from(ExceptionCode.UNEXPECTED_EXCEPTION));
+	}
+
+	@ExceptionHandler(SQLException.class)
+	public ResponseEntity<ErrorResponse> handleSQLException(SQLException exception, HttpServletRequest request) {
+		log.error("SQLException 발생: {}, 경로: {}", exception.getMessage(), request.getRequestURI());
+		return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+			.body(ErrorResponse.of(ExceptionCode.DATABASE_ERROR, List.of(exception.getMessage())));
 	}
 }
