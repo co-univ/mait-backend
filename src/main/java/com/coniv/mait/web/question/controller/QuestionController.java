@@ -17,7 +17,6 @@ import com.coniv.mait.domain.question.enums.DeliveryMode;
 import com.coniv.mait.domain.question.enums.QuestionType;
 import com.coniv.mait.domain.question.service.QuestionService;
 import com.coniv.mait.global.response.ApiResponse;
-import com.coniv.mait.web.question.dto.CreateDefaultQuestionApiRequest;
 import com.coniv.mait.web.question.dto.CreateQuestionApiRequest;
 import com.coniv.mait.web.question.dto.QuestionApiResponse;
 import com.coniv.mait.web.question.dto.UpdateQuestionApiRequest;
@@ -50,11 +49,9 @@ public class QuestionController {
 	@Operation(summary = "기본 문제 생성 API", description = "문제 생성 과정에서 추가 버튼을 통해 기본 문제를 생성한다.")
 	@PostMapping("/default")
 	public ResponseEntity<ApiResponse<QuestionApiResponse>> createDefaultQuestion(
-		@PathVariable("questionSetId") final Long questionSetId,
-		@RequestBody @Valid CreateDefaultQuestionApiRequest request) {
+		@PathVariable("questionSetId") final Long questionSetId) {
 		return ResponseEntity.ok(
-			ApiResponse.ok(
-				QuestionApiResponse.from(questionService.createDefaultQuestion(questionSetId, request.number()))));
+			ApiResponse.ok(QuestionApiResponse.from(questionService.createDefaultQuestion(questionSetId))));
 	}
 
 	@Operation(summary = "문제 조회 API")
