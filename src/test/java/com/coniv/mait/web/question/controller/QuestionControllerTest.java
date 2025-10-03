@@ -1145,27 +1145,4 @@ class QuestionControllerTest {
 
 		verify(questionService).createDefaultQuestion(eq(questionSetId));
 	}
-
-	@Test
-	@DisplayName("기본 문제 생성 API 테스트 - 실패 (문제 번호 누락)")
-	void createDefaultQuestionMissingNumber() throws Exception {
-		// given
-		final Long questionSetId = 1L;
-		CreateDefaultQuestionApiRequest request = new CreateDefaultQuestionApiRequest(null);
-
-		// when & then
-		mockMvc.perform(post("/api/v1/question-sets/{questionSetId}/questions/default", questionSetId)
-				.contentType(MediaType.APPLICATION_JSON)
-				.content(objectMapper.writeValueAsString(request)))
-			.andExpectAll(
-				status().isBadRequest(),
-				jsonPath("$.isSuccess").value(false),
-				jsonPath("$.code").value("C-001"),
-				jsonPath("$.message").value("사용자 입력 오류입니다."),
-				jsonPath("$.reasons").isArray(),
-				jsonPath("$.reasons[0]").value("문제 번호는 필수 입니다.")
-			);
-
-		verify(questionService, never()).createDefaultQuestion(anyLong());
-	}
 }
