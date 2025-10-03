@@ -1132,7 +1132,7 @@ class QuestionControllerTest {
 		CreateDefaultQuestionApiRequest request = new CreateDefaultQuestionApiRequest(1L);
 		MultipleQuestionDto questionDto = mock(MultipleQuestionDto.class);
 		when(questionDto.getNumber()).thenReturn(1L);
-		when(questionService.createDefaultQuestion(questionSetId, 1L)).thenReturn(questionDto);
+		when(questionService.createDefaultQuestion(questionSetId)).thenReturn(questionDto);
 
 		// when & then
 		mockMvc.perform(post("/api/v1/question-sets/{questionSetId}/questions/default", questionSetId)
@@ -1143,7 +1143,7 @@ class QuestionControllerTest {
 				jsonPath("$.data.number").value(1L)
 			);
 
-		verify(questionService).createDefaultQuestion(eq(questionSetId), eq(1L));
+		verify(questionService).createDefaultQuestion(eq(questionSetId));
 	}
 
 	@Test
@@ -1166,6 +1166,6 @@ class QuestionControllerTest {
 				jsonPath("$.reasons[0]").value("문제 번호는 필수 입니다.")
 			);
 
-		verify(questionService, never()).createDefaultQuestion(anyLong(), any());
+		verify(questionService, never()).createDefaultQuestion(anyLong());
 	}
 }

@@ -23,6 +23,7 @@ import com.coniv.mait.domain.question.entity.QuestionSetEntity;
 import com.coniv.mait.domain.question.entity.ShortQuestionEntity;
 import com.coniv.mait.domain.question.enums.DeliveryMode;
 import com.coniv.mait.domain.question.enums.QuestionType;
+import com.coniv.mait.domain.question.repository.MultipleChoiceEntityRepository;
 import com.coniv.mait.domain.question.repository.QuestionEntityRepository;
 import com.coniv.mait.domain.question.repository.QuestionSetEntityRepository;
 import com.coniv.mait.domain.question.service.component.FillBlankQuestionFactory;
@@ -62,6 +63,9 @@ class QuestionServiceTest {
 	@Mock
 	private FillBlankQuestionFactory fillBlankQuestionFactory;
 
+	@Mock
+	private MultipleChoiceEntityRepository multipleChoiceEntityRepository;
+
 	@BeforeEach
 	void setUp() {
 		// QuestionFactory들의 getQuestionType() 메서드 모킹 (QuestionService 생성자에서 호출됨)
@@ -82,7 +86,8 @@ class QuestionServiceTest {
 		questionService = new QuestionService(
 			factories,
 			questionEntityRepository,
-			questionSetEntityRepository
+			questionSetEntityRepository,
+			multipleChoiceEntityRepository
 		);
 	}
 
@@ -589,9 +594,10 @@ class QuestionServiceTest {
 		when(expectedQuestionDto.getContent()).thenReturn(QuestionConstant.DEFAULT_QUESTION_CONTENT);
 
 		when(multipleQuestionFactory.getQuestion(any(QuestionEntity.class), eq(true))).thenReturn(expectedQuestionDto);
+		when(questionEntityRepository.findMaxNumberByQuestionSetId(questionSetId)).thenReturn(number - 1);
 
 		// when
-		QuestionDto result = questionService.createDefaultQuestion(questionSetId, number);
+		QuestionDto result = questionService.createDefaultQuestion(questionSetId);
 
 		// then
 		assertNotNull(result);
