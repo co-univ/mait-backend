@@ -29,7 +29,6 @@ public class TeamController {
 	@PostMapping
 	public ResponseEntity<ApiResponse<Void>> createTeam(@AuthenticationPrincipal UserEntity ownerUser,
 		@Valid @RequestBody CreateTeamApiRequest request) {
-		//TODO: @AuthenticationPrincipal UserEntity user 추가
 		teamService.createTeam(request.name(), ownerUser);
 		return ResponseEntity.ok(ApiResponse.noContent());
 	}
