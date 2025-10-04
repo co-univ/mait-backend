@@ -13,6 +13,7 @@ import com.coniv.mait.domain.team.repository.TeamInviteEntityRepository;
 import com.coniv.mait.domain.team.repository.TeamUserEntityRepository;
 import com.coniv.mait.domain.team.service.component.InviteTokenGenerator;
 import com.coniv.mait.domain.user.entity.UserEntity;
+import com.coniv.mait.global.enums.InviteTokenDuration;
 
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
@@ -41,14 +42,15 @@ public class TeamService {
 	}
 
 	@Transactional
-	public String createTeamInviteCode(final Long teamId, final UserEntity inviter) {
+	public String createTeamInviteCode(final Long teamId, final UserEntity inviter,
+		final InviteTokenDuration duration) {
 		TeamEntity team = teamEntityRepository.findById(teamId)
 			.orElseThrow(() -> new EntityNotFoundException("Team not found with id: " + teamId));
 
 		validateInviterRole(team, inviter);
 		String privateCode = inviteTokenGenerator.generateUniqueInviteToken();
 
-		TeamInviteEntity teamInviteEntity = TeamInviteEntity.createInvite(inviter, team, privateCode);
+		TeamInviteEntity teamInviteEntity = TeamInviteEntity.createInvite(inviter, team, privateCode, duration);
 		teamInviteEntityRepository.save(teamInviteEntity);
 
 		return privateCode;

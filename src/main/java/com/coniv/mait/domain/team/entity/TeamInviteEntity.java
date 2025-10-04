@@ -4,9 +4,12 @@ import java.time.LocalDateTime;
 
 import com.coniv.mait.domain.user.entity.UserEntity;
 import com.coniv.mait.global.entity.BaseTimeEntity;
+import com.coniv.mait.global.enums.InviteTokenDuration;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -43,15 +46,20 @@ public class TeamInviteEntity extends BaseTimeEntity {
 	@Column(nullable = false, unique = true)
 	private String token;
 
-	@Column(nullable = false)
+	@Enumerated(EnumType.STRING)
+	private InviteTokenDuration tokenDuration;
+
+	@Column
 	private LocalDateTime expiresAt;
 
-	public static TeamInviteEntity createInvite(UserEntity inviter, TeamEntity team, String token) {
+	public static TeamInviteEntity createInvite(UserEntity inviter, TeamEntity team, String token,
+		InviteTokenDuration duration) {
 		return TeamInviteEntity.builder()
 			.inviter(inviter)
 			.team(team)
 			.token(token)
-			.expiresAt(LocalDateTime.now())
+			.tokenDuration(duration)
+			.expiresAt(duration.calculateExpirationTime())
 			.build();
 	}
 }
