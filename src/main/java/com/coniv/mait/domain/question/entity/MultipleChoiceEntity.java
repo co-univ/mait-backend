@@ -35,4 +35,12 @@ public class MultipleChoiceEntity {
 	@ManyToOne(fetch = FetchType.LAZY)
 	@JoinColumn(name = "question_id", nullable = false)
 	private MultipleQuestionEntity question;
+
+	public static MultipleChoiceEntity defaultChoice(int number, MultipleQuestionEntity defaultQuestion) {
+		return MultipleChoiceEntity.builder()
+			.number(number)
+			.isCorrect(false)
+			.question(defaultQuestion)
+			.build();
+	}
 }

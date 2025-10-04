@@ -4,6 +4,8 @@ import java.util.List;
 import java.util.Optional;
 
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
 import com.coniv.mait.domain.question.entity.QuestionEntity;
 import com.coniv.mait.domain.question.entity.QuestionSetEntity;
@@ -13,6 +15,9 @@ public interface QuestionEntityRepository extends JpaRepository<QuestionEntity, 
 	List<QuestionEntity> findAllByQuestionSetId(final Long questionSetId);
 
 	long countByQuestionSetId(Long questionSetId);
+
+	@Query("select coalesce(max(q.number), 0) from QuestionEntity q where q.questionSet.id = :questionSetId")
+	long findMaxNumberByQuestionSetId(@Param("questionSetId") Long questionSetId);
 
 	Optional<QuestionEntity> findFirstByQuestionSetAndQuestionStatusIn(
 		QuestionSetEntity questionSet,

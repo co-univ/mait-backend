@@ -1,5 +1,9 @@
 package com.coniv.mait.domain.question.service.component;
 
+import java.util.List;
+
+import com.coniv.mait.domain.question.entity.MultipleChoiceEntity;
+import com.coniv.mait.domain.question.entity.MultipleQuestionEntity;
 import com.coniv.mait.domain.question.entity.QuestionEntity;
 import com.coniv.mait.domain.question.entity.QuestionSetEntity;
 import com.coniv.mait.domain.question.enums.QuestionType;
@@ -16,4 +20,13 @@ public interface QuestionFactory<T extends QuestionDto> {
 	void deleteSubEntities(QuestionEntity question);
 
 	void createSubEntities(T questionDto, QuestionEntity question);
+
+	static List<MultipleChoiceEntity> createDefaultSubEntities(MultipleQuestionEntity defaultQuestion) {
+		return List.of(
+			MultipleChoiceEntity.defaultChoice(1, defaultQuestion),
+			MultipleChoiceEntity.defaultChoice(2, defaultQuestion),
+			MultipleChoiceEntity.defaultChoice(3, defaultQuestion),
+			MultipleChoiceEntity.defaultChoice(4, defaultQuestion)
+		);
+	}
 }
