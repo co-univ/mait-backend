@@ -45,4 +45,13 @@ public class TeamInviteEntity extends BaseTimeEntity {
 
 	@Column(nullable = false)
 	private LocalDateTime expiresAt;
+
+	public static TeamInviteEntity createInvite(UserEntity inviter, TeamEntity team, String token) {
+		return TeamInviteEntity.builder()
+			.inviter(inviter)
+			.team(team)
+			.token(token)
+			.expiresAt(LocalDateTime.now())
+			.build();
+	}
 }
