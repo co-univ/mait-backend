@@ -87,6 +87,10 @@ public class JwtAuthorizationFilter extends OncePerRequestFilter {
 			return false; // 필터를 실행
 		}
 
+		if ("POST".equals(method) && pathMatcher.match("/api/v1/teams/*/invite", path)) {
+			return false; // 필터를 실행
+		}
+
 		return true;
 	}
 }
