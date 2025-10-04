@@ -58,7 +58,8 @@ public class TeamService {
 
 	private void validateInviterRole(final TeamEntity team, final UserEntity inviter) {
 		TeamUserEntity teamUser = teamUserEntityRepository.findByTeamAndUser(team, inviter)
-			.orElseThrow(() -> new EntityNotFoundException("Inviter is not a member of the team"));
+			.orElseThrow(() -> new EntityNotFoundException(
+				"Inviter is not a member of the team" + team.getId() + ", user: " + inviter.getId()));
 
 		if (!teamUser.canInvite()) {
 			throw new IllegalArgumentException("Only team owners can create invite codes");
