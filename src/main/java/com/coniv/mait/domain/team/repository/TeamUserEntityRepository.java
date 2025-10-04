@@ -12,5 +12,5 @@ import com.coniv.mait.domain.user.entity.UserEntity;
 public interface TeamUserEntityRepository extends JpaRepository<TeamUserEntity, Long> {
 	List<TeamUserEntity> findAllByTeamId(Long teamId);
 
-	Optional<TeamUserEntity> findByTeamIdAndUserId(TeamEntity team, UserEntity user);
+	Optional<TeamUserEntity> findByTeamAndUser(TeamEntity team, UserEntity user);
 }

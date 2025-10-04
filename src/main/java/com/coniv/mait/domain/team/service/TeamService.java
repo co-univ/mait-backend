@@ -57,7 +57,7 @@ public class TeamService {
 	}
 
 	private void validateInviterRole(final TeamEntity team, final UserEntity inviter) {
-		TeamUserEntity teamUser = teamUserEntityRepository.findByTeamIdAndUserId(team, inviter)
+		TeamUserEntity teamUser = teamUserEntityRepository.findByTeamAndUser(team, inviter)
 			.orElseThrow(() -> new EntityNotFoundException("Inviter is not a member of the team"));
 
 		if (!teamUser.canInvite()) {
