@@ -36,6 +36,7 @@ import com.coniv.mait.domain.question.service.dto.MultipleQuestionDto;
 import com.coniv.mait.domain.question.service.dto.OrderingQuestionDto;
 import com.coniv.mait.domain.question.service.dto.QuestionDto;
 import com.coniv.mait.domain.question.service.dto.ShortQuestionDto;
+import com.coniv.mait.domain.question.util.LexoRank;
 import com.coniv.mait.global.exception.custom.ResourceNotBelongException;
 
 import jakarta.persistence.EntityNotFoundException;
@@ -92,6 +93,101 @@ class QuestionServiceTest {
 	}
 
 	@Test
+	@DisplayName("순서 변경 - prev=null 이면 맨 앞으로 이동 (next 이전 키 생성)")
+	void changeOrder_MoveToFront_WhenPrevNull() {
+		// given
+		final Long questionSetId = 1L;
+		final Long sourceQuestionId = 10L;
+		final Long nextQuestionId = 20L;
+
+		QuestionSetEntity questionSet = mock(QuestionSetEntity.class);
+		when(questionSet.getId()).thenReturn(questionSetId);
+
+		QuestionEntity source = mock(QuestionEntity.class);
+		when(source.getQuestionSet()).thenReturn(questionSet);
+
+		QuestionEntity next = mock(QuestionEntity.class);
+		when(next.getQuestionSet()).thenReturn(questionSet);
+		when(next.getRank()).thenReturn("B");
+
+		when(questionEntityRepository.findById(sourceQuestionId)).thenReturn(Optional.of(source));
+		when(questionEntityRepository.findById(nextQuestionId)).thenReturn(Optional.of(next));
+
+		String expected = LexoRank.prevBefore("B");
+
+		// when
+		questionService.changeQuestionOrder(questionSetId, sourceQuestionId, null, nextQuestionId);
+
+		// then
+		verify(source).updateRank(expected);
+	}
+
+	@Test
+	@DisplayName("순서 변경 - next=null 이면 맨 뒤로 이동 (prev 다음 키 생성)")
+	void changeOrder_MoveToEnd_WhenNextNull() {
+		// given
+		final Long questionSetId = 1L;
+		final Long sourceQuestionId = 11L;
+		final Long prevQuestionId = 21L;
+
+		QuestionSetEntity questionSet = mock(QuestionSetEntity.class);
+		when(questionSet.getId()).thenReturn(questionSetId);
+
+		QuestionEntity source = mock(QuestionEntity.class);
+		when(source.getQuestionSet()).thenReturn(questionSet);
+
+		QuestionEntity prev = mock(QuestionEntity.class);
+		when(prev.getQuestionSet()).thenReturn(questionSet);
+		when(prev.getRank()).thenReturn("A");
+
+		when(questionEntityRepository.findById(sourceQuestionId)).thenReturn(Optional.of(source));
+		when(questionEntityRepository.findById(prevQuestionId)).thenReturn(Optional.of(prev));
+
+		String expected = LexoRank.nextAfter("A");
+
+		// when
+		questionService.changeQuestionOrder(questionSetId, sourceQuestionId, prevQuestionId, null);
+
+		// then
+		verify(source).updateRank(expected);
+	}
+
+	@Test
+	@DisplayName("순서 변경 - prev와 next 사이로 이동 (between 생성)")
+	void changeOrder_MoveBetween_WhenPrevAndNextPresent() {
+		// given
+		final Long questionSetId = 1L;
+		final Long sourceQuestionId = 12L;
+		final Long prevQuestionId = 22L;
+		final Long nextQuestionId = 23L;
+
+		QuestionSetEntity questionSet = mock(QuestionSetEntity.class);
+		when(questionSet.getId()).thenReturn(questionSetId);
+
+		QuestionEntity source = mock(QuestionEntity.class);
+		when(source.getQuestionSet()).thenReturn(questionSet);
+
+		QuestionEntity prev = mock(QuestionEntity.class);
+		when(prev.getQuestionSet()).thenReturn(questionSet);
+		when(prev.getRank()).thenReturn("A");
+
+		QuestionEntity next = mock(QuestionEntity.class);
+		when(next.getQuestionSet()).thenReturn(questionSet);
+		when(next.getRank()).thenReturn("C");
+
+		when(questionEntityRepository.findById(sourceQuestionId)).thenReturn(Optional.of(source));
+		when(questionEntityRepository.findById(prevQuestionId)).thenReturn(Optional.of(prev));
+		when(questionEntityRepository.findById(nextQuestionId)).thenReturn(Optional.of(next));
+
+		String expected = LexoRank.between("A", "C");
+
+		// when
+		questionService.changeQuestionOrder(questionSetId, sourceQuestionId, prevQuestionId, nextQuestionId);
+
+		// then
+		verify(source).updateRank(expected);
+	}
+
 	@DisplayName("문제 생성 성공 - 적절한 팩토리 호출 확인")
 	void createQuestion_Success() {
 		// given
