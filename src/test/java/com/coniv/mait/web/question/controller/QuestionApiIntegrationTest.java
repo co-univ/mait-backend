@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
+import java.util.Comparator;
 import java.util.List;
 
 import org.junit.jupiter.api.BeforeEach;
@@ -44,6 +45,7 @@ import com.coniv.mait.web.question.dto.CreateShortQuestionApiRequest;
 import com.coniv.mait.web.question.dto.UpdateFillBlankQuestionApiRequest;
 import com.coniv.mait.web.question.dto.UpdateMultipleQuestionApiRequest;
 import com.coniv.mait.web.question.dto.UpdateOrderingQuestionApiRequest;
+import com.coniv.mait.web.question.dto.UpdateQuestionOrderApiRequest;
 import com.coniv.mait.web.question.dto.UpdateShortQuestionApiRequest;
 
 public class QuestionApiIntegrationTest extends BaseIntegrationTest {
@@ -1209,5 +1211,47 @@ public class QuestionApiIntegrationTest extends BaseIntegrationTest {
 		assertThat(savedQuestion.getNumber()).isEqualTo(1L);
 		assertThat(savedQuestion.getQuestionSet().getId()).isEqualTo(questionSet.getId());
 		assertThat(savedQuestion).isInstanceOf(MultipleQuestionEntity.class);
+	}
+
+	@Test
+	@DisplayName("문제 순서 변경 API 통합 테스트")
+	void updateQuestionOrderApiSuccess() throws Exception {
+		// given
+		QuestionSetEntity questionSet = questionSetEntityRepository.save(
+			QuestionSetEntity.of("Sample Subject", QuestionSetCreationType.MANUAL));
+
+		QuestionEntity defaultQuestion = QuestionEntity.createDefaultQuestion(questionSet, 1L);
+		defaultQuestion.updateRank("123");
+		defaultQuestion = questionEntityRepository.save(defaultQuestion);
+
+		QuestionEntity prevQuestion = QuestionEntity.createDefaultQuestion(questionSet, 2L);
+		prevQuestion.updateRank("1245");
+		prevQuestion = questionEntityRepository.save(prevQuestion);
+
+		QuestionEntity nextQuestion = QuestionEntity.createDefaultQuestion(questionSet, 3L);
+		nextQuestion.updateRank("1250");
+		nextQuestion = questionEntityRepository.save(nextQuestion);
+
+		UpdateQuestionOrderApiRequest request = new UpdateQuestionOrderApiRequest(prevQuestion.getId(),
+			nextQuestion.getId());
+
+		// when
+		mockMvc.perform(
+				patch("/api/v1/question-sets/{questionSetId}/questions/{questionId}/orders", questionSet.getId(),
+					defaultQuestion.getId())
+					.contentType(MediaType.APPLICATION_JSON)
+					.content(objectMapper.writeValueAsString(request)))
+			.andExpectAll(status().isOk(),
+				jsonPath("$.isSuccess").value(true),
+				jsonPath("$.data").doesNotExist());
+
+		// then
+		List<QuestionEntity> questions = questionEntityRepository.findAllByQuestionSetId(questionSet.getId()).stream()
+			.sorted(Comparator.comparing(QuestionEntity::getLexoRank)).toList();
+
+		assertThat(questions).hasSize(3);
+		assertThat(questions.get(0).getId()).isEqualTo(prevQuestion.getId());
+		assertThat(questions.get(1).getId()).isEqualTo(defaultQuestion.getId());
+		assertThat(questions.get(2).getId()).isEqualTo(nextQuestion.getId());
 	}
 }
