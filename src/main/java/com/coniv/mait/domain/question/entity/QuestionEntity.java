@@ -51,7 +51,7 @@ public abstract class QuestionEntity {
 	private Long number;
 
 	@Column(nullable = false)
-	private String rank;
+	private String lexoRank;
 
 	@Column(nullable = false)
 	private int displayDelayMilliseconds;
@@ -109,6 +109,6 @@ public abstract class QuestionEntity {
 	}
 
 	public void updateRank(String rank) {
-		this.rank = rank;
+		this.lexoRank = rank;
 	}
 }

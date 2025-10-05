@@ -189,7 +189,7 @@ public class QuestionService {
 			if (!next.getQuestionSet().getId().equals(questionSetId)) {
 				throw new ResourceNotBelongException("nextQuestionId가 해당 문제 셋에 속한 문제가 아닙니다.");
 			}
-			sourceQuestion.updateRank(LexoRank.prevBefore(next.getRank()));
+			sourceQuestion.updateRank(LexoRank.prevBefore(next.getLexoRank()));
 			return;
 		}
 
@@ -199,7 +199,7 @@ public class QuestionService {
 			if (!prev.getQuestionSet().getId().equals(questionSetId)) {
 				throw new ResourceNotBelongException("prevQuestionId가 해당 문제 셋에 속한 문제가 아닙니다.");
 			}
-			sourceQuestion.updateRank(LexoRank.nextAfter(prev.getRank()));
+			sourceQuestion.updateRank(LexoRank.nextAfter(prev.getLexoRank()));
 			return;
 		}
 
@@ -215,8 +215,8 @@ public class QuestionService {
 			throw new ResourceNotBelongException("nextQuestionId가 해당 문제 셋에 속한 문제가 아닙니다.");
 		}
 
-		String prevRank = prev.getRank();
-		String nextRank = next.getRank();
+		String prevRank = prev.getLexoRank();
+		String nextRank = next.getLexoRank();
 
 		String newRank = LexoRank.between(prevRank, nextRank);
 		sourceQuestion.updateRank(newRank);

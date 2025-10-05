@@ -108,7 +108,7 @@ class QuestionServiceTest {
 
 		QuestionEntity next = mock(QuestionEntity.class);
 		when(next.getQuestionSet()).thenReturn(questionSet);
-		when(next.getRank()).thenReturn("B");
+		when(next.getLexoRank()).thenReturn("B");
 
 		when(questionEntityRepository.findById(sourceQuestionId)).thenReturn(Optional.of(source));
 		when(questionEntityRepository.findById(nextQuestionId)).thenReturn(Optional.of(next));
@@ -138,7 +138,7 @@ class QuestionServiceTest {
 
 		QuestionEntity prev = mock(QuestionEntity.class);
 		when(prev.getQuestionSet()).thenReturn(questionSet);
-		when(prev.getRank()).thenReturn("A");
+		when(prev.getLexoRank()).thenReturn("A");
 
 		when(questionEntityRepository.findById(sourceQuestionId)).thenReturn(Optional.of(source));
 		when(questionEntityRepository.findById(prevQuestionId)).thenReturn(Optional.of(prev));
@@ -169,11 +169,11 @@ class QuestionServiceTest {
 
 		QuestionEntity prev = mock(QuestionEntity.class);
 		when(prev.getQuestionSet()).thenReturn(questionSet);
-		when(prev.getRank()).thenReturn("A");
+		when(prev.getLexoRank()).thenReturn("A");
 
 		QuestionEntity next = mock(QuestionEntity.class);
 		when(next.getQuestionSet()).thenReturn(questionSet);
-		when(next.getRank()).thenReturn("C");
+		when(next.getLexoRank()).thenReturn("C");
 
 		when(questionEntityRepository.findById(sourceQuestionId)).thenReturn(Optional.of(source));
 		when(questionEntityRepository.findById(prevQuestionId)).thenReturn(Optional.of(prev));
