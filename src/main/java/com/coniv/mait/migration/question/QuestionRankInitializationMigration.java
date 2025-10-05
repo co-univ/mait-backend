@@ -16,7 +16,7 @@ import com.coniv.mait.migration.MigrationJob;
 
 import lombok.RequiredArgsConstructor;
 
-@Profile({"dev, local, prod"})
+@Profile({"dev", "local", "prod"})
 @Component
 @RequiredArgsConstructor
 public class QuestionRankInitializationMigration implements MigrationJob {
@@ -36,13 +36,13 @@ public class QuestionRankInitializationMigration implements MigrationJob {
 			List<QuestionEntity> questions = questionEntityRepository.findAllByQuestionSetId(questionSetId).stream()
 				.sorted(Comparator.comparingLong(QuestionEntity::getNumber))
 				.toList();
-			boolean needsInit = questions.stream().anyMatch(q -> q.getLexoRank() == null);
+			boolean needsInit = questions.stream().anyMatch(q -> q.getLexoRank() == null || q.getLexoRank().isBlank());
 			if (!needsInit) {
 				continue;
 			}
 			String prev = null;
 			for (QuestionEntity q : questions) {
-				if (q.getLexoRank() == null) {
+				if (q.getLexoRank() == null || q.getLexoRank().isBlank()) {
 					String rank = prev == null ? LexoRank.middle() : LexoRank.nextAfter(prev);
 					q.updateRank(rank);
 					prev = rank;

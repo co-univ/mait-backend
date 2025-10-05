@@ -19,7 +19,7 @@ import lombok.extern.slf4j.Slf4j;
  * 테이블 변경에 따른 데이터 마이그레이션을 수행하는 컴포넌트
  * Todo: batch 서버 생성 시 이동 고려
  */
-@Profile({"dev, local, prod"})
+@Profile({"dev", "local", "prod"})
 @Slf4j
 @Component
 @RequiredArgsConstructor
