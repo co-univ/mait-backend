@@ -51,6 +51,9 @@ public abstract class QuestionEntity {
 	private Long number;
 
 	@Column(nullable = false)
+	private String rank;
+
+	@Column(nullable = false)
 	private int displayDelayMilliseconds;
 
 	@Enumerated(EnumType.STRING)
@@ -99,5 +102,13 @@ public abstract class QuestionEntity {
 
 	public void updateExplanation(final String explanation) {
 		this.explanation = explanation;
+	}
+
+	public void updateNumber(long number) {
+		this.number = number;
+	}
+
+	public void updateRank(String rank) {
+		this.rank = rank;
 	}
 }
