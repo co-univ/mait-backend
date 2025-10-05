@@ -22,8 +22,8 @@ import com.coniv.mait.domain.question.service.QuestionService;
 import com.coniv.mait.global.response.ApiResponse;
 import com.coniv.mait.web.question.dto.CreateDefaultQuestionApiRequest;
 import com.coniv.mait.web.question.dto.CreateQuestionApiRequest;
-import com.coniv.mait.web.question.dto.ImageInfoApiResponse;
 import com.coniv.mait.web.question.dto.QuestionApiResponse;
+import com.coniv.mait.web.question.dto.QuestionImageApiResponse;
 import com.coniv.mait.web.question.dto.UpdateQuestionApiRequest;
 
 import io.swagger.v3.oas.annotations.Operation;
@@ -103,11 +103,11 @@ public class QuestionController {
 
 	@Operation(summary = "문제 이미지 업로드 API", description = "문제에 이미지를 업로드합니다.")
 	@PostMapping(value = "/{questionId}/images", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-	public ResponseEntity<ApiResponse<ImageInfoApiResponse>> uploadImage(
+	public ResponseEntity<ApiResponse<QuestionImageApiResponse>> uploadImage(
 		@PathVariable("questionId") final Long questionId,
 		@RequestParam("image") MultipartFile image
 	) {
 		return ResponseEntity.ok(
-			ApiResponse.ok(ImageInfoApiResponse.from(questionImageService.uploadImage(questionId, image).getUrl())));
+			ApiResponse.ok(QuestionImageApiResponse.from(questionImageService.uploadImage(questionId, image))));
 	}
 }
