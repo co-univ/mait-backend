@@ -97,6 +97,7 @@ public class QuestionAnswerSubmitApiIntegrationTest extends BaseIntegrationTest 
 			MultipleQuestionEntity.builder()
 				.number(1L)
 				.questionSet(questionSet)
+				.lexoRank("0")
 				.build()
 		);
 
@@ -158,6 +159,7 @@ public class QuestionAnswerSubmitApiIntegrationTest extends BaseIntegrationTest 
 			MultipleQuestionEntity.builder()
 				.number(1L)
 				.questionSet(questionSet)
+				.lexoRank("a")
 				.build()
 		);
 
@@ -210,6 +212,7 @@ public class QuestionAnswerSubmitApiIntegrationTest extends BaseIntegrationTest 
 			MultipleQuestionEntity.builder()
 				.content("이것은 테스트 문제입니다.")
 				.number(1L)
+				.lexoRank("a")
 				.displayDelayMilliseconds(0)
 				.questionSet(questionSet)
 				.answerCount(4)

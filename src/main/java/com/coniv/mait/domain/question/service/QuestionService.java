@@ -24,6 +24,7 @@ import com.coniv.mait.domain.question.repository.QuestionSetEntityRepository;
 import com.coniv.mait.domain.question.service.component.QuestionFactory;
 import com.coniv.mait.domain.question.service.dto.CurrentQuestionDto;
 import com.coniv.mait.domain.question.service.dto.QuestionDto;
+import com.coniv.mait.domain.question.util.LexoRank;
 import com.coniv.mait.global.exception.custom.ResourceNotBelongException;
 
 import jakarta.persistence.EntityNotFoundException;
@@ -171,5 +172,53 @@ public class QuestionService {
 		QuestionFactory<?> questionFactory = questionFactories.get(question.getType());
 		questionFactory.deleteSubEntities(question);
 		questionEntityRepository.deleteById(question.getId());
+	}
+
+	@Transactional
+	public void changeQuestionOrder(final Long questionSetId, final Long sourceQuestionId, final Long prevQuestionId,
+		final Long nextQuestionId) {
+		QuestionEntity sourceQuestion = questionEntityRepository.findById(sourceQuestionId)
+			.orElseThrow(() -> new EntityNotFoundException("Question not found with id: " + sourceQuestionId));
+		if (!sourceQuestion.getQuestionSet().getId().equals(questionSetId)) {
+			throw new ResourceNotBelongException("해당 문제 셋에 속한 문제가 아닙니다.");
+		}
+
+		if (prevQuestionId == null) {
+			QuestionEntity next = questionEntityRepository.findById(nextQuestionId)
+				.orElseThrow(() -> new EntityNotFoundException("Next question not found with id: " + nextQuestionId));
+			if (!next.getQuestionSet().getId().equals(questionSetId)) {
+				throw new ResourceNotBelongException("nextQuestionId가 해당 문제 셋에 속한 문제가 아닙니다.");
+			}
+			sourceQuestion.updateRank(LexoRank.prevBefore(next.getLexoRank()));
+			return;
+		}
+
+		if (nextQuestionId == null) {
+			QuestionEntity prev = questionEntityRepository.findById(prevQuestionId)
+				.orElseThrow(() -> new EntityNotFoundException("Prev question not found with id: " + prevQuestionId));
+			if (!prev.getQuestionSet().getId().equals(questionSetId)) {
+				throw new ResourceNotBelongException("prevQuestionId가 해당 문제 셋에 속한 문제가 아닙니다.");
+			}
+			sourceQuestion.updateRank(LexoRank.nextAfter(prev.getLexoRank()));
+			return;
+		}
+
+		QuestionEntity prev = questionEntityRepository.findById(prevQuestionId)
+			.orElseThrow(() -> new EntityNotFoundException("Prev question not found with id: " + prevQuestionId));
+		QuestionEntity next = questionEntityRepository.findById(nextQuestionId)
+			.orElseThrow(() -> new EntityNotFoundException("Next question not found with id: " + nextQuestionId));
+
+		if (!prev.getQuestionSet().getId().equals(questionSetId)) {
+			throw new ResourceNotBelongException("prevQuestionId가 해당 문제 셋에 속한 문제가 아닙니다.");
+		}
+		if (!next.getQuestionSet().getId().equals(questionSetId)) {
+			throw new ResourceNotBelongException("nextQuestionId가 해당 문제 셋에 속한 문제가 아닙니다.");
+		}
+
+		String prevRank = prev.getLexoRank();
+		String nextRank = next.getLexoRank();
+
+		String newRank = LexoRank.between(prevRank, nextRank);
+		sourceQuestion.updateRank(newRank);
 	}
 }

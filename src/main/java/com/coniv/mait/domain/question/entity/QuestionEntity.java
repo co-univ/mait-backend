@@ -52,6 +52,9 @@ public abstract class QuestionEntity extends BaseTimeEntity {
 	private Long number;
 
 	@Column(nullable = false)
+	private String lexoRank;
+
+	@Column(nullable = false)
 	private int displayDelayMilliseconds;
 
 	@Enumerated(EnumType.STRING)
@@ -100,5 +103,13 @@ public abstract class QuestionEntity extends BaseTimeEntity {
 
 	public void updateExplanation(final String explanation) {
 		this.explanation = explanation;
+	}
+
+	public void updateNumber(long number) {
+		this.number = number;
+	}
+
+	public void updateRank(String rank) {
+		this.lexoRank = rank;
 	}
 }

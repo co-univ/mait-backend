@@ -39,6 +39,7 @@ import com.coniv.mait.web.question.dto.CreateShortQuestionApiRequest;
 import com.coniv.mait.web.question.dto.UpdateFillBlankQuestionApiRequest;
 import com.coniv.mait.web.question.dto.UpdateMultipleQuestionApiRequest;
 import com.coniv.mait.web.question.dto.UpdateOrderingQuestionApiRequest;
+import com.coniv.mait.web.question.dto.UpdateQuestionOrderApiRequest;
 import com.coniv.mait.web.question.dto.UpdateShortQuestionApiRequest;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
@@ -1040,5 +1041,51 @@ class QuestionControllerTest {
 			);
 
 		verify(questionService).createDefaultQuestion(eq(questionSetId));
+	}
+
+	@Test
+	@DisplayName("문제 순서 변경 API 테스트 - 성공")
+	void updateQuestionOrderTest() throws Exception {
+		// given
+		final Long questionSetId = 1L;
+		final Long sourceQuestionId = 2L;
+		final Long prevQuestionId = 3L;
+		final Long nextQuestionId = 4L;
+		UpdateQuestionOrderApiRequest request = new UpdateQuestionOrderApiRequest(prevQuestionId, nextQuestionId);
+
+		// when & then
+		mockMvc.perform(
+				patch("/api/v1/question-sets/{questionSetId}/questions/{questionId}/orders", questionSetId,
+					sourceQuestionId)
+					.contentType(MediaType.APPLICATION_JSON)
+					.content(objectMapper.writeValueAsString(request)))
+			.andExpect(status().isOk());
+
+		verify(questionService).changeQuestionOrder(questionSetId, sourceQuestionId, prevQuestionId, nextQuestionId);
+	}
+
+	@Test
+	@DisplayName("문제 순서 변경 API 테스트 - prevQuestionId와 nextQuestionId가 모두 null인 경우")
+	void updateQuestionOrderBothNullTest() throws Exception {
+		// given
+		final Long questionSetId = 1L;
+		final Long sourceQuestionId = 2L;
+		UpdateQuestionOrderApiRequest request = new UpdateQuestionOrderApiRequest(null, null);
+
+		// when & then
+		mockMvc.perform(
+				patch("/api/v1/question-sets/{questionSetId}/questions/{questionId}/orders", questionSetId,
+					sourceQuestionId)
+					.contentType(MediaType.APPLICATION_JSON)
+					.content(objectMapper.writeValueAsString(request)))
+			.andExpectAll(
+				status().isBadRequest(),
+				jsonPath("$.isSuccess").value(false),
+				jsonPath("$.code").value("C-003"),
+				jsonPath("$.reasons").isArray(),
+				jsonPath("$.reasons[0]").value("이전 문제 ID와 다음 문제 ID가 모두 null일 수 없습니다.")
+			);
+
+		verify(questionService, never()).changeQuestionOrder(anyLong(), anyLong(), any(), any());
 	}
 }
