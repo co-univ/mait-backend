@@ -51,7 +51,7 @@ public class TeamInviteEntity extends BaseTimeEntity {
 	private InviteTokenDuration tokenDuration;
 
 	@Column
-	private LocalDateTime expiresAt;
+	private LocalDateTime expiredAt;
 
 	public static TeamInviteEntity createInvite(UserEntity inviter, TeamEntity team, String token,
 		InviteTokenDuration duration) {
@@ -60,11 +60,11 @@ public class TeamInviteEntity extends BaseTimeEntity {
 			.team(team)
 			.token(token)
 			.tokenDuration(duration)
-			.expiresAt(duration.calculateExpirationTime())
+			.expiredAt(duration.calculateExpirationTime())
 			.build();
 	}
 
 	public boolean isExpired() {
-		return expiresAt != null && LocalDateTime.now().isAfter(expiresAt);
+		return expiredAt != null && LocalDateTime.now().isAfter(expiredAt);
 	}
 }
