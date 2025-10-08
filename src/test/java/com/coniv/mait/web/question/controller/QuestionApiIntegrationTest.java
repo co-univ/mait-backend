@@ -84,7 +84,7 @@ public class QuestionApiIntegrationTest extends BaseIntegrationTest {
 			.content("객관식 문제 내용")
 			.explanation("객관식 문제 해설")
 			.number(1L)
-			.lexoRank("1")
+			.lexoRank("m")
 			.questionSet(savedQuestionSet)
 			.build();
 		MultipleQuestionEntity savedQuestion = questionEntityRepository.save(question);
@@ -139,7 +139,7 @@ public class QuestionApiIntegrationTest extends BaseIntegrationTest {
 			.content("주관식 문제 내용")
 			.explanation("주관식 문제 해설")
 			.number(1L)
-			.lexoRank("1")
+			.lexoRank("m")
 			.questionSet(savedQuestionSet)
 			.build();
 		ShortQuestionEntity savedQuestion = questionEntityRepository.save(question);
@@ -197,7 +197,7 @@ public class QuestionApiIntegrationTest extends BaseIntegrationTest {
 			.explanation("순서배열 문제 해설")
 			.number(1L)
 			.questionSet(savedQuestionSet)
-			.lexoRank("1")
+			.lexoRank("m")
 			.build();
 		OrderingQuestionEntity savedQuestion = questionEntityRepository.save(question);
 
@@ -228,7 +228,6 @@ public class QuestionApiIntegrationTest extends BaseIntegrationTest {
 				jsonPath("$.data.id").value(savedQuestion.getId()),
 				jsonPath("$.data.content").value("순서배열 문제 내용"),
 				jsonPath("$.data.explanation").value("순서배열 문제 해설"),
-				jsonPath("$.data.number").value(1),
 				jsonPath("$.data.options").isArray(),
 				jsonPath("$.data.options.length()").value(2),
 				jsonPath("$.data.options[0].content").value("첫 번째 단계"),
@@ -251,7 +250,7 @@ public class QuestionApiIntegrationTest extends BaseIntegrationTest {
 			.content("빈칸에 들어갈 적절한 단어는 ___입니다.")
 			.explanation("빈칸 문제 해설")
 			.number(1L)
-			.lexoRank("1")
+			.lexoRank("m")
 			.questionSet(savedQuestionSet)
 			.build();
 		FillBlankQuestionEntity savedQuestion = questionEntityRepository.save(question);
@@ -333,8 +332,8 @@ public class QuestionApiIntegrationTest extends BaseIntegrationTest {
 		ShortQuestionEntity shortQuestion = ShortQuestionEntity.builder()
 			.content("주관식 문제")
 			.explanation("주관식 문제 해설")
-			.number(1L)
 			.lexoRank("1")
+			.number(1L)
 			.questionSet(savedQuestionSet)
 			.build();
 		ShortQuestionEntity savedShortQuestion = questionEntityRepository.save(shortQuestion);
@@ -403,17 +402,12 @@ public class QuestionApiIntegrationTest extends BaseIntegrationTest {
 				jsonPath("$.isSuccess").value(true),
 				jsonPath("$.data").isArray(),
 				jsonPath("$.data.length()").value(4),
-				// number 순으로 정렬되어야 함 (1, 2, 3, 4)
-				jsonPath("$.data[0].number").value(1), // 주관식
 				jsonPath("$.data[0].content").value("주관식 문제"),
 				jsonPath("$.data[0].type").value(QuestionType.SHORT.name()),
-				jsonPath("$.data[1].number").value(2), // 객관식
 				jsonPath("$.data[1].content").value("객관식 문제"),
 				jsonPath("$.data[1].type").value(QuestionType.MULTIPLE.name()),
-				jsonPath("$.data[2].number").value(3), // 순서배열
 				jsonPath("$.data[2].content").value("순서배열 문제"),
 				jsonPath("$.data[2].type").value(QuestionType.ORDERING.name()),
-				jsonPath("$.data[3].number").value(4), // 빈칸
 				jsonPath("$.data[3].content").value("빈칸 문제"),
 				jsonPath("$.data[3].type").value(QuestionType.FILL_BLANK.name())
 			);
@@ -448,8 +442,8 @@ public class QuestionApiIntegrationTest extends BaseIntegrationTest {
 			.content("원본 주관식 문제 내용")
 			.explanation("원본 문제 해설")
 			.number(1L)
-			.lexoRank("a")
 			.questionSet(savedQuestionSet)
+			.lexoRank("1234")
 			.build();
 		ShortQuestionEntity savedQuestion = questionEntityRepository.save(originalQuestion);
 
@@ -522,8 +516,8 @@ public class QuestionApiIntegrationTest extends BaseIntegrationTest {
 			.content("원본 객관식 문제 내용")
 			.explanation("원본 문제 해설")
 			.number(1L)
-			.lexoRank("a")
 			.questionSet(savedQuestionSet)
+			.lexoRank("1234")
 			.build();
 		MultipleQuestionEntity savedQuestion = questionEntityRepository.save(originalQuestion);
 
@@ -619,7 +613,7 @@ public class QuestionApiIntegrationTest extends BaseIntegrationTest {
 			.content("원본 순서맞추기 문제 내용")
 			.explanation("원본 문제 해설")
 			.number(1L)
-			.lexoRank("a")
+			.lexoRank("1234")
 			.questionSet(savedQuestionSet)
 			.build();
 		OrderingQuestionEntity savedQuestion = questionEntityRepository.save(originalQuestion);
@@ -708,8 +702,8 @@ public class QuestionApiIntegrationTest extends BaseIntegrationTest {
 			.content("원본 빈칸에 들어갈 적절한 단어는 ___입니다.")
 			.explanation("원본 문제 해설")
 			.number(1L)
+			.lexoRank("1234")
 			.questionSet(savedQuestionSet)
-			.lexoRank("a")
 			.build();
 		FillBlankQuestionEntity savedQuestion = questionEntityRepository.save(originalQuestion);
 
@@ -795,7 +789,7 @@ public class QuestionApiIntegrationTest extends BaseIntegrationTest {
 			.content("삭제할 객관식 문제 내용")
 			.explanation("삭제할 문제 해설")
 			.number(1L)
-			.lexoRank("a")
+			.lexoRank("1234")
 			.questionSet(savedQuestionSet)
 			.build();
 		MultipleQuestionEntity savedQuestion = questionEntityRepository.save(question);
@@ -865,17 +859,14 @@ public class QuestionApiIntegrationTest extends BaseIntegrationTest {
 		QuestionSetEntity questionSet = questionSetEntityRepository.save(
 			QuestionSetEntity.of("Sample Subject", QuestionSetCreationType.MANUAL));
 
-		QuestionEntity defaultQuestion = QuestionEntity.createDefaultQuestion(questionSet, 1L);
-		defaultQuestion.updateRank("123");
-		defaultQuestion = questionEntityRepository.save(defaultQuestion);
+		QuestionEntity defaultQuestion = questionEntityRepository.save(
+			QuestionEntity.createDefaultQuestion(questionSet, "123"));
 
-		QuestionEntity prevQuestion = QuestionEntity.createDefaultQuestion(questionSet, 2L);
-		prevQuestion.updateRank("1245");
-		prevQuestion = questionEntityRepository.save(prevQuestion);
+		QuestionEntity prevQuestion = questionEntityRepository.save(
+			QuestionEntity.createDefaultQuestion(questionSet, "1245"));
 
-		QuestionEntity nextQuestion = QuestionEntity.createDefaultQuestion(questionSet, 3L);
-		nextQuestion.updateRank("1250");
-		nextQuestion = questionEntityRepository.save(nextQuestion);
+		QuestionEntity nextQuestion = questionEntityRepository.save(
+			QuestionEntity.createDefaultQuestion(questionSet, "12451"));
 
 		UpdateQuestionOrderApiRequest request = new UpdateQuestionOrderApiRequest(prevQuestion.getId(),
 			nextQuestion.getId());
