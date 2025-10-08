@@ -19,7 +19,6 @@ import jakarta.persistence.InheritanceType;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
-import jakarta.persistence.UniqueConstraint;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -27,9 +26,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.experimental.SuperBuilder;
 
-@Table(name = "questions", uniqueConstraints = {
-	@UniqueConstraint(name = "uk_question_set_number", columnNames = {"question_set_id", "number"})
-})
+@Table(name = "questions")
 @Entity
 @Inheritance(strategy = InheritanceType.SINGLE_TABLE)
 @DiscriminatorColumn(name = "question_type")
@@ -48,7 +45,6 @@ public abstract class QuestionEntity extends BaseTimeEntity {
 
 	private String explanation;
 
-	@Column(nullable = false)
 	private Long number;
 
 	@Column(nullable = false)
@@ -66,10 +62,10 @@ public abstract class QuestionEntity extends BaseTimeEntity {
 	@JoinColumn(name = "question_set_id")
 	private QuestionSetEntity questionSet;
 
-	public static QuestionEntity createDefaultQuestion(QuestionSetEntity questionSet, Long number) {
+	public static QuestionEntity createDefaultQuestion(QuestionSetEntity questionSet, String rank) {
 		return MultipleQuestionEntity.builder()
-			.number(number)
 			.questionSet(questionSet)
+			.lexoRank(rank)
 			.content(QuestionConstant.DEFAULT_QUESTION_CONTENT)
 			.displayDelayMilliseconds(QuestionConstant.MAX_DISPLAY_DELAY_MILLISECONDS)
 			.build();

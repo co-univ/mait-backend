@@ -72,9 +72,12 @@ public class QuestionService {
 		QuestionSetEntity questionSet = questionSetEntityRepository.findById(questionSetId)
 			.orElseThrow(() -> new EntityNotFoundException("QuestionSet not found with id: " + questionSetId));
 
-		long number = questionEntityRepository.findMaxNumberByQuestionSetId(questionSetId) + 1;
+		final String nextRank = questionEntityRepository.findTopByQuestionSetIdOrderByLexoRankDesc(questionSetId)
+			.map(QuestionEntity::getLexoRank)
+			.map(LexoRank::nextAfter)
+			.orElseGet(LexoRank::middle);
 
-		QuestionEntity defaultQuestion = QuestionEntity.createDefaultQuestion(questionSet, number);
+		QuestionEntity defaultQuestion = QuestionEntity.createDefaultQuestion(questionSet, nextRank);
 		questionEntityRepository.save(defaultQuestion);
 
 		List<MultipleChoiceEntity> defaultSubEntities = QuestionFactory.createDefaultSubEntities(

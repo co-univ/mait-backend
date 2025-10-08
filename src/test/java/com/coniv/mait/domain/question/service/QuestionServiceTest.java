@@ -673,7 +673,6 @@ class QuestionServiceTest {
 	void createDefaultQuestion_Success() {
 		// given
 		final Long questionSetId = 1L;
-		final Long number = 1L;
 
 		QuestionSetEntity questionSetEntity = mock(QuestionSetEntity.class);
 		when(questionSetEntityRepository.findById(questionSetId)).thenReturn(Optional.of(questionSetEntity));
@@ -685,25 +684,22 @@ class QuestionServiceTest {
 
 		// multipleQuestionFactory.getQuestion() mock 설정
 		MultipleQuestionDto expectedQuestionDto = mock(MultipleQuestionDto.class);
-		when(expectedQuestionDto.getNumber()).thenReturn(number);
 		when(expectedQuestionDto.getType()).thenReturn(QuestionType.MULTIPLE);
 		when(expectedQuestionDto.getContent()).thenReturn(QuestionConstant.DEFAULT_QUESTION_CONTENT);
 
 		when(multipleQuestionFactory.getQuestion(any(QuestionEntity.class), eq(true))).thenReturn(expectedQuestionDto);
-		when(questionEntityRepository.findMaxNumberByQuestionSetId(questionSetId)).thenReturn(number - 1);
 
 		// when
 		QuestionDto result = questionService.createDefaultQuestion(questionSetId);
 
 		// then
 		assertNotNull(result);
-		assertEquals(number, result.getNumber());
 		assertEquals(QuestionType.MULTIPLE, result.getType());
 		assertEquals(QuestionConstant.DEFAULT_QUESTION_CONTENT, result.getContent());
 
 		QuestionEntity savedQuestion = questionCaptor.getValue();
 		assertNotNull(savedQuestion);
-		assertEquals(number, savedQuestion.getNumber());
+		assertNotNull(savedQuestion.getLexoRank());
 		assertEquals(QuestionConstant.DEFAULT_QUESTION_CONTENT, savedQuestion.getContent());
 		assertEquals(questionSetEntity, savedQuestion.getQuestionSet());
 		assertEquals(QuestionConstant.MAX_DISPLAY_DELAY_MILLISECONDS, savedQuestion.getDisplayDelayMilliseconds());
