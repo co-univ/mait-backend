@@ -29,7 +29,7 @@ public class TeamService {
 
 	@Transactional
 	public void createTeam(final String teamName, final UserEntity owner) {
-		TeamEntity teamEntity = teamEntityRepository.save(TeamEntity.of(teamName));
+		TeamEntity teamEntity = teamEntityRepository.save(TeamEntity.of(teamName, owner.getId()));
 		teamUserEntityRepository.save(TeamUserEntity.createOwnerUser(owner, teamEntity));
 	}
 

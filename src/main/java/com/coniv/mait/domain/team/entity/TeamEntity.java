@@ -29,11 +29,14 @@ public class TeamEntity extends BaseTimeEntity {
 	@Column(nullable = false)
 	private String name;
 
-	private TeamEntity(String name) {
+	@Column(nullable = false)
+	private Long creatorId;
+
+	private TeamEntity(String name, Long creatorId) {
 		this.name = name;
 	}
 
-	public static TeamEntity of(String name) {
-		return new TeamEntity(name);
+	public static TeamEntity of(String name, Long creatorId) {
+		return new TeamEntity(name, creatorId);
 	}
 }
