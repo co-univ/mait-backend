@@ -13,6 +13,7 @@ import com.coniv.mait.domain.user.entity.UserEntity;
 import com.coniv.mait.global.response.ApiResponse;
 import com.coniv.mait.web.team.dto.CreateTeamApiRequest;
 import com.coniv.mait.web.team.dto.CreateTeamInviteApiRequest;
+import com.coniv.mait.web.team.dto.CreateTeamInviteApiResponse;
 
 import io.swagger.v3.oas.annotations.Operation;
 import jakarta.validation.Valid;
@@ -35,10 +36,14 @@ public class TeamController {
 
 	@Operation(summary = "팀 초대 링크 생성 API")
 	@PostMapping("/{teamId}/invite")
-	public ResponseEntity<ApiResponse<String>> createTeamInviteCode(@PathVariable("teamId") Long teamId,
+	public ResponseEntity<ApiResponse<CreateTeamInviteApiResponse>> createTeamInviteCode(
+		@PathVariable("teamId") Long teamId,
 		@RequestBody @Valid CreateTeamInviteApiRequest request,
 		@AuthenticationPrincipal UserEntity ownerUser) {
 		String inviteCode = teamService.createTeamInviteCode(teamId, ownerUser, request.duration());
-		return ResponseEntity.ok(ApiResponse.ok(inviteCode));
+		return ResponseEntity.ok()
+			.body(ApiResponse.ok(
+				CreateTeamInviteApiResponse.from(inviteCode)
+			));
 	}
 }
