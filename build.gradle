@@ -45,6 +45,10 @@ dependencies {
     implementation 'org.apache.poi:poi:5.2.5'
     implementation 'org.apache.poi:poi-ooxml:5.2.5'
 
+    // AWS S3 연동을 위한 의존성
+    implementation 'io.awspring.cloud:spring-cloud-aws-starter-s3:3.2.1'
+    implementation 'software.amazon.awssdk:s3'
+
     compileOnly 'org.projectlombok:lombok'
 
     runtimeOnly 'com.mysql:mysql-connector-j'

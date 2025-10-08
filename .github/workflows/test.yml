@@ -8,6 +8,10 @@ jobs:
   build:
     runs-on: ubuntu-latest
     
+    env:
+      SPRING_PROFILES_ACTIVE: test
+      AWS_REGION: ap-northeast-2
+    
     services:
       redis:
         image: redis:7
@@ -19,6 +23,8 @@ jobs:
           --health-timeout 5s
           --health-retries 5
 
+
+    
     steps:
       - uses: actions/checkout@v3
       - name: Set up JDK 21
@@ -38,4 +44,7 @@ jobs:
         run: ./gradlew build -x test
 
       - name: Run tests
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
         run: ./gradlew test

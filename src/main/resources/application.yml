@@ -33,9 +33,25 @@ spring:
             scope:
               - email
               - profile
+  servlet:
+    multipart:
+      max-file-size: 10MB
+      max-request-size: 100MB
+
+  cloud:
+    aws:
+      credentials:
+        access-key: ${AWS_ACCESS_KEY_ID:}
+        secret-key: ${AWS_SECRET_ACCESS_KEY:}
+      s3:
+        bucket: ${AWS_S3_BUCKET:}
+      region:
+        static: ap-northeast-2
+      stack:
+        auto: false
 
 jwt:
-  secretKey: ${JWT_SECRET_KEY}
+  secretKey: ${JWT_SECRET_KEY:}
   access:
     expiration: ${JWT_ACCESS_TOKEN_EXPIRATION}
   refresh:
