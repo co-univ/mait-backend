@@ -66,6 +66,7 @@ public class IdempotencyIntegrationTest extends BaseIntegrationTest {
 			MultipleQuestionEntity.builder()
 				.number(1L)
 				.questionSet(questionSet)
+				.lexoRank("0")
 				.build()
 		);
 
@@ -104,6 +105,7 @@ public class IdempotencyIntegrationTest extends BaseIntegrationTest {
 			MultipleQuestionEntity.builder()
 				.number(1L)
 				.questionSet(questionSet)
+				.lexoRank("a")
 				.build()
 		);
 
