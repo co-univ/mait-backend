@@ -115,8 +115,8 @@ public class QuestionController {
 		questionService.changeQuestionOrder(questionSetId, questionId, request.prevQuestionId(),
 			request.nextQuestionId());
 		return ResponseEntity.ok(ApiResponse.noContent());
-  }
-    
+	}
+
 	@Operation(summary = "문제 이미지 업로드 API", description = "문제에 이미지를 업로드합니다.")
 	@PostMapping(value = "/{questionId}/images", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
 	public ResponseEntity<ApiResponse<QuestionImageApiResponse>> uploadImage(
