@@ -34,6 +34,7 @@ public class TeamEntity extends BaseTimeEntity {
 
 	private TeamEntity(String name, Long creatorId) {
 		this.name = name;
+		this.creatorId = creatorId;
 	}
 
 	public static TeamEntity of(String name, Long creatorId) {
