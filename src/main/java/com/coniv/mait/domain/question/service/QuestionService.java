@@ -103,7 +103,9 @@ public class QuestionService {
 	// Todo: 조회 성능 개선
 	public List<QuestionDto> getQuestions(final Long questionSetId) {
 		return questionEntityRepository.findAllByQuestionSetId(questionSetId).stream()
-			.sorted(Comparator.comparingLong(QuestionEntity::getNumber))
+			.sorted(Comparator
+				.comparing(QuestionEntity::getNumber, Comparator.nullsLast(Long::compareTo))
+				.thenComparing(QuestionEntity::getLexoRank))
 			.map(question -> getQuestionFactory(question.getType()).getQuestion(question, true))
 			.toList();
 	}
