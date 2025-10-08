@@ -42,24 +42,24 @@ public class TeamService {
 	}
 
 	@Transactional
-	public String createTeamInviteCode(final Long teamId, final UserEntity inviter,
+	public String createTeamInviteCode(final Long teamId, final UserEntity invitor,
 		final InviteTokenDuration duration) {
 		TeamEntity team = teamEntityRepository.findById(teamId)
 			.orElseThrow(() -> new EntityNotFoundException("Team not found with id: " + teamId));
 
-		validateInviterRole(team, inviter);
+		validateInvitorRole(team, invitor);
 		String privateCode = inviteTokenGenerator.generateUniqueInviteToken();
 
-		TeamInviteEntity teamInviteEntity = TeamInviteEntity.createInvite(inviter, team, privateCode, duration);
+		TeamInviteEntity teamInviteEntity = TeamInviteEntity.createInvite(invitor, team, privateCode, duration);
 		teamInviteEntityRepository.save(teamInviteEntity);
 
 		return privateCode;
 	}
 
-	private void validateInviterRole(final TeamEntity team, final UserEntity inviter) {
+	private void validateInvitorRole(final TeamEntity team, final UserEntity inviter) {
 		TeamUserEntity teamUser = teamUserEntityRepository.findByTeamAndUser(team, inviter)
 			.orElseThrow(() -> new EntityNotFoundException(
-				"Inviter is not a member of the team" + team.getId() + ", user: " + inviter.getId()));
+				"Inviter is not a member of the team " + team.getId() + ", user: " + inviter.getId()));
 
 		if (!teamUser.canInvite()) {
 			throw new IllegalArgumentException("Only team owners can create invite codes");
