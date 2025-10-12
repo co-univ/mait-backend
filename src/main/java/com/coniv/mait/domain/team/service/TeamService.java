@@ -14,6 +14,7 @@ import com.coniv.mait.domain.team.repository.TeamUserEntityRepository;
 import com.coniv.mait.domain.team.service.component.InviteTokenGenerator;
 import com.coniv.mait.domain.user.entity.UserEntity;
 import com.coniv.mait.global.enums.InviteTokenDuration;
+import com.coniv.mait.global.exception.custom.TeamInviteFailException;
 
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
@@ -62,7 +63,7 @@ public class TeamService {
 				"Inviter is not a member of the team " + team.getId() + ", user: " + inviter.getId()));
 
 		if (!teamUser.canInvite()) {
-			throw new IllegalArgumentException("Only team owners can create invite codes");
+			throw new TeamInviteFailException("Only team owners can create invite codes");
 		}
 	}
 }

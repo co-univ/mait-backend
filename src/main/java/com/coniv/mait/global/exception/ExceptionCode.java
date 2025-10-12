@@ -16,6 +16,8 @@ public enum ExceptionCode {
 	PROCESSING(HttpStatus.CONFLICT, "C-005", "이전 요청이 처리 중입니다."),
 	Question_SET_LIVE_EXCEPTION(HttpStatus.BAD_REQUEST, "C-006", "실시간 문제 세트에서 오류가 발생했습니다."),
 
+	TEAM_INVITE_FAIL_EXCEPTION(HttpStatus.BAD_REQUEST, "C-007", "팀 초대 생성에서 오류가 발생했습니다."),
+
 	LOGIN_FAIL_EXCEPTION(HttpStatus.UNAUTHORIZED, "A-001", "로그인 실패"),
 	JWT_AUTH_EXCEPTION(HttpStatus.UNAUTHORIZED, "A-002", "JWT 인증 오류"),
 

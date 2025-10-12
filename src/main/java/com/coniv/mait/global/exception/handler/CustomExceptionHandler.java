@@ -10,6 +10,7 @@ import com.coniv.mait.global.exception.ExceptionCode;
 import com.coniv.mait.global.exception.custom.LoginFailException;
 import com.coniv.mait.global.exception.custom.QuestionSetLiveException;
 import com.coniv.mait.global.exception.custom.ResourceNotBelongException;
+import com.coniv.mait.global.exception.custom.TeamInviteFailException;
 import com.coniv.mait.global.exception.custom.UserParameterException;
 import com.coniv.mait.global.response.ErrorResponse;
 
@@ -49,5 +50,13 @@ public class CustomExceptionHandler {
 		log.info("QuestionSetLiveException 발생: {}, {}", exception.getMessage(), request.getRequestURI());
 		return ResponseEntity.badRequest()
 			.body(ErrorResponse.of(ExceptionCode.Question_SET_LIVE_EXCEPTION, List.of(exception.getMessage())));
+	}
+
+	@ExceptionHandler(TeamInviteFailException.class)
+	public ResponseEntity<ErrorResponse> handleTeamInviteFailException(TeamInviteFailException exception,
+		HttpServletRequest request) {
+		log.info("QuestionSetLiveException 발생: {}, {}", exception.getMessage(), request.getRequestURI());
+		return ResponseEntity.badRequest()
+			.body(ErrorResponse.of(ExceptionCode.TEAM_INVITE_FAIL_EXCEPTION, List.of(exception.getMessage())));
 	}
 }
