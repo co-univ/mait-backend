@@ -35,7 +35,7 @@ public abstract class QuestionApiResponse {
 
 	private String explanation;
 
-	@Schema(requiredMode = Schema.RequiredMode.REQUIRED)
+	@Schema(requiredMode = Schema.RequiredMode.NOT_REQUIRED)
 	private Long number;
 
 	@Schema(requiredMode = Schema.RequiredMode.REQUIRED)
