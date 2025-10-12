@@ -37,12 +37,16 @@ class QuestionSetServiceTest {
 	@Mock
 	private QuestionEntityRepository questionEntityRepository;
 
+	@Mock
+	private QuestionService questionService;
+
 	@Test
 	@DisplayName("문제 셋 생성 테스트")
 	void createQuestionSetTest() {
 		// given
 		String subject = "Sample Subject";
 		var creationType = QuestionSetCreationType.MANUAL;
+		final Long questionSetId = 1L;
 
 		// when
 		QuestionSetDto questionSetDto = questionSetService.createQuestionSet(subject, creationType);
@@ -51,6 +55,7 @@ class QuestionSetServiceTest {
 		assertThat(questionSetDto).isNotNull();
 		assertThat(questionSetDto.getSubject()).isEqualTo(subject);
 		verify(questionSetEntityRepository).save(any());
+		verify(questionService).createDefaultQuestion(any());
 	}
 
 	@Test
