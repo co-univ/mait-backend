@@ -22,6 +22,8 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class QuestionSetService {
 
+	private final QuestionService questionService;
+
 	private final QuestionSetEntityRepository questionSetEntityRepository;
 
 	private final QuestionEntityRepository questionEntityRepository;
@@ -32,6 +34,8 @@ public class QuestionSetService {
 
 		QuestionSetEntity questionSetEntity = QuestionSetEntity.of(subject, creationType);
 		questionSetEntityRepository.save(questionSetEntity);
+
+		questionService.createDefaultQuestion(questionSetEntity.getId());
 
 		return QuestionSetDto.builder()
 			.id(questionSetEntity.getId())
