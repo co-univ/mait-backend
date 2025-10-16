@@ -36,7 +36,7 @@ class TeamServiceTest {
 	void createTeam_SavesTeamEntity() {
 		// given
 		String teamName = "테스트 팀";
-		TeamEntity mockTeamEntity = TeamEntity.of(teamName);
+		TeamEntity mockTeamEntity = TeamEntity.of(teamName, 1L);
 		UserEntity owner = UserEntity.socialLoginUser("email", "닉네임", "socialId", LoginProvider.GOOGLE);
 		TeamUserEntity ownerTeamUser = TeamUserEntity.createOwnerUser(owner, mockTeamEntity);
 
@@ -55,7 +55,7 @@ class TeamServiceTest {
 	@DisplayName("사용자들과 팀 연결 시 TeamUserEntity들이 저장되는지 확인")
 	void createUsersAndLinkTeam_SavesTeamUserEntities() {
 		// given
-		TeamEntity team = TeamEntity.of("테스트 팀");
+		TeamEntity team = TeamEntity.of("테스트 팀", 1L);
 		List<UserEntity> users = List.of(
 			UserEntity.socialLoginUser("user1@test.com", "사용자1", "provider1", LoginProvider.GOOGLE),
 			UserEntity.socialLoginUser("user2@test.com", "사용자2", "provider2", LoginProvider.GOOGLE)

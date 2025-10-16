@@ -122,7 +122,7 @@ class CsvUserEntityCreationTest {
 		List<TeamEntity> teams = teamEntityRepository.findAll();
 		TeamEntity team;
 		if (teams.isEmpty()) {
-			team = TeamEntity.of("테스트");
+			team = TeamEntity.of("테스트", 1L);
 			teamEntityRepository.save(team);
 		} else {
 			team = teams.getFirst();

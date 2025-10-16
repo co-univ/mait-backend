@@ -62,7 +62,7 @@ public class QuestionSetApiIntegrationTest extends BaseIntegrationTest {
 	@DisplayName("문제 셋 목록 조회 API 성공 테스트")
 	void getQuestionSetsApiSuccess() throws Exception {
 		// given
-		TeamEntity team = teamEntityRepository.save(TeamEntity.builder().name("코니브").build());
+		TeamEntity team = teamEntityRepository.save(TeamEntity.builder().name("코니브").creatorId(1L).build());
 		String subject1 = "Subject 1";
 		String subject2 = "Subject 2";
 		final DeliveryMode deliveryMode = DeliveryMode.LIVE_TIME;
