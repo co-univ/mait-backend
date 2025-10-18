@@ -48,7 +48,7 @@ public class MultipleQuestionValidator implements QuestionValidator {
 		}
 
 		if (choices.stream().anyMatch(choice -> choice.getContent().isBlank())) {
-			return QuestionValidateDto.invalid(multipleQuestion, QuestionValidationResult.MISSING_CHOICE_CONTENT);
+			return QuestionValidateDto.invalid(multipleQuestion, QuestionValidationResult.EMPTY_CHOICE_CONTENT);
 		}
 
 		return QuestionValidateDto.valid(multipleQuestion);
