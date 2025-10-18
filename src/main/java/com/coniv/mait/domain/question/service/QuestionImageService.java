@@ -1,5 +1,6 @@
 package com.coniv.mait.domain.question.service;
 
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
@@ -45,5 +46,23 @@ public class QuestionImageService {
 			.imageKey(questionImage.getImageKey())
 			.imageUrl(questionImage.getUrl())
 			.build();
+	}
+
+	@Async("maitThreadPoolExecutor")
+	@Transactional
+	public void updateImage(final QuestionEntity question, final Long questionImageId) {
+		if (questionImageId == null) {
+			return;
+		}
+
+		questionImageEntityRepository.findAllByQuestionAndUsedIsTrue(question).forEach(image -> {
+			image.updateUsage(false);
+		});
+
+		QuestionImageEntity questionImage = questionImageEntityRepository.findById(questionImageId)
+			.orElseThrow(() -> new EntityNotFoundException("QuestionImage not found with id: " + questionImageId));
+
+		questionImage.updateUsage(true);
+		questionImageEntityRepository.save(questionImage);
 	}
 }

@@ -25,4 +25,8 @@ public abstract class BaseImageEntity extends BaseTimeEntity {
 
 	@Builder.Default
 	private boolean used = true;
+
+	public void updateUsage(boolean used) {
+		this.used = used;
+	}
 }
