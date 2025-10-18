@@ -26,6 +26,8 @@ public class UpdateMultipleQuestionApiRequest extends UpdateQuestionApiRequest {
 		return MultipleQuestionDto.builder()
 			.id(getId())
 			.content(getContent())
+			.imageUrl(getImageUrl())
+			.imageId(getImageId())
 			.explanation(getExplanation())
 			.number(getNumber())
 			.choices(choices)

@@ -39,6 +39,9 @@ public class QuestionService {
 	private final QuestionSetEntityRepository questionSetEntityRepository;
 
 	private final Map<QuestionType, QuestionFactory<?>> questionFactories;
+
+	private final QuestionImageService questionImageService;
+
 	private final MultipleChoiceEntityRepository multipleChoiceEntityRepository;
 
 	@Autowired
@@ -46,11 +49,13 @@ public class QuestionService {
 		List<QuestionFactory<?>> factories,
 		QuestionEntityRepository questionEntityRepository,
 		QuestionSetEntityRepository questionSetEntityRepository,
-		MultipleChoiceEntityRepository multipleChoiceEntityRepository) {
+		MultipleChoiceEntityRepository multipleChoiceEntityRepository,
+		QuestionImageService questionImageService) {
 		questionFactories = factories.stream()
 			.collect(Collectors.toUnmodifiableMap(QuestionFactory::getQuestionType, Function.identity()));
 		this.questionEntityRepository = questionEntityRepository;
 		this.questionSetEntityRepository = questionSetEntityRepository;
+		this.questionImageService = questionImageService;
 		this.multipleChoiceEntityRepository = multipleChoiceEntityRepository;
 	}
 
@@ -150,6 +155,8 @@ public class QuestionService {
 		if (question.getType() == questionDto.getType()) {
 			question.updateContent(questionDto.getContent());
 			question.updateExplanation(questionDto.getExplanation());
+			question.updateImageUrl(questionDto.getImageUrl());
+			questionImageService.updateImage(question, questionDto.getImageId());
 
 			questionFactory.deleteSubEntities(question);
 			questionFactory.createSubEntities(questionDto, question);
@@ -161,6 +168,8 @@ public class QuestionService {
 		questionEntityRepository.delete(question);
 
 		QuestionEntity createdQuestion = questionFactory.save(questionDto, question.getQuestionSet());
+		createdQuestion.updateImageUrl(questionDto.getImageUrl());
+		questionImageService.updateImage(createdQuestion, questionDto.getImageId());
 
 		return questionFactory.getQuestion(createdQuestion, true);
 	}

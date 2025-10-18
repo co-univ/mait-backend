@@ -25,6 +25,8 @@ public class UpdateShortQuestionApiRequest extends UpdateQuestionApiRequest {
 			.id(getId())
 			.content(getContent())
 			.explanation(getExplanation())
+			.imageUrl(getImageUrl())
+			.imageId(getImageId())
 			.number(getNumber())
 			.shortAnswers(shortAnswers)
 			.build();
