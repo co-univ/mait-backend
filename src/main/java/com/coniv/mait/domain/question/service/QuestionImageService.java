@@ -1,5 +1,7 @@
 package com.coniv.mait.domain.question.service;
 
+import java.util.concurrent.CompletableFuture;
+
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -50,9 +52,9 @@ public class QuestionImageService {
 
 	@Async("maitThreadPoolExecutor")
 	@Transactional
-	public void updateImage(final QuestionEntity question, final Long questionImageId) {
+	public CompletableFuture<Void> updateImage(final QuestionEntity question, final Long questionImageId) {
 		if (questionImageId == null) {
-			return;
+			return CompletableFuture.completedFuture(null);
 		}
 
 		questionImageEntityRepository.findAllByQuestionAndUsedIsTrue(question).forEach(image -> {
@@ -64,5 +66,6 @@ public class QuestionImageService {
 
 		questionImage.updateUsage(true);
 		questionImageEntityRepository.save(questionImage);
+		return CompletableFuture.completedFuture(null);
 	}
 }
