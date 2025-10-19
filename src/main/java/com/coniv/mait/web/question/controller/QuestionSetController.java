@@ -21,6 +21,7 @@ import com.coniv.mait.global.response.ApiResponse;
 import com.coniv.mait.web.question.dto.CreateQuestionSetApiRequest;
 import com.coniv.mait.web.question.dto.CreateQuestionSetApiResponse;
 import com.coniv.mait.web.question.dto.QuestionSetApiResponse;
+import com.coniv.mait.web.question.dto.QuestionValidationApiResponse;
 import com.coniv.mait.web.question.dto.UpdateQuestionSetApiRequest;
 import com.coniv.mait.web.question.dto.UpdateQuestionSetFieldApiRequest;
 
@@ -83,5 +84,16 @@ public class QuestionSetController {
 		@PathVariable("questionSetId") Long questionSetId) {
 		questionSetService.updateQuestionSetField(questionSetId, request.title());
 		return ResponseEntity.ok(ApiResponse.noContent());
+	}
+
+	@Operation(summary = "문제 셋 전체 문제 검증 API", description = "문제 셋 전체 문제를 검증 후 조건을 만족하지 않는 문제 목록을 반환한다.")
+	@GetMapping("/validate")
+	public ResponseEntity<ApiResponse<List<QuestionValidationApiResponse>>> validateQuestionSet(
+		@RequestParam("questionSetId") Long questionSetId) {
+		List<QuestionValidationApiResponse> responses = questionSetService.validateQuestionSet(questionSetId)
+			.stream()
+			.map(QuestionValidationApiResponse::from)
+			.toList();
+		return ResponseEntity.ok(ApiResponse.ok(responses));
 	}
 }
