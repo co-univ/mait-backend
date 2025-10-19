@@ -15,13 +15,16 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import com.coniv.mait.domain.question.entity.QuestionEntity;
 import com.coniv.mait.domain.question.entity.QuestionSetEntity;
 import com.coniv.mait.domain.question.enums.DeliveryMode;
 import com.coniv.mait.domain.question.enums.QuestionSetCreationType;
 import com.coniv.mait.domain.question.enums.QuestionSetVisibility;
+import com.coniv.mait.domain.question.exception.QuestionValidationResult;
 import com.coniv.mait.domain.question.repository.QuestionEntityRepository;
 import com.coniv.mait.domain.question.repository.QuestionSetEntityRepository;
 import com.coniv.mait.domain.question.service.dto.QuestionSetDto;
+import com.coniv.mait.domain.question.service.dto.QuestionValidateDto;
 
 import jakarta.persistence.EntityNotFoundException;
 
@@ -39,6 +42,9 @@ class QuestionSetServiceTest {
 
 	@Mock
 	private QuestionService questionService;
+
+	@Mock
+	private com.coniv.mait.domain.question.service.component.QuestionChecker questionChecker;
 
 	@Test
 	@DisplayName("문제 셋 생성 테스트")
@@ -222,5 +228,105 @@ class QuestionSetServiceTest {
 		// then
 		verify(questionSetEntityRepository, times(1)).findById(questionSetId);
 		assertThat(questionSetEntity.getTitle()).isEqualTo(newTitle);
+	}
+
+	@Test
+	@DisplayName("문제 셋 검증 테스트 - 모든 문제가 유효한 경우 빈 리스트 반환")
+	void validateQuestionSet_AllValid_ReturnsEmptyList() {
+		// given
+		final Long questionSetId = 1L;
+		final QuestionSetEntity questionSetEntity = mock(QuestionSetEntity.class);
+		when(questionSetEntity.getId()).thenReturn(questionSetId);
+
+		QuestionEntity question1 = mock(QuestionEntity.class);
+		QuestionEntity question2 = mock(QuestionEntity.class);
+
+		List<QuestionEntity> questions = List.of(question1, question2);
+
+		QuestionValidateDto validDto1 = QuestionValidateDto.builder()
+			.questionId(1L)
+			.number(1L)
+			.valid(true)
+			.build();
+
+		QuestionValidateDto validDto2 = QuestionValidateDto.builder()
+			.questionId(2L)
+			.number(2L)
+			.valid(true)
+			.build();
+
+		when(questionSetEntityRepository.findById(questionSetId)).thenReturn(Optional.of(questionSetEntity));
+		when(questionEntityRepository.findAllByQuestionSetId(questionSetId)).thenReturn(questions);
+		when(questionChecker.validateQuestion(question1)).thenReturn(validDto1);
+		when(questionChecker.validateQuestion(question2)).thenReturn(validDto2);
+
+		// when
+		List<QuestionValidateDto> result = questionSetService.validateQuestionSet(questionSetId);
+
+		// then
+		assertThat(result).isEmpty();
+		verify(questionSetEntityRepository).findById(questionSetId);
+		verify(questionEntityRepository).findAllByQuestionSetId(questionSetId);
+		verify(questionChecker).validateQuestion(question1);
+		verify(questionChecker).validateQuestion(question2);
+	}
+
+	@Test
+	@DisplayName("문제 셋 검증 테스트 - 일부 문제가 유효하지 않은 경우 해당 문제만 반환")
+	void validateQuestionSet_SomeInvalid_ReturnsInvalidQuestions() {
+		// given
+		final Long questionSetId = 1L;
+		final QuestionSetEntity questionSetEntity = mock(QuestionSetEntity.class);
+		when(questionSetEntity.getId()).thenReturn(questionSetId);
+
+		QuestionEntity question1 = mock(QuestionEntity.class);
+		QuestionEntity question2 = mock(QuestionEntity.class);
+		QuestionEntity question3 = mock(QuestionEntity.class);
+
+		List<QuestionEntity> questions = List.of(question1, question2, question3);
+
+		QuestionValidateDto validDto = QuestionValidateDto.builder()
+			.questionId(1L)
+			.number(1L)
+			.valid(true)
+			.build();
+
+		QuestionValidateDto invalidDto1 = QuestionValidateDto.builder()
+			.questionId(2L)
+			.number(2L)
+			.valid(false)
+			.reason(QuestionValidationResult.EMPTY_CONTENT)
+			.build();
+
+		QuestionValidateDto invalidDto2 = QuestionValidateDto.builder()
+			.questionId(3L)
+			.number(3L)
+			.valid(false)
+			.reason(QuestionValidationResult.INVALID_CHOICE_COUNT)
+			.build();
+
+		when(questionSetEntityRepository.findById(questionSetId)).thenReturn(Optional.of(questionSetEntity));
+		when(questionEntityRepository.findAllByQuestionSetId(questionSetId)).thenReturn(questions);
+		when(questionChecker.validateQuestion(question1)).thenReturn(validDto);
+		when(questionChecker.validateQuestion(question2)).thenReturn(invalidDto1);
+		when(questionChecker.validateQuestion(question3)).thenReturn(invalidDto2);
+
+		// when
+		List<QuestionValidateDto> result = questionSetService.validateQuestionSet(questionSetId);
+
+		// then
+		assertThat(result).hasSize(2);
+		assertThat(result.get(0).getQuestionId()).isEqualTo(2L);
+		assertThat(result.get(0).isValid()).isFalse();
+		assertThat(result.get(0).getReason()).isEqualTo(QuestionValidationResult.EMPTY_CONTENT);
+		assertThat(result.get(1).getQuestionId()).isEqualTo(3L);
+		assertThat(result.get(1).isValid()).isFalse();
+		assertThat(result.get(1).getReason()).isEqualTo(QuestionValidationResult.INVALID_CHOICE_COUNT);
+
+		verify(questionSetEntityRepository).findById(questionSetId);
+		verify(questionEntityRepository).findAllByQuestionSetId(questionSetId);
+		verify(questionChecker).validateQuestion(question1);
+		verify(questionChecker).validateQuestion(question2);
+		verify(questionChecker).validateQuestion(question3);
 	}
 }
