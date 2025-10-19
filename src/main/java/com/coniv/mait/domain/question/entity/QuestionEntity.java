@@ -50,6 +50,8 @@ public abstract class QuestionEntity extends BaseTimeEntity {
 	@Column(nullable = false)
 	private String lexoRank;
 
+	private String imageUrl;
+
 	@Column(nullable = false)
 	private int displayDelayMilliseconds;
 
@@ -107,5 +109,9 @@ public abstract class QuestionEntity extends BaseTimeEntity {
 
 	public void updateRank(String rank) {
 		this.lexoRank = rank;
+	}
+
+	public void updateImageUrl(String imageUrl) {
+		this.imageUrl = imageUrl;
 	}
 }

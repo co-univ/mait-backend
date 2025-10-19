@@ -25,6 +25,8 @@ public class UpdateFillBlankQuestionApiRequest extends UpdateQuestionApiRequest 
 			.id(getId())
 			.content(getContent())
 			.explanation(getExplanation())
+			.imageUrl(getImageUrl())
+			.imageId(getImageId())
 			.number(getNumber())
 			.fillBlankAnswers(fillBlankAnswers)
 			.build();

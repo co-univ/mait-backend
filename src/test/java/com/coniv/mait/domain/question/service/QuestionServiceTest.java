@@ -67,6 +67,9 @@ class QuestionServiceTest {
 	@Mock
 	private MultipleChoiceEntityRepository multipleChoiceEntityRepository;
 
+	@Mock
+	private QuestionImageService questionImageService;
+
 	@BeforeEach
 	void setUp() {
 		// QuestionFactory들의 getQuestionType() 메서드 모킹 (QuestionService 생성자에서 호출됨)
@@ -88,7 +91,8 @@ class QuestionServiceTest {
 			factories,
 			questionEntityRepository,
 			questionSetEntityRepository,
-			multipleChoiceEntityRepository
+			multipleChoiceEntityRepository,
+			questionImageService
 		);
 	}
 
@@ -506,6 +510,7 @@ class QuestionServiceTest {
 		when(questionDto.getType()).thenReturn(QuestionType.MULTIPLE);
 		when(questionDto.getContent()).thenReturn("수정된 문제 내용");
 		when(questionDto.getExplanation()).thenReturn("수정된 해설");
+		when(questionDto.getImageId()).thenReturn(100L);
 
 		MultipleQuestionDto expectedResult = mock(MultipleQuestionDto.class);
 		when(multipleQuestionFactory.getQuestion(existingQuestion, true)).thenReturn(expectedResult);
@@ -526,6 +531,7 @@ class QuestionServiceTest {
 		verify(multipleQuestionFactory).deleteSubEntities(existingQuestion);
 		verify(multipleQuestionFactory).createSubEntities(questionDto, existingQuestion);
 		verify(multipleQuestionFactory).getQuestion(existingQuestion, true);
+		verify(questionImageService).updateImage(existingQuestion, questionDto.getImageId());
 
 		// delete와 save는 호출되지 않아야 함
 		verify(questionEntityRepository, never()).delete(any());
@@ -549,6 +555,7 @@ class QuestionServiceTest {
 
 		ShortQuestionDto questionDto = mock(ShortQuestionDto.class);
 		when(questionDto.getType()).thenReturn(QuestionType.SHORT);
+		when(questionDto.getImageId()).thenReturn(200L);
 
 		ShortQuestionEntity newQuestion = mock(ShortQuestionEntity.class);
 		when(shortQuestionFactory.save(questionDto, questionSetEntity)).thenReturn(newQuestion);
@@ -572,6 +579,7 @@ class QuestionServiceTest {
 		verify(shortQuestionFactory).save(questionDto, questionSetEntity); // 새로운 타입의 팩토리
 		verify(shortQuestionFactory).getQuestion(newQuestion, true);
 
+		verify(questionImageService).updateImage(newQuestion, questionDto.getImageId());
 		// 같은 타입 수정 메서드들은 호출되지 않아야 함
 		verify(existingQuestion, never()).updateContent(anyString());
 		verify(existingQuestion, never()).updateExplanation(anyString());
