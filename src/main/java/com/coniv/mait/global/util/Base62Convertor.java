@@ -1,4 +1,4 @@
-package com.coniv.mait.util;
+package com.coniv.mait.global.util;
 
 import java.math.BigInteger;
 import java.nio.ByteBuffer;

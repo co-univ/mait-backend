@@ -5,7 +5,7 @@ import java.util.UUID;
 import org.springframework.stereotype.Component;
 
 import com.coniv.mait.domain.team.repository.TeamInviteEntityRepository;
-import com.coniv.mait.util.Base62Convertor;
+import com.coniv.mait.global.util.Base62Convertor;
 
 import lombok.RequiredArgsConstructor;
 
