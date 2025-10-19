@@ -190,21 +190,21 @@ public class QuestionSetApiIntegrationTest extends BaseIntegrationTest {
 			.build();
 		questionEntityRepository.save(question1);
 
-		MultipleChoiceEntity choice1_1 = MultipleChoiceEntity.builder()
+		MultipleChoiceEntity choice1 = MultipleChoiceEntity.builder()
 			.question(question1)
 			.content("선택지 1")
 			.isCorrect(true)
 			.number(1)
 			.build();
 
-		MultipleChoiceEntity choice1_2 = MultipleChoiceEntity.builder()
+		MultipleChoiceEntity choice2 = MultipleChoiceEntity.builder()
 			.question(question1)
 			.content("선택지 2")
 			.isCorrect(false)
 			.number(2)
 			.build();
 
-		multipleChoiceEntityRepository.saveAll(java.util.List.of(choice1_1, choice1_2));
+		multipleChoiceEntityRepository.saveAll(java.util.List.of(choice1, choice2));
 
 		MultipleQuestionEntity question2 = MultipleQuestionEntity.builder()
 			.questionSet(questionSet)
@@ -215,28 +215,28 @@ public class QuestionSetApiIntegrationTest extends BaseIntegrationTest {
 			.build();
 		questionEntityRepository.save(question2);
 
-		MultipleChoiceEntity choice2_1 = MultipleChoiceEntity.builder()
+		MultipleChoiceEntity choice3 = MultipleChoiceEntity.builder()
 			.question(question2)
 			.content("선택지 A")
 			.isCorrect(false)
 			.number(1)
 			.build();
 
-		MultipleChoiceEntity choice2_2 = MultipleChoiceEntity.builder()
+		MultipleChoiceEntity choice4 = MultipleChoiceEntity.builder()
 			.question(question2)
 			.content("선택지 B")
 			.isCorrect(true)
 			.number(2)
 			.build();
 
-		MultipleChoiceEntity choice2_3 = MultipleChoiceEntity.builder()
+		MultipleChoiceEntity choice5 = MultipleChoiceEntity.builder()
 			.question(question2)
 			.content("선택지 C")
 			.isCorrect(false)
 			.number(3)
 			.build();
 
-		multipleChoiceEntityRepository.saveAll(java.util.List.of(choice2_1, choice2_2, choice2_3));
+		multipleChoiceEntityRepository.saveAll(java.util.List.of(choice3, choice4, choice5));
 
 		// when & then
 		mockMvc.perform(get("/api/v1/question-sets/validate")
@@ -290,21 +290,21 @@ public class QuestionSetApiIntegrationTest extends BaseIntegrationTest {
 			.build();
 		questionEntityRepository.save(invalidQuestion1);
 
-		MultipleChoiceEntity invalidChoice1_1 = MultipleChoiceEntity.builder()
+		MultipleChoiceEntity invalidChoice1 = MultipleChoiceEntity.builder()
 			.question(invalidQuestion1)
 			.content("선택지 A")
 			.isCorrect(true)
 			.number(1)
 			.build();
 
-		MultipleChoiceEntity invalidChoice1_2 = MultipleChoiceEntity.builder()
+		MultipleChoiceEntity invalidChoice2 = MultipleChoiceEntity.builder()
 			.question(invalidQuestion1)
 			.content("선택지 B")
 			.isCorrect(false)
 			.number(2)
 			.build();
 
-		multipleChoiceEntityRepository.saveAll(java.util.List.of(invalidChoice1_1, invalidChoice1_2));
+		multipleChoiceEntityRepository.saveAll(java.util.List.of(invalidChoice1, invalidChoice2));
 
 		// 선택지가 1개만 있는 문제 (유효하지 않음)
 		MultipleQuestionEntity invalidQuestion2 = MultipleQuestionEntity.builder()
@@ -316,14 +316,14 @@ public class QuestionSetApiIntegrationTest extends BaseIntegrationTest {
 			.build();
 		questionEntityRepository.save(invalidQuestion2);
 
-		MultipleChoiceEntity invalidChoice2_1 = MultipleChoiceEntity.builder()
+		MultipleChoiceEntity invalidChoice3 = MultipleChoiceEntity.builder()
 			.question(invalidQuestion2)
 			.content("유일한 선택지")
 			.isCorrect(true)
 			.number(1)
 			.build();
 
-		multipleChoiceEntityRepository.save(invalidChoice2_1);
+		multipleChoiceEntityRepository.save(invalidChoice3);
 
 		// when & then
 		mockMvc.perform(get("/api/v1/question-sets/validate")
