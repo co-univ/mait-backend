@@ -39,6 +39,10 @@ public class OrderingQuestionValidator implements QuestionValidator {
 			return QuestionValidateDto.invalid(question, QuestionValidationResult.INVALID_OPTION_COUNT);
 		}
 
+		if (options.stream().anyMatch(option -> option.getContent().isBlank())) {
+			return QuestionValidateDto.invalid(question, QuestionValidationResult.EMPTY_ORDERING_OPTION_CONTENT);
+		}
+
 		return QuestionValidateDto.valid(question);
 	}
 }
