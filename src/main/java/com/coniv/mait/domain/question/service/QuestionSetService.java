@@ -106,7 +106,7 @@ public class QuestionSetService {
 		QuestionSetEntity questionSet = questionSetEntityRepository.findById(questionSetId)
 			.orElseThrow(() -> new EntityNotFoundException("Question set not found"));
 
-		List<QuestionEntity> questions = questionEntityRepository.findAllByQuestionSetId(questionSetId);
+		List<QuestionEntity> questions = questionEntityRepository.findAllByQuestionSetId(questionSet.getId());
 
 		return questions.stream()
 			.map(questionChecker::validateQuestion)
