@@ -16,6 +16,7 @@ public enum QuestionValidationResult {
 	// 주관식
 	INVALID_ANSWER_COUNT("주관식 문제의 정답은 1개 이상이어야 합니다."),
 	EMPTY_SHORT_ANSWER_CONTENT("주관식 문제의 모든 정답 내용을 입력해주세요."),
+	INVALID_SUB_ANSWER_COUNT("주관식 문제의 인정 답안은 하나의 번호당 5개 이하이어야 합니다."),
 
 	// 빈칸
 	INVALID_BLANK_COUNT("빈칸 문제의 빈칸 개수는 1개 이상이어야 합니다."),

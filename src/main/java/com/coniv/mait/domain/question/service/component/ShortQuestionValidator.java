@@ -1,6 +1,8 @@
 package com.coniv.mait.domain.question.service.component;
 
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Component;
 
@@ -16,6 +18,12 @@ import lombok.RequiredArgsConstructor;
 @Component
 @RequiredArgsConstructor
 public class ShortQuestionValidator implements QuestionValidator {
+
+	private static final int MIN_ANSWER_COUNT = 1;
+
+	private static final int MAX_ANSWER_COUNT = 5;
+
+	private static final int MAX_SUB_ANSWER_COUNT = 5;
 
 	private final ShortAnswerEntityRepository shortAnswerEntityRepository;
 
@@ -33,12 +41,22 @@ public class ShortQuestionValidator implements QuestionValidator {
 		List<ShortAnswerEntity> shortAnswers = shortAnswerEntityRepository.findAllByShortQuestionId(
 			question.getId());
 
-		if (shortAnswers.stream().noneMatch(ShortAnswerEntity::isMain)) {
+		long count = shortAnswers.stream().filter(ShortAnswerEntity::isMain).count();
+
+		if (MIN_ANSWER_COUNT > count || count > MAX_ANSWER_COUNT) {
 			return QuestionValidateDto.invalid(question, QuestionValidationResult.INVALID_ANSWER_COUNT);
 		}
 
 		if (shortAnswers.stream().anyMatch(answer -> answer.getAnswer().isBlank())) {
 			return QuestionValidateDto.invalid(question, QuestionValidationResult.EMPTY_SHORT_ANSWER_CONTENT);
+		}
+
+		Map<Long, Long> numberByCount = shortAnswers.stream()
+			.filter(shortAnswer -> !shortAnswer.isMain())
+			.collect(Collectors.groupingBy(ShortAnswerEntity::getNumber, Collectors.counting()));
+
+		if (numberByCount.values().stream().anyMatch(cnt -> cnt > MAX_SUB_ANSWER_COUNT)) {
+			return QuestionValidateDto.invalid(question, QuestionValidationResult.INVALID_SUB_ANSWER_COUNT);
 		}
 
 		return QuestionValidateDto.valid(question);
