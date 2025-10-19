@@ -1,9 +1,11 @@
 package com.coniv.mait.domain.team.service;
 
+import static org.assertj.core.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
 import java.util.List;
+import java.util.Optional;
 
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -13,11 +15,18 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import com.coniv.mait.domain.team.entity.TeamEntity;
+import com.coniv.mait.domain.team.entity.TeamInviteEntity;
 import com.coniv.mait.domain.team.entity.TeamUserEntity;
 import com.coniv.mait.domain.team.repository.TeamEntityRepository;
+import com.coniv.mait.domain.team.repository.TeamInviteEntityRepository;
 import com.coniv.mait.domain.team.repository.TeamUserEntityRepository;
+import com.coniv.mait.domain.team.service.component.InviteTokenGenerator;
 import com.coniv.mait.domain.user.entity.UserEntity;
 import com.coniv.mait.domain.user.enums.LoginProvider;
+import com.coniv.mait.global.enums.InviteTokenDuration;
+import com.coniv.mait.global.exception.custom.TeamInviteFailException;
+
+import jakarta.persistence.EntityNotFoundException;
 
 @ExtendWith(MockitoExtension.class)
 class TeamServiceTest {
@@ -27,6 +36,12 @@ class TeamServiceTest {
 
 	@Mock
 	private TeamUserEntityRepository teamUserEntityRepository;
+
+	@Mock
+	private TeamInviteEntityRepository teamInviteEntityRepository;
+
+	@Mock
+	private InviteTokenGenerator inviteTokenGenerator;
 
 	@InjectMocks
 	private TeamService teamService;
@@ -67,5 +82,101 @@ class TeamServiceTest {
 		// then
 		verify(teamUserEntityRepository, times(1)).saveAll(anyList());
 	}
-}
 
+	@Test
+	@DisplayName("팀 초대 코드 생성 성공 - Owner가 초대 코드를 생성한다")
+	void createTeamInviteCode_Success_Owner() {
+		// given
+		Long teamId = 1L;
+		UserEntity mockOwner = mock(UserEntity.class);
+		TeamEntity team = TeamEntity.of("테스트 팀", 1L);
+		TeamUserEntity ownerTeamUser = TeamUserEntity.createOwnerUser(mockOwner, team);
+		String expectedToken = "test-invite-code";
+		InviteTokenDuration duration = InviteTokenDuration.ONE_DAY;
+
+		when(teamEntityRepository.findById(teamId)).thenReturn(Optional.of(team));
+		when(teamUserEntityRepository.findByTeamAndUser(team, mockOwner)).thenReturn(Optional.of(ownerTeamUser));
+		when(inviteTokenGenerator.generateUniqueInviteToken()).thenReturn(expectedToken);
+		when(teamInviteEntityRepository.save(any(TeamInviteEntity.class))).thenAnswer(
+			invocation -> invocation.getArgument(0));
+
+		// when
+		String result = teamService.createTeamInviteCode(teamId, mockOwner, duration);
+
+		// then
+		assertThat(result).isEqualTo(expectedToken);
+		verify(teamEntityRepository).findById(teamId);
+		verify(teamUserEntityRepository).findByTeamAndUser(team, mockOwner);
+		verify(inviteTokenGenerator).generateUniqueInviteToken();
+		verify(teamInviteEntityRepository).save(any(TeamInviteEntity.class));
+	}
+
+	@Test
+	@DisplayName("팀 초대 코드 생성 실패 - 팀이 존재하지 않음")
+	void createTeamInviteCode_Failure_TeamNotFound() {
+		// given
+		Long teamId = 999L;
+		UserEntity mockUser = mock(UserEntity.class);
+		InviteTokenDuration duration = InviteTokenDuration.ONE_DAY;
+
+		when(teamEntityRepository.findById(teamId)).thenReturn(Optional.empty());
+
+		// when & then
+		assertThatThrownBy(() -> teamService.createTeamInviteCode(teamId, mockUser, duration))
+			.isInstanceOf(EntityNotFoundException.class)
+			.hasMessageContaining("Team not found with id: " + teamId);
+
+		verify(teamEntityRepository).findById(teamId);
+		verify(teamUserEntityRepository, never()).findByTeamAndUser(any(), any());
+		verify(inviteTokenGenerator, never()).generateUniqueInviteToken();
+		verify(teamInviteEntityRepository, never()).save(any());
+	}
+
+	@Test
+	@DisplayName("팀 초대 코드 생성 실패 - 사용자가 팀 멤버가 아님")
+	void createTeamInviteCode_Failure_NotTeamMember() {
+		// given
+		Long teamId = 1L;
+		UserEntity mockUser = mock(UserEntity.class);
+		when(mockUser.getId()).thenReturn(999L);
+		TeamEntity team = TeamEntity.of("테스트 팀", 1L);
+		InviteTokenDuration duration = InviteTokenDuration.ONE_DAY;
+
+		when(teamEntityRepository.findById(teamId)).thenReturn(Optional.of(team));
+		when(teamUserEntityRepository.findByTeamAndUser(team, mockUser)).thenReturn(Optional.empty());
+
+		// when & then
+		assertThatThrownBy(() -> teamService.createTeamInviteCode(teamId, mockUser, duration))
+			.isInstanceOf(EntityNotFoundException.class)
+			.hasMessageContaining("Inviter is not a member of the team");
+
+		verify(teamEntityRepository).findById(teamId);
+		verify(teamUserEntityRepository).findByTeamAndUser(team, mockUser);
+		verify(inviteTokenGenerator, never()).generateUniqueInviteToken();
+		verify(teamInviteEntityRepository, never()).save(any());
+	}
+
+	@Test
+	@DisplayName("팀 초대 코드 생성 실패 - PLAYER는 초대 코드를 생성할 수 없음")
+	void createTeamInviteCode_Failure_PlayerCannotInvite() {
+		// given
+		Long teamId = 1L;
+		UserEntity mockPlayer = mock(UserEntity.class);
+		TeamEntity team = TeamEntity.of("테스트 팀", 1L);
+		TeamUserEntity playerTeamUser = TeamUserEntity.createPlayerUser(mockPlayer, team);
+		InviteTokenDuration duration = InviteTokenDuration.ONE_DAY;
+
+		when(teamEntityRepository.findById(teamId)).thenReturn(Optional.of(team));
+		when(teamUserEntityRepository.findByTeamAndUser(team, mockPlayer)).thenReturn(Optional.of(playerTeamUser));
+
+		// when & then
+		assertThatThrownBy(() -> teamService.createTeamInviteCode(teamId, mockPlayer, duration))
+			.isInstanceOf(TeamInviteFailException.class)
+			.hasMessageContaining("Only team owners can create invite codes");
+
+		verify(teamEntityRepository).findById(teamId);
+		verify(teamUserEntityRepository).findByTeamAndUser(team, mockPlayer);
+		verify(inviteTokenGenerator, never()).generateUniqueInviteToken();
+		verify(teamInviteEntityRepository, never()).save(any());
+	}
+}
