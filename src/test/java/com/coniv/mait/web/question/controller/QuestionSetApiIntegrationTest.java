@@ -10,10 +10,14 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
 
+import com.coniv.mait.domain.question.entity.MultipleChoiceEntity;
+import com.coniv.mait.domain.question.entity.MultipleQuestionEntity;
 import com.coniv.mait.domain.question.entity.QuestionSetEntity;
 import com.coniv.mait.domain.question.enums.DeliveryMode;
 import com.coniv.mait.domain.question.enums.QuestionSetCreationType;
 import com.coniv.mait.domain.question.enums.QuestionSetVisibility;
+import com.coniv.mait.domain.question.repository.MultipleChoiceEntityRepository;
+import com.coniv.mait.domain.question.repository.QuestionEntityRepository;
 import com.coniv.mait.domain.question.repository.QuestionSetEntityRepository;
 import com.coniv.mait.domain.team.entity.TeamEntity;
 import com.coniv.mait.domain.team.repository.TeamEntityRepository;
@@ -30,9 +34,17 @@ public class QuestionSetApiIntegrationTest extends BaseIntegrationTest {
 	@Autowired
 	private TeamEntityRepository teamEntityRepository;
 
+	@Autowired
+	private QuestionEntityRepository questionEntityRepository;
+
+	@Autowired
+	private MultipleChoiceEntityRepository multipleChoiceEntityRepository;
+
 	@BeforeEach
 	void setUp() {
 		questionSetEntityRepository.deleteAll();
+		questionEntityRepository.deleteAll();
+		multipleChoiceEntityRepository.deleteAll();
 	}
 
 	@Test
@@ -120,8 +132,7 @@ public class QuestionSetApiIntegrationTest extends BaseIntegrationTest {
 			"Updated Subject",
 			DeliveryMode.LIVE_TIME,
 			"중급",
-			QuestionSetVisibility.GROUP
-		);
+			QuestionSetVisibility.GROUP);
 
 		QuestionSetEntity questionSet = questionSetEntityRepository.save(
 			QuestionSetEntity.builder()
@@ -161,5 +172,171 @@ public class QuestionSetApiIntegrationTest extends BaseIntegrationTest {
 
 		QuestionSetEntity findSet = questionSetEntityRepository.findById(questionSet.getId()).get();
 		assertThat(findSet.getTitle()).isEqualTo(title);
+	}
+
+	@Test
+	@DisplayName("문제 셋 검증 API 통합 테스트 - 모든 문제가 유효한 경우")
+	void validateQuestionSet_AllValid_IntegrationTest() throws Exception {
+		// given
+		QuestionSetEntity questionSet = QuestionSetEntity.of("테스트 주제", QuestionSetCreationType.MANUAL);
+		questionSetEntityRepository.save(questionSet);
+
+		MultipleQuestionEntity question1 = MultipleQuestionEntity.builder()
+			.questionSet(questionSet)
+			.content("객관식 문제 1")
+			.number(1L)
+			.lexoRank("a")
+			.displayDelayMilliseconds(5000)
+			.build();
+		questionEntityRepository.save(question1);
+
+		MultipleChoiceEntity choice1_1 = MultipleChoiceEntity.builder()
+			.question(question1)
+			.content("선택지 1")
+			.isCorrect(true)
+			.number(1)
+			.build();
+
+		MultipleChoiceEntity choice1_2 = MultipleChoiceEntity.builder()
+			.question(question1)
+			.content("선택지 2")
+			.isCorrect(false)
+			.number(2)
+			.build();
+
+		multipleChoiceEntityRepository.saveAll(java.util.List.of(choice1_1, choice1_2));
+
+		MultipleQuestionEntity question2 = MultipleQuestionEntity.builder()
+			.questionSet(questionSet)
+			.content("객관식 문제 2")
+			.number(2L)
+			.lexoRank("b")
+			.displayDelayMilliseconds(5000)
+			.build();
+		questionEntityRepository.save(question2);
+
+		MultipleChoiceEntity choice2_1 = MultipleChoiceEntity.builder()
+			.question(question2)
+			.content("선택지 A")
+			.isCorrect(false)
+			.number(1)
+			.build();
+
+		MultipleChoiceEntity choice2_2 = MultipleChoiceEntity.builder()
+			.question(question2)
+			.content("선택지 B")
+			.isCorrect(true)
+			.number(2)
+			.build();
+
+		MultipleChoiceEntity choice2_3 = MultipleChoiceEntity.builder()
+			.question(question2)
+			.content("선택지 C")
+			.isCorrect(false)
+			.number(3)
+			.build();
+
+		multipleChoiceEntityRepository.saveAll(java.util.List.of(choice2_1, choice2_2, choice2_3));
+
+		// when & then
+		mockMvc.perform(get("/api/v1/question-sets/validate")
+				.param("questionSetId", String.valueOf(questionSet.getId())))
+			.andExpect(status().isOk())
+			.andExpect(jsonPath("$.isSuccess").value(true))
+			.andExpect(jsonPath("$.data").isArray())
+			.andExpect(jsonPath("$.data.length()").value(0));
+	}
+
+	@Test
+	@DisplayName("문제 셋 검증 API 통합 테스트 - 일부 문제가 유효하지 않은 경우")
+	void validateQuestionSet_SomeInvalid_IntegrationTest() throws Exception {
+		// given
+		QuestionSetEntity questionSet = QuestionSetEntity.of("테스트 주제", QuestionSetCreationType.MANUAL);
+		questionSetEntityRepository.save(questionSet);
+
+		// 유효한 문제
+		MultipleQuestionEntity validQuestion = MultipleQuestionEntity.builder()
+			.questionSet(questionSet)
+			.content("유효한 객관식 문제")
+			.number(1L)
+			.lexoRank("a")
+			.displayDelayMilliseconds(5000)
+			.build();
+		questionEntityRepository.save(validQuestion);
+
+		MultipleChoiceEntity validChoice1 = MultipleChoiceEntity.builder()
+			.question(validQuestion)
+			.content("선택지 1")
+			.isCorrect(true)
+			.number(1)
+			.build();
+
+		MultipleChoiceEntity validChoice2 = MultipleChoiceEntity.builder()
+			.question(validQuestion)
+			.content("선택지 2")
+			.isCorrect(false)
+			.number(2)
+			.build();
+
+		multipleChoiceEntityRepository.saveAll(java.util.List.of(validChoice1, validChoice2));
+
+		// 내용이 없는 문제 (유효하지 않음)
+		MultipleQuestionEntity invalidQuestion1 = MultipleQuestionEntity.builder()
+			.questionSet(questionSet)
+			.content(null)
+			.number(2L)
+			.lexoRank("b")
+			.displayDelayMilliseconds(5000)
+			.build();
+		questionEntityRepository.save(invalidQuestion1);
+
+		MultipleChoiceEntity invalidChoice1_1 = MultipleChoiceEntity.builder()
+			.question(invalidQuestion1)
+			.content("선택지 A")
+			.isCorrect(true)
+			.number(1)
+			.build();
+
+		MultipleChoiceEntity invalidChoice1_2 = MultipleChoiceEntity.builder()
+			.question(invalidQuestion1)
+			.content("선택지 B")
+			.isCorrect(false)
+			.number(2)
+			.build();
+
+		multipleChoiceEntityRepository.saveAll(java.util.List.of(invalidChoice1_1, invalidChoice1_2));
+
+		// 선택지가 1개만 있는 문제 (유효하지 않음)
+		MultipleQuestionEntity invalidQuestion2 = MultipleQuestionEntity.builder()
+			.questionSet(questionSet)
+			.content("선택지가 부족한 문제")
+			.number(3L)
+			.lexoRank("c")
+			.displayDelayMilliseconds(5000)
+			.build();
+		questionEntityRepository.save(invalidQuestion2);
+
+		MultipleChoiceEntity invalidChoice2_1 = MultipleChoiceEntity.builder()
+			.question(invalidQuestion2)
+			.content("유일한 선택지")
+			.isCorrect(true)
+			.number(1)
+			.build();
+
+		multipleChoiceEntityRepository.save(invalidChoice2_1);
+
+		// when & then
+		mockMvc.perform(get("/api/v1/question-sets/validate")
+				.param("questionSetId", String.valueOf(questionSet.getId())))
+			.andExpect(status().isOk())
+			.andExpect(jsonPath("$.isSuccess").value(true))
+			.andExpect(jsonPath("$.data").isArray())
+			.andExpect(jsonPath("$.data.length()").value(2))
+			.andExpect(jsonPath("$.data[0].questionId").value(invalidQuestion1.getId()))
+			.andExpect(jsonPath("$.data[0].isValid").value(false))
+			.andExpect(jsonPath("$.data[0].number").value(2L))
+			.andExpect(jsonPath("$.data[1].questionId").value(invalidQuestion2.getId()))
+			.andExpect(jsonPath("$.data[1].isValid").value(false))
+			.andExpect(jsonPath("$.data[1].number").value(3L));
 	}
 }
