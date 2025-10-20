@@ -48,8 +48,11 @@ class OrderingQuestionValidatorTest {
 		when(question.getContent()).thenReturn("순서 문제 내용");
 
 		OrderingOptionEntity option1 = mock(OrderingOptionEntity.class);
+		when(option1.getContent()).thenReturn("옵션 1");
 		OrderingOptionEntity option2 = mock(OrderingOptionEntity.class);
+		when(option2.getContent()).thenReturn("옵션 2");
 		OrderingOptionEntity option3 = mock(OrderingOptionEntity.class);
+		when(option3.getContent()).thenReturn("옵션 3");
 
 		List<OrderingOptionEntity> options = List.of(option1, option2, option3);
 		when(orderingOptionEntityRepository.findAllByOrderingQuestionId(1L)).thenReturn(options);
@@ -161,7 +164,9 @@ class OrderingQuestionValidatorTest {
 		when(question.getContent()).thenReturn("순서 문제 내용");
 
 		OrderingOptionEntity option1 = mock(OrderingOptionEntity.class);
+		when(option1.getContent()).thenReturn("옵션 1");
 		OrderingOptionEntity option2 = mock(OrderingOptionEntity.class);
+		when(option2.getContent()).thenReturn("옵션 2");
 		List<OrderingOptionEntity> options = List.of(option1, option2);
 		when(orderingOptionEntityRepository.findAllByOrderingQuestionId(1L)).thenReturn(options);
 
@@ -176,4 +181,3 @@ class OrderingQuestionValidatorTest {
 		verify(orderingOptionEntityRepository).findAllByOrderingQuestionId(1L);
 	}
 }
-
