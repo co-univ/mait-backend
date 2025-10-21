@@ -6,6 +6,7 @@ import java.util.List;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.coniv.mait.domain.question.entity.QuestionEntity;
 import com.coniv.mait.domain.question.entity.QuestionSetEntity;
 import com.coniv.mait.domain.question.enums.DeliveryMode;
 import com.coniv.mait.domain.question.enums.QuestionSetCreationType;
@@ -21,6 +22,8 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class QuestionSetService {
 
+	private final QuestionService questionService;
+
 	private final QuestionSetEntityRepository questionSetEntityRepository;
 
 	private final QuestionEntityRepository questionEntityRepository;
@@ -31,6 +34,8 @@ public class QuestionSetService {
 
 		QuestionSetEntity questionSetEntity = QuestionSetEntity.of(subject, creationType);
 		questionSetEntityRepository.save(questionSetEntity);
+
+		questionService.createDefaultQuestion(questionSetEntity.getId());
 
 		return QuestionSetDto.builder()
 			.id(questionSetEntity.getId())
@@ -73,6 +78,14 @@ public class QuestionSetService {
 			.orElseThrow(() -> new EntityNotFoundException("Question set not found"));
 
 		// Todo:  현재 생성 단계가 아니면 예외
+		int number = 1;
+
+		List<QuestionEntity> questions = questionEntityRepository.findAllByQuestionSetIdOrderByLexoRankAsc(
+			questionSetId);
+		for (QuestionEntity question : questions) {
+			question.updateNumber(number++);
+		}
+
 		questionSet.completeQuestionSet(title, subject, mode, levelDescription, visibility);
 		return QuestionSetDto.from(questionSet);
 	}

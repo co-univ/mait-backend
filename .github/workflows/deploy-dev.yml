@@ -68,6 +68,10 @@ jobs:
             # Create .env file with required environment variables
             cat > ~/.env << EOL
             DOCKER_USERNAME=${{ secrets.DOCKER_USERNAME }}
+            SPRING_PROFILES_ACTIVE=dev
+            AWS_REGION=${{ secrets.AWS_REGION }}
+            AWS_ACCESS_KEY_ID=${{ secrets.AWS_ACCESS_KEY_ID }}
+            AWS_SECRET_ACCESS_KEY=${{ secrets.AWS_SECRET_ACCESS_KEY }}
             DB_URL=${{ secrets.DB_URL }}
             DB_USERNAME=${{ secrets.DB_USERNAME }}
             DB_PASSWORD=${{ secrets.DB_PASSWORD }}

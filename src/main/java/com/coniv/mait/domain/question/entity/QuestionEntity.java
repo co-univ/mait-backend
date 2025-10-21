@@ -3,6 +3,7 @@ package com.coniv.mait.domain.question.entity;
 import com.coniv.mait.domain.question.constant.QuestionConstant;
 import com.coniv.mait.domain.question.enums.QuestionStatusType;
 import com.coniv.mait.domain.question.enums.QuestionType;
+import com.coniv.mait.global.entity.BaseTimeEntity;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.DiscriminatorColumn;
@@ -33,7 +34,7 @@ import lombok.experimental.SuperBuilder;
 @SuperBuilder
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor(access = AccessLevel.PROTECTED)
-public abstract class QuestionEntity {
+public abstract class QuestionEntity extends BaseTimeEntity {
 
 	@Id
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -44,8 +45,12 @@ public abstract class QuestionEntity {
 
 	private String explanation;
 
-	@Column(nullable = false)
 	private Long number;
+
+	@Column(nullable = false)
+	private String lexoRank;
+
+	private String imageUrl;
 
 	@Column(nullable = false)
 	private int displayDelayMilliseconds;
@@ -59,10 +64,10 @@ public abstract class QuestionEntity {
 	@JoinColumn(name = "question_set_id")
 	private QuestionSetEntity questionSet;
 
-	public static QuestionEntity createDefaultQuestion(QuestionSetEntity questionSet, Long number) {
+	public static QuestionEntity createDefaultQuestion(QuestionSetEntity questionSet, String rank) {
 		return MultipleQuestionEntity.builder()
-			.number(number)
 			.questionSet(questionSet)
+			.lexoRank(rank)
 			.content(QuestionConstant.DEFAULT_QUESTION_CONTENT)
 			.displayDelayMilliseconds(QuestionConstant.MAX_DISPLAY_DELAY_MILLISECONDS)
 			.build();
@@ -96,5 +101,17 @@ public abstract class QuestionEntity {
 
 	public void updateExplanation(final String explanation) {
 		this.explanation = explanation;
+	}
+
+	public void updateNumber(long number) {
+		this.number = number;
+	}
+
+	public void updateRank(String rank) {
+		this.lexoRank = rank;
+	}
+
+	public void updateImageUrl(String imageUrl) {
+		this.imageUrl = imageUrl;
 	}
 }

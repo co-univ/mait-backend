@@ -23,6 +23,7 @@ import com.coniv.mait.domain.question.entity.QuestionSetEntity;
 import com.coniv.mait.domain.question.entity.ShortQuestionEntity;
 import com.coniv.mait.domain.question.enums.DeliveryMode;
 import com.coniv.mait.domain.question.enums.QuestionType;
+import com.coniv.mait.domain.question.repository.MultipleChoiceEntityRepository;
 import com.coniv.mait.domain.question.repository.QuestionEntityRepository;
 import com.coniv.mait.domain.question.repository.QuestionSetEntityRepository;
 import com.coniv.mait.domain.question.service.component.FillBlankQuestionFactory;
@@ -35,6 +36,7 @@ import com.coniv.mait.domain.question.service.dto.MultipleQuestionDto;
 import com.coniv.mait.domain.question.service.dto.OrderingQuestionDto;
 import com.coniv.mait.domain.question.service.dto.QuestionDto;
 import com.coniv.mait.domain.question.service.dto.ShortQuestionDto;
+import com.coniv.mait.domain.question.util.LexoRank;
 import com.coniv.mait.global.exception.custom.ResourceNotBelongException;
 
 import jakarta.persistence.EntityNotFoundException;
@@ -62,6 +64,12 @@ class QuestionServiceTest {
 	@Mock
 	private FillBlankQuestionFactory fillBlankQuestionFactory;
 
+	@Mock
+	private MultipleChoiceEntityRepository multipleChoiceEntityRepository;
+
+	@Mock
+	private QuestionImageService questionImageService;
+
 	@BeforeEach
 	void setUp() {
 		// QuestionFactory들의 getQuestionType() 메서드 모킹 (QuestionService 생성자에서 호출됨)
@@ -82,11 +90,108 @@ class QuestionServiceTest {
 		questionService = new QuestionService(
 			factories,
 			questionEntityRepository,
-			questionSetEntityRepository
+			questionSetEntityRepository,
+			multipleChoiceEntityRepository,
+			questionImageService
 		);
 	}
 
 	@Test
+	@DisplayName("순서 변경 - prev=null 이면 맨 앞으로 이동 (next 이전 키 생성)")
+	void changeOrder_MoveToFront_WhenPrevNull() {
+		// given
+		final Long questionSetId = 1L;
+		final Long sourceQuestionId = 10L;
+		final Long nextQuestionId = 20L;
+
+		QuestionSetEntity questionSet = mock(QuestionSetEntity.class);
+		when(questionSet.getId()).thenReturn(questionSetId);
+
+		QuestionEntity source = mock(QuestionEntity.class);
+		when(source.getQuestionSet()).thenReturn(questionSet);
+
+		QuestionEntity next = mock(QuestionEntity.class);
+		when(next.getQuestionSet()).thenReturn(questionSet);
+		when(next.getLexoRank()).thenReturn("B");
+
+		when(questionEntityRepository.findById(sourceQuestionId)).thenReturn(Optional.of(source));
+		when(questionEntityRepository.findById(nextQuestionId)).thenReturn(Optional.of(next));
+
+		String expected = LexoRank.prevBefore("B");
+
+		// when
+		questionService.changeQuestionOrder(questionSetId, sourceQuestionId, null, nextQuestionId);
+
+		// then
+		verify(source).updateRank(expected);
+	}
+
+	@Test
+	@DisplayName("순서 변경 - next=null 이면 맨 뒤로 이동 (prev 다음 키 생성)")
+	void changeOrder_MoveToEnd_WhenNextNull() {
+		// given
+		final Long questionSetId = 1L;
+		final Long sourceQuestionId = 11L;
+		final Long prevQuestionId = 21L;
+
+		QuestionSetEntity questionSet = mock(QuestionSetEntity.class);
+		when(questionSet.getId()).thenReturn(questionSetId);
+
+		QuestionEntity source = mock(QuestionEntity.class);
+		when(source.getQuestionSet()).thenReturn(questionSet);
+
+		QuestionEntity prev = mock(QuestionEntity.class);
+		when(prev.getQuestionSet()).thenReturn(questionSet);
+		when(prev.getLexoRank()).thenReturn("A");
+
+		when(questionEntityRepository.findById(sourceQuestionId)).thenReturn(Optional.of(source));
+		when(questionEntityRepository.findById(prevQuestionId)).thenReturn(Optional.of(prev));
+
+		String expected = LexoRank.nextAfter("A");
+
+		// when
+		questionService.changeQuestionOrder(questionSetId, sourceQuestionId, prevQuestionId, null);
+
+		// then
+		verify(source).updateRank(expected);
+	}
+
+	@Test
+	@DisplayName("순서 변경 - prev와 next 사이로 이동 (between 생성)")
+	void changeOrder_MoveBetween_WhenPrevAndNextPresent() {
+		// given
+		final Long questionSetId = 1L;
+		final Long sourceQuestionId = 12L;
+		final Long prevQuestionId = 22L;
+		final Long nextQuestionId = 23L;
+
+		QuestionSetEntity questionSet = mock(QuestionSetEntity.class);
+		when(questionSet.getId()).thenReturn(questionSetId);
+
+		QuestionEntity source = mock(QuestionEntity.class);
+		when(source.getQuestionSet()).thenReturn(questionSet);
+
+		QuestionEntity prev = mock(QuestionEntity.class);
+		when(prev.getQuestionSet()).thenReturn(questionSet);
+		when(prev.getLexoRank()).thenReturn("A");
+
+		QuestionEntity next = mock(QuestionEntity.class);
+		when(next.getQuestionSet()).thenReturn(questionSet);
+		when(next.getLexoRank()).thenReturn("C");
+
+		when(questionEntityRepository.findById(sourceQuestionId)).thenReturn(Optional.of(source));
+		when(questionEntityRepository.findById(prevQuestionId)).thenReturn(Optional.of(prev));
+		when(questionEntityRepository.findById(nextQuestionId)).thenReturn(Optional.of(next));
+
+		String expected = LexoRank.between("A", "C");
+
+		// when
+		questionService.changeQuestionOrder(questionSetId, sourceQuestionId, prevQuestionId, nextQuestionId);
+
+		// then
+		verify(source).updateRank(expected);
+	}
+
 	@DisplayName("문제 생성 성공 - 적절한 팩토리 호출 확인")
 	void createQuestion_Success() {
 		// given
@@ -405,6 +510,7 @@ class QuestionServiceTest {
 		when(questionDto.getType()).thenReturn(QuestionType.MULTIPLE);
 		when(questionDto.getContent()).thenReturn("수정된 문제 내용");
 		when(questionDto.getExplanation()).thenReturn("수정된 해설");
+		when(questionDto.getImageId()).thenReturn(100L);
 
 		MultipleQuestionDto expectedResult = mock(MultipleQuestionDto.class);
 		when(multipleQuestionFactory.getQuestion(existingQuestion, true)).thenReturn(expectedResult);
@@ -425,6 +531,7 @@ class QuestionServiceTest {
 		verify(multipleQuestionFactory).deleteSubEntities(existingQuestion);
 		verify(multipleQuestionFactory).createSubEntities(questionDto, existingQuestion);
 		verify(multipleQuestionFactory).getQuestion(existingQuestion, true);
+		verify(questionImageService).updateImage(existingQuestion, questionDto.getImageId());
 
 		// delete와 save는 호출되지 않아야 함
 		verify(questionEntityRepository, never()).delete(any());
@@ -448,6 +555,7 @@ class QuestionServiceTest {
 
 		ShortQuestionDto questionDto = mock(ShortQuestionDto.class);
 		when(questionDto.getType()).thenReturn(QuestionType.SHORT);
+		when(questionDto.getImageId()).thenReturn(200L);
 
 		ShortQuestionEntity newQuestion = mock(ShortQuestionEntity.class);
 		when(shortQuestionFactory.save(questionDto, questionSetEntity)).thenReturn(newQuestion);
@@ -471,6 +579,7 @@ class QuestionServiceTest {
 		verify(shortQuestionFactory).save(questionDto, questionSetEntity); // 새로운 타입의 팩토리
 		verify(shortQuestionFactory).getQuestion(newQuestion, true);
 
+		verify(questionImageService).updateImage(newQuestion, questionDto.getImageId());
 		// 같은 타입 수정 메서드들은 호출되지 않아야 함
 		verify(existingQuestion, never()).updateContent(anyString());
 		verify(existingQuestion, never()).updateExplanation(anyString());
@@ -572,7 +681,6 @@ class QuestionServiceTest {
 	void createDefaultQuestion_Success() {
 		// given
 		final Long questionSetId = 1L;
-		final Long number = 1L;
 
 		QuestionSetEntity questionSetEntity = mock(QuestionSetEntity.class);
 		when(questionSetEntityRepository.findById(questionSetId)).thenReturn(Optional.of(questionSetEntity));
@@ -584,24 +692,22 @@ class QuestionServiceTest {
 
 		// multipleQuestionFactory.getQuestion() mock 설정
 		MultipleQuestionDto expectedQuestionDto = mock(MultipleQuestionDto.class);
-		when(expectedQuestionDto.getNumber()).thenReturn(number);
 		when(expectedQuestionDto.getType()).thenReturn(QuestionType.MULTIPLE);
 		when(expectedQuestionDto.getContent()).thenReturn(QuestionConstant.DEFAULT_QUESTION_CONTENT);
 
 		when(multipleQuestionFactory.getQuestion(any(QuestionEntity.class), eq(true))).thenReturn(expectedQuestionDto);
 
 		// when
-		QuestionDto result = questionService.createDefaultQuestion(questionSetId, number);
+		QuestionDto result = questionService.createDefaultQuestion(questionSetId);
 
 		// then
 		assertNotNull(result);
-		assertEquals(number, result.getNumber());
 		assertEquals(QuestionType.MULTIPLE, result.getType());
 		assertEquals(QuestionConstant.DEFAULT_QUESTION_CONTENT, result.getContent());
 
 		QuestionEntity savedQuestion = questionCaptor.getValue();
 		assertNotNull(savedQuestion);
-		assertEquals(number, savedQuestion.getNumber());
+		assertNotNull(savedQuestion.getLexoRank());
 		assertEquals(QuestionConstant.DEFAULT_QUESTION_CONTENT, savedQuestion.getContent());
 		assertEquals(questionSetEntity, savedQuestion.getQuestionSet());
 		assertEquals(QuestionConstant.MAX_DISPLAY_DELAY_MILLISECONDS, savedQuestion.getDisplayDelayMilliseconds());

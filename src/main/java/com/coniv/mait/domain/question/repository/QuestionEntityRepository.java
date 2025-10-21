@@ -12,10 +12,14 @@ import com.coniv.mait.domain.question.enums.QuestionStatusType;
 public interface QuestionEntityRepository extends JpaRepository<QuestionEntity, Long> {
 	List<QuestionEntity> findAllByQuestionSetId(final Long questionSetId);
 
+	List<QuestionEntity> findAllByQuestionSetIdOrderByLexoRankAsc(final Long questionSetId);
+
 	long countByQuestionSetId(Long questionSetId);
 
 	Optional<QuestionEntity> findFirstByQuestionSetAndQuestionStatusIn(
 		QuestionSetEntity questionSet,
 		List<QuestionStatusType> statuses
 	);
+
+	Optional<QuestionEntity> findTopByQuestionSetIdOrderByLexoRankDesc(Long questionSetId);
 }

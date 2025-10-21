@@ -20,6 +20,7 @@ import org.springframework.http.MediaType;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
+import com.coniv.mait.domain.question.service.QuestionImageService;
 import com.coniv.mait.domain.question.service.QuestionService;
 import com.coniv.mait.domain.question.service.dto.FillBlankAnswerDto;
 import com.coniv.mait.domain.question.service.dto.MultipleChoiceDto;
@@ -38,6 +39,7 @@ import com.coniv.mait.web.question.dto.CreateShortQuestionApiRequest;
 import com.coniv.mait.web.question.dto.UpdateFillBlankQuestionApiRequest;
 import com.coniv.mait.web.question.dto.UpdateMultipleQuestionApiRequest;
 import com.coniv.mait.web.question.dto.UpdateOrderingQuestionApiRequest;
+import com.coniv.mait.web.question.dto.UpdateQuestionOrderApiRequest;
 import com.coniv.mait.web.question.dto.UpdateShortQuestionApiRequest;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
@@ -61,6 +63,9 @@ class QuestionControllerTest {
 
 	@MockitoBean
 	private JwtAuthorizationFilter jwtAuthorizationFilter;
+
+	@MockitoBean
+	private QuestionImageService questionImageService;
 
 	@BeforeEach
 	void setUp() throws Exception {
@@ -889,114 +894,6 @@ class QuestionControllerTest {
 		verify(questionService).updateQuestion(eq(questionSetId), eq(questionId), any());
 	}
 
-	@ParameterizedTest(name = "{index} - {0}")
-	@DisplayName("단답형 문제 수정 실패 테스트 - 유효하지 않은 요청")
-	@MethodSource("invalidUpdateShortQuestionRequests")
-	void updateShortQuestionInvalidRequestTest(String testName, UpdateShortQuestionApiRequest request,
-		String expectedMessage) throws Exception {
-		// given
-		Long questionSetId = 1L;
-		Long questionId = 1L;
-
-		String json = objectMapper.writeValueAsString(request);
-
-		// when & then
-		mockMvc.perform(put("/api/v1/question-sets/{questionSetId}/questions/{questionId}", questionSetId, questionId)
-				.contentType(MediaType.APPLICATION_JSON)
-				.content(json))
-			.andExpectAll(
-				status().isBadRequest(),
-				jsonPath("$.isSuccess").value(false),
-				jsonPath("$.code").value("C-001"),
-				jsonPath("$.message").value("사용자 입력 오류입니다."),
-				jsonPath("$.reasons").isArray(),
-				jsonPath("$.reasons[0]").value(expectedMessage)
-			);
-
-		verify(questionService, never()).updateQuestion(anyLong(), anyLong(), any());
-	}
-
-	static Stream<Arguments> invalidUpdateShortQuestionRequests() {
-		// 문제 번호 누락 요청
-		UpdateShortQuestionApiRequest noNumberRequest = new UpdateShortQuestionApiRequest();
-		noNumberRequest.setId(1L);
-		noNumberRequest.setContent("단답형 문제 내용");
-		noNumberRequest.setExplanation("문제 해설");
-		noNumberRequest.setShortAnswers(List.of(
-			ShortAnswerDto.builder().answer("정답1").isMain(true).number(1L).build()
-		));
-		noNumberRequest.setNumber(null);
-
-		// 정답 리스트 빈 배열 요청
-		UpdateShortQuestionApiRequest emptyAnswersRequest = new UpdateShortQuestionApiRequest();
-		emptyAnswersRequest.setId(1L);
-		emptyAnswersRequest.setContent("단답형 문제 내용");
-		emptyAnswersRequest.setExplanation("문제 해설");
-		emptyAnswersRequest.setNumber(1L);
-		emptyAnswersRequest.setShortAnswers(List.of());
-
-		return Stream.of(
-			Arguments.of("문제 번호 누락", noNumberRequest, "문제 번호는 필수입니다."),
-			Arguments.of("정답 리스트 빈 배열", emptyAnswersRequest, "정답은 최소 1개 이상이어야 합니다.")
-		);
-	}
-
-	@ParameterizedTest(name = "{index} - {0}")
-	@DisplayName("객관식 문제 수정 실패 테스트 - 유효하지 않은 요청")
-	@MethodSource("invalidUpdateMultipleQuestionRequests")
-	void updateMultipleQuestionInvalidRequestTest(String testName, UpdateMultipleQuestionApiRequest request,
-		String expectedMessage) throws Exception {
-		// given
-		Long questionSetId = 1L;
-		Long questionId = 1L;
-
-		String json = objectMapper.writeValueAsString(request);
-
-		// when & then
-		mockMvc.perform(put("/api/v1/question-sets/{questionSetId}/questions/{questionId}", questionSetId, questionId)
-				.contentType(MediaType.APPLICATION_JSON)
-				.content(json))
-			.andExpectAll(
-				status().isBadRequest(),
-				jsonPath("$.isSuccess").value(false),
-				jsonPath("$.code").value("C-001"),
-				jsonPath("$.message").value("사용자 입력 오류입니다."),
-				jsonPath("$.reasons").isArray(),
-				jsonPath("$.reasons[0]").value(expectedMessage)
-			);
-
-		verify(questionService, never()).updateQuestion(anyLong(), anyLong(), any());
-	}
-
-	static Stream<Arguments> invalidUpdateMultipleQuestionRequests() {
-		// 선택지 null 요청
-		UpdateMultipleQuestionApiRequest nullChoicesRequest = new UpdateMultipleQuestionApiRequest();
-		nullChoicesRequest.setId(1L);
-		nullChoicesRequest.setContent("객관식 문제 내용");
-		nullChoicesRequest.setExplanation("문제 해설");
-		nullChoicesRequest.setNumber(1L);
-		nullChoicesRequest.setChoices(null);
-
-		// 선택지 1개 요청
-		UpdateMultipleQuestionApiRequest oneChoiceRequest = new UpdateMultipleQuestionApiRequest();
-		oneChoiceRequest.setId(1L);
-		oneChoiceRequest.setContent("객관식 문제 내용");
-		oneChoiceRequest.setExplanation("문제 해설");
-		oneChoiceRequest.setNumber(1L);
-		oneChoiceRequest.setChoices(List.of(
-			MultipleChoiceDto.builder()
-				.number(1)
-				.content("선택지 1")
-				.isCorrect(true)
-				.build()
-		));
-
-		return Stream.of(
-			Arguments.of("선택지 null", nullChoicesRequest, "객관식 문제에는 반드시 선지가 있어야 합니다."),
-			Arguments.of("선택지 1개", oneChoiceRequest, "객관식 문제는 최소 2개, 최대 8개의 선택지를 가져야 합니다.")
-		);
-	}
-
 	@Test
 	@DisplayName("문제 수정 API 테스트 - 같은 유형으로 수정 성공 (객관식 -> 객관식)")
 	void updateQuestionSameTypeTest() throws Exception {
@@ -1132,7 +1029,7 @@ class QuestionControllerTest {
 		CreateDefaultQuestionApiRequest request = new CreateDefaultQuestionApiRequest(1L);
 		MultipleQuestionDto questionDto = mock(MultipleQuestionDto.class);
 		when(questionDto.getNumber()).thenReturn(1L);
-		when(questionService.createDefaultQuestion(questionSetId, 1L)).thenReturn(questionDto);
+		when(questionService.createDefaultQuestion(questionSetId)).thenReturn(questionDto);
 
 		// when & then
 		mockMvc.perform(post("/api/v1/question-sets/{questionSetId}/questions/default", questionSetId)
@@ -1143,29 +1040,52 @@ class QuestionControllerTest {
 				jsonPath("$.data.number").value(1L)
 			);
 
-		verify(questionService).createDefaultQuestion(eq(questionSetId), eq(1L));
+		verify(questionService).createDefaultQuestion(eq(questionSetId));
 	}
 
 	@Test
-	@DisplayName("기본 문제 생성 API 테스트 - 실패 (문제 번호 누락)")
-	void createDefaultQuestionMissingNumber() throws Exception {
+	@DisplayName("문제 순서 변경 API 테스트 - 성공")
+	void updateQuestionOrderTest() throws Exception {
 		// given
 		final Long questionSetId = 1L;
-		CreateDefaultQuestionApiRequest request = new CreateDefaultQuestionApiRequest(null);
+		final Long sourceQuestionId = 2L;
+		final Long prevQuestionId = 3L;
+		final Long nextQuestionId = 4L;
+		UpdateQuestionOrderApiRequest request = new UpdateQuestionOrderApiRequest(prevQuestionId, nextQuestionId);
 
 		// when & then
-		mockMvc.perform(post("/api/v1/question-sets/{questionSetId}/questions/default", questionSetId)
-				.contentType(MediaType.APPLICATION_JSON)
-				.content(objectMapper.writeValueAsString(request)))
+		mockMvc.perform(
+				patch("/api/v1/question-sets/{questionSetId}/questions/{questionId}/orders", questionSetId,
+					sourceQuestionId)
+					.contentType(MediaType.APPLICATION_JSON)
+					.content(objectMapper.writeValueAsString(request)))
+			.andExpect(status().isOk());
+
+		verify(questionService).changeQuestionOrder(questionSetId, sourceQuestionId, prevQuestionId, nextQuestionId);
+	}
+
+	@Test
+	@DisplayName("문제 순서 변경 API 테스트 - prevQuestionId와 nextQuestionId가 모두 null인 경우")
+	void updateQuestionOrderBothNullTest() throws Exception {
+		// given
+		final Long questionSetId = 1L;
+		final Long sourceQuestionId = 2L;
+		UpdateQuestionOrderApiRequest request = new UpdateQuestionOrderApiRequest(null, null);
+
+		// when & then
+		mockMvc.perform(
+				patch("/api/v1/question-sets/{questionSetId}/questions/{questionId}/orders", questionSetId,
+					sourceQuestionId)
+					.contentType(MediaType.APPLICATION_JSON)
+					.content(objectMapper.writeValueAsString(request)))
 			.andExpectAll(
 				status().isBadRequest(),
 				jsonPath("$.isSuccess").value(false),
-				jsonPath("$.code").value("C-001"),
-				jsonPath("$.message").value("사용자 입력 오류입니다."),
+				jsonPath("$.code").value("C-003"),
 				jsonPath("$.reasons").isArray(),
-				jsonPath("$.reasons[0]").value("문제 번호는 필수 입니다.")
+				jsonPath("$.reasons[0]").value("이전 문제 ID와 다음 문제 ID가 모두 null일 수 없습니다.")
 			);
 
-		verify(questionService, never()).createDefaultQuestion(anyLong(), any());
+		verify(questionService, never()).changeQuestionOrder(anyLong(), anyLong(), any(), any());
 	}
 }

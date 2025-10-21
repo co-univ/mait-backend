@@ -203,4 +203,32 @@ class GlobalExceptionHandlerTest {
 		assertThat(errorResponse.getIsSuccess()).isFalse();
 		assertThat(errorResponse.getStatus()).isEqualTo(HttpStatus.INTERNAL_SERVER_ERROR);
 	}
+
+	@Test
+	@DisplayName("SQLException 처리 - 데이터베이스 오류")
+	void handleSqlException() {
+		// Given
+		String requestUri = "/api/test";
+		String sqlErrorMessage = "Database error";
+
+		// Mock 설정
+		when(httpServletRequest.getRequestURI()).thenReturn(requestUri);
+
+		// When
+		ResponseEntity<ErrorResponse> response = globalExceptionHandler.handleSqlException(
+			new java.sql.SQLException(sqlErrorMessage), httpServletRequest);
+
+		// Then
+		assertThat(response.getStatusCode()).isEqualTo(HttpStatus.INTERNAL_SERVER_ERROR);
+		assertThat(response.getBody()).isNotNull();
+
+		ErrorResponse errorResponse = response.getBody();
+		assertThat(errorResponse.getIsSuccess()).isFalse();
+		assertThat(errorResponse.getStatus()).isEqualTo(HttpStatus.INTERNAL_SERVER_ERROR);
+		assertThat(errorResponse.getMessage()).isEqualTo(ExceptionCode.DATABASE_ERROR.getMessage());
+		assertNotNull(errorResponse.getReasons());
+		assertThat(errorResponse.getReasons().get(0)).isEqualTo(sqlErrorMessage);
+
+		verify(httpServletRequest).getRequestURI();
+	}
 }

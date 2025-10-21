@@ -21,7 +21,8 @@ public enum ExceptionCode {
 	LOGIN_FAIL_EXCEPTION(HttpStatus.UNAUTHORIZED, "A-001", "로그인 실패"),
 	JWT_AUTH_EXCEPTION(HttpStatus.UNAUTHORIZED, "A-002", "JWT 인증 오류"),
 
-	UNEXPECTED_EXCEPTION(HttpStatus.INTERNAL_SERVER_ERROR, "S-000", "예기치 못한 오류가 발생했습니다.");
+	UNEXPECTED_EXCEPTION(HttpStatus.INTERNAL_SERVER_ERROR, "S-000", "예기치 못한 오류가 발생했습니다."),
+	DATABASE_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "S-001", "데이터베이스 처리 중 오류가 발생했습니다.");
 
 	private final HttpStatus status;
 	private final String code;

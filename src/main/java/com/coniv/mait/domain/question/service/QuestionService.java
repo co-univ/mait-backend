@@ -11,16 +11,20 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.coniv.mait.domain.question.entity.MultipleChoiceEntity;
+import com.coniv.mait.domain.question.entity.MultipleQuestionEntity;
 import com.coniv.mait.domain.question.entity.QuestionEntity;
 import com.coniv.mait.domain.question.entity.QuestionSetEntity;
 import com.coniv.mait.domain.question.enums.DeliveryMode;
 import com.coniv.mait.domain.question.enums.QuestionStatusType;
 import com.coniv.mait.domain.question.enums.QuestionType;
+import com.coniv.mait.domain.question.repository.MultipleChoiceEntityRepository;
 import com.coniv.mait.domain.question.repository.QuestionEntityRepository;
 import com.coniv.mait.domain.question.repository.QuestionSetEntityRepository;
 import com.coniv.mait.domain.question.service.component.QuestionFactory;
 import com.coniv.mait.domain.question.service.dto.CurrentQuestionDto;
 import com.coniv.mait.domain.question.service.dto.QuestionDto;
+import com.coniv.mait.domain.question.util.LexoRank;
 import com.coniv.mait.global.exception.custom.ResourceNotBelongException;
 
 import jakarta.persistence.EntityNotFoundException;
@@ -36,16 +40,23 @@ public class QuestionService {
 
 	private final Map<QuestionType, QuestionFactory<?>> questionFactories;
 
+	private final QuestionImageService questionImageService;
+
+	private final MultipleChoiceEntityRepository multipleChoiceEntityRepository;
+
 	@Autowired
 	public QuestionService(
 		List<QuestionFactory<?>> factories,
 		QuestionEntityRepository questionEntityRepository,
-		QuestionSetEntityRepository questionSetEntityRepository
-	) {
+		QuestionSetEntityRepository questionSetEntityRepository,
+		MultipleChoiceEntityRepository multipleChoiceEntityRepository,
+		QuestionImageService questionImageService) {
 		questionFactories = factories.stream()
 			.collect(Collectors.toUnmodifiableMap(QuestionFactory::getQuestionType, Function.identity()));
 		this.questionEntityRepository = questionEntityRepository;
 		this.questionSetEntityRepository = questionSetEntityRepository;
+		this.questionImageService = questionImageService;
+		this.multipleChoiceEntityRepository = multipleChoiceEntityRepository;
 	}
 
 	public <T extends QuestionDto> void createQuestion(
@@ -62,12 +73,21 @@ public class QuestionService {
 	}
 
 	@Transactional
-	public QuestionDto createDefaultQuestion(final Long questionSetId, final Long number) {
+	public QuestionDto createDefaultQuestion(final Long questionSetId) {
 		QuestionSetEntity questionSet = questionSetEntityRepository.findById(questionSetId)
 			.orElseThrow(() -> new EntityNotFoundException("QuestionSet not found with id: " + questionSetId));
 
-		QuestionEntity defaultQuestion = QuestionEntity.createDefaultQuestion(questionSet, number);
+		final String nextRank = questionEntityRepository.findTopByQuestionSetIdOrderByLexoRankDesc(questionSetId)
+			.map(QuestionEntity::getLexoRank)
+			.map(LexoRank::nextAfter)
+			.orElseGet(LexoRank::middle);
+
+		QuestionEntity defaultQuestion = QuestionEntity.createDefaultQuestion(questionSet, nextRank);
 		questionEntityRepository.save(defaultQuestion);
+
+		List<MultipleChoiceEntity> defaultSubEntities = QuestionFactory.createDefaultSubEntities(
+			(MultipleQuestionEntity)defaultQuestion);
+		multipleChoiceEntityRepository.saveAll(defaultSubEntities);
 
 		return getQuestionFactory(DEFAULT_QUESTION_TYPE).getQuestion(defaultQuestion, true);
 	}
@@ -88,7 +108,9 @@ public class QuestionService {
 	// Todo: 조회 성능 개선
 	public List<QuestionDto> getQuestions(final Long questionSetId) {
 		return questionEntityRepository.findAllByQuestionSetId(questionSetId).stream()
-			.sorted(Comparator.comparingLong(QuestionEntity::getNumber))
+			.sorted(Comparator
+				.comparing(QuestionEntity::getNumber, Comparator.nullsLast(Long::compareTo))
+				.thenComparing(QuestionEntity::getLexoRank))
 			.map(question -> getQuestionFactory(question.getType()).getQuestion(question, true))
 			.toList();
 	}
@@ -133,6 +155,8 @@ public class QuestionService {
 		if (question.getType() == questionDto.getType()) {
 			question.updateContent(questionDto.getContent());
 			question.updateExplanation(questionDto.getExplanation());
+			question.updateImageUrl(questionDto.getImageUrl());
+			questionImageService.updateImage(question, questionDto.getImageId());
 
 			questionFactory.deleteSubEntities(question);
 			questionFactory.createSubEntities(questionDto, question);
@@ -144,6 +168,8 @@ public class QuestionService {
 		questionEntityRepository.delete(question);
 
 		QuestionEntity createdQuestion = questionFactory.save(questionDto, question.getQuestionSet());
+		createdQuestion.updateImageUrl(questionDto.getImageUrl());
+		questionImageService.updateImage(createdQuestion, questionDto.getImageId());
 
 		return questionFactory.getQuestion(createdQuestion, true);
 	}
@@ -160,5 +186,53 @@ public class QuestionService {
 		QuestionFactory<?> questionFactory = questionFactories.get(question.getType());
 		questionFactory.deleteSubEntities(question);
 		questionEntityRepository.deleteById(question.getId());
+	}
+
+	@Transactional
+	public void changeQuestionOrder(final Long questionSetId, final Long sourceQuestionId, final Long prevQuestionId,
+		final Long nextQuestionId) {
+		QuestionEntity sourceQuestion = questionEntityRepository.findById(sourceQuestionId)
+			.orElseThrow(() -> new EntityNotFoundException("Question not found with id: " + sourceQuestionId));
+		if (!sourceQuestion.getQuestionSet().getId().equals(questionSetId)) {
+			throw new ResourceNotBelongException("해당 문제 셋에 속한 문제가 아닙니다.");
+		}
+
+		if (prevQuestionId == null) {
+			QuestionEntity next = questionEntityRepository.findById(nextQuestionId)
+				.orElseThrow(() -> new EntityNotFoundException("Next question not found with id: " + nextQuestionId));
+			if (!next.getQuestionSet().getId().equals(questionSetId)) {
+				throw new ResourceNotBelongException("nextQuestionId가 해당 문제 셋에 속한 문제가 아닙니다.");
+			}
+			sourceQuestion.updateRank(LexoRank.prevBefore(next.getLexoRank()));
+			return;
+		}
+
+		if (nextQuestionId == null) {
+			QuestionEntity prev = questionEntityRepository.findById(prevQuestionId)
+				.orElseThrow(() -> new EntityNotFoundException("Prev question not found with id: " + prevQuestionId));
+			if (!prev.getQuestionSet().getId().equals(questionSetId)) {
+				throw new ResourceNotBelongException("prevQuestionId가 해당 문제 셋에 속한 문제가 아닙니다.");
+			}
+			sourceQuestion.updateRank(LexoRank.nextAfter(prev.getLexoRank()));
+			return;
+		}
+
+		QuestionEntity prev = questionEntityRepository.findById(prevQuestionId)
+			.orElseThrow(() -> new EntityNotFoundException("Prev question not found with id: " + prevQuestionId));
+		QuestionEntity next = questionEntityRepository.findById(nextQuestionId)
+			.orElseThrow(() -> new EntityNotFoundException("Next question not found with id: " + nextQuestionId));
+
+		if (!prev.getQuestionSet().getId().equals(questionSetId)) {
+			throw new ResourceNotBelongException("prevQuestionId가 해당 문제 셋에 속한 문제가 아닙니다.");
+		}
+		if (!next.getQuestionSet().getId().equals(questionSetId)) {
+			throw new ResourceNotBelongException("nextQuestionId가 해당 문제 셋에 속한 문제가 아닙니다.");
+		}
+
+		String prevRank = prev.getLexoRank();
+		String nextRank = next.getLexoRank();
+
+		String newRank = LexoRank.between(prevRank, nextRank);
+		sourceQuestion.updateRank(newRank);
 	}
 }
