@@ -55,7 +55,7 @@ public class CustomExceptionHandler {
 	@ExceptionHandler(TeamInviteFailException.class)
 	public ResponseEntity<ErrorResponse> handleTeamInviteFailException(TeamInviteFailException exception,
 		HttpServletRequest request) {
-		log.info("QuestionSetLiveException 발생: {}, {}", exception.getMessage(), request.getRequestURI());
+		log.info("TeamInviteFailException 발생: {}, {}", exception.getMessage(), request.getRequestURI());
 		return ResponseEntity.badRequest()
 			.body(ErrorResponse.of(ExceptionCode.TEAM_INVITE_FAIL_EXCEPTION, List.of(exception.getMessage())));
 	}
