@@ -15,7 +15,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import com.coniv.mait.domain.question.entity.QuestionEntity;
 import com.coniv.mait.domain.question.entity.ShortAnswerEntity;
 import com.coniv.mait.domain.question.enums.QuestionType;
-import com.coniv.mait.domain.question.exception.QuestionValidationResult;
+import com.coniv.mait.domain.question.enums.QuestionValidationResult;
 import com.coniv.mait.domain.question.repository.ShortAnswerEntityRepository;
 import com.coniv.mait.domain.question.service.dto.QuestionValidateDto;
 

@@ -1,7 +1,7 @@
 package com.coniv.mait.domain.question.service.dto;
 
 import com.coniv.mait.domain.question.entity.QuestionEntity;
-import com.coniv.mait.domain.question.exception.QuestionValidationResult;
+import com.coniv.mait.domain.question.enums.QuestionValidationResult;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;

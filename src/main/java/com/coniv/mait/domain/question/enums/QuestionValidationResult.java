@@ -1,4 +1,4 @@
-package com.coniv.mait.domain.question.exception;
+package com.coniv.mait.domain.question.enums;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;

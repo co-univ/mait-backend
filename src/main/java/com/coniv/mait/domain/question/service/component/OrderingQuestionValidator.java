@@ -7,7 +7,7 @@ import org.springframework.stereotype.Component;
 import com.coniv.mait.domain.question.entity.OrderingOptionEntity;
 import com.coniv.mait.domain.question.entity.QuestionEntity;
 import com.coniv.mait.domain.question.enums.QuestionType;
-import com.coniv.mait.domain.question.exception.QuestionValidationResult;
+import com.coniv.mait.domain.question.enums.QuestionValidationResult;
 import com.coniv.mait.domain.question.repository.OrderingOptionEntityRepository;
 import com.coniv.mait.domain.question.service.dto.QuestionValidateDto;
 
