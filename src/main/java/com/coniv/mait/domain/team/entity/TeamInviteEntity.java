@@ -37,7 +37,7 @@ public class TeamInviteEntity extends BaseTimeEntity {
 
 	@ManyToOne(fetch = FetchType.LAZY)
 	@JoinColumn(name = "user_id", nullable = false)
-	private UserEntity inviter;
+	private UserEntity invitor;
 
 	@ManyToOne(fetch = FetchType.LAZY)
 	@JoinColumn(name = "team_id", nullable = false)
@@ -53,10 +53,10 @@ public class TeamInviteEntity extends BaseTimeEntity {
 	@Column
 	private LocalDateTime expiredAt;
 
-	public static TeamInviteEntity createInvite(UserEntity inviter, TeamEntity team, String token,
+	public static TeamInviteEntity createInvite(UserEntity invitor, TeamEntity team, String token,
 		InviteTokenDuration duration) {
 		return TeamInviteEntity.builder()
-			.inviter(inviter)
+			.invitor(invitor)
 			.team(team)
 			.token(token)
 			.tokenDuration(duration)

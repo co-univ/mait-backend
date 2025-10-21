@@ -162,7 +162,7 @@ class TeamServiceTest {
 		// when & then
 		assertThatThrownBy(() -> teamService.createTeamInviteCode(teamId, mockUser, duration))
 			.isInstanceOf(EntityNotFoundException.class)
-			.hasMessageContaining("Inviter is not a member of the team");
+			.hasMessageContaining("Invitor is not a member of the team");
 
 		verify(teamEntityRepository).findById(teamId);
 		verify(userEntityRepository).findById(999L);

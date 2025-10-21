@@ -143,7 +143,7 @@ public class TeamApiIntegrationTest extends BaseIntegrationTest {
 		assertThat(invites).hasSize(1);
 		TeamInviteEntity savedInvite = invites.get(0);
 		assertThat(savedInvite.getTeam().getId()).isEqualTo(team.getId());
-		assertThat(savedInvite.getInviter().getId()).isEqualTo(user.getId());
+		assertThat(savedInvite.getInvitor().getId()).isEqualTo(user.getId());
 		assertThat(savedInvite.getTokenDuration()).isEqualTo(InviteTokenDuration.ONE_DAY);
 		assertThat(savedInvite.getToken()).isNotBlank();
 		assertThat(savedInvite.getExpiredAt()).isNotNull();
