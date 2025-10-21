@@ -8,6 +8,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import java.util.List;
 
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -63,7 +64,7 @@ public class TeamApiIntegrationTest extends BaseIntegrationTest {
 	@Autowired
 	private TeamInviteEntityRepository teamInviteEntityRepository;
 
-	@BeforeEach
+	@AfterEach
 	void clear() {
 		teamInviteEntityRepository.deleteAll();
 		teamUserEntityRepository.deleteAll();
@@ -89,6 +90,8 @@ public class TeamApiIntegrationTest extends BaseIntegrationTest {
 	void createTeam_Success() throws Exception {
 		// given
 		CreateTeamApiRequest request = new CreateTeamApiRequest("테스트 팀");
+
+		System.out.println(userEntityRepository.findAll().size() + " size는 ");
 
 		// when & then
 		mockMvc.perform(post("/api/v1/teams")
