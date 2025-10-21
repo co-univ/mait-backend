@@ -6,11 +6,18 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.coniv.mait.domain.team.entity.TeamEntity;
+import com.coniv.mait.domain.team.entity.TeamInviteEntity;
 import com.coniv.mait.domain.team.entity.TeamUserEntity;
 import com.coniv.mait.domain.team.repository.TeamEntityRepository;
+import com.coniv.mait.domain.team.repository.TeamInviteEntityRepository;
 import com.coniv.mait.domain.team.repository.TeamUserEntityRepository;
+import com.coniv.mait.domain.team.service.component.InviteTokenGenerator;
 import com.coniv.mait.domain.user.entity.UserEntity;
+import com.coniv.mait.domain.user.repository.UserEntityRepository;
+import com.coniv.mait.global.enums.InviteTokenDuration;
+import com.coniv.mait.global.exception.custom.TeamInviteFailException;
 
+import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 
 @Service
@@ -19,12 +26,16 @@ public class TeamService {
 
 	private final TeamEntityRepository teamEntityRepository;
 	private final TeamUserEntityRepository teamUserEntityRepository;
+	private final InviteTokenGenerator inviteTokenGenerator;
+	private final TeamInviteEntityRepository teamInviteEntityRepository;
+	private final UserEntityRepository userEntityRepository;
 
 	@Transactional
-	public void createTeam(final String teamName) {
-		TeamEntity teamEntity = teamEntityRepository.save(TeamEntity.of(teamName));
-
-		//TODO: 추후 UserEntity와 연동하여 TeamMemberEntity를 생성하는 로직 추가
+	public void createTeam(final String teamName, final UserEntity ownerPrincipal) {
+		UserEntity owner = userEntityRepository.findById(ownerPrincipal.getId())
+			.orElseThrow(() -> new EntityNotFoundException("Owner user not found with id: " + ownerPrincipal.getId()));
+		TeamEntity teamEntity = teamEntityRepository.save(TeamEntity.of(teamName, owner.getId()));
+		teamUserEntityRepository.save(TeamUserEntity.createOwnerUser(owner, teamEntity));
 	}
 
 	@Transactional
@@ -33,5 +44,33 @@ public class TeamService {
 			.map(user -> TeamUserEntity.createPlayerUser(user, team))
 			.toList();
 		teamUserEntityRepository.saveAll(teamUsers);
+	}
+
+	@Transactional
+	public String createTeamInviteCode(final Long teamId, final UserEntity invitorPrincipal,
+		final InviteTokenDuration duration) {
+		TeamEntity team = teamEntityRepository.findById(teamId)
+			.orElseThrow(() -> new EntityNotFoundException("Team not found with id: " + teamId));
+		UserEntity invitor = userEntityRepository.findById(invitorPrincipal.getId())
+			.orElseThrow(
+				() -> new EntityNotFoundException("Owner user not found with id: " + invitorPrincipal.getId()));
+
+		validateInvitorRole(team, invitor);
+		String privateCode = inviteTokenGenerator.generateUniqueInviteToken();
+
+		TeamInviteEntity teamInviteEntity = TeamInviteEntity.createInvite(invitor, team, privateCode, duration);
+		teamInviteEntityRepository.save(teamInviteEntity);
+
+		return privateCode;
+	}
+
+	private void validateInvitorRole(final TeamEntity team, final UserEntity invitor) {
+		TeamUserEntity teamUser = teamUserEntityRepository.findByTeamAndUser(team, invitor)
+			.orElseThrow(() -> new EntityNotFoundException(
+				"Invitor is not a member of the team " + team.getId() + ", user: " + invitor.getId()));
+
+		if (!teamUser.canInvite()) {
+			throw new TeamInviteFailException("Only team owners can create invite codes");
+		}
 	}
 }

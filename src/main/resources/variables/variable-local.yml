@@ -9,4 +9,3 @@ mait:
     http-only: true
     secure: false
     same-site: "Lax"
-
