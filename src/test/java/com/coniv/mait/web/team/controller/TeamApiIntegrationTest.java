@@ -73,9 +73,9 @@ public class TeamApiIntegrationTest extends BaseIntegrationTest {
 	@BeforeEach
 	void passThroughJwtFilter() throws Exception {
 		Mockito.doAnswer(inv -> {
-			var request = (ServletRequest)inv.getArgument(0);
-			var response = (ServletResponse)inv.getArgument(1);
-			var chain = (FilterChain)inv.getArgument(2);
+			ServletRequest request = inv.getArgument(0);
+			ServletResponse response = inv.getArgument(1);
+			FilterChain chain = inv.getArgument(2);
 			chain.doFilter(request, response);
 			return null;
 		}).when(jwtAuthenticationFilter).doFilter(Mockito.any(), Mockito.any(), Mockito.any());
@@ -88,8 +88,6 @@ public class TeamApiIntegrationTest extends BaseIntegrationTest {
 	void createTeam_Success() throws Exception {
 		// given
 		CreateTeamApiRequest request = new CreateTeamApiRequest("테스트 팀");
-
-		System.out.println(userEntityRepository.findAll().size() + " size는 ");
 
 		// when & then
 		mockMvc.perform(post("/api/v1/teams")
