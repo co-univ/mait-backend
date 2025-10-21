@@ -23,8 +23,10 @@ import org.springframework.test.web.servlet.MockMvc;
 import com.coniv.mait.domain.question.enums.DeliveryMode;
 import com.coniv.mait.domain.question.enums.QuestionSetCreationType;
 import com.coniv.mait.domain.question.enums.QuestionSetVisibility;
+import com.coniv.mait.domain.question.enums.QuestionValidationResult;
 import com.coniv.mait.domain.question.service.QuestionSetService;
 import com.coniv.mait.domain.question.service.dto.QuestionSetDto;
+import com.coniv.mait.domain.question.service.dto.QuestionValidateDto;
 import com.coniv.mait.global.filter.JwtAuthorizationFilter;
 import com.coniv.mait.global.interceptor.idempotency.IdempotencyInterceptor;
 import com.coniv.mait.web.question.dto.CreateQuestionSetApiRequest;
@@ -103,8 +105,7 @@ class QuestionSetControllerTest {
 				jsonPath("$.code").value("C-001"),
 				jsonPath("$.message").value("사용자 입력 오류입니다."),
 				jsonPath("$.reasons").isArray(),
-				jsonPath("$.reasons[0]").value(expectedMessage)
-			);
+				jsonPath("$.reasons[0]").value(expectedMessage));
 
 		verify(questionSetService, never()).createQuestionSet(anyString(), any());
 	}
@@ -114,8 +115,7 @@ class QuestionSetControllerTest {
 			Arguments.of("빈 제목", "", QuestionSetCreationType.MANUAL, "교육 주제를 입력해주세요."),
 			Arguments.of("null 제목", null, QuestionSetCreationType.MANUAL, "교육 주제를 입력해주세요."),
 			Arguments.of("공백만 있는 제목", "   ", QuestionSetCreationType.MANUAL, "교육 주제를 입력해주세요."),
-			Arguments.of("빈 생성 타입", "Valid Subject", null, "문제 셋 생성 유형을 선택해주세요.")
-		);
+			Arguments.of("빈 생성 타입", "Valid Subject", null, "문제 셋 생성 유형을 선택해주세요."));
 	}
 
 	@Test
@@ -137,9 +137,7 @@ class QuestionSetControllerTest {
 				jsonPath("$.reasons.length()").value(2),
 				jsonPath("$.reasons[*]").value(org.hamcrest.Matchers.hasItems(
 					"교육 주제를 입력해주세요.",
-					"문제 셋 생성 유형을 선택해주세요."
-				))
-			);
+					"문제 셋 생성 유형을 선택해주세요.")));
 
 		verify(questionSetService, never()).createQuestionSet(anyString(), any());
 	}
@@ -252,9 +250,7 @@ class QuestionSetControllerTest {
 				jsonPath("$.reasons").isArray(),
 				jsonPath("$.reasons.length()").value(expectedErrorMessages.size()),
 				jsonPath("$.reasons[*]").value(org.hamcrest.Matchers.hasItems(
-					expectedErrorMessages.toArray(new String[0])
-				))
-			);
+					expectedErrorMessages.toArray(new String[0]))));
 
 		verify(questionSetService, never()).completeQuestionSet(anyLong(), anyString(), anyString(), any(), anyString(),
 			any());
@@ -264,38 +260,34 @@ class QuestionSetControllerTest {
 		return Stream.of(
 			Arguments.of(
 				"제목과 주제가 빈 문자열",
-				new UpdateQuestionSetApiRequest("", "", DeliveryMode.LIVE_TIME, "설명", QuestionSetVisibility.GROUP),
-				List.of("제목을 입력해주세요", "주제를 입력해주세요")
-			),
+				new UpdateQuestionSetApiRequest("", "", DeliveryMode.LIVE_TIME, "설명",
+					QuestionSetVisibility.GROUP),
+				List.of("제목을 입력해주세요", "주제를 입력해주세요")),
 			Arguments.of(
 				"제목만 빈 문자열",
-				new UpdateQuestionSetApiRequest("", "유효한 주제", DeliveryMode.REVIEW, "설명", QuestionSetVisibility.PRIVATE),
-				List.of("제목을 입력해주세요")
-			),
+				new UpdateQuestionSetApiRequest("", "유효한 주제", DeliveryMode.REVIEW, "설명",
+					QuestionSetVisibility.PRIVATE),
+				List.of("제목을 입력해주세요")),
 			Arguments.of(
 				"주제만 빈 문자열",
 				new UpdateQuestionSetApiRequest("유효한 제목", "", DeliveryMode.LIVE_TIME, "설명",
 					QuestionSetVisibility.GROUP),
-				List.of("주제를 입력해주세요")
-			),
+				List.of("주제를 입력해주세요")),
 			Arguments.of(
 				"제목과 주제가 null",
-				new UpdateQuestionSetApiRequest(null, null, DeliveryMode.REVIEW, "설명", QuestionSetVisibility.GROUP),
-				List.of("제목을 입력해주세요", "주제를 입력해주세요")
-			),
+				new UpdateQuestionSetApiRequest(null, null, DeliveryMode.REVIEW, "설명",
+					QuestionSetVisibility.GROUP),
+				List.of("제목을 입력해주세요", "주제를 입력해주세요")),
 			Arguments.of(
 				"제목이 공백만 포함",
 				new UpdateQuestionSetApiRequest("   ", "유효한 주제", DeliveryMode.LIVE_TIME, "설명",
 					QuestionSetVisibility.PRIVATE),
-				List.of("제목을 입력해주세요")
-			),
+				List.of("제목을 입력해주세요")),
 			Arguments.of(
 				"주제가 공백만 포함",
 				new UpdateQuestionSetApiRequest("유효한 제목", "   ", DeliveryMode.REVIEW, "설명",
 					QuestionSetVisibility.GROUP),
-				List.of("주제를 입력해주세요")
-			)
-		);
+				List.of("주제를 입력해주세요")));
 	}
 
 	@Test
@@ -333,7 +325,65 @@ class QuestionSetControllerTest {
 			.andExpectAll(status().is4xxClientError(),
 				jsonPath("$.isSuccess").value(false),
 				jsonPath("$.code").value("C-001"),
-				jsonPath("$.reasons[0]").value("문제 셋 제목은 비어있을 수 없습니다.")
-			);
+				jsonPath("$.reasons[0]").value("문제 셋 제목은 비어있을 수 없습니다."));
+	}
+
+	@Test
+	@DisplayName("문제 셋 검증 API 테스트 - 모든 문제가 유효한 경우")
+	void validateQuestionSet_AllValid() throws Exception {
+		// given
+		final Long questionSetId = 1L;
+
+		when(questionSetService.validateQuestionSet(questionSetId)).thenReturn(List.of());
+
+		// when & then
+		mockMvc.perform(get("/api/v1/question-sets/validate")
+				.param("questionSetId", String.valueOf(questionSetId)))
+			.andExpect(status().isOk())
+			.andExpect(jsonPath("$.isSuccess").value(true))
+			.andExpect(jsonPath("$.data").isArray())
+			.andExpect(jsonPath("$.data.length()").value(0));
+
+		verify(questionSetService).validateQuestionSet(questionSetId);
+	}
+
+	@Test
+	@DisplayName("문제 셋 검증 API 테스트 - 일부 문제가 유효하지 않은 경우")
+	void validateQuestionSet_SomeInvalid() throws Exception {
+		// given
+		final Long questionSetId = 1L;
+
+		QuestionValidateDto invalidDto1 = QuestionValidateDto.builder()
+			.questionId(2L)
+			.number(2L)
+			.valid(false)
+			.reason(QuestionValidationResult.EMPTY_CONTENT)
+			.build();
+
+		QuestionValidateDto invalidDto2 = QuestionValidateDto.builder()
+			.questionId(3L)
+			.number(3L)
+			.valid(false)
+			.reason(QuestionValidationResult.INVALID_CHOICE_COUNT)
+			.build();
+
+		when(questionSetService.validateQuestionSet(questionSetId))
+			.thenReturn(List.of(invalidDto1, invalidDto2));
+
+		// when & then
+		mockMvc.perform(get("/api/v1/question-sets/validate")
+				.param("questionSetId", String.valueOf(questionSetId)))
+			.andExpect(status().isOk())
+			.andExpect(jsonPath("$.isSuccess").value(true))
+			.andExpect(jsonPath("$.data").isArray())
+			.andExpect(jsonPath("$.data.length()").value(2))
+			.andExpect(jsonPath("$.data[0].questionId").value(2L))
+			.andExpect(jsonPath("$.data[0].isValid").value(false))
+			.andExpect(jsonPath("$.data[0].number").value(2L))
+			.andExpect(jsonPath("$.data[1].questionId").value(3L))
+			.andExpect(jsonPath("$.data[1].isValid").value(false))
+			.andExpect(jsonPath("$.data[1].number").value(3L));
+
+		verify(questionSetService).validateQuestionSet(questionSetId);
 	}
 }

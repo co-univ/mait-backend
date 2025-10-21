@@ -13,7 +13,9 @@ import com.coniv.mait.domain.question.enums.QuestionSetCreationType;
 import com.coniv.mait.domain.question.enums.QuestionSetVisibility;
 import com.coniv.mait.domain.question.repository.QuestionEntityRepository;
 import com.coniv.mait.domain.question.repository.QuestionSetEntityRepository;
+import com.coniv.mait.domain.question.service.component.QuestionChecker;
 import com.coniv.mait.domain.question.service.dto.QuestionSetDto;
+import com.coniv.mait.domain.question.service.dto.QuestionValidateDto;
 
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
@@ -27,6 +29,8 @@ public class QuestionSetService {
 	private final QuestionSetEntityRepository questionSetEntityRepository;
 
 	private final QuestionEntityRepository questionEntityRepository;
+
+	private final QuestionChecker questionChecker;
 
 	@Transactional
 	public QuestionSetDto createQuestionSet(final String subject, final QuestionSetCreationType creationType) {
@@ -96,5 +100,17 @@ public class QuestionSetService {
 			.orElseThrow(() -> new EntityNotFoundException("Question set not found"));
 
 		questionSet.updateTitle(title);
+	}
+
+	public List<QuestionValidateDto> validateQuestionSet(final Long questionSetId) {
+		QuestionSetEntity questionSet = questionSetEntityRepository.findById(questionSetId)
+			.orElseThrow(() -> new EntityNotFoundException("Question set not found"));
+
+		List<QuestionEntity> questions = questionEntityRepository.findAllByQuestionSetId(questionSet.getId());
+
+		return questions.stream()
+			.map(questionChecker::validateQuestion)
+			.filter(dto -> !dto.isValid())
+			.toList();
 	}
 }
