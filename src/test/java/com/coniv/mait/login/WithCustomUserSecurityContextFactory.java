@@ -34,9 +34,6 @@ public class WithCustomUserSecurityContextFactory implements WithSecurityContext
 				return userEntityRepository.save(newUser);
 			}));
 
-		UserEntity byEmail = userEntityRepository.findByEmail(email).get();
-		System.out.println(byEmail.getEmail() + " " + byEmail.getId() + " byEmail Content");
-
 		UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(user,
 			"N/A",
 			List.of()
