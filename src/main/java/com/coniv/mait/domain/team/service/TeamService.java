@@ -13,6 +13,7 @@ import com.coniv.mait.domain.team.repository.TeamInviteEntityRepository;
 import com.coniv.mait.domain.team.repository.TeamUserEntityRepository;
 import com.coniv.mait.domain.team.service.component.InviteTokenGenerator;
 import com.coniv.mait.domain.user.entity.UserEntity;
+import com.coniv.mait.domain.user.repository.UserEntityRepository;
 import com.coniv.mait.global.enums.InviteTokenDuration;
 import com.coniv.mait.global.exception.custom.TeamInviteFailException;
 
@@ -27,9 +28,12 @@ public class TeamService {
 	private final TeamUserEntityRepository teamUserEntityRepository;
 	private final InviteTokenGenerator inviteTokenGenerator;
 	private final TeamInviteEntityRepository teamInviteEntityRepository;
+	private final UserEntityRepository userEntityRepository;
 
 	@Transactional
-	public void createTeam(final String teamName, final UserEntity owner) {
+	public void createTeam(final String teamName, final UserEntity ownerPrincipal) {
+		UserEntity owner = userEntityRepository.findById(ownerPrincipal.getId())
+			.orElseThrow(() -> new EntityNotFoundException("Owner user not found with id: " + ownerPrincipal.getId()));
 		TeamEntity teamEntity = teamEntityRepository.save(TeamEntity.of(teamName, owner.getId()));
 		teamUserEntityRepository.save(TeamUserEntity.createOwnerUser(owner, teamEntity));
 	}
