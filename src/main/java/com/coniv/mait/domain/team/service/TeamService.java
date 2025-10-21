@@ -47,10 +47,13 @@ public class TeamService {
 	}
 
 	@Transactional
-	public String createTeamInviteCode(final Long teamId, final UserEntity invitor,
+	public String createTeamInviteCode(final Long teamId, final UserEntity invitorPrincipal,
 		final InviteTokenDuration duration) {
 		TeamEntity team = teamEntityRepository.findById(teamId)
 			.orElseThrow(() -> new EntityNotFoundException("Team not found with id: " + teamId));
+		UserEntity invitor = userEntityRepository.findById(invitorPrincipal.getId())
+			.orElseThrow(
+				() -> new EntityNotFoundException("Owner user not found with id: " + invitorPrincipal.getId()));
 
 		validateInvitorRole(team, invitor);
 		String privateCode = inviteTokenGenerator.generateUniqueInviteToken();
