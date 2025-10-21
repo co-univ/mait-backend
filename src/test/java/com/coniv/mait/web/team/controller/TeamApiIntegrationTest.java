@@ -1,6 +1,5 @@
 package com.coniv.mait.web.team.controller;
 
-import static com.coniv.mait.domain.user.enums.LoginProvider.*;
 import static org.assertj.core.api.Assertions.*;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
@@ -15,7 +14,6 @@ import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
-import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.transaction.annotation.Transactional;
@@ -124,22 +122,23 @@ public class TeamApiIntegrationTest extends BaseIntegrationTest {
 	}
 
 	@Test
-	@WithMockUser
+	@Transactional
+	@WithCustomUser(email = "test@example.com", name = "사용자1")
 	@DisplayName("팀 초대 코드 생성 API 통합 테스트 - 성공")
 	void createTeamInviteCode_Success() throws Exception {
 		// given
-		UserEntity user = createTestUser("test@example.com", "테스트 사용자");
+		UserEntity user = userEntityRepository.findByEmail("test@example.com").orElseThrow();
 		TeamEntity team = createTeamWithOwner("테스트 팀", user);
 		CreateTeamInviteApiRequest request = new CreateTeamInviteApiRequest(InviteTokenDuration.ONE_DAY);
 
 		// when & then
 		mockMvc.perform(post("/api/v1/teams/{teamId}/invite", team.getId())
 				.contentType(MediaType.APPLICATION_JSON)
-				.content(objectMapper.writeValueAsString(request)))
+				.content(objectMapper.writeValueAsString(request))
+				.with(csrf()))
 			.andExpect(status().isOk())
-			.andExpect(jsonPath("$.success").value(true))
-			.andExpect(jsonPath("$.data.inviteCode").exists())
-			.andExpect(jsonPath("$.data.inviteCode").isString());
+			.andExpect(jsonPath("$.isSuccess").value(true))
+			.andExpect(jsonPath("$.data.token").exists());
 
 		// then
 		List<TeamInviteEntity> invites = teamInviteEntityRepository.findAll();
@@ -150,11 +149,6 @@ public class TeamApiIntegrationTest extends BaseIntegrationTest {
 		assertThat(savedInvite.getTokenDuration()).isEqualTo(InviteTokenDuration.ONE_DAY);
 		assertThat(savedInvite.getToken()).isNotBlank();
 		assertThat(savedInvite.getExpiredAt()).isNotNull();
-	}
-
-	private UserEntity createTestUser(String email, String name) {
-		UserEntity user = UserEntity.socialLoginUser(email, name, "providerId", GOOGLE);
-		return userEntityRepository.save(user);
 	}
 
 	private TeamEntity createTeamWithOwner(String teamName, UserEntity owner) {
