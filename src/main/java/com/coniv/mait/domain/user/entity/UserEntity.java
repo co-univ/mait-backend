@@ -11,11 +11,12 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
+import jakarta.persistence.UniqueConstraint;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
-@Table(name = "users")
+@Table(name = "users", uniqueConstraints = @UniqueConstraint(columnNames = {"nickname", "code"}))
 @Entity
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
@@ -33,8 +34,14 @@ public class UserEntity extends BaseTimeEntity {
 	@Column(nullable = false)
 	private String name;
 
-	@Column(unique = true)
+	@Column
 	private String nickname;
+
+	@Column(name = "code", length = 4)
+	private String nicknameCode;
+
+	@Column(name = "full_nickname", insertable = false, updatable = false)
+	private String fullNickname;
 
 	private Boolean isLocalLogin;
 
