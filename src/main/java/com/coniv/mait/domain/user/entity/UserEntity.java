@@ -34,7 +34,7 @@ public class UserEntity extends BaseTimeEntity {
 	@Column(nullable = false)
 	private String name;
 
-	@Column
+	@Column(length = 20)
 	private String nickname;
 
 	@Column(name = "code", length = 4)
