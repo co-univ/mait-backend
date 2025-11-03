@@ -40,7 +40,6 @@ public class UserController {
 	public ResponseEntity<ApiResponse<PatchNicknameResponse>> updateUserNickname(
 		@AuthenticationPrincipal UserEntity user,
 		@Valid @RequestBody PatchNicknameRequest request) {
-		System.out.println("user===" + user.getId());
 		UserDto dto = userService.updateUserNickname(user, request.nickname());
 		return ResponseEntity.ok(ApiResponse.ok(PatchNicknameResponse.from(dto)));
 	}
