@@ -16,7 +16,10 @@ public record UserInfoApiResponse(
 	String email,
 
 	@Schema(description = "사용자 닉네임")
-	String nickname
+	String nickname,
+
+	@Schema(description = "사용자 전체 닉네임")
+	String fullNickname
 ) {
 
 	public static UserInfoApiResponse from(UserDto userDto) {
@@ -24,7 +27,8 @@ public record UserInfoApiResponse(
 			userDto.getId(),
 			userDto.getName(),
 			userDto.getEmail(),
-			userDto.getNickname()
+			userDto.getNickname(),
+			userDto.getFullNickname()
 		);
 	}
 }
