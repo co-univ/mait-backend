@@ -2,6 +2,7 @@ package com.coniv.mait.global.config;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Profile;
 
 import com.coniv.mait.global.config.property.AwsCredentialsProperty;
 
@@ -13,6 +14,7 @@ import software.amazon.awssdk.services.s3.S3Client;
 
 @Configuration
 @RequiredArgsConstructor
+@Profile("!test")
 public class S3Config {
 
 	private final AwsCredentialsProperty credentialsProperty;
