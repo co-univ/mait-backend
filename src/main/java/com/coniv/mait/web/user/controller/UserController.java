@@ -14,6 +14,7 @@ import com.coniv.mait.domain.user.service.dto.UserDto;
 import com.coniv.mait.global.response.ApiResponse;
 import com.coniv.mait.web.user.dto.PatchNicknameRequest;
 import com.coniv.mait.web.user.dto.PatchNicknameResponse;
+import com.coniv.mait.web.user.dto.RandomNicknameResponse;
 import com.coniv.mait.web.user.dto.UserInfoApiResponse;
 
 import io.swagger.v3.oas.annotations.Operation;
@@ -42,5 +43,12 @@ public class UserController {
 		System.out.println("user===" + user.getId());
 		UserDto dto = userService.updateUserNickname(user, request.nickname());
 		return ResponseEntity.ok(ApiResponse.ok(PatchNicknameResponse.from(dto)));
+	}
+
+	@Operation(summary = "랜덤 닉네임 반환")
+	@GetMapping("/nickname/random")
+	public ResponseEntity<ApiResponse<RandomNicknameResponse>> getRandomNickname() {
+		String randomNickname = userService.getRandomNickname();
+		return ResponseEntity.ok(ApiResponse.ok(RandomNicknameResponse.from(randomNickname)));
 	}
 }

@@ -7,6 +7,7 @@ import com.coniv.mait.domain.user.component.UserNickNameGenerator;
 import com.coniv.mait.domain.user.entity.UserEntity;
 import com.coniv.mait.domain.user.repository.UserEntityRepository;
 import com.coniv.mait.domain.user.service.dto.UserDto;
+import com.coniv.mait.domain.user.util.RandomNicknameUtil;
 
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
@@ -31,5 +32,9 @@ public class UserService {
 		user.updateNickname(newNickname, code);
 
 		return UserDto.from(user);
+	}
+
+	public String getRandomNickname() {
+		return RandomNicknameUtil.generateRandomNickname();
 	}
 }
