@@ -82,4 +82,9 @@ public class UserEntity extends BaseTimeEntity {
 	public static UserEntity localLoginUser(String email, String password, String name, String nickname) {
 		return new UserEntity(email, password, name, nickname, true, null, null);
 	}
+
+	public void updateNickname(final String nickname, final String nicknameCode) {
+		this.nickname = nickname;
+		this.nicknameCode = nicknameCode;
+	}
 }
