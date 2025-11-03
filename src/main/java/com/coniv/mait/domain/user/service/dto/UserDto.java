@@ -20,7 +20,7 @@ public class UserDto {
 
 	private String nickname;
 
-	private String fullNickname;
+	private String nicknameCode;
 
 	public static UserDto from(UserEntity user) {
 		return UserDto.builder()
@@ -28,7 +28,7 @@ public class UserDto {
 			.email(user.getEmail())
 			.name(user.getName())
 			.nickname(user.getNickname())
-			.fullNickname(user.getFullNickname())
+			.nicknameCode(user.getNicknameCode())
 			.build();
 	}
 }
