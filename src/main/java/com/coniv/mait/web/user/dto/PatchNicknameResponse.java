@@ -12,10 +12,6 @@ public record PatchNicknameResponse(
 	String fullNickname
 ) {
 	public static PatchNicknameResponse from(UserDto dto) {
-		return new PatchNicknameResponse(dto.getNickname(), getFullNickname(dto));
-	}
-
-	private static String getFullNickname(UserDto dto) {
-		return dto.getNickname() + "#" + dto.getNicknameCode();
+		return new PatchNicknameResponse(dto.getNickname(), dto.getFullNickname());
 	}
 }

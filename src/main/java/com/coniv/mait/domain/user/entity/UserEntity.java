@@ -40,9 +40,6 @@ public class UserEntity extends BaseTimeEntity {
 	@Column(name = "code", length = 4)
 	private String nicknameCode;
 
-	@Column(name = "full_nickname", insertable = false, updatable = false)
-	private String fullNickname;
-
 	private Boolean isLocalLogin;
 
 	@Column(unique = true)
@@ -50,8 +47,6 @@ public class UserEntity extends BaseTimeEntity {
 
 	@Enumerated(EnumType.STRING)
 	private LoginProvider loginProvider;
-
-	//TODO 초대링크 작업 시 팀 필드 추가
 
 	private UserEntity(String email, String name, String nickname, Boolean isLocalLogin, String providerId,
 		LoginProvider loginProvider) {
@@ -86,5 +81,9 @@ public class UserEntity extends BaseTimeEntity {
 	public void updateNickname(final String nickname, final String nicknameCode) {
 		this.nickname = nickname;
 		this.nicknameCode = nicknameCode;
+	}
+
+	public String getFullNickname() {
+		return this.nickname + "#" + this.nicknameCode;
 	}
 }

@@ -22,6 +22,8 @@ public class UserDto {
 
 	private String nicknameCode;
 
+	private String fullNickname;
+
 	public static UserDto from(UserEntity user) {
 		return UserDto.builder()
 			.id(user.getId())
@@ -29,6 +31,7 @@ public class UserDto {
 			.name(user.getName())
 			.nickname(user.getNickname())
 			.nicknameCode(user.getNicknameCode())
+			.fullNickname(user.getFullNickname())
 			.build();
 	}
 }
