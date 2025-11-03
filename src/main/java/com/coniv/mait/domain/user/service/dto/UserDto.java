@@ -17,4 +17,6 @@ public class UserDto {
 	private String name;
 
 	private String nickname;
+
+	private String fullNickname;
 }
