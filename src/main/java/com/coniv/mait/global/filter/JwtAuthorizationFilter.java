@@ -83,6 +83,10 @@ public class JwtAuthorizationFilter extends OncePerRequestFilter {
 			return false; // 필터를 실행
 		}
 
+		if ("PATCH".equals(method) && pathMatcher.match("/api/v1/users/nickname", path)) {
+			return false; // 필터를 실행
+		}
+
 		if ("POST".equals(method) && pathMatcher.match("/api/v1/teams", path)) {
 			return false; // 필터를 실행
 		}

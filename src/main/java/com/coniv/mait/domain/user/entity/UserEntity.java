@@ -11,11 +11,12 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
+import jakarta.persistence.UniqueConstraint;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
-@Table(name = "users")
+@Table(name = "users", uniqueConstraints = @UniqueConstraint(columnNames = {"nickname", "code"}))
 @Entity
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
@@ -33,8 +34,11 @@ public class UserEntity extends BaseTimeEntity {
 	@Column(nullable = false)
 	private String name;
 
-	@Column(unique = true)
+	@Column(length = 20)
 	private String nickname;
+
+	@Column(name = "code", length = 4)
+	private String nicknameCode;
 
 	private Boolean isLocalLogin;
 
@@ -43,8 +47,6 @@ public class UserEntity extends BaseTimeEntity {
 
 	@Enumerated(EnumType.STRING)
 	private LoginProvider loginProvider;
-
-	//TODO 초대링크 작업 시 팀 필드 추가
 
 	private UserEntity(String email, String name, String nickname, Boolean isLocalLogin, String providerId,
 		LoginProvider loginProvider) {
@@ -74,5 +76,17 @@ public class UserEntity extends BaseTimeEntity {
 
 	public static UserEntity localLoginUser(String email, String password, String name, String nickname) {
 		return new UserEntity(email, password, name, nickname, true, null, null);
+	}
+
+	public void updateNickname(final String nickname, final String nicknameCode) {
+		this.nickname = nickname;
+		this.nicknameCode = nicknameCode;
+	}
+
+	public String getFullNickname() {
+		if (this.nickname == null || this.nicknameCode == null) {
+			return null;
+		}
+		return this.nickname + "#" + this.nicknameCode;
 	}
 }
