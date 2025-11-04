@@ -18,7 +18,7 @@ import com.coniv.mait.domain.question.entity.QuestionEntity;
 import com.coniv.mait.domain.question.entity.QuestionImageEntity;
 import com.coniv.mait.domain.question.repository.QuestionEntityRepository;
 import com.coniv.mait.domain.question.repository.QuestionImageEntityRepository;
-import com.coniv.mait.global.s3.service.S3ImageUploader;
+import com.coniv.mait.global.s3.service.S3FileUploader;
 
 @ExtendWith(MockitoExtension.class)
 class QuestionImageServiceTest {
@@ -30,7 +30,7 @@ class QuestionImageServiceTest {
 	private QuestionEntityRepository questionEntityRepository;
 
 	@Mock
-	private S3ImageUploader imageUploader;
+	private S3FileUploader imageUploader;
 
 	@Mock
 	private QuestionImageEntityRepository questionImageEntityRepository;
