@@ -12,13 +12,13 @@ import lombok.experimental.SuperBuilder;
 @SuperBuilder
 @MappedSuperclass
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-public abstract class BaseImageEntity extends BaseTimeEntity {
+public abstract class BaseFileEntity extends BaseTimeEntity {
 
 	@Column(updatable = false)
 	private String url;
 
-	@Column(name = "image_key", updatable = false)
-	private String imageKey;
+	@Column(name = "file_key", updatable = false)
+	private String fileKey;
 
 	@Column(updatable = false)
 	private String bucket;

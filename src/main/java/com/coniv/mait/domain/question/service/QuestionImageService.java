@@ -37,7 +37,7 @@ public class QuestionImageService {
 
 		QuestionImageEntity questionImage = questionImageEntityRepository.save(QuestionImageEntity.builder()
 			.question(question)
-			.imageKey(imageInfo.getKey())
+			.fileKey(imageInfo.getKey())
 			.url(imageInfo.getUrl())
 			.bucket(imageInfo.getBucket())
 			.build());
@@ -45,7 +45,7 @@ public class QuestionImageService {
 		return QuestionImageDto.builder()
 			.id(questionImage.getId())
 			.questionId(question.getId())
-			.imageKey(questionImage.getImageKey())
+			.imageKey(questionImage.getFileKey())
 			.imageUrl(questionImage.getUrl())
 			.build();
 	}

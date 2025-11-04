@@ -1,6 +1,6 @@
 package com.coniv.mait.domain.question.entity;
 
-import com.coniv.mait.global.entity.BaseImageEntity;
+import com.coniv.mait.global.entity.BaseFileEntity;
 
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
@@ -22,7 +22,7 @@ import lombok.experimental.SuperBuilder;
 @SuperBuilder
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor
-public class QuestionImageEntity extends BaseImageEntity {
+public class QuestionImageEntity extends BaseFileEntity {
 
 	@Id
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
