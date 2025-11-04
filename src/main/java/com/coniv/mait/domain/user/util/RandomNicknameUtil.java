@@ -6,6 +6,9 @@ import com.coniv.mait.global.util.RandomUtil;
 
 public class RandomNicknameUtil {
 
+	private RandomNicknameUtil() {
+	}
+
 	private static final List<String> ADJECTIVES = List.of(
 		"빠른", "느린", "차가운", "따뜻한", "밝은",
 		"어두운", "귀여운", "멋진", "작은", "큰",
