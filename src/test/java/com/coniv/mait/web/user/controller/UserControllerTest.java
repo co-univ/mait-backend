@@ -19,7 +19,7 @@ import com.coniv.mait.domain.user.service.UserService;
 import com.coniv.mait.domain.user.service.dto.UserDto;
 import com.coniv.mait.global.filter.JwtAuthorizationFilter;
 import com.coniv.mait.global.interceptor.idempotency.IdempotencyInterceptor;
-import com.coniv.mait.web.user.dto.PatchNicknameRequest;
+import com.coniv.mait.web.user.dto.UpdateNicknameRequest;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 @WebMvcTest(UserController.class)
@@ -72,7 +72,7 @@ class UserControllerTest {
 	@DisplayName("닉네임 변경 API 테스트 - 성공")
 	void updateUserNickname_Success() throws Exception {
 		// given
-		PatchNicknameRequest request = new PatchNicknameRequest("새로운닉네임");
+		UpdateNicknameRequest request = new UpdateNicknameRequest("새로운닉네임");
 		UserDto mockDto = UserDto.builder()
 			.id(1L)
 			.email("test@example.com")
@@ -115,7 +115,7 @@ class UserControllerTest {
 	@DisplayName("닉네임 변경 API 테스트 - 실패: 닉네임이 너무 짧음 (trim 후)")
 	void updateUserNickname_Failure_TooShortAfterTrim() throws Exception {
 		// given
-		PatchNicknameRequest request = new PatchNicknameRequest("  a  ");
+		UpdateNicknameRequest request = new UpdateNicknameRequest("  a  ");
 
 		// when & then
 		mockMvc.perform(patch("/api/v1/users/nickname")

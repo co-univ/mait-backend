@@ -21,7 +21,7 @@ import com.coniv.mait.domain.user.repository.UserEntityRepository;
 import com.coniv.mait.global.filter.JwtAuthorizationFilter;
 import com.coniv.mait.login.WithCustomUser;
 import com.coniv.mait.web.integration.BaseIntegrationTest;
-import com.coniv.mait.web.user.dto.PatchNicknameRequest;
+import com.coniv.mait.web.user.dto.UpdateNicknameRequest;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import jakarta.servlet.FilterChain;
@@ -78,7 +78,7 @@ public class UserApiIntegrationTest extends BaseIntegrationTest {
 	@DisplayName("닉네임 변경 API 통합 테스트")
 	void updateUserNickname_Success() throws Exception {
 		// given
-		PatchNicknameRequest request = new PatchNicknameRequest("빠른고양이");
+		UpdateNicknameRequest request = new UpdateNicknameRequest("빠른고양이");
 
 		// when & then
 		mockMvc.perform(patch("/api/v1/users/nickname")

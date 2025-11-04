@@ -12,9 +12,9 @@ import com.coniv.mait.domain.user.entity.UserEntity;
 import com.coniv.mait.domain.user.service.UserService;
 import com.coniv.mait.domain.user.service.dto.UserDto;
 import com.coniv.mait.global.response.ApiResponse;
-import com.coniv.mait.web.user.dto.PatchNicknameRequest;
-import com.coniv.mait.web.user.dto.PatchNicknameResponse;
 import com.coniv.mait.web.user.dto.RandomNicknameResponse;
+import com.coniv.mait.web.user.dto.UpdateNicknameRequest;
+import com.coniv.mait.web.user.dto.UpdateNicknameResponse;
 import com.coniv.mait.web.user.dto.UserInfoApiResponse;
 
 import io.swagger.v3.oas.annotations.Operation;
@@ -37,11 +37,11 @@ public class UserController {
 
 	@Operation(summary = "사용자 닉네임 변경")
 	@PatchMapping("/nickname")
-	public ResponseEntity<ApiResponse<PatchNicknameResponse>> updateUserNickname(
+	public ResponseEntity<ApiResponse<UpdateNicknameResponse>> updateUserNickname(
 		@AuthenticationPrincipal UserEntity user,
-		@Valid @RequestBody PatchNicknameRequest request) {
+		@Valid @RequestBody UpdateNicknameRequest request) {
 		UserDto dto = userService.updateUserNickname(user, request.nickname().trim());
-		return ResponseEntity.ok(ApiResponse.ok(PatchNicknameResponse.from(dto)));
+		return ResponseEntity.ok(ApiResponse.ok(UpdateNicknameResponse.from(dto)));
 	}
 
 	@Operation(summary = "랜덤 닉네임 반환")
