@@ -12,8 +12,8 @@ import com.coniv.mait.domain.question.entity.QuestionImageEntity;
 import com.coniv.mait.domain.question.repository.QuestionEntityRepository;
 import com.coniv.mait.domain.question.repository.QuestionImageEntityRepository;
 import com.coniv.mait.domain.question.service.dto.QuestionImageDto;
-import com.coniv.mait.global.component.ImageUploader;
-import com.coniv.mait.global.component.dto.ImageInfo;
+import com.coniv.mait.global.component.dto.FileInfo;
+import com.coniv.mait.global.s3.service.S3ImageUploader;
 
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
@@ -25,7 +25,7 @@ public class QuestionImageService {
 	private static final String QUESTION_IMAGE_DIRECTORY = "questions";
 
 	private final QuestionEntityRepository questionEntityRepository;
-	private final ImageUploader imageUploader;
+	private final S3ImageUploader imageUploader;
 	private final QuestionImageEntityRepository questionImageEntityRepository;
 
 	@Transactional
@@ -33,7 +33,7 @@ public class QuestionImageService {
 		QuestionEntity question = questionEntityRepository.findById(questionId)
 			.orElseThrow(() -> new EntityNotFoundException("Question not found with id: " + questionId));
 
-		ImageInfo imageInfo = imageUploader.uploadImage(image, QUESTION_IMAGE_DIRECTORY);
+		FileInfo imageInfo = imageUploader.uploadFile(image, QUESTION_IMAGE_DIRECTORY);
 
 		QuestionImageEntity questionImage = questionImageEntityRepository.save(QuestionImageEntity.builder()
 			.question(question)
