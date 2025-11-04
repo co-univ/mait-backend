@@ -12,9 +12,12 @@ import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.multipart.MultipartFile;
 
 import com.coniv.mait.domain.question.enums.DeliveryMode;
+import com.coniv.mait.domain.question.service.QuestionSetMaterialService;
 import com.coniv.mait.domain.question.service.QuestionSetService;
 import com.coniv.mait.domain.question.service.dto.QuestionSetDto;
 import com.coniv.mait.global.response.ApiResponse;
@@ -30,13 +33,15 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 
-@Tag(name = "QuestionSet", description = "문제 셋 API")
+@Tag(name = "문제 셋 API", description = "문제 셋 API")
 @RestController
 @RequestMapping("/api/v1/question-sets")
 @RequiredArgsConstructor
 public class QuestionSetController {
 
 	private final QuestionSetService questionSetService;
+
+	private final QuestionSetMaterialService questionSetMaterialService;
 
 	@Operation(summary = "문제 셋 생성 API", description = "새로운 문제 셋을 생성합니다.")
 	@PostMapping
@@ -45,6 +50,15 @@ public class QuestionSetController {
 		QuestionSetDto questionSetDto = questionSetService.createQuestionSet(request.subject(), request.creationType());
 		return ResponseEntity.status(HttpStatus.CREATED)
 			.body(ApiResponse.ok(CreateQuestionSetApiResponse.from(questionSetDto)));
+	}
+
+	@Operation(summary = "문제 셋에 사용될 파일 업로드 API", description = "문제 셋 생성 과정에서 사용될 파일을 업로드합니다.")
+	@PostMapping("/{questionSetId}/materials")
+	public ResponseEntity<ApiResponse<Void>> uploadQuestionSetFiles(
+		@PathVariable("questionSetId") Long questionSetId,
+		@RequestPart("material") MultipartFile material) {
+		questionSetMaterialService.uploadQuestionSetMaterial(questionSetId, material);
+		return ResponseEntity.status(HttpStatus.NOT_IMPLEMENTED).body(ApiResponse.noContent());
 	}
 
 	@Operation(summary = "문제 셋 목록 조회")
