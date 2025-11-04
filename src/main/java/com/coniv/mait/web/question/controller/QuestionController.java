@@ -13,6 +13,7 @@ import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -121,7 +122,7 @@ public class QuestionController {
 	@PostMapping(value = "/{questionId}/images", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
 	public ResponseEntity<ApiResponse<QuestionImageApiResponse>> uploadImage(
 		@PathVariable("questionId") final Long questionId,
-		@RequestParam("image") MultipartFile image
+		@RequestPart("image") MultipartFile image
 	) {
 		return ResponseEntity.ok(
 			ApiResponse.ok(QuestionImageApiResponse.from(questionImageService.uploadImage(questionId, image))));
