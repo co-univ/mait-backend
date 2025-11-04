@@ -84,6 +84,9 @@ public class UserEntity extends BaseTimeEntity {
 	}
 
 	public String getFullNickname() {
+		if (this.nickname == null || this.nicknameCode == null) {
+			return null;
+		}
 		return this.nickname + "#" + this.nicknameCode;
 	}
 }
