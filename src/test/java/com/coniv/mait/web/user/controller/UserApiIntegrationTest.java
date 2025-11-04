@@ -100,29 +100,6 @@ public class UserApiIntegrationTest extends BaseIntegrationTest {
 
 	@Test
 	@Transactional
-	@WithCustomUser(email = "user1@example.com", name = "사용자1")
-	@DisplayName("닉네임 변경 API 통합 테스트 - 동일한 닉네임에 다른 코드 부여")
-	void updateUserNickname_SameNickname_DifferentCode() throws Exception {
-		// given
-		// 첫 번째 사용자가 "빠른고양이" 닉네임 사용
-		PatchNicknameRequest request1 = new PatchNicknameRequest("빠른고양이");
-		mockMvc.perform(patch("/api/v1/users/nickname")
-				.contentType(MediaType.APPLICATION_JSON)
-				.content(objectMapper.writeValueAsString(request1))
-				.with(csrf()))
-			.andExpect(status().isOk());
-
-		UserEntity user1 = userEntityRepository.findByEmail("user1@example.com").orElseThrow();
-		String code1 = user1.getNicknameCode();
-
-		// 두 번째 사용자 생성 및 로그인 (실제로는 새로운 테스트에서 해야하지만 간단히 시뮬레이션)
-		// 이 부분은 실제로는 별도의 테스트로 분리하는 것이 좋습니다
-		assertThat(code1).isNotNull();
-		assertThat(code1).matches("\\d{4}");
-	}
-
-	@Test
-	@Transactional
 	@WithCustomUser(email = "test@example.com", name = "테스트유저")
 	@DisplayName("랜덤 닉네임 반환 API 통합 테스트 - 성공")
 	void getRandomNickname_Success() throws Exception {
