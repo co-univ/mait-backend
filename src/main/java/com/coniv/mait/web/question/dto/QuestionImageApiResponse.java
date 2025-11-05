@@ -9,8 +9,6 @@ import lombok.Builder;
 public record QuestionImageApiResponse(
 	@Schema(description = "문제 이미지 아이디", requiredMode = Schema.RequiredMode.REQUIRED)
 	Long id,
-	@Schema(description = "해당 사진이 속한 문제 아이디", requiredMode = Schema.RequiredMode.REQUIRED)
-	Long questionId,
 	@Schema(description = "생성된 이미지 url", requiredMode = Schema.RequiredMode.REQUIRED)
 	String imageUrl
 ) {
@@ -18,7 +16,6 @@ public record QuestionImageApiResponse(
 		return QuestionImageApiResponse.builder()
 			.id(questionImageDto.getId())
 			.imageUrl(questionImageDto.getImageUrl())
-			.questionId(questionImageDto.getQuestionId())
 			.build();
 	}
 }

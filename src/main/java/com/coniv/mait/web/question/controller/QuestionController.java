@@ -119,13 +119,12 @@ public class QuestionController {
 	}
 
 	@Operation(summary = "문제 이미지 업로드 API", description = "문제에 이미지를 업로드합니다.")
-	@PostMapping(value = "/{questionId}/images", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+	@PostMapping(value = "/images", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
 	public ResponseEntity<ApiResponse<QuestionImageApiResponse>> uploadImage(
 		@PathVariable("questionSetId") final Long questionSetId,
-		@PathVariable("questionId") final Long questionId,
 		@RequestPart("image") MultipartFile image
 	) {
 		return ResponseEntity.ok(
-			ApiResponse.ok(QuestionImageApiResponse.from(questionImageService.uploadImage(questionId, image))));
+			ApiResponse.ok(QuestionImageApiResponse.from(questionImageService.uploadImage(questionSetId, image))));
 	}
 }
