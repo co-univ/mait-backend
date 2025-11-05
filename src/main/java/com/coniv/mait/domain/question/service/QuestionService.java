@@ -169,10 +169,12 @@ public class QuestionService {
 		oldQuestionFactory.deleteSubEntities(question);
 		questionEntityRepository.delete(question);
 
-		QuestionEntity createdQuestion = questionFactory.save(questionDto, question.getQuestionSet());
+		QuestionEntity createdQuestion = questionFactory.create(questionDto, question.getQuestionSet());
 
 		createdQuestion.updateImage(questionDto.getImageUrl(), questionDto.getImageId());
 		createdQuestion.updateLexoRank(question.getLexoRank());
+		questionEntityRepository.save(createdQuestion);
+		questionFactory.createSubEntities(questionDto, createdQuestion);
 
 		return questionFactory.getQuestion(createdQuestion, true);
 	}
