@@ -59,6 +59,7 @@ public class FillBlankQuestionDto extends QuestionDto {
 			.content(fillBlankQuestion.getContent())
 			.explanation(fillBlankQuestion.getExplanation())
 			.number(fillBlankQuestion.getNumber())
+			.imageUrl(fillBlankQuestion.getImageUrl())
 			.questionStatus(fillBlankQuestion.getQuestionStatus())
 			.fillBlankAnswers(fillBlankAnswerDtos)
 			.blankCount(blankCount)
