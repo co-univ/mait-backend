@@ -168,6 +168,7 @@ public class QuestionService {
 
 		QuestionEntity createdQuestion = questionFactory.save(questionDto, question.getQuestionSet());
 		createdQuestion.updateImageUrl(questionDto.getImageUrl());
+		createdQuestion.updateLexoRank(question.getLexoRank());
 		questionImageService.updateImage(createdQuestion, questionDto.getImageId());
 
 		return questionFactory.getQuestion(createdQuestion, true);

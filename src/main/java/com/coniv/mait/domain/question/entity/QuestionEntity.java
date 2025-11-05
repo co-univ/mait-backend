@@ -114,4 +114,8 @@ public abstract class QuestionEntity extends BaseTimeEntity {
 	public void updateImageUrl(String imageUrl) {
 		this.imageUrl = imageUrl;
 	}
+
+	public void updateLexoRank(String lexoRank) {
+		this.lexoRank = lexoRank;
+	}
 }
