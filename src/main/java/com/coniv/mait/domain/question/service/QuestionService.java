@@ -152,7 +152,7 @@ public class QuestionService {
 		QuestionFactory<QuestionDto> questionFactory = getQuestionFactory(questionDto.getType());
 
 		if (!question.getImageId().equals(questionDto.getImageId())) {
-			questionImageService.unuseExistImage(question.getImageId());
+			questionImageService.unUseExistImage(question.getImageId());
 		}
 
 		if (question.getType() == questionDto.getType()) {

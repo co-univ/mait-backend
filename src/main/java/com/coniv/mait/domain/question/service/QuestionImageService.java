@@ -49,7 +49,7 @@ public class QuestionImageService {
 
 	@Async("maitThreadPoolExecutor")
 	@Transactional
-	public CompletableFuture<Void> unuseExistImage(final Long existQuestionImageId) {
+	public CompletableFuture<Void> unUseExistImage(final Long existQuestionImageId) {
 		QuestionImageEntity existImage = questionImageEntityRepository.findById(existQuestionImageId)
 			.orElseThrow(() -> new EntityNotFoundException("QuestionImage not found id: " + existQuestionImageId));
 
