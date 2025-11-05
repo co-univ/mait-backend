@@ -7,10 +7,10 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
-import com.coniv.mait.domain.question.entity.QuestionEntity;
 import com.coniv.mait.domain.question.entity.QuestionImageEntity;
-import com.coniv.mait.domain.question.repository.QuestionEntityRepository;
+import com.coniv.mait.domain.question.entity.QuestionSetEntity;
 import com.coniv.mait.domain.question.repository.QuestionImageEntityRepository;
+import com.coniv.mait.domain.question.repository.QuestionSetEntityRepository;
 import com.coniv.mait.domain.question.service.dto.QuestionImageDto;
 import com.coniv.mait.global.component.dto.FileInfo;
 import com.coniv.mait.global.s3.dto.FileType;
@@ -23,19 +23,18 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class QuestionImageService {
 
-	private final QuestionEntityRepository questionEntityRepository;
+	private final QuestionSetEntityRepository questionSetEntityRepository;
 	private final S3FileUploader imageUploader;
 	private final QuestionImageEntityRepository questionImageEntityRepository;
 
 	@Transactional
-	public QuestionImageDto uploadImage(final Long questionId, final MultipartFile image) {
-		QuestionEntity question = questionEntityRepository.findById(questionId)
-			.orElseThrow(() -> new EntityNotFoundException("Question not found with id: " + questionId));
+	public QuestionImageDto uploadImage(final Long questionSetId, final MultipartFile image) {
+		QuestionSetEntity questionSet = questionSetEntityRepository.findById(questionSetId)
+			.orElseThrow(() -> new EntityNotFoundException("Question Set not found with id: " + questionSetId));
 
 		FileInfo imageInfo = imageUploader.uploadFile(image, FileType.QUESTION_IMAGE);
 
 		QuestionImageEntity questionImage = questionImageEntityRepository.save(QuestionImageEntity.builder()
-			.question(question)
 			.fileKey(imageInfo.getKey())
 			.url(imageInfo.getUrl())
 			.bucket(imageInfo.getBucket())
@@ -43,7 +42,6 @@ public class QuestionImageService {
 
 		return QuestionImageDto.builder()
 			.id(questionImage.getId())
-			.questionId(question.getId())
 			.imageKey(questionImage.getFileKey())
 			.imageUrl(questionImage.getUrl())
 			.build();
@@ -51,20 +49,11 @@ public class QuestionImageService {
 
 	@Async("maitThreadPoolExecutor")
 	@Transactional
-	public CompletableFuture<Void> updateImage(final QuestionEntity question, final Long questionImageId) {
-		if (questionImageId == null) {
-			return CompletableFuture.completedFuture(null);
-		}
+	public CompletableFuture<Void> unUseExistImage(final Long existQuestionImageId) {
+		QuestionImageEntity existImage = questionImageEntityRepository.findById(existQuestionImageId)
+			.orElseThrow(() -> new EntityNotFoundException("QuestionImage not found id: " + existQuestionImageId));
 
-		questionImageEntityRepository.findAllByQuestionAndUsedIsTrue(question).forEach(image -> {
-			image.updateUsage(false);
-		});
-
-		QuestionImageEntity questionImage = questionImageEntityRepository.findById(questionImageId)
-			.orElseThrow(() -> new EntityNotFoundException("QuestionImage not found with id: " + questionImageId));
-
-		questionImage.updateUsage(true);
-		questionImageEntityRepository.save(questionImage);
+		existImage.updateUsage(false);
 		return CompletableFuture.completedFuture(null);
 	}
 }

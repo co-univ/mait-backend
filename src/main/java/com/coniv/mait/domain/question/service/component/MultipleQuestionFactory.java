@@ -65,6 +65,7 @@ public class MultipleQuestionFactory implements QuestionFactory<MultipleQuestion
 		multipleQuestion.updateAnswerCount(calculateAnswerCount(questionDto.getChoices()));
 	}
 
+	@Override
 	public MultipleQuestionEntity create(MultipleQuestionDto dto, QuestionSetEntity questionSet) {
 		return MultipleQuestionEntity.builder()
 			.content(dto.getContent())

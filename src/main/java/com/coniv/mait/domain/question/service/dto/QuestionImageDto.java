@@ -13,8 +13,6 @@ public class QuestionImageDto {
 
 	private Long id;
 
-	private Long questionId;
-
 	private String imageUrl;
 
 	private String imageKey;

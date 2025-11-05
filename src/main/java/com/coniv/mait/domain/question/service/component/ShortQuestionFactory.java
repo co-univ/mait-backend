@@ -68,6 +68,7 @@ public class ShortQuestionFactory implements QuestionFactory<ShortQuestionDto> {
 		shortQuestionEntity.updateAnswerCount(shortAnswers.size());
 	}
 
+	@Override
 	public ShortQuestionEntity create(ShortQuestionDto dto, QuestionSetEntity questionSetEntity) {
 		return ShortQuestionEntity.builder()
 			.number(dto.getNumber())
