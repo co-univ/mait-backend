@@ -553,7 +553,7 @@ class QuestionServiceTest {
 		when(questionDto.getImageId()).thenReturn(200L);
 
 		ShortQuestionEntity newQuestion = mock(ShortQuestionEntity.class);
-		when(shortQuestionFactory.save(questionDto, questionSetEntity)).thenReturn(newQuestion);
+		when(shortQuestionFactory.create(questionDto, questionSetEntity)).thenReturn(newQuestion);
 
 		ShortQuestionDto expectedResult = mock(ShortQuestionDto.class);
 		when(shortQuestionFactory.getQuestion(newQuestion, true)).thenReturn(expectedResult);
@@ -571,7 +571,7 @@ class QuestionServiceTest {
 		verify(questionEntityRepository).findById(questionId);
 		verify(multipleQuestionFactory).deleteSubEntities(existingQuestion); // 기존 타입의 팩토리
 		verify(questionEntityRepository).delete(existingQuestion);
-		verify(shortQuestionFactory).save(questionDto, questionSetEntity); // 새로운 타입의 팩토리
+		verify(shortQuestionFactory).create(questionDto, questionSetEntity); // 새로운 타입의 팩토리
 		verify(shortQuestionFactory).getQuestion(newQuestion, true);
 
 		verify(questionImageService).unUseExistImage(newQuestion.getImageId());
