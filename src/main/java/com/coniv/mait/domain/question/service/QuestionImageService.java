@@ -7,7 +7,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
-import com.coniv.mait.domain.question.entity.QuestionEntity;
 import com.coniv.mait.domain.question.entity.QuestionImageEntity;
 import com.coniv.mait.domain.question.entity.QuestionSetEntity;
 import com.coniv.mait.domain.question.repository.QuestionImageEntityRepository;
@@ -50,20 +49,11 @@ public class QuestionImageService {
 
 	@Async("maitThreadPoolExecutor")
 	@Transactional
-	public CompletableFuture<Void> updateImage(final QuestionEntity question, final Long questionImageId) {
-		if (questionImageId == null) {
-			return CompletableFuture.completedFuture(null);
-		}
+	public CompletableFuture<Void> unuseExistImage(final Long existQuestionImageId) {
+		QuestionImageEntity existImage = questionImageEntityRepository.findById(existQuestionImageId)
+			.orElseThrow(() -> new EntityNotFoundException("QuestionImage not found id: " + existQuestionImageId));
 
-		questionImageEntityRepository.findAllByQuestionAndUsedIsTrue(question).forEach(image -> {
-			image.updateUsage(false);
-		});
-
-		QuestionImageEntity questionImage = questionImageEntityRepository.findById(questionImageId)
-			.orElseThrow(() -> new EntityNotFoundException("QuestionImage not found with id: " + questionImageId));
-
-		questionImage.updateUsage(true);
-		questionImageEntityRepository.save(questionImage);
+		existImage.updateUsage(false);
 		return CompletableFuture.completedFuture(null);
 	}
 }

@@ -151,11 +151,14 @@ public class QuestionService {
 
 		QuestionFactory<QuestionDto> questionFactory = getQuestionFactory(questionDto.getType());
 
+		if (!question.getImageId().equals(questionDto.getImageId())) {
+			questionImageService.unuseExistImage(question.getImageId());
+		}
+
 		if (question.getType() == questionDto.getType()) {
 			question.updateContent(questionDto.getContent());
 			question.updateExplanation(questionDto.getExplanation());
-			question.updateImageUrl(questionDto.getImageUrl());
-			questionImageService.updateImage(question, questionDto.getImageId());
+			question.updateImage(questionDto.getImageUrl(), questionDto.getImageId());
 
 			questionFactory.deleteSubEntities(question);
 			questionFactory.createSubEntities(questionDto, question);
@@ -167,9 +170,9 @@ public class QuestionService {
 		questionEntityRepository.delete(question);
 
 		QuestionEntity createdQuestion = questionFactory.save(questionDto, question.getQuestionSet());
-		createdQuestion.updateImageUrl(questionDto.getImageUrl());
+
+		createdQuestion.updateImage(questionDto.getImageUrl(), questionDto.getImageId());
 		createdQuestion.updateLexoRank(question.getLexoRank());
-		questionImageService.updateImage(createdQuestion, questionDto.getImageId());
 
 		return questionFactory.getQuestion(createdQuestion, true);
 	}
