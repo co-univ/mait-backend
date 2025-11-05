@@ -109,8 +109,7 @@ public class QuestionService {
 	public List<QuestionDto> getQuestions(final Long questionSetId) {
 		return questionEntityRepository.findAllByQuestionSetId(questionSetId).stream()
 			.sorted(Comparator
-				.comparing(QuestionEntity::getNumber, Comparator.nullsLast(Long::compareTo))
-				.thenComparing(QuestionEntity::getLexoRank))
+				.comparing(QuestionEntity::getLexoRank, Comparator.nullsLast(String::compareTo)))
 			.map(question -> getQuestionFactory(question.getType()).getQuestion(question, true))
 			.toList();
 	}
@@ -169,6 +168,7 @@ public class QuestionService {
 
 		QuestionEntity createdQuestion = questionFactory.save(questionDto, question.getQuestionSet());
 		createdQuestion.updateImageUrl(questionDto.getImageUrl());
+		createdQuestion.updateLexoRank(question.getLexoRank());
 		questionImageService.updateImage(createdQuestion, questionDto.getImageId());
 
 		return questionFactory.getQuestion(createdQuestion, true);
