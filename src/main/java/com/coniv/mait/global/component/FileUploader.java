@@ -4,12 +4,13 @@ import java.util.UUID;
 
 import org.springframework.web.multipart.MultipartFile;
 
-import com.coniv.mait.global.component.dto.ImageInfo;
+import com.coniv.mait.global.component.dto.FileInfo;
 import com.coniv.mait.global.enums.FileExtension;
+import com.coniv.mait.global.s3.dto.FileType;
 
-public interface ImageUploader {
+public interface FileUploader {
 
-	ImageInfo uploadImage(MultipartFile file, String directory);
+	FileInfo uploadFile(MultipartFile file, FileType type);
 
 	static String generateKey(String directory, FileExtension extension) {
 		return directory + "/" + UUID.randomUUID() + extension.getExtension();

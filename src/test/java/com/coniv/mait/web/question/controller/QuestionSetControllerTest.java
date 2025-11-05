@@ -17,6 +17,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.http.MediaType;
+import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
@@ -24,8 +25,10 @@ import com.coniv.mait.domain.question.enums.DeliveryMode;
 import com.coniv.mait.domain.question.enums.QuestionSetCreationType;
 import com.coniv.mait.domain.question.enums.QuestionSetVisibility;
 import com.coniv.mait.domain.question.enums.QuestionValidationResult;
+import com.coniv.mait.domain.question.service.QuestionSetMaterialService;
 import com.coniv.mait.domain.question.service.QuestionSetService;
 import com.coniv.mait.domain.question.service.dto.QuestionSetDto;
+import com.coniv.mait.domain.question.service.dto.QuestionSetMaterialDto;
 import com.coniv.mait.domain.question.service.dto.QuestionValidateDto;
 import com.coniv.mait.global.filter.JwtAuthorizationFilter;
 import com.coniv.mait.global.interceptor.idempotency.IdempotencyInterceptor;
@@ -40,6 +43,9 @@ class QuestionSetControllerTest {
 
 	@MockitoBean
 	private QuestionSetService questionSetService;
+
+	@MockitoBean
+	private QuestionSetMaterialService questionSetMaterialService;
 
 	@Autowired
 	private MockMvc mockMvc;
@@ -385,5 +391,42 @@ class QuestionSetControllerTest {
 			.andExpect(jsonPath("$.data[1].number").value(3L));
 
 		verify(questionSetService).validateQuestionSet(questionSetId);
+	}
+
+	@Test
+	@DisplayName("문제 셋 자료 파일 업로드 API 테스트 - 성공")
+	void uploadQuestionSetMaterial_Success() throws Exception {
+		// given
+		final Long questionSetId = 1L;
+		final Long materialId = 100L;
+		final String fileName = "test-material.pdf";
+		final String fileUrl = "https://s3.amazonaws.com/bucket/test-material.pdf";
+		final String fileKey = "question-set-materials/test-material.pdf";
+
+		MockMultipartFile mockFile = new MockMultipartFile(
+			"material",
+			fileName,
+			MediaType.APPLICATION_PDF_VALUE,
+			"test file content".getBytes()
+		);
+
+		QuestionSetMaterialDto mockResponse = QuestionSetMaterialDto.builder()
+			.id(materialId)
+			.questionSetId(questionSetId)
+			.materialUrl(fileUrl)
+			.materialKey(fileKey)
+			.build();
+
+		when(questionSetMaterialService.uploadQuestionSetMaterial(eq(questionSetId), any()))
+			.thenReturn(mockResponse);
+
+		// when & then
+		mockMvc.perform(multipart("/api/v1/question-sets/{questionSetId}/materials", questionSetId)
+				.file(mockFile))
+			.andExpect(status().isNotImplemented())
+			.andExpect(jsonPath("$.isSuccess").value(true))
+			.andExpect(jsonPath("$.data").doesNotExist());
+
+		verify(questionSetMaterialService).uploadQuestionSetMaterial(eq(questionSetId), any());
 	}
 }

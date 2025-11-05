@@ -3,7 +3,6 @@ package com.coniv.mait.domain.question.entity;
 import com.coniv.mait.global.entity.BaseFileEntity;
 
 import jakarta.persistence.Entity;
-import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -16,19 +15,19 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.experimental.SuperBuilder;
 
-@Table(name = "question_images")
+@Table(name = "question_set_materials")
 @Entity
 @Getter
 @SuperBuilder
+@AllArgsConstructor(access = AccessLevel.PRIVATE)
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-@AllArgsConstructor
-public class QuestionImageEntity extends BaseFileEntity {
+public class QuestionSetMaterialEntity extends BaseFileEntity {
 
 	@Id
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	private Long id;
 
-	@ManyToOne(fetch = FetchType.LAZY)
-	@JoinColumn(name = "question_id")
-	private QuestionEntity question;
+	@ManyToOne
+	@JoinColumn(name = "question_set_id")
+	private QuestionSetEntity questionSet;
 }
