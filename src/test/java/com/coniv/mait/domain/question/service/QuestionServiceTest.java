@@ -526,7 +526,7 @@ class QuestionServiceTest {
 		verify(multipleQuestionFactory).deleteSubEntities(existingQuestion);
 		verify(multipleQuestionFactory).createSubEntities(questionDto, existingQuestion);
 		verify(multipleQuestionFactory).getQuestion(existingQuestion, true);
-		verify(questionImageService).updateImage(existingQuestion, questionDto.getImageId());
+		verify(questionImageService).unUseExistImage(existingQuestion.getImageId());
 
 		// delete와 save는 호출되지 않아야 함
 		verify(questionEntityRepository, never()).delete(any());
@@ -574,7 +574,7 @@ class QuestionServiceTest {
 		verify(shortQuestionFactory).save(questionDto, questionSetEntity); // 새로운 타입의 팩토리
 		verify(shortQuestionFactory).getQuestion(newQuestion, true);
 
-		verify(questionImageService).updateImage(newQuestion, questionDto.getImageId());
+		verify(questionImageService).unUseExistImage(newQuestion.getImageId());
 		// 같은 타입 수정 메서드들은 호출되지 않아야 함
 		verify(existingQuestion, never()).updateContent(anyString());
 		verify(existingQuestion, never()).updateExplanation(anyString());
