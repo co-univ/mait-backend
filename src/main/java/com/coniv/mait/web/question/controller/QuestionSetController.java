@@ -3,6 +3,7 @@ package com.coniv.mait.web.question.controller;
 import java.util.List;
 
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
@@ -24,6 +25,7 @@ import com.coniv.mait.global.response.ApiResponse;
 import com.coniv.mait.web.question.dto.CreateQuestionSetApiRequest;
 import com.coniv.mait.web.question.dto.CreateQuestionSetApiResponse;
 import com.coniv.mait.web.question.dto.QuestionSetApiResponse;
+import com.coniv.mait.web.question.dto.QuestionSetMaterialApiResponse;
 import com.coniv.mait.web.question.dto.QuestionValidationApiResponse;
 import com.coniv.mait.web.question.dto.UpdateQuestionSetApiRequest;
 import com.coniv.mait.web.question.dto.UpdateQuestionSetFieldApiRequest;
@@ -53,8 +55,8 @@ public class QuestionSetController {
 	}
 
 	@Operation(summary = "문제 셋에 사용될 파일 업로드 API", description = "문제 셋 생성 과정에서 사용될 파일을 업로드합니다.")
-	@PostMapping("/{questionSetId}/materials")
-	public ResponseEntity<ApiResponse<Void>> uploadQuestionSetFiles(
+	@PostMapping(value = "/{questionSetId}/materials", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+	public ResponseEntity<ApiResponse<QuestionSetMaterialApiResponse>> uploadQuestionSetFiles(
 		@PathVariable("questionSetId") Long questionSetId,
 		@RequestPart("material") MultipartFile material) {
 		questionSetMaterialService.uploadQuestionSetMaterial(questionSetId, material);
