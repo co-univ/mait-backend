@@ -53,6 +53,7 @@ public class ShortQuestionDto extends QuestionDto {
 			.content(shortQuestion.getContent())
 			.explanation(shortQuestion.getExplanation())
 			.number(shortQuestion.getNumber())
+			.imageUrl(shortQuestion.getImageUrl())
 			.shortAnswers(shortAnswerDtos)
 			.questionStatus(shortQuestion.getQuestionStatus())
 			.answerCount(shortAnswers.size())
