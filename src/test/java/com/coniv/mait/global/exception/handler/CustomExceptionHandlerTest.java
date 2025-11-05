@@ -14,7 +14,9 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 
+import com.coniv.mait.global.exception.code.S3ExceptionCode;
 import com.coniv.mait.global.exception.custom.ResourceNotBelongException;
+import com.coniv.mait.global.exception.custom.S3FileException;
 import com.coniv.mait.global.exception.custom.UserParameterException;
 import com.coniv.mait.global.response.ErrorResponse;
 
@@ -45,7 +47,7 @@ class CustomExceptionHandlerTest {
 
 		// when
 		ResponseEntity<ErrorResponse> errorResponse = customExceptionHandler.handleUserParameterException(
-			exception, httpServletRequest);
+				exception, httpServletRequest);
 
 		// then
 		assertNotNull(errorResponse);
@@ -62,11 +64,51 @@ class CustomExceptionHandlerTest {
 
 		// when
 		ResponseEntity<ErrorResponse> errorResponse = customExceptionHandler.handleResourceNotBelongException(
-			exception, httpServletRequest);
+				exception, httpServletRequest);
 
 		// then
 		assertNotNull(errorResponse);
 		assertTrue(errorResponse.getBody().getReasons().contains(errorMessage));
 		assertThat(errorResponse.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
+	}
+
+	@Test
+	@DisplayName("S3FileException 처리 테스트 - PUT 오류")
+	void handleS3FileExceptionForPut() {
+		// given
+		String bucket = "mait-image-bucket";
+		String key = "images/test.jpg";
+		S3ExceptionCode code = S3ExceptionCode.PUT;
+		S3FileException exception = new S3FileException(code, bucket, key);
+
+		// when
+		ResponseEntity<ErrorResponse> errorResponse = customExceptionHandler.handleS3FileException(
+				exception, httpServletRequest);
+
+		// then
+		assertNotNull(errorResponse);
+		assertThat(errorResponse.getStatusCode()).isEqualTo(HttpStatus.INTERNAL_SERVER_ERROR);
+		assertTrue(errorResponse.getBody().getReasons().contains(code.getMessage()));
+		assertThat(errorResponse.getBody().getCode()).isEqualTo("F-001");
+	}
+
+	@Test
+	@DisplayName("S3FileException 처리 테스트 - INVALID_TYPE 오류")
+	void handleS3FileExceptionForInvalidType() {
+		// given
+		String bucket = "mait-image-bucket";
+		String key = "images/test.txt";
+		S3ExceptionCode code = S3ExceptionCode.INVALID_TYPE;
+		S3FileException exception = new S3FileException(code, bucket, key);
+
+		// when
+		ResponseEntity<ErrorResponse> errorResponse = customExceptionHandler.handleS3FileException(
+				exception, httpServletRequest);
+
+		// then
+		assertNotNull(errorResponse);
+		assertThat(errorResponse.getStatusCode()).isEqualTo(HttpStatus.INTERNAL_SERVER_ERROR);
+		assertTrue(errorResponse.getBody().getReasons().contains(code.getMessage()));
+		assertThat(errorResponse.getBody().getMessage()).isEqualTo("S3 파일 처리 중 오류가 발생했습니다.");
 	}
 }
