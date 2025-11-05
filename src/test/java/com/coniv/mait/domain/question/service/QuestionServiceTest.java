@@ -84,16 +84,14 @@ class QuestionServiceTest {
 			multipleQuestionFactory,
 			shortQuestionFactory,
 			orderingQuestionFactory,
-			fillBlankQuestionFactory
-		);
+			fillBlankQuestionFactory);
 
 		questionService = new QuestionService(
 			factories,
 			questionEntityRepository,
 			questionSetEntityRepository,
 			multipleChoiceEntityRepository,
-			questionImageService
-		);
+			questionImageService);
 	}
 
 	@Test
@@ -315,44 +313,43 @@ class QuestionServiceTest {
 	}
 
 	@Test
-	@DisplayName("문제 셋의 모든 문제 조회 성공 - number 순으로 정렬")
+	@DisplayName("문제 셋의 모든 문제 조회 성공 - lexo rank 순으로 정렬")
 	void getQuestions_Success() {
 		// given
 		final Long questionSetId = 1L;
 
-		// 다양한 타입의 문제들을 number 순서가 뒤섞인 상태로 생성
 		MultipleQuestionEntity multipleQuestion = mock(MultipleQuestionEntity.class);
-		when(multipleQuestion.getNumber()).thenReturn(3L);
+		when(multipleQuestion.getLexoRank()).thenReturn("cccc"); // lexoRank: 3번째
 		when(multipleQuestion.getType()).thenReturn(QuestionType.MULTIPLE);
 
 		ShortQuestionEntity shortQuestion = mock(ShortQuestionEntity.class);
-		when(shortQuestion.getNumber()).thenReturn(1L);
+		when(shortQuestion.getLexoRank()).thenReturn("aaaa"); // lexoRank: 1번째
 		when(shortQuestion.getType()).thenReturn(QuestionType.SHORT);
 
 		OrderingQuestionEntity orderingQuestion = mock(OrderingQuestionEntity.class);
-		when(orderingQuestion.getNumber()).thenReturn(2L);
+		when(orderingQuestion.getLexoRank()).thenReturn("bbbb"); // lexoRank: 2번째
 		when(orderingQuestion.getType()).thenReturn(QuestionType.ORDERING);
 
 		FillBlankQuestionEntity fillBlankQuestion = mock(FillBlankQuestionEntity.class);
-		when(fillBlankQuestion.getNumber()).thenReturn(4L);
+		when(fillBlankQuestion.getLexoRank()).thenReturn("dddd"); // lexoRank: 4번째
 		when(fillBlankQuestion.getType()).thenReturn(QuestionType.FILL_BLANK);
 
-		// Repository에서 순서가 뒤섞인 상태로 반환
-		List<QuestionEntity> questions = List.of(multipleQuestion, fillBlankQuestion, shortQuestion, orderingQuestion);
+		// Repository에서 lexoRank와 다른 순서로 반환 (뒤섞인 상태)
+		List<QuestionEntity> questions = List.of(fillBlankQuestion, multipleQuestion, shortQuestion, orderingQuestion);
 		when(questionEntityRepository.findAllByQuestionSetId(questionSetId)).thenReturn(questions);
 
-		// 각 factory의 getQuestion 메서드 모킹 (정렬 순서 확인을 위해 number 설정)
+		// 각 factory의 getQuestion 메서드 모킹
 		MultipleQuestionDto multipleDto = mock(MultipleQuestionDto.class);
-		when(multipleDto.getNumber()).thenReturn(3L);
+		when(multipleDto.getId()).thenReturn(3L);
 
 		ShortQuestionDto shortDto = mock(ShortQuestionDto.class);
-		when(shortDto.getNumber()).thenReturn(1L);
+		when(shortDto.getId()).thenReturn(1L);
 
 		OrderingQuestionDto orderingDto = mock(OrderingQuestionDto.class);
-		when(orderingDto.getNumber()).thenReturn(2L);
+		when(orderingDto.getId()).thenReturn(2L);
 
 		FillBlankQuestionDto fillBlankDto = mock(FillBlankQuestionDto.class);
-		when(fillBlankDto.getNumber()).thenReturn(4L);
+		when(fillBlankDto.getId()).thenReturn(4L);
 
 		when(multipleQuestionFactory.getQuestion(multipleQuestion, true)).thenReturn(multipleDto);
 		when(shortQuestionFactory.getQuestion(shortQuestion, true)).thenReturn(shortDto);
@@ -366,11 +363,11 @@ class QuestionServiceTest {
 		assertNotNull(result);
 		assertEquals(4, result.size());
 
-		// number 순으로 정렬되었는지 확인 (1, 2, 3, 4)
-		assertEquals(1L, result.get(0).getNumber()); // shortDto (number: 1)
-		assertEquals(2L, result.get(1).getNumber()); // orderingDto (number: 2)
-		assertEquals(3L, result.get(2).getNumber()); // multipleDto (number: 3)
-		assertEquals(4L, result.get(3).getNumber()); // fillBlankDto (number: 4)
+		// lexoRank 순으로 정렬되었는지 ID로 확인 (aaaa, bbbb, cccc, dddd)
+		assertEquals(1L, result.get(0).getId()); // shortQuestion (lexoRank: aaaa)
+		assertEquals(2L, result.get(1).getId()); // orderingQuestion (lexoRank: bbbb)
+		assertEquals(3L, result.get(2).getId()); // multipleQuestion (lexoRank: cccc)
+		assertEquals(4L, result.get(3).getId()); // fillBlankQuestion (lexoRank: dddd)
 
 		// factory 메서드들이 올바르게 호출되었는지 확인
 		verify(questionEntityRepository).findAllByQuestionSetId(questionSetId);
@@ -409,11 +406,9 @@ class QuestionServiceTest {
 		final Long questionSetId = 1L;
 
 		MultipleQuestionEntity question1 = mock(MultipleQuestionEntity.class);
-		when(question1.getNumber()).thenReturn(2L);
 		when(question1.getType()).thenReturn(QuestionType.MULTIPLE);
 
 		MultipleQuestionEntity question2 = mock(MultipleQuestionEntity.class);
-		when(question2.getNumber()).thenReturn(1L);
 		when(question2.getType()).thenReturn(QuestionType.MULTIPLE);
 
 		List<QuestionEntity> questions = List.of(question1, question2);
