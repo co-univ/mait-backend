@@ -40,21 +40,17 @@ public class PolicyEntity extends BaseTimeEntity {
 	@Column(nullable = false)
 	private String title;
 
-	@Column(nullable = false, columnDefinition = "TEXT")
-	private String content;
-
-	private PolicyEntity(PolicyCategory category, PolicyType policyType, String title, String content) {
+	private PolicyEntity(PolicyCategory category, PolicyType policyType, String title) {
 		this.policyType = policyType;
 		this.category = category;
 		this.title = title;
-		this.content = content;
 	}
 
-	public static PolicyEntity essentialPolicy(PolicyCategory category, String title, String content) {
-		return new PolicyEntity(category, PolicyType.ESSENTIAL, title, content);
+	public static PolicyEntity essentialPolicy(PolicyCategory category, String title) {
+		return new PolicyEntity(category, PolicyType.ESSENTIAL, title);
 	}
 
-	public static PolicyEntity optionalPolicy(PolicyCategory category, String title, String content) {
-		return new PolicyEntity(category, PolicyType.OPTIONAL, title, content);
+	public static PolicyEntity optionalPolicy(PolicyCategory category, String title) {
+		return new PolicyEntity(category, PolicyType.OPTIONAL, title);
 	}
 }
