@@ -35,6 +35,8 @@ public abstract class QuestionApiResponse {
 
 	private String explanation;
 
+	private String imageUrl;
+
 	@Schema(requiredMode = Schema.RequiredMode.NOT_REQUIRED)
 	private Long number;
 

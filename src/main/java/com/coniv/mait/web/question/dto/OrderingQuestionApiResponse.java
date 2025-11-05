@@ -29,6 +29,7 @@ public class OrderingQuestionApiResponse extends QuestionApiResponse {
 			.explanation(dto.getExplanation())
 			.number(dto.getNumber())
 			.questionStatusType(dto.getQuestionStatus())
+			.imageUrl(dto.getImageUrl())
 			.type(QuestionType.ORDERING)
 			.options(options)
 			.build();
