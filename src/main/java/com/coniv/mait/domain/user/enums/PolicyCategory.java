@@ -7,7 +7,9 @@ import lombok.Getter;
 @AllArgsConstructor
 public enum PolicyCategory {
 
-	PERSONAL_INFORMATION("개인정보 관련된 정책");
+	TERMS_OF_SERVICE("서비스 이용약관 관련된 정책"),
+	PERSONAL_INFORMATION("개인정보 관련된 정책"),
+	MARKETING("마케팅 활용 관련된 정책");
 
 	private final String description;
 }
