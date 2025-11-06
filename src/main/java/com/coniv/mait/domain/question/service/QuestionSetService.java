@@ -9,13 +9,14 @@ import org.springframework.transaction.annotation.Transactional;
 import com.coniv.mait.domain.question.entity.QuestionEntity;
 import com.coniv.mait.domain.question.entity.QuestionSetEntity;
 import com.coniv.mait.domain.question.enums.DeliveryMode;
-import com.coniv.mait.domain.question.enums.QuestionSetCreationType;
 import com.coniv.mait.domain.question.enums.QuestionSetVisibility;
 import com.coniv.mait.domain.question.repository.QuestionEntityRepository;
 import com.coniv.mait.domain.question.repository.QuestionSetEntityRepository;
 import com.coniv.mait.domain.question.service.component.QuestionChecker;
+import com.coniv.mait.domain.question.service.dto.QuestionCount;
 import com.coniv.mait.domain.question.service.dto.QuestionSetDto;
 import com.coniv.mait.domain.question.service.dto.QuestionValidateDto;
+import com.coniv.mait.domain.user.service.component.TeamRoleValidator;
 
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
@@ -32,14 +33,23 @@ public class QuestionSetService {
 
 	private final QuestionChecker questionChecker;
 
-	@Transactional
-	public QuestionSetDto createQuestionSet(final String subject, final QuestionSetCreationType creationType) {
-		// Todo: AI 제작인 경우에 분기 필요
+	private final TeamRoleValidator teamRoleValidator;
 
-		QuestionSetEntity questionSetEntity = QuestionSetEntity.of(subject, creationType);
+	@Transactional
+	public QuestionSetDto createQuestionSet(final QuestionSetDto questionSetDto, final List<QuestionCount> counts,
+		final String instruction, final String difficulty, final Long userId) {
+		teamRoleValidator.checkHasCreateQuestionSetAuthority(questionSetDto.getTeamId(), userId);
+
+		QuestionSetEntity questionSetEntity = QuestionSetEntity.builder()
+			.subject(questionSetDto.getSubject())
+			.creationType(questionSetDto.getCreationType())
+			.teamId(questionSetDto.getTeamId())
+			.creatorId(userId)
+			.build();
 		questionSetEntityRepository.save(questionSetEntity);
 
-		questionService.createDefaultQuestion(questionSetEntity.getId());
+		// Todo: createion type에 맞게 로직 분기
+		// questionService.createDefaultQuestion(questionSetEntity.getId());
 
 		return QuestionSetDto.builder()
 			.id(questionSetEntity.getId())

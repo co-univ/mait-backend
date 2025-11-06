@@ -1,7 +1,9 @@
 package com.coniv.mait.domain.question.service.dto;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
+import com.coniv.mait.domain.question.dto.MaterialDto;
 import com.coniv.mait.domain.question.entity.QuestionSetEntity;
 import com.coniv.mait.domain.question.enums.DeliveryMode;
 import com.coniv.mait.domain.question.enums.QuestionSetCreationType;
@@ -26,6 +28,7 @@ public class QuestionSetDto {
 	private Long teamId;
 	private Long questionCount;
 	private String levelDescription;
+	private List<MaterialDto> materials;
 	private LocalDateTime updatedAt;
 
 	public static QuestionSetDto from(final QuestionSetEntity questionSetEntity) {
