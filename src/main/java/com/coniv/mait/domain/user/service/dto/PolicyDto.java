@@ -17,7 +17,9 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 public class PolicyDto {
 
-	private Long id;
+	private Long policyId;
+
+	private Long policyVersionId;
 
 	private String title;
 
@@ -34,6 +36,7 @@ public class PolicyDto {
 	public static PolicyDto from(PolicyEntity policy, PolicyVersionEntity policyVersion) {
 		return new PolicyDto(
 			policy.getId(),
+			policyVersion.getId(),
 			policy.getTitle(),
 			policyVersion.getContent(),
 			policyVersion.getVersion(),
