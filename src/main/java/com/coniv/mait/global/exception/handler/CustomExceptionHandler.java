@@ -14,6 +14,7 @@ import com.coniv.mait.global.exception.custom.S3FileException;
 import com.coniv.mait.global.exception.custom.TeamInviteFailException;
 import com.coniv.mait.global.exception.custom.UserParameterException;
 import com.coniv.mait.global.response.ErrorResponse;
+import com.coniv.mait.domain.user.exception.UserRoleException;
 
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
@@ -68,5 +69,13 @@ public class CustomExceptionHandler {
 				exception.getMessage(), exception.getBucket(), exception.getKey(), request.getRequestURI());
 		return ResponseEntity.status(ExceptionCode.S3_FILE_EXCEPTION.getStatus())
 				.body(ErrorResponse.of(ExceptionCode.S3_FILE_EXCEPTION, List.of(exception.getMessage())));
+	}
+
+	@ExceptionHandler(UserRoleException.class)
+	public ResponseEntity<ErrorResponse> handleUserRoleException(UserRoleException exception,
+			HttpServletRequest request) {
+		log.info("UserRoleException 발생: {}, {}", exception.getMessage(), request.getRequestURI());
+		return ResponseEntity.status(ExceptionCode.USER_ROLE_EXCEPTION.getStatus())
+				.body(ErrorResponse.of(ExceptionCode.USER_ROLE_EXCEPTION, List.of(exception.getMessage())));
 	}
 }
