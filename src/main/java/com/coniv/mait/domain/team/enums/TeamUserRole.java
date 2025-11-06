@@ -14,4 +14,8 @@ public enum TeamUserRole {
 	PLAYER("참가자");
 
 	private final String description;
+
+	public boolean canCreateQuestionSet() {
+		return this == MAKER || this == OWNER;
+	}
 }

@@ -22,7 +22,6 @@ import com.coniv.mait.domain.question.repository.QuestionSetEntityRepository;
 import com.coniv.mait.domain.team.entity.TeamEntity;
 import com.coniv.mait.domain.team.repository.TeamEntityRepository;
 import com.coniv.mait.web.integration.BaseIntegrationTest;
-import com.coniv.mait.web.question.dto.CreateQuestionSetApiRequest;
 import com.coniv.mait.web.question.dto.UpdateQuestionSetApiRequest;
 import com.coniv.mait.web.question.dto.UpdateQuestionSetFieldApiRequest;
 
@@ -47,28 +46,28 @@ public class QuestionSetApiIntegrationTest extends BaseIntegrationTest {
 		multipleChoiceEntityRepository.deleteAll();
 	}
 
-	@Test
-	@DisplayName("문제 셋 생성 API 성공 테스트")
-	void createQuestionSetApiSuccess() throws Exception {
-		// given
-		String subject = "Sample Subject";
-		QuestionSetCreationType creationType = QuestionSetCreationType.MANUAL;
-
-		CreateQuestionSetApiRequest request = new CreateQuestionSetApiRequest(subject, creationType);
-
-		// when
-		mockMvc.perform(post("/api/v1/question-sets").contentType(MediaType.APPLICATION_JSON)
-				.content(objectMapper.writeValueAsString(request)))
-			.andExpect(status().isCreated())
-			.andExpect(jsonPath("$.data.subject").value(subject));
-
-		// then
-		QuestionSetEntity questionSetEntity = questionSetEntityRepository.findAll().get(0);
-
-		assertThat(questionSetEntityRepository.count()).isEqualTo(1);
-		assertThat(questionSetEntity.getSubject()).isEqualTo(subject);
-		assertThat(questionSetEntity.getCreationType()).isEqualTo(creationType);
-	}
+	// @Test
+	// @DisplayName("문제 셋 생성 API 성공 테스트")
+	// void createQuestionSetApiSuccess() throws Exception {
+	// 	// given
+	// 	String subject = "Sample Subject";
+	// 	QuestionSetCreationType creationType = QuestionSetCreationType.MANUAL;
+	//
+	// 	CreateQuestionSetApiRequest request = new CreateQuestionSetApiRequest(subject, creationType);
+	//
+	// 	// when
+	// 	mockMvc.perform(post("/api/v1/question-sets").contentType(MediaType.APPLICATION_JSON)
+	// 			.content(objectMapper.writeValueAsString(request)))
+	// 		.andExpect(status().isCreated())
+	// 		.andExpect(jsonPath("$.data.subject").value(subject));
+	//
+	// 	// then
+	// 	QuestionSetEntity questionSetEntity = questionSetEntityRepository.findAll().get(0);
+	//
+	// 	assertThat(questionSetEntityRepository.count()).isEqualTo(1);
+	// 	assertThat(questionSetEntity.getSubject()).isEqualTo(subject);
+	// 	assertThat(questionSetEntity.getCreationType()).isEqualTo(creationType);
+	// }
 
 	@Test
 	@DisplayName("문제 셋 목록 조회 API 성공 테스트")

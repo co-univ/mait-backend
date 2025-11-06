@@ -5,6 +5,7 @@ import java.util.List;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -21,6 +22,7 @@ import com.coniv.mait.domain.question.enums.DeliveryMode;
 import com.coniv.mait.domain.question.service.QuestionSetMaterialService;
 import com.coniv.mait.domain.question.service.QuestionSetService;
 import com.coniv.mait.domain.question.service.dto.QuestionSetDto;
+import com.coniv.mait.domain.user.entity.UserEntity;
 import com.coniv.mait.global.response.ApiResponse;
 import com.coniv.mait.web.question.dto.CreateQuestionSetApiRequest;
 import com.coniv.mait.web.question.dto.CreateQuestionSetApiResponse;
@@ -48,8 +50,10 @@ public class QuestionSetController {
 	@Operation(summary = "문제 셋 생성 API", description = "새로운 문제 셋을 생성합니다.")
 	@PostMapping
 	public ResponseEntity<ApiResponse<CreateQuestionSetApiResponse>> createQuestionSet(
+		@AuthenticationPrincipal UserEntity user,
 		@Valid @RequestBody CreateQuestionSetApiRequest request) {
-		QuestionSetDto questionSetDto = questionSetService.createQuestionSet(request.subject(), request.creationType());
+		QuestionSetDto questionSetDto = questionSetService.createQuestionSet(request.toQuestionSetDto(),
+			request.counts(), request.instruction(), request.difficulty(), user.getId());
 		return ResponseEntity.status(HttpStatus.CREATED)
 			.body(ApiResponse.ok(CreateQuestionSetApiResponse.from(questionSetDto)));
 	}

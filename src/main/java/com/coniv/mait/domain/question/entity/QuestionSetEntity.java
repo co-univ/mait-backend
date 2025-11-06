@@ -56,6 +56,8 @@ public class QuestionSetEntity extends BaseTimeEntity {
 	// @Column(nullable = false)
 	private Long teamId;
 
+	private Long creatorId;
+
 	@Enumerated(EnumType.STRING)
 	@Builder.Default
 	private QuestionSetLiveStatus liveStatus = QuestionSetLiveStatus.BEFORE_LIVE;
