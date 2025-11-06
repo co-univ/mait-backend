@@ -3,13 +3,16 @@ package com.coniv.mait.global.filter;
 import java.io.IOException;
 import java.util.List;
 
+import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.web.servlet.util.matcher.PathPatternRequestMatcher;
+import org.springframework.security.web.util.matcher.RequestMatcher;
 import org.springframework.stereotype.Component;
-import org.springframework.util.AntPathMatcher;
 import org.springframework.web.filter.OncePerRequestFilter;
+import org.springframework.web.util.pattern.PathPatternParser;
 
 import com.coniv.mait.domain.user.entity.UserEntity;
 import com.coniv.mait.domain.user.repository.UserEntityRepository;
@@ -30,8 +33,8 @@ import lombok.extern.slf4j.Slf4j;
 public class JwtAuthorizationFilter extends OncePerRequestFilter {
 
 	private static final String AUTH_HEADER = "Authorization";
-
 	private static final String BEARER = "Bearer ";
+	private static final PathPatternParser PARSER = new PathPatternParser();
 
 	private final JwtTokenProvider jwtTokenProvider;
 
@@ -39,7 +42,13 @@ public class JwtAuthorizationFilter extends OncePerRequestFilter {
 
 	private final UserEntityRepository userEntityRepository;
 
-	private final AntPathMatcher pathMatcher = new AntPathMatcher();
+	private final List<RequestMatcher> authRequiredMatchers = List.of(
+		PathPatternRequestMatcher.withPathPatternParser(PARSER).matcher(HttpMethod.GET, "/api/v1/users/me"),
+		PathPatternRequestMatcher.withPathPatternParser(PARSER).matcher(HttpMethod.PATCH, "/api/v1/users/nickname"),
+		PathPatternRequestMatcher.withPathPatternParser(PARSER).matcher(HttpMethod.POST, "/api/v1/teams"),
+		PathPatternRequestMatcher.withPathPatternParser(PARSER).matcher(HttpMethod.POST, "/api/v1/teams/*/invite"),
+		PathPatternRequestMatcher.withPathPatternParser(PARSER).matcher(HttpMethod.POST, "/api/v1/question-sets")
+	);
 
 	@Override
 	protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
@@ -75,26 +84,8 @@ public class JwtAuthorizationFilter extends OncePerRequestFilter {
 	}
 
 	@Override
-	protected boolean shouldNotFilter(HttpServletRequest request) throws ServletException {
-		String path = request.getRequestURI();
-		String method = request.getMethod();
-
-		if ("GET".equals(method) && pathMatcher.match("/api/v1/users/me", path)) {
-			return false; // 필터를 실행
-		}
-
-		if ("PATCH".equals(method) && pathMatcher.match("/api/v1/users/nickname", path)) {
-			return false; // 필터를 실행
-		}
-
-		if ("POST".equals(method) && pathMatcher.match("/api/v1/teams", path)) {
-			return false; // 필터를 실행
-		}
-
-		if ("POST".equals(method) && pathMatcher.match("/api/v1/teams/*/invite", path)) {
-			return false; // 필터를 실행
-		}
-
-		return true;
+	protected boolean shouldNotFilter(HttpServletRequest request) {
+		return authRequiredMatchers.stream()
+			.noneMatch(matcher -> matcher.matches(request));
 	}
 }
