@@ -12,6 +12,7 @@ import com.coniv.mait.domain.user.enums.PolicyTiming;
 import com.coniv.mait.domain.user.service.PolicyService;
 import com.coniv.mait.domain.user.service.dto.PolicyDto;
 import com.coniv.mait.global.response.ApiResponse;
+import com.coniv.mait.web.user.dto.LatestPoliciesApiResponse;
 
 import io.swagger.v3.oas.annotations.Operation;
 import lombok.RequiredArgsConstructor;
@@ -25,9 +26,10 @@ public class PolicyController {
 
 	@Operation(summary = "타이밍별 최신 정책 목록 조회")
 	@GetMapping
-	public ResponseEntity<ApiResponse<List<PolicyDto>>> getLatestPolicies(
+	public ResponseEntity<ApiResponse<List<LatestPoliciesApiResponse>>> findLatestPolicies(
 		@RequestParam PolicyTiming timing) {
 		List<PolicyDto> policies = policyService.findLatestPolicies(timing);
-		return ResponseEntity.ok(ApiResponse.ok(policies));
+
+		return ResponseEntity.ok(ApiResponse.ok(policies.stream().map(LatestPoliciesApiResponse::from).toList()));
 	}
 }
