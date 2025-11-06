@@ -75,12 +75,12 @@ class QuestionSetControllerTest {
 		String subject = "Sample Subject";
 		QuestionSetCreationType creationType = QuestionSetCreationType.MANUAL;
 		CreateQuestionSetApiRequest request = new CreateQuestionSetApiRequest(subject,
-				creationType);
+			creationType);
 
 		QuestionSetDto questionSetDto = QuestionSetDto.builder()
-				.id(questionSetId)
-				.subject(subject)
-				.build();
+			.id(questionSetId)
+			.subject(subject)
+			.build();
 
 		when(questionSetService.createQuestionSet(subject, creationType)).thenReturn(questionSetDto);
 
@@ -88,9 +88,9 @@ class QuestionSetControllerTest {
 		mockMvc.perform(post("/api/v1/question-sets")
 				.contentType(MediaType.APPLICATION_JSON)
 				.content(objectMapper.writeValueAsString(request)))
-				.andExpect(status().isCreated())
-				.andExpect(jsonPath("$.data.questionSetId").value(questionSetId))
-				.andExpect(jsonPath("$.data.subject").value(subject));
+			.andExpect(status().isCreated())
+			.andExpect(jsonPath("$.data.questionSetId").value(questionSetId))
+			.andExpect(jsonPath("$.data.subject").value(subject));
 
 		// then
 		verify(questionSetService).createQuestionSet(request.subject(), request.creationType());
@@ -100,7 +100,7 @@ class QuestionSetControllerTest {
 	@DisplayName("문제 셋 생성 실패 테스트 - 유효하지 않은 요청")
 	@MethodSource("invalidCreateQuestionSetRequests")
 	void createQuestionSetInvalidRequestTest(String testName, String subject, QuestionSetCreationType creationType,
-			String expectedMessage) throws Exception {
+		String expectedMessage) throws Exception {
 		// given
 		CreateQuestionSetApiRequest request = new CreateQuestionSetApiRequest(subject, creationType);
 
@@ -108,23 +108,23 @@ class QuestionSetControllerTest {
 		mockMvc.perform(post("/api/v1/question-sets")
 				.contentType(MediaType.APPLICATION_JSON)
 				.content(objectMapper.writeValueAsString(request)))
-				.andExpectAll(
-						status().isBadRequest(),
-						jsonPath("$.isSuccess").value(false),
-						jsonPath("$.code").value("C-001"),
-						jsonPath("$.message").value("사용자 입력 오류입니다."),
-						jsonPath("$.reasons").isArray(),
-						jsonPath("$.reasons[0]").value(expectedMessage));
+			.andExpectAll(
+				status().isBadRequest(),
+				jsonPath("$.isSuccess").value(false),
+				jsonPath("$.code").value("C-001"),
+				jsonPath("$.message").value("사용자 입력 오류입니다."),
+				jsonPath("$.reasons").isArray(),
+				jsonPath("$.reasons[0]").value(expectedMessage));
 
 		verify(questionSetService, never()).createQuestionSet(anyString(), any());
 	}
 
 	static Stream<Arguments> invalidCreateQuestionSetRequests() {
 		return Stream.of(
-				Arguments.of("빈 제목", "", QuestionSetCreationType.MANUAL, "교육 주제를 입력해주세요."),
-				Arguments.of("null 제목", null, QuestionSetCreationType.MANUAL, "교육 주제를 입력해주세요."),
-				Arguments.of("공백만 있는 제목", "   ", QuestionSetCreationType.MANUAL, "교육 주제를 입력해주세요."),
-				Arguments.of("빈 생성 타입", "Valid Subject", null, "문제 셋 생성 유형을 선택해주세요."));
+			Arguments.of("빈 제목", "", QuestionSetCreationType.MANUAL, "교육 주제를 입력해주세요."),
+			Arguments.of("null 제목", null, QuestionSetCreationType.MANUAL, "교육 주제를 입력해주세요."),
+			Arguments.of("공백만 있는 제목", "   ", QuestionSetCreationType.MANUAL, "교육 주제를 입력해주세요."),
+			Arguments.of("빈 생성 타입", "Valid Subject", null, "문제 셋 생성 유형을 선택해주세요."));
 	}
 
 	@Test
@@ -137,16 +137,16 @@ class QuestionSetControllerTest {
 		mockMvc.perform(post("/api/v1/question-sets")
 				.contentType(MediaType.APPLICATION_JSON)
 				.content(objectMapper.writeValueAsString(request)))
-				.andExpectAll(
-						status().isBadRequest(),
-						jsonPath("$.isSuccess").value(false),
-						jsonPath("$.code").value("C-001"),
-						jsonPath("$.message").value("사용자 입력 오류입니다."),
-						jsonPath("$.reasons").isArray(),
-						jsonPath("$.reasons.length()").value(2),
-						jsonPath("$.reasons[*]").value(org.hamcrest.Matchers.hasItems(
-								"교육 주제를 입력해주세요.",
-								"문제 셋 생성 유형을 선택해주세요.")));
+			.andExpectAll(
+				status().isBadRequest(),
+				jsonPath("$.isSuccess").value(false),
+				jsonPath("$.code").value("C-001"),
+				jsonPath("$.message").value("사용자 입력 오류입니다."),
+				jsonPath("$.reasons").isArray(),
+				jsonPath("$.reasons.length()").value(2),
+				jsonPath("$.reasons[*]").value(org.hamcrest.Matchers.hasItems(
+					"교육 주제를 입력해주세요.",
+					"문제 셋 생성 유형을 선택해주세요.")));
 
 		verify(questionSetService, never()).createQuestionSet(anyString(), any());
 	}
@@ -158,13 +158,13 @@ class QuestionSetControllerTest {
 		Long teamId = 1L;
 		final DeliveryMode mode = DeliveryMode.MAKING;
 		QuestionSetDto questionSet1 = QuestionSetDto.builder()
-				.id(1L)
-				.subject("Subject 1")
-				.build();
+			.id(1L)
+			.subject("Subject 1")
+			.build();
 		QuestionSetDto questionSet2 = QuestionSetDto.builder()
-				.id(2L)
-				.subject("Subject 2")
-				.build();
+			.id(2L)
+			.subject("Subject 2")
+			.build();
 
 		QuestionSetList questionSetList = QuestionSetList.of(List.of(questionSet1, questionSet2));
 		when(questionSetService.getQuestionSets(teamId, mode)).thenReturn(questionSetList);
@@ -173,13 +173,13 @@ class QuestionSetControllerTest {
 		mockMvc.perform(get("/api/v1/question-sets")
 				.param("teamId", String.valueOf(teamId))
 				.param("mode", mode.name()))
-				.andExpect(status().isOk())
-				.andExpect(jsonPath("$.data.mode").value("MAKING"))
-				.andExpect(jsonPath("$.data.questionSets.questionSets.length()").value(2))
-				.andExpect(jsonPath("$.data.questionSets.questionSets[0].id").value(1L))
-				.andExpect(jsonPath("$.data.questionSets.questionSets[0].subject").value("Subject 1"))
-				.andExpect(jsonPath("$.data.questionSets.questionSets[1].id").value(2L))
-				.andExpect(jsonPath("$.data.questionSets.questionSets[1].subject").value("Subject 2"));
+			.andExpect(status().isOk())
+			.andExpect(jsonPath("$.data.mode").value("MAKING"))
+			.andExpect(jsonPath("$.data.content.questionSets.length()").value(2))
+			.andExpect(jsonPath("$.data.content.questionSets[0].id").value(1L))
+			.andExpect(jsonPath("$.data.content.questionSets[0].subject").value("Subject 1"))
+			.andExpect(jsonPath("$.data.content.questionSets[1].id").value(2L))
+			.andExpect(jsonPath("$.data.content.questionSets[1].subject").value("Subject 2"));
 
 		verify(questionSetService).getQuestionSets(teamId, mode);
 	}
@@ -191,15 +191,15 @@ class QuestionSetControllerTest {
 		Long teamId = 1L;
 		final DeliveryMode mode = DeliveryMode.LIVE_TIME;
 		QuestionSetDto beforeSet = QuestionSetDto.builder()
-				.id(1L)
-				.subject("Subject 1")
-				.ongoingStatus(QuestionSetOngoingStatus.BEFORE)
-				.build();
+			.id(1L)
+			.subject("Subject 1")
+			.ongoingStatus(QuestionSetOngoingStatus.BEFORE)
+			.build();
 		QuestionSetDto ongoingSet = QuestionSetDto.builder()
-				.id(2L)
-				.subject("Subject 2")
-				.ongoingStatus(QuestionSetOngoingStatus.ONGOING)
-				.build();
+			.id(2L)
+			.subject("Subject 2")
+			.ongoingStatus(QuestionSetOngoingStatus.ONGOING)
+			.build();
 
 		QuestionSetGroup questionSetGroup = QuestionSetGroup.of(List.of(beforeSet, ongoingSet));
 		when(questionSetService.getQuestionSets(teamId, mode)).thenReturn(questionSetGroup);
@@ -208,16 +208,16 @@ class QuestionSetControllerTest {
 		mockMvc.perform(get("/api/v1/question-sets")
 				.param("teamId", String.valueOf(teamId))
 				.param("mode", mode.name()))
-				.andExpect(status().isOk())
-				.andExpect(jsonPath("$.data.mode").value("LIVE_TIME"))
-				.andExpect(jsonPath("$.data.questionSets.questionSets.BEFORE").isArray())
-				.andExpect(jsonPath("$.data.questionSets.questionSets.BEFORE.length()").value(1))
-				.andExpect(jsonPath("$.data.questionSets.questionSets.BEFORE[0].id").value(1L))
-				.andExpect(jsonPath("$.data.questionSets.questionSets.BEFORE[0].subject").value("Subject 1"))
-				.andExpect(jsonPath("$.data.questionSets.questionSets.ONGOING").isArray())
-				.andExpect(jsonPath("$.data.questionSets.questionSets.ONGOING.length()").value(1))
-				.andExpect(jsonPath("$.data.questionSets.questionSets.ONGOING[0].id").value(2L))
-				.andExpect(jsonPath("$.data.questionSets.questionSets.ONGOING[0].subject").value("Subject 2"));
+			.andExpect(status().isOk())
+			.andExpect(jsonPath("$.data.mode").value("LIVE_TIME"))
+			.andExpect(jsonPath("$.data.content.questionSets.BEFORE").isArray())
+			.andExpect(jsonPath("$.data.content.questionSets.BEFORE.length()").value(1))
+			.andExpect(jsonPath("$.data.content.questionSets.BEFORE[0].id").value(1L))
+			.andExpect(jsonPath("$.data.content.questionSets.BEFORE[0].subject").value("Subject 1"))
+			.andExpect(jsonPath("$.data.content.questionSets.ONGOING").isArray())
+			.andExpect(jsonPath("$.data.content.questionSets.ONGOING.length()").value(1))
+			.andExpect(jsonPath("$.data.content.questionSets.ONGOING[0].id").value(2L))
+			.andExpect(jsonPath("$.data.content.questionSets.ONGOING[0].subject").value("Subject 2"));
 
 		verify(questionSetService).getQuestionSets(teamId, mode);
 	}
@@ -229,17 +229,17 @@ class QuestionSetControllerTest {
 		final Long questionSetId = 1L;
 		final String subject = "Test Subject";
 		QuestionSetDto questionSetDto = QuestionSetDto.builder()
-				.id(questionSetId)
-				.subject(subject)
-				.build();
+			.id(questionSetId)
+			.subject(subject)
+			.build();
 
 		when(questionSetService.getQuestionSet(questionSetId)).thenReturn(questionSetDto);
 
 		// when & then
 		mockMvc.perform(get("/api/v1/question-sets/{questionSetId}", questionSetId))
-				.andExpect(status().isOk())
-				.andExpect(jsonPath("$.data.id").value(questionSetId))
-				.andExpect(jsonPath("$.data.subject").value(subject));
+			.andExpect(status().isOk())
+			.andExpect(jsonPath("$.data.id").value(questionSetId))
+			.andExpect(jsonPath("$.data.subject").value(subject));
 
 		verify(questionSetService).getQuestionSet(questionSetId);
 	}
@@ -258,38 +258,38 @@ class QuestionSetControllerTest {
 		var request = new UpdateQuestionSetApiRequest(title, subject, mode, levelDescription, visibility);
 
 		QuestionSetDto questionSetDto = QuestionSetDto.builder()
-				.id(questionSetId)
-				.subject(subject)
-				.title(title)
-				.deliveryMode(mode)
-				.levelDescription(levelDescription)
-				.visibility(visibility)
-				.build();
+			.id(questionSetId)
+			.subject(subject)
+			.title(title)
+			.deliveryMode(mode)
+			.levelDescription(levelDescription)
+			.visibility(visibility)
+			.build();
 
 		when(questionSetService.completeQuestionSet(questionSetId, title, subject, mode, levelDescription, visibility))
-				.thenReturn(questionSetDto);
+			.thenReturn(questionSetDto);
 
 		// when & then
 		mockMvc.perform(put("/api/v1/question-sets/{questionSetId}", questionSetId)
 				.contentType(MediaType.APPLICATION_JSON)
 				.content(objectMapper.writeValueAsString(request)))
-				.andExpect(status().isOk())
-				.andExpect(jsonPath("$.data.id").value(questionSetId))
-				.andExpect(jsonPath("$.data.subject").value(subject))
-				.andExpect(jsonPath("$.data.title").value(title))
-				.andExpect(jsonPath("$.data.deliveryMode").value(mode.name()))
-				.andExpect(jsonPath("$.data.levelDescription").value(levelDescription))
-				.andExpect(jsonPath("$.data.visibility").value(visibility.name()));
+			.andExpect(status().isOk())
+			.andExpect(jsonPath("$.data.id").value(questionSetId))
+			.andExpect(jsonPath("$.data.subject").value(subject))
+			.andExpect(jsonPath("$.data.title").value(title))
+			.andExpect(jsonPath("$.data.deliveryMode").value(mode.name()))
+			.andExpect(jsonPath("$.data.levelDescription").value(levelDescription))
+			.andExpect(jsonPath("$.data.visibility").value(visibility.name()));
 
 		verify(questionSetService).completeQuestionSet(questionSetId, title, subject, mode, levelDescription,
-				visibility);
+			visibility);
 	}
 
 	@ParameterizedTest(name = "{index} - {0}")
 	@DisplayName("문제 셋 최종 저장 테스트 - 유효하지 않은 요청")
 	@MethodSource("invalidUpdateQuestionSetRequests")
 	void updateQuestionSets_InvalidRequest(String testName, UpdateQuestionSetApiRequest request,
-			List<String> expectedErrorMessages) throws Exception {
+		List<String> expectedErrorMessages) throws Exception {
 		// given
 		final Long questionSetId = 1L;
 
@@ -297,52 +297,52 @@ class QuestionSetControllerTest {
 		mockMvc.perform(put("/api/v1/question-sets/{questionSetId}", questionSetId)
 				.contentType(MediaType.APPLICATION_JSON)
 				.content(objectMapper.writeValueAsString(request)))
-				.andExpectAll(
-						status().isBadRequest(),
-						jsonPath("$.isSuccess").value(false),
-						jsonPath("$.code").value("C-001"),
-						jsonPath("$.message").value("사용자 입력 오류입니다."),
-						jsonPath("$.reasons").isArray(),
-						jsonPath("$.reasons.length()").value(expectedErrorMessages.size()),
-						jsonPath("$.reasons[*]").value(org.hamcrest.Matchers.hasItems(
-								expectedErrorMessages.toArray(new String[0]))));
+			.andExpectAll(
+				status().isBadRequest(),
+				jsonPath("$.isSuccess").value(false),
+				jsonPath("$.code").value("C-001"),
+				jsonPath("$.message").value("사용자 입력 오류입니다."),
+				jsonPath("$.reasons").isArray(),
+				jsonPath("$.reasons.length()").value(expectedErrorMessages.size()),
+				jsonPath("$.reasons[*]").value(org.hamcrest.Matchers.hasItems(
+					expectedErrorMessages.toArray(new String[0]))));
 
 		verify(questionSetService, never()).completeQuestionSet(anyLong(), anyString(), anyString(), any(), anyString(),
-				any());
+			any());
 	}
 
 	static Stream<Arguments> invalidUpdateQuestionSetRequests() {
 		return Stream.of(
-				Arguments.of(
-						"제목과 주제가 빈 문자열",
-						new UpdateQuestionSetApiRequest("", "", DeliveryMode.LIVE_TIME, "설명",
-								QuestionSetVisibility.GROUP),
-						List.of("제목을 입력해주세요", "주제를 입력해주세요")),
-				Arguments.of(
-						"제목만 빈 문자열",
-						new UpdateQuestionSetApiRequest("", "유효한 주제", DeliveryMode.REVIEW, "설명",
-								QuestionSetVisibility.PRIVATE),
-						List.of("제목을 입력해주세요")),
-				Arguments.of(
-						"주제만 빈 문자열",
-						new UpdateQuestionSetApiRequest("유효한 제목", "", DeliveryMode.LIVE_TIME, "설명",
-								QuestionSetVisibility.GROUP),
-						List.of("주제를 입력해주세요")),
-				Arguments.of(
-						"제목과 주제가 null",
-						new UpdateQuestionSetApiRequest(null, null, DeliveryMode.REVIEW, "설명",
-								QuestionSetVisibility.GROUP),
-						List.of("제목을 입력해주세요", "주제를 입력해주세요")),
-				Arguments.of(
-						"제목이 공백만 포함",
-						new UpdateQuestionSetApiRequest("   ", "유효한 주제", DeliveryMode.LIVE_TIME, "설명",
-								QuestionSetVisibility.PRIVATE),
-						List.of("제목을 입력해주세요")),
-				Arguments.of(
-						"주제가 공백만 포함",
-						new UpdateQuestionSetApiRequest("유효한 제목", "   ", DeliveryMode.REVIEW, "설명",
-								QuestionSetVisibility.GROUP),
-						List.of("주제를 입력해주세요")));
+			Arguments.of(
+				"제목과 주제가 빈 문자열",
+				new UpdateQuestionSetApiRequest("", "", DeliveryMode.LIVE_TIME, "설명",
+					QuestionSetVisibility.GROUP),
+				List.of("제목을 입력해주세요", "주제를 입력해주세요")),
+			Arguments.of(
+				"제목만 빈 문자열",
+				new UpdateQuestionSetApiRequest("", "유효한 주제", DeliveryMode.REVIEW, "설명",
+					QuestionSetVisibility.PRIVATE),
+				List.of("제목을 입력해주세요")),
+			Arguments.of(
+				"주제만 빈 문자열",
+				new UpdateQuestionSetApiRequest("유효한 제목", "", DeliveryMode.LIVE_TIME, "설명",
+					QuestionSetVisibility.GROUP),
+				List.of("주제를 입력해주세요")),
+			Arguments.of(
+				"제목과 주제가 null",
+				new UpdateQuestionSetApiRequest(null, null, DeliveryMode.REVIEW, "설명",
+					QuestionSetVisibility.GROUP),
+				List.of("제목을 입력해주세요", "주제를 입력해주세요")),
+			Arguments.of(
+				"제목이 공백만 포함",
+				new UpdateQuestionSetApiRequest("   ", "유효한 주제", DeliveryMode.LIVE_TIME, "설명",
+					QuestionSetVisibility.PRIVATE),
+				List.of("제목을 입력해주세요")),
+			Arguments.of(
+				"주제가 공백만 포함",
+				new UpdateQuestionSetApiRequest("유효한 제목", "   ", DeliveryMode.REVIEW, "설명",
+					QuestionSetVisibility.GROUP),
+				List.of("주제를 입력해주세요")));
 	}
 
 	@Test
@@ -357,9 +357,9 @@ class QuestionSetControllerTest {
 		mockMvc.perform(patch("/api/v1/question-sets/{questionSetId}", questionSetId)
 				.contentType(MediaType.APPLICATION_JSON)
 				.content(objectMapper.writeValueAsString(request)))
-				.andExpect(status().isOk())
-				.andExpect(jsonPath("$.isSuccess").value(true))
-				.andExpect(jsonPath("$.data").doesNotExist());
+			.andExpect(status().isOk())
+			.andExpect(jsonPath("$.isSuccess").value(true))
+			.andExpect(jsonPath("$.data").doesNotExist());
 
 		// then
 		verify(questionSetService).updateQuestionSetField(questionSetId, newTitle);
@@ -377,10 +377,10 @@ class QuestionSetControllerTest {
 		mockMvc.perform(patch("/api/v1/question-sets/{questionSetId}", questionSetId)
 				.contentType(MediaType.APPLICATION_JSON)
 				.content(objectMapper.writeValueAsString(request)))
-				.andExpectAll(status().is4xxClientError(),
-						jsonPath("$.isSuccess").value(false),
-						jsonPath("$.code").value("C-001"),
-						jsonPath("$.reasons[0]").value("문제 셋 제목은 비어있을 수 없습니다."));
+			.andExpectAll(status().is4xxClientError(),
+				jsonPath("$.isSuccess").value(false),
+				jsonPath("$.code").value("C-001"),
+				jsonPath("$.reasons[0]").value("문제 셋 제목은 비어있을 수 없습니다."));
 	}
 
 	@Test
@@ -394,10 +394,10 @@ class QuestionSetControllerTest {
 		// when & then
 		mockMvc.perform(get("/api/v1/question-sets/validate")
 				.param("questionSetId", String.valueOf(questionSetId)))
-				.andExpect(status().isOk())
-				.andExpect(jsonPath("$.isSuccess").value(true))
-				.andExpect(jsonPath("$.data").isArray())
-				.andExpect(jsonPath("$.data.length()").value(0));
+			.andExpect(status().isOk())
+			.andExpect(jsonPath("$.isSuccess").value(true))
+			.andExpect(jsonPath("$.data").isArray())
+			.andExpect(jsonPath("$.data.length()").value(0));
 
 		verify(questionSetService).validateQuestionSet(questionSetId);
 	}
@@ -409,35 +409,35 @@ class QuestionSetControllerTest {
 		final Long questionSetId = 1L;
 
 		QuestionValidateDto invalidDto1 = QuestionValidateDto.builder()
-				.questionId(2L)
-				.number(2L)
-				.valid(false)
-				.reason(QuestionValidationResult.EMPTY_CONTENT)
-				.build();
+			.questionId(2L)
+			.number(2L)
+			.valid(false)
+			.reason(QuestionValidationResult.EMPTY_CONTENT)
+			.build();
 
 		QuestionValidateDto invalidDto2 = QuestionValidateDto.builder()
-				.questionId(3L)
-				.number(3L)
-				.valid(false)
-				.reason(QuestionValidationResult.INVALID_CHOICE_COUNT)
-				.build();
+			.questionId(3L)
+			.number(3L)
+			.valid(false)
+			.reason(QuestionValidationResult.INVALID_CHOICE_COUNT)
+			.build();
 
 		when(questionSetService.validateQuestionSet(questionSetId))
-				.thenReturn(List.of(invalidDto1, invalidDto2));
+			.thenReturn(List.of(invalidDto1, invalidDto2));
 
 		// when & then
 		mockMvc.perform(get("/api/v1/question-sets/validate")
 				.param("questionSetId", String.valueOf(questionSetId)))
-				.andExpect(status().isOk())
-				.andExpect(jsonPath("$.isSuccess").value(true))
-				.andExpect(jsonPath("$.data").isArray())
-				.andExpect(jsonPath("$.data.length()").value(2))
-				.andExpect(jsonPath("$.data[0].questionId").value(2L))
-				.andExpect(jsonPath("$.data[0].isValid").value(false))
-				.andExpect(jsonPath("$.data[0].number").value(2L))
-				.andExpect(jsonPath("$.data[1].questionId").value(3L))
-				.andExpect(jsonPath("$.data[1].isValid").value(false))
-				.andExpect(jsonPath("$.data[1].number").value(3L));
+			.andExpect(status().isOk())
+			.andExpect(jsonPath("$.isSuccess").value(true))
+			.andExpect(jsonPath("$.data").isArray())
+			.andExpect(jsonPath("$.data.length()").value(2))
+			.andExpect(jsonPath("$.data[0].questionId").value(2L))
+			.andExpect(jsonPath("$.data[0].isValid").value(false))
+			.andExpect(jsonPath("$.data[0].number").value(2L))
+			.andExpect(jsonPath("$.data[1].questionId").value(3L))
+			.andExpect(jsonPath("$.data[1].isValid").value(false))
+			.andExpect(jsonPath("$.data[1].number").value(3L));
 
 		verify(questionSetService).validateQuestionSet(questionSetId);
 	}
@@ -453,27 +453,27 @@ class QuestionSetControllerTest {
 		final String fileKey = "question-set-materials/test-material.pdf";
 
 		MockMultipartFile mockFile = new MockMultipartFile(
-				"material",
-				fileName,
-				MediaType.APPLICATION_PDF_VALUE,
-				"test file content".getBytes());
+			"material",
+			fileName,
+			MediaType.APPLICATION_PDF_VALUE,
+			"test file content".getBytes());
 
 		QuestionSetMaterialDto mockResponse = QuestionSetMaterialDto.builder()
-				.id(materialId)
-				.questionSetId(questionSetId)
-				.materialUrl(fileUrl)
-				.materialKey(fileKey)
-				.build();
+			.id(materialId)
+			.questionSetId(questionSetId)
+			.materialUrl(fileUrl)
+			.materialKey(fileKey)
+			.build();
 
 		when(questionSetMaterialService.uploadQuestionSetMaterial(eq(questionSetId), any()))
-				.thenReturn(mockResponse);
+			.thenReturn(mockResponse);
 
 		// when & then
 		mockMvc.perform(multipart("/api/v1/question-sets/{questionSetId}/materials", questionSetId)
 				.file(mockFile))
-				.andExpect(status().isNotImplemented())
-				.andExpect(jsonPath("$.isSuccess").value(true))
-				.andExpect(jsonPath("$.data").doesNotExist());
+			.andExpect(status().isNotImplemented())
+			.andExpect(jsonPath("$.isSuccess").value(true))
+			.andExpect(jsonPath("$.data").doesNotExist());
 
 		verify(questionSetMaterialService).uploadQuestionSetMaterial(eq(questionSetId), any());
 	}
