@@ -12,7 +12,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.coniv.mait.domain.question.enums.QuestionSetLiveStatus;
+import com.coniv.mait.domain.question.enums.QuestionSetOngoingStatus;
 import com.coniv.mait.domain.question.service.QuestionRankService;
 import com.coniv.mait.domain.question.service.QuestionService;
 import com.coniv.mait.domain.question.service.QuestionSetLiveControlService;
@@ -63,7 +63,7 @@ public class QuestionSetLiveController {
 	@GetMapping
 	public ResponseEntity<ApiResponse<QuestionSetLiveStatusResponse>> getLiveStatus(
 		@PathVariable Long questionSetId) {
-		QuestionSetLiveStatus status = questionSetLiveControlService.getLiveStatus(questionSetId);
+		QuestionSetOngoingStatus status = questionSetLiveControlService.getLiveStatus(questionSetId);
 		return ResponseEntity.ok(ApiResponse.ok(QuestionSetLiveStatusResponse.from(questionSetId, status)));
 	}
 

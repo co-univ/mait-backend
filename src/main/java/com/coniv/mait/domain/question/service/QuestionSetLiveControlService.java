@@ -20,7 +20,7 @@ import com.coniv.mait.domain.question.entity.QuestionSetParticipantEntity;
 import com.coniv.mait.domain.question.enums.DeliveryMode;
 import com.coniv.mait.domain.question.enums.ParticipantStatus;
 import com.coniv.mait.domain.question.enums.QuestionSetCommandType;
-import com.coniv.mait.domain.question.enums.QuestionSetLiveStatus;
+import com.coniv.mait.domain.question.enums.QuestionSetOngoingStatus;
 import com.coniv.mait.domain.question.enums.QuestionStatusType;
 import com.coniv.mait.domain.question.repository.QuestionEntityRepository;
 import com.coniv.mait.domain.question.repository.QuestionSetEntityRepository;
@@ -83,12 +83,12 @@ public class QuestionSetLiveControlService {
 	}
 
 	@Transactional(readOnly = true)
-	public QuestionSetLiveStatus getLiveStatus(Long questionSetId) {
+	public QuestionSetOngoingStatus getLiveStatus(Long questionSetId) {
 		QuestionSetEntity questionSet = findQuestionSetById(questionSetId);
 		if (questionSet.getDeliveryMode() == DeliveryMode.REVIEW) {
 			throw new ResourceNotBelongException("review mode can't find live status.");
 		}
-		return questionSet.getLiveStatus();
+		return questionSet.getOngoingStatus();
 	}
 
 	private QuestionSetEntity findQuestionSetById(Long questionSetId) {
