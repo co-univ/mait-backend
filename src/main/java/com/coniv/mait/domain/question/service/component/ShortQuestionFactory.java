@@ -80,6 +80,17 @@ public class ShortQuestionFactory implements QuestionFactory<ShortQuestionDto> {
 			.build();
 	}
 
+	@Override
+	@Transactional
+	public ShortQuestionEntity createDefaultQuestion(String lexoRank, QuestionSetEntity questionSetEntity) {
+		return questionEntityRepository.save(ShortQuestionEntity.builder()
+			.content(QuestionConstant.DEFAULT_QUESTION_CONTENT)
+			.displayDelayMilliseconds(QuestionConstant.MAX_DISPLAY_DELAY_MILLISECONDS)
+			.lexoRank(lexoRank)
+			.questionSet(questionSetEntity)
+			.build());
+	}
+
 	public List<ShortAnswerEntity> createShortAnswers(List<ShortAnswerDto> shortAnswerDtos,
 		ShortQuestionEntity shortQuestionEntity) {
 		validateMainAnswers(shortAnswerDtos);
