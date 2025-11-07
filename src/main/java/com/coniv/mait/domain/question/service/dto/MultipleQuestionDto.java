@@ -47,6 +47,7 @@ public class MultipleQuestionDto extends QuestionDto {
 			.explanation(multipleQuestion.getExplanation())
 			.number(multipleQuestion.getNumber())
 			.imageUrl(multipleQuestion.getImageUrl())
+			.imageId(multipleQuestion.getImageId())
 			.questionStatus(multipleQuestion.getQuestionStatus())
 			.choices(choiceDtos)
 			.build();
