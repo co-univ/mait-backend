@@ -44,11 +44,7 @@ public class QuestionSetService {
 
 		questionService.createDefaultQuestion(questionSetEntity.getId());
 
-		return QuestionSetDto.builder()
-			.id(questionSetEntity.getId())
-			.subject(questionSetEntity.getSubject())
-			.title(questionSetEntity.getTitle())
-			.build();
+		return QuestionSetDto.from(questionSetEntity);
 	}
 
 	public QuestionSetContainer getQuestionSets(final Long teamId, final DeliveryMode mode) {
