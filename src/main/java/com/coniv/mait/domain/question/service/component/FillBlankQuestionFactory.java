@@ -76,6 +76,17 @@ public class FillBlankQuestionFactory implements QuestionFactory<FillBlankQuesti
 			.build();
 	}
 
+	@Override
+	@Transactional
+	public FillBlankQuestionEntity createDefaultQuestion(String lexoRank, QuestionSetEntity questionSetEntity) {
+		return questionEntityRepository.save(FillBlankQuestionEntity.builder()
+			.content(DEFAULT_QUESTION_CONTENT)
+			.lexoRank(lexoRank)
+			.displayDelayMilliseconds(RandomUtil.getRandomNumber(MAX_DISPLAY_DELAY_MILLISECONDS))
+			.questionSet(questionSetEntity)
+			.build());
+	}
+
 	public List<FillBlankAnswerEntity> createFillBlankAnswers(
 		List<FillBlankAnswerDto> fillBlankAnswerDtos, FillBlankQuestionEntity fillBlankQuestionEntity) {
 		validateMainAnswers(fillBlankAnswerDtos);
