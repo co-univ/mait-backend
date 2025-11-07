@@ -9,22 +9,22 @@ import io.swagger.v3.oas.annotations.media.Schema;
 
 public record LatestPoliciesApiResponse(
 
-	@Schema(description = "정책 버전 ID")
+	@Schema(description = "정책 버전 ID", requiredMode = Schema.RequiredMode.REQUIRED)
 	Long id,
 
-	@Schema(description = "정책 제목")
+	@Schema(description = "정책 제목", requiredMode = Schema.RequiredMode.REQUIRED)
 	String title,
 
-	@Schema(description = "정책 내용")
+	@Schema(description = "정책 내용", requiredMode = Schema.RequiredMode.REQUIRED)
 	String content,
 
-	@Schema(description = "정책 동의 필수")
+	@Schema(description = "정책 동의 필수", requiredMode = Schema.RequiredMode.REQUIRED, enumAsRef = true)
 	PolicyType policyType,
 
-	@Schema(description = "정책 적용 타이밍")
+	@Schema(description = "정책 적용 타이밍", requiredMode = Schema.RequiredMode.REQUIRED, enumAsRef = true)
 	PolicyTiming timing,
 
-	@Schema(description = "정책 카테고리")
+	@Schema(description = "정책 카테고리", requiredMode = Schema.RequiredMode.REQUIRED, enumAsRef = true)
 	PolicyCategory category
 ) {
 
