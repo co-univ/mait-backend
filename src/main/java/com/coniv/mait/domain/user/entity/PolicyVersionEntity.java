@@ -1,7 +1,5 @@
 package com.coniv.mait.domain.user.entity;
 
-import org.hibernate.annotations.DynamicInsert;
-
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
@@ -27,7 +25,6 @@ import lombok.NoArgsConstructor;
 )
 @Entity
 @Getter
-@DynamicInsert
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class PolicyVersionEntity {
 
