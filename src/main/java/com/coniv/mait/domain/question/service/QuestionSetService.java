@@ -17,6 +17,9 @@ import com.coniv.mait.domain.question.service.dto.QuestionCount;
 import com.coniv.mait.domain.question.service.dto.QuestionSetDto;
 import com.coniv.mait.domain.question.service.dto.QuestionValidateDto;
 import com.coniv.mait.domain.user.service.component.TeamRoleValidator;
+import com.coniv.mait.web.question.dto.QuestionSetContainer;
+import com.coniv.mait.web.question.dto.QuestionSetGroup;
+import com.coniv.mait.web.question.dto.QuestionSetList;
 
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
@@ -51,23 +54,24 @@ public class QuestionSetService {
 		// Todo: createion type에 맞게 로직 분기
 		// questionService.createDefaultQuestion(questionSetEntity.getId());
 
-		return QuestionSetDto.builder()
-			.id(questionSetEntity.getId())
-			.subject(questionSetEntity.getSubject())
-			.title(questionSetEntity.getTitle())
-			.build();
+		return QuestionSetDto.from(questionSetEntity);
 	}
 
-	public List<QuestionSetDto> getQuestionSets(final Long teamId, final DeliveryMode mode) {
+	public QuestionSetContainer getQuestionSets(final Long teamId, final DeliveryMode mode) {
 		// Todo: 조회하려는 유저와 팀이 일치하는지 확인
-
-		return questionSetEntityRepository.findAllByTeamIdAndDeliveryMode(teamId, mode).stream()
+		List<QuestionSetDto> questionSets = questionSetEntityRepository.findAllByTeamIdAndDeliveryMode(teamId, mode)
+			.stream()
 			.sorted(Comparator.comparing(
 				QuestionSetEntity::getModifiedAt,
-				Comparator.nullsLast(Comparator.naturalOrder())
-			).reversed())
+				Comparator.nullsLast(Comparator.naturalOrder())).reversed())
 			.map(QuestionSetDto::from)
 			.toList();
+
+		if (mode == DeliveryMode.MAKING || mode == DeliveryMode.REVIEW) {
+			return QuestionSetList.of(questionSets);
+		}
+
+		return QuestionSetGroup.of(questionSets);
 	}
 
 	public QuestionSetDto getQuestionSet(final Long questionSetId) {
@@ -86,12 +90,11 @@ public class QuestionSetService {
 		final String subject,
 		final DeliveryMode mode,
 		final String levelDescription,
-		final QuestionSetVisibility visibility
-	) {
+		final QuestionSetVisibility visibility) {
 		QuestionSetEntity questionSet = questionSetEntityRepository.findById(questionSetId)
 			.orElseThrow(() -> new EntityNotFoundException("Question set not found"));
 
-		// Todo:  현재 생성 단계가 아니면 예외
+		// Todo: 현재 생성 단계가 아니면 예외
 		int number = 1;
 
 		List<QuestionEntity> questions = questionEntityRepository.findAllByQuestionSetIdOrderByLexoRankAsc(

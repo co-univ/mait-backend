@@ -23,6 +23,7 @@ import org.springframework.test.web.servlet.MockMvc;
 
 import com.coniv.mait.domain.question.enums.DeliveryMode;
 import com.coniv.mait.domain.question.enums.QuestionSetCreationType;
+import com.coniv.mait.domain.question.enums.QuestionSetOngoingStatus;
 import com.coniv.mait.domain.question.enums.QuestionSetVisibility;
 import com.coniv.mait.domain.question.enums.QuestionValidationResult;
 import com.coniv.mait.domain.question.service.QuestionSetMaterialService;
@@ -32,6 +33,9 @@ import com.coniv.mait.domain.question.service.dto.QuestionSetMaterialDto;
 import com.coniv.mait.domain.question.service.dto.QuestionValidateDto;
 import com.coniv.mait.global.filter.JwtAuthorizationFilter;
 import com.coniv.mait.global.interceptor.idempotency.IdempotencyInterceptor;
+import com.coniv.mait.web.question.dto.CreateQuestionSetApiRequest;
+import com.coniv.mait.web.question.dto.QuestionSetGroup;
+import com.coniv.mait.web.question.dto.QuestionSetList;
 import com.coniv.mait.web.question.dto.UpdateQuestionSetApiRequest;
 import com.coniv.mait.web.question.dto.UpdateQuestionSetFieldApiRequest;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -148,26 +152,72 @@ class QuestionSetControllerTest {
 	// }
 
 	@Test
-	@DisplayName("문제 셋 목록 조회 테스트")
-	void getQuestionSetsTest() throws Exception {
+	@DisplayName("문제 셋 목록 조회 테스트 - MAKING 모드는 List 구조 반환")
+	void getQuestionSets_MakingMode_ReturnsList() throws Exception {
 		// given
 		Long teamId = 1L;
-		QuestionSetDto questionSet1 = QuestionSetDto.builder().id(1L).subject("Subject 1").build();
-		QuestionSetDto questionSet2 = QuestionSetDto.builder().id(2L).subject("Subject 2").build();
-		final DeliveryMode mode = DeliveryMode.LIVE_TIME;
-		when(questionSetService.getQuestionSets(teamId, DeliveryMode.LIVE_TIME)).thenReturn(
-			List.of(questionSet1, questionSet2));
+		final DeliveryMode mode = DeliveryMode.MAKING;
+		QuestionSetDto questionSet1 = QuestionSetDto.builder()
+			.id(1L)
+			.subject("Subject 1")
+			.build();
+		QuestionSetDto questionSet2 = QuestionSetDto.builder()
+			.id(2L)
+			.subject("Subject 2")
+			.build();
+
+		QuestionSetList questionSetList = QuestionSetList.of(List.of(questionSet1, questionSet2));
+		when(questionSetService.getQuestionSets(teamId, mode)).thenReturn(questionSetList);
 
 		// when & then
 		mockMvc.perform(get("/api/v1/question-sets")
 				.param("teamId", String.valueOf(teamId))
 				.param("mode", mode.name()))
 			.andExpect(status().isOk())
-			.andExpect(jsonPath("$.data.length()").value(2))
-			.andExpect(jsonPath("$.data[0].id").value(1L))
-			.andExpect(jsonPath("$.data[0].subject").value("Subject 1"))
-			.andExpect(jsonPath("$.data[1].id").value(2L))
-			.andExpect(jsonPath("$.data[1].subject").value("Subject 2"));
+			.andExpect(jsonPath("$.data.mode").value("MAKING"))
+			.andExpect(jsonPath("$.data.content.questionSets.length()").value(2))
+			.andExpect(jsonPath("$.data.content.questionSets[0].id").value(1L))
+			.andExpect(jsonPath("$.data.content.questionSets[0].subject").value("Subject 1"))
+			.andExpect(jsonPath("$.data.content.questionSets[1].id").value(2L))
+			.andExpect(jsonPath("$.data.content.questionSets[1].subject").value("Subject 2"));
+
+		verify(questionSetService).getQuestionSets(teamId, mode);
+	}
+
+	@Test
+	@DisplayName("문제 셋 목록 조회 테스트 - LIVE_TIME 모드는 Map 구조 반환")
+	void getQuestionSets_LiveTimeMode_ReturnsGroupedMap() throws Exception {
+		// given
+		Long teamId = 1L;
+		final DeliveryMode mode = DeliveryMode.LIVE_TIME;
+		QuestionSetDto beforeSet = QuestionSetDto.builder()
+			.id(1L)
+			.subject("Subject 1")
+			.ongoingStatus(QuestionSetOngoingStatus.BEFORE)
+			.build();
+		QuestionSetDto ongoingSet = QuestionSetDto.builder()
+			.id(2L)
+			.subject("Subject 2")
+			.ongoingStatus(QuestionSetOngoingStatus.ONGOING)
+			.build();
+
+		QuestionSetGroup questionSetGroup = QuestionSetGroup.of(List.of(beforeSet, ongoingSet));
+		when(questionSetService.getQuestionSets(teamId, mode)).thenReturn(questionSetGroup);
+
+		// when & then
+		mockMvc.perform(get("/api/v1/question-sets")
+				.param("teamId", String.valueOf(teamId))
+				.param("mode", mode.name()))
+			.andExpect(status().isOk())
+			.andExpect(jsonPath("$.data.mode").value("LIVE_TIME"))
+			.andExpect(jsonPath("$.data.content.questionSets.BEFORE").isArray())
+			.andExpect(jsonPath("$.data.content.questionSets.BEFORE.length()").value(1))
+			.andExpect(jsonPath("$.data.content.questionSets.BEFORE[0].id").value(1L))
+			.andExpect(jsonPath("$.data.content.questionSets.BEFORE[0].subject").value("Subject 1"))
+			.andExpect(jsonPath("$.data.content.questionSets.ONGOING").isArray())
+			.andExpect(jsonPath("$.data.content.questionSets.ONGOING.length()").value(1))
+			.andExpect(jsonPath("$.data.content.questionSets.ONGOING[0].id").value(2L))
+			.andExpect(jsonPath("$.data.content.questionSets.ONGOING[0].subject").value("Subject 2"));
 
 		verify(questionSetService).getQuestionSets(teamId, mode);
 	}
@@ -406,8 +456,7 @@ class QuestionSetControllerTest {
 			"material",
 			fileName,
 			MediaType.APPLICATION_PDF_VALUE,
-			"test file content".getBytes()
-		);
+			"test file content".getBytes());
 
 		QuestionSetMaterialDto mockResponse = QuestionSetMaterialDto.builder()
 			.id(materialId)

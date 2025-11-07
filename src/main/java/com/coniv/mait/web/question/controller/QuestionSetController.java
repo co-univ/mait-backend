@@ -27,7 +27,9 @@ import com.coniv.mait.global.response.ApiResponse;
 import com.coniv.mait.web.question.dto.CreateQuestionSetApiRequest;
 import com.coniv.mait.web.question.dto.CreateQuestionSetApiResponse;
 import com.coniv.mait.web.question.dto.QuestionSetApiResponse;
+import com.coniv.mait.web.question.dto.QuestionSetContainer;
 import com.coniv.mait.web.question.dto.QuestionSetMaterialApiResponse;
+import com.coniv.mait.web.question.dto.QuestionSetsApiResponse;
 import com.coniv.mait.web.question.dto.QuestionValidationApiResponse;
 import com.coniv.mait.web.question.dto.UpdateQuestionSetApiRequest;
 import com.coniv.mait.web.question.dto.UpdateQuestionSetFieldApiRequest;
@@ -69,14 +71,12 @@ public class QuestionSetController {
 
 	@Operation(summary = "문제 셋 목록 조회")
 	@GetMapping
-	public ResponseEntity<ApiResponse<List<QuestionSetApiResponse>>> getQuestionSets(
+	public ResponseEntity<ApiResponse<QuestionSetsApiResponse>> getQuestionSets(
 		@RequestParam(value = "mode") DeliveryMode mode,
 		@RequestParam("teamId") Long teamId) {
-		List<QuestionSetApiResponse> responses = questionSetService.getQuestionSets(teamId, mode)
-			.stream()
-			.map(QuestionSetApiResponse::from)
-			.toList();
-		return ResponseEntity.ok(ApiResponse.ok(responses));
+		QuestionSetContainer questionSets = questionSetService.getQuestionSets(teamId, mode);
+		QuestionSetsApiResponse response = QuestionSetsApiResponse.of(mode, questionSets);
+		return ResponseEntity.ok(ApiResponse.ok(response));
 	}
 
 	@Operation(summary = "문제 셋 단건 조회")
@@ -93,7 +93,8 @@ public class QuestionSetController {
 		@PathVariable("questionSetId") Long questionSetId,
 		@Valid @RequestBody UpdateQuestionSetApiRequest request) {
 		return ResponseEntity.ok(ApiResponse.ok(QuestionSetApiResponse.from(
-			questionSetService.completeQuestionSet(questionSetId, request.title(), request.subject(), request.mode(),
+			questionSetService.completeQuestionSet(questionSetId, request.title(), request.subject(),
+				request.mode(),
 				request.levelDescription(), request.visibility()))));
 	}
 

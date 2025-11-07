@@ -17,12 +17,17 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import com.coniv.mait.domain.question.entity.QuestionEntity;
 import com.coniv.mait.domain.question.entity.QuestionSetEntity;
 import com.coniv.mait.domain.question.enums.DeliveryMode;
+import com.coniv.mait.domain.question.enums.QuestionSetCreationType;
+import com.coniv.mait.domain.question.enums.QuestionSetOngoingStatus;
 import com.coniv.mait.domain.question.enums.QuestionSetVisibility;
 import com.coniv.mait.domain.question.enums.QuestionValidationResult;
 import com.coniv.mait.domain.question.repository.QuestionEntityRepository;
 import com.coniv.mait.domain.question.repository.QuestionSetEntityRepository;
 import com.coniv.mait.domain.question.service.dto.QuestionSetDto;
 import com.coniv.mait.domain.question.service.dto.QuestionValidateDto;
+import com.coniv.mait.web.question.dto.QuestionSetContainer;
+import com.coniv.mait.web.question.dto.QuestionSetGroup;
+import com.coniv.mait.web.question.dto.QuestionSetList;
 
 import jakarta.persistence.EntityNotFoundException;
 
@@ -64,30 +69,97 @@ class QuestionSetServiceTest {
 	// }
 
 	@Test
-	@DisplayName("문제 셋 목록 조회 테스트")
-	void getQuestionSetsTest() {
+	@DisplayName("문제 셋 목록 조회 테스트 - MAKING 모드는 QuestionSetList 반환")
+	void getQuestionSets_MakingMode_ReturnsQuestionSetList() {
 		// given
 		final Long teamId = 1L;
 		final LocalDateTime now = LocalDateTime.now();
-		final DeliveryMode mode = DeliveryMode.LIVE_TIME;
+		final DeliveryMode mode = DeliveryMode.MAKING;
 		QuestionSetEntity older = mock(QuestionSetEntity.class);
 		QuestionSetEntity newer = mock(QuestionSetEntity.class);
 
+		// older mock 설정
 		when(older.getId()).thenReturn(1L);
-		when(newer.getId()).thenReturn(2L);
+		when(older.getDeliveryMode()).thenReturn(mode);
+		when(older.getOngoingStatus()).thenReturn(QuestionSetOngoingStatus.BEFORE);
+		when(older.getTeamId()).thenReturn(teamId);
 		when(older.getModifiedAt()).thenReturn(now.minusDays(1));
+
+		// newer mock 설정
+		when(newer.getId()).thenReturn(2L);
+		when(newer.getDeliveryMode()).thenReturn(mode);
+		when(newer.getOngoingStatus()).thenReturn(QuestionSetOngoingStatus.ONGOING);
+		when(newer.getTeamId()).thenReturn(teamId);
 		when(newer.getModifiedAt()).thenReturn(now.plusDays(1));
 
 		when(questionSetEntityRepository.findAllByTeamIdAndDeliveryMode(teamId, mode))
 			.thenReturn(List.of(older, newer));
 
 		// when
-		List<QuestionSetDto> result = questionSetService.getQuestionSets(teamId, mode);
+		QuestionSetContainer result = questionSetService.getQuestionSets(teamId, mode);
 
 		// then
-		assertThat(result).hasSize(2);
-		assertThat(result.get(0).getId()).isEqualTo(2L); // 최신 것이 먼저
-		assertThat(result.get(1).getId()).isEqualTo(1L);
+		assertThat(result).isInstanceOf(QuestionSetList.class);
+		QuestionSetList list = (QuestionSetList)result;
+		assertThat(list.questionSets()).hasSize(2);
+		assertThat(list.questionSets().get(0).getId()).isEqualTo(2L); // 최신 것이 먼저
+		assertThat(list.questionSets().get(1).getId()).isEqualTo(1L);
+
+		verify(questionSetEntityRepository, times(1)).findAllByTeamIdAndDeliveryMode(teamId, mode);
+	}
+
+	@Test
+	@DisplayName("문제 셋 목록 조회 테스트 - LIVE_TIME 모드는 QuestionSetGroup 반환")
+	void getQuestionSets_LiveTimeMode_ReturnsQuestionSetGroup() {
+		// given
+		final Long teamId = 1L;
+		final LocalDateTime now = LocalDateTime.now();
+		final DeliveryMode mode = DeliveryMode.LIVE_TIME;
+		QuestionSetEntity beforeStatus = mock(QuestionSetEntity.class);
+		QuestionSetEntity ongoingStatus = mock(QuestionSetEntity.class);
+		QuestionSetEntity afterStatus = mock(QuestionSetEntity.class);
+
+		// BEFORE status mock 설정
+		when(beforeStatus.getId()).thenReturn(1L);
+		when(beforeStatus.getDeliveryMode()).thenReturn(mode);
+		when(beforeStatus.getOngoingStatus()).thenReturn(QuestionSetOngoingStatus.BEFORE);
+		when(beforeStatus.getTeamId()).thenReturn(teamId);
+		when(beforeStatus.getModifiedAt()).thenReturn(now.minusDays(2));
+
+		// ONGOING status mock 설정
+		when(ongoingStatus.getId()).thenReturn(2L);
+		when(ongoingStatus.getDeliveryMode()).thenReturn(mode);
+		when(ongoingStatus.getOngoingStatus()).thenReturn(QuestionSetOngoingStatus.ONGOING);
+		when(ongoingStatus.getTeamId()).thenReturn(teamId);
+		when(ongoingStatus.getModifiedAt()).thenReturn(now.minusDays(1));
+
+		// AFTER status mock 설정
+		when(afterStatus.getId()).thenReturn(3L);
+		when(afterStatus.getDeliveryMode()).thenReturn(mode);
+		when(afterStatus.getOngoingStatus()).thenReturn(QuestionSetOngoingStatus.AFTER);
+		when(afterStatus.getTeamId()).thenReturn(teamId);
+		when(afterStatus.getModifiedAt()).thenReturn(now);
+
+		when(questionSetEntityRepository.findAllByTeamIdAndDeliveryMode(teamId, mode))
+			.thenReturn(List.of(beforeStatus, ongoingStatus, afterStatus));
+
+		// when
+		QuestionSetContainer result = questionSetService.getQuestionSets(teamId, mode);
+
+		// then
+		assertThat(result).isInstanceOf(QuestionSetGroup.class);
+		QuestionSetGroup group = (QuestionSetGroup)result;
+		assertThat(group.questionSets()).hasSize(3); // 3개의 status
+		assertThat(group.questionSets()).containsKeys(
+			QuestionSetOngoingStatus.BEFORE,
+			QuestionSetOngoingStatus.ONGOING,
+			QuestionSetOngoingStatus.AFTER);
+		assertThat(group.questionSets().get(QuestionSetOngoingStatus.BEFORE)).hasSize(1);
+		assertThat(group.questionSets().get(QuestionSetOngoingStatus.ONGOING)).hasSize(1);
+		assertThat(group.questionSets().get(QuestionSetOngoingStatus.AFTER)).hasSize(1);
+		assertThat(group.questionSets().get(QuestionSetOngoingStatus.BEFORE).get(0).getId()).isEqualTo(1L);
+		assertThat(group.questionSets().get(QuestionSetOngoingStatus.ONGOING).get(0).getId()).isEqualTo(2L);
+		assertThat(group.questionSets().get(QuestionSetOngoingStatus.AFTER).get(0).getId()).isEqualTo(3L);
 
 		verify(questionSetEntityRepository, times(1)).findAllByTeamIdAndDeliveryMode(teamId, mode);
 	}
@@ -161,8 +233,7 @@ class QuestionSetServiceTest {
 			newSubject,
 			newMode,
 			levelDescription,
-			newVisibility
-		);
+			newVisibility);
 
 		// then
 		verify(questionSetEntityRepository, times(1)).findById(questionSetId);
@@ -196,8 +267,7 @@ class QuestionSetServiceTest {
 			"주제",
 			DeliveryMode.LIVE_TIME,
 			"설명",
-			QuestionSetVisibility.GROUP
-		))
+			QuestionSetVisibility.GROUP))
 			.isInstanceOf(EntityNotFoundException.class)
 			.hasMessage("Question set not found");
 

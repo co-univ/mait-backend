@@ -2,7 +2,7 @@ package com.coniv.mait.domain.question.entity;
 
 import com.coniv.mait.domain.question.enums.DeliveryMode;
 import com.coniv.mait.domain.question.enums.QuestionSetCreationType;
-import com.coniv.mait.domain.question.enums.QuestionSetLiveStatus;
+import com.coniv.mait.domain.question.enums.QuestionSetOngoingStatus;
 import com.coniv.mait.domain.question.enums.QuestionSetVisibility;
 import com.coniv.mait.global.entity.BaseTimeEntity;
 import com.coniv.mait.global.exception.custom.QuestionSetLiveException;
@@ -51,7 +51,7 @@ public class QuestionSetEntity extends BaseTimeEntity {
 	@Enumerated(EnumType.STRING)
 	@Column(nullable = false)
 	@Builder.Default
-	private DeliveryMode deliveryMode = DeliveryMode.LIVE_TIME;
+	private DeliveryMode deliveryMode = DeliveryMode.MAKING;
 
 	// @Column(nullable = false)
 	private Long teamId;
@@ -60,7 +60,7 @@ public class QuestionSetEntity extends BaseTimeEntity {
 
 	@Enumerated(EnumType.STRING)
 	@Builder.Default
-	private QuestionSetLiveStatus liveStatus = QuestionSetLiveStatus.BEFORE_LIVE;
+	private QuestionSetOngoingStatus ongoingStatus = QuestionSetOngoingStatus.BEFORE;
 
 	private String levelDescription;
 
@@ -77,23 +77,23 @@ public class QuestionSetEntity extends BaseTimeEntity {
 	}
 
 	public boolean isOnLive() {
-		return liveStatus == QuestionSetLiveStatus.LIVE && deliveryMode == DeliveryMode.LIVE_TIME;
+		return ongoingStatus == QuestionSetOngoingStatus.ONGOING && deliveryMode == DeliveryMode.LIVE_TIME;
 	}
 
 	public void startLiveQuestionSet() {
 		checkLiveDeliveryMode();
-		if (liveStatus != QuestionSetLiveStatus.BEFORE_LIVE) {
-			throw new QuestionSetLiveException("BEFORE_LIVE 상태에서만 실시간 문제를 시작할 수 있습니다. 현재 상태: " + liveStatus);
+		if (ongoingStatus != QuestionSetOngoingStatus.BEFORE) {
+			throw new QuestionSetLiveException("BEFORE_LIVE 상태에서만 실시간 문제를 시작할 수 있습니다. 현재 상태: " + ongoingStatus);
 		}
-		this.liveStatus = QuestionSetLiveStatus.LIVE;
+		this.ongoingStatus = QuestionSetOngoingStatus.ONGOING;
 	}
 
 	public void endLiveQuestionSet() {
 		checkLiveDeliveryMode();
-		if (liveStatus != QuestionSetLiveStatus.LIVE) {
-			throw new QuestionSetLiveException("LIVE 상태에서만 실시간 문제를 종료할 수 있습니다. 현재 상태: " + liveStatus);
+		if (ongoingStatus != QuestionSetOngoingStatus.ONGOING) {
+			throw new QuestionSetLiveException("LIVE 상태에서만 실시간 문제를 종료할 수 있습니다. 현재 상태: " + ongoingStatus);
 		}
-		this.liveStatus = QuestionSetLiveStatus.AFTER_LIVE;
+		this.ongoingStatus = QuestionSetOngoingStatus.AFTER;
 	}
 
 	private void checkLiveDeliveryMode() {
