@@ -2,7 +2,7 @@ server:
   domain: "https://api.dev.mait.kr"
 
 mait:
-  base-url: "https://dev.mait.kr"
+  base-url: "https://localhost:3000" //TODO 프론트 개발 완료시 변경
   cookie:
     path: "/"
     max-age: 259200  # 3 days

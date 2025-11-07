@@ -7,4 +7,4 @@ spring:
       client:
         registration:
           google:
-            redirect-uri: "https://localhost:3000/login/oauth2/code/google"
+            redirect-uri: "https://api.dev.mait.kr/login/oauth2/code/google"
