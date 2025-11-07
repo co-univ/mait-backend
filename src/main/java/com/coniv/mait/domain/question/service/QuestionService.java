@@ -23,6 +23,7 @@ import com.coniv.mait.domain.question.repository.QuestionEntityRepository;
 import com.coniv.mait.domain.question.repository.QuestionSetEntityRepository;
 import com.coniv.mait.domain.question.service.component.QuestionFactory;
 import com.coniv.mait.domain.question.service.dto.CurrentQuestionDto;
+import com.coniv.mait.domain.question.service.dto.QuestionCount;
 import com.coniv.mait.domain.question.service.dto.QuestionDto;
 import com.coniv.mait.domain.question.util.LexoRank;
 import com.coniv.mait.global.exception.custom.ResourceNotBelongException;
@@ -90,6 +91,18 @@ public class QuestionService {
 		multipleChoiceEntityRepository.saveAll(defaultSubEntities);
 
 		return getQuestionFactory(DEFAULT_QUESTION_TYPE).getQuestion(defaultQuestion, true);
+	}
+
+	// @Async todo 재사용성이 없으면 부모스레드와 다르게 비동기로 태워도 될 것 같기도
+	public void createDefaultQuestions(final QuestionSetEntity questionSetEntity, final List<QuestionCount> counts) {
+		String currentRank = LexoRank.middle();
+
+		for (QuestionCount count : counts) {
+			QuestionFactory<QuestionDto> questionFactory = getQuestionFactory(count.type());
+			for (int i = 0; i < count.count(); i++) {
+				questionFactory.createDefaultQuestion(LexoRank.nextAfter(currentRank), questionSetEntity);
+			}
+		}
 	}
 
 	public QuestionDto getQuestion(final Long questionSetId, final Long questionId, final DeliveryMode mode) {

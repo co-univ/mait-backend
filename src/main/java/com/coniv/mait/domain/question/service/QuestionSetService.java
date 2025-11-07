@@ -9,6 +9,7 @@ import org.springframework.transaction.annotation.Transactional;
 import com.coniv.mait.domain.question.entity.QuestionEntity;
 import com.coniv.mait.domain.question.entity.QuestionSetEntity;
 import com.coniv.mait.domain.question.enums.DeliveryMode;
+import com.coniv.mait.domain.question.enums.QuestionSetCreationType;
 import com.coniv.mait.domain.question.enums.QuestionSetVisibility;
 import com.coniv.mait.domain.question.repository.QuestionEntityRepository;
 import com.coniv.mait.domain.question.repository.QuestionSetEntityRepository;
@@ -51,8 +52,9 @@ public class QuestionSetService {
 			.build();
 		questionSetEntityRepository.save(questionSetEntity);
 
-		// Todo: createion type에 맞게 로직 분기
-		// questionService.createDefaultQuestion(questionSetEntity.getId());
+		if (questionSetDto.getCreationType() == QuestionSetCreationType.MANUAL) {
+			questionService.createDefaultQuestions(questionSetEntity, counts);
+		}
 
 		return QuestionSetDto.from(questionSetEntity);
 	}
