@@ -19,6 +19,8 @@ public interface QuestionFactory<T extends QuestionDto> {
 
 	QuestionEntity create(T questionDto, QuestionSetEntity questionSetEntity);
 
+	QuestionEntity createDefaultQuestion(String lexoRank, QuestionSetEntity questionSetEntity);
+
 	void deleteSubEntities(QuestionEntity question);
 
 	void createSubEntities(T questionDto, QuestionEntity question);
