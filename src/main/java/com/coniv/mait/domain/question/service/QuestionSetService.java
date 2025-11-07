@@ -51,11 +51,7 @@ public class QuestionSetService {
 		// Todo: createion type에 맞게 로직 분기
 		// questionService.createDefaultQuestion(questionSetEntity.getId());
 
-		return QuestionSetDto.builder()
-			.id(questionSetEntity.getId())
-			.subject(questionSetEntity.getSubject())
-			.title(questionSetEntity.getTitle())
-			.build();
+		return QuestionSetDto.from(questionSetEntity);
 	}
 
 	public List<QuestionSetDto> getQuestionSets(final Long teamId, final DeliveryMode mode) {

@@ -51,7 +51,7 @@ public class QuestionSetEntity extends BaseTimeEntity {
 	@Enumerated(EnumType.STRING)
 	@Column(nullable = false)
 	@Builder.Default
-	private DeliveryMode deliveryMode = DeliveryMode.LIVE_TIME;
+	private DeliveryMode deliveryMode = DeliveryMode.MAKING;
 
 	// @Column(nullable = false)
 	private Long teamId;
