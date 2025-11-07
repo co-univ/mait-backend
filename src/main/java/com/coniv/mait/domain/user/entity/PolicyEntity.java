@@ -1,8 +1,5 @@
 package com.coniv.mait.domain.user.entity;
 
-import org.hibernate.annotations.ColumnDefault;
-import org.hibernate.annotations.DynamicInsert;
-
 import com.coniv.mait.domain.user.enums.PolicyCategory;
 import com.coniv.mait.domain.user.enums.PolicyTiming;
 import com.coniv.mait.domain.user.enums.PolicyType;
@@ -23,7 +20,7 @@ import lombok.NoArgsConstructor;
 
 @Entity
 @Getter
-@DynamicInsert
+@Builder
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
 public class PolicyEntity extends BaseTimeEntity {
@@ -34,8 +31,8 @@ public class PolicyEntity extends BaseTimeEntity {
 
 	@Column(nullable = false)
 	@Enumerated(EnumType.STRING)
-	@ColumnDefault(value = "'ESSENTIAL'")
-	private PolicyType policyType;
+	@Builder.Default
+	private PolicyType policyType = PolicyType.ESSENTIAL;
 
 	@Column(nullable = false)
 	@Enumerated(EnumType.STRING)
