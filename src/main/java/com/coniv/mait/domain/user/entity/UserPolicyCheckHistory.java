@@ -30,7 +30,7 @@ import lombok.NoArgsConstructor;
 @Entity
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-public class UserPolicyEntity extends BaseTimeEntity {
+public class UserPolicyCheckHistory extends BaseTimeEntity {
 
 	@Id
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -50,14 +50,16 @@ public class UserPolicyEntity extends BaseTimeEntity {
 	@JoinColumn(name = "policy_version_id", nullable = false)
 	private PolicyVersionEntity policyVersion;
 
-	private UserPolicyEntity(Boolean isChecked, UserEntity user, PolicyVersionEntity policyVersion) {
+	private UserPolicyCheckHistory(Boolean isChecked, UserEntity user, PolicyVersionEntity policyVersion,
+		LocalDateTime checkTime) {
 		this.isChecked = isChecked;
 		this.user = user;
 		this.policyVersion = policyVersion;
-		this.checkTime = LocalDateTime.now();
+		this.checkTime = checkTime;
 	}
 
-	public static UserPolicyEntity of(Boolean isChecked, UserEntity user, PolicyVersionEntity policyVersion) {
-		return new UserPolicyEntity(isChecked, user, policyVersion);
+	public static UserPolicyCheckHistory of(Boolean isChecked, UserEntity user, PolicyVersionEntity policyVersion,
+		LocalDateTime checkTime) {
+		return new UserPolicyCheckHistory(isChecked, user, policyVersion, checkTime);
 	}
 }
