@@ -8,6 +8,7 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 
 import com.coniv.mait.global.exception.ExceptionCode;
 import com.coniv.mait.global.exception.custom.LoginFailException;
+import com.coniv.mait.global.exception.custom.PolicyException;
 import com.coniv.mait.global.exception.custom.QuestionSetLiveException;
 import com.coniv.mait.global.exception.custom.ResourceNotBelongException;
 import com.coniv.mait.global.exception.custom.TeamInviteFailException;
@@ -58,5 +59,13 @@ public class CustomExceptionHandler {
 		log.info("TeamInviteFailException 발생: {}, {}", exception.getMessage(), request.getRequestURI());
 		return ResponseEntity.badRequest()
 			.body(ErrorResponse.of(ExceptionCode.TEAM_INVITE_FAIL_EXCEPTION, List.of(exception.getMessage())));
+	}
+
+	@ExceptionHandler(PolicyException.class)
+	public ResponseEntity<ErrorResponse> handlePolicyException(PolicyException exception,
+		HttpServletRequest request) {
+		log.info("PolicyException 발생: {}, {}", exception.getMessage(), request.getRequestURI());
+		return ResponseEntity.badRequest()
+			.body(ErrorResponse.of(ExceptionCode.POLICY_EXCEPTION, List.of(exception.getMessage())));
 	}
 }
