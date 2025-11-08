@@ -54,7 +54,6 @@ public class PolicyService {
 			.toList();
 	}
 
-	//해당 유저가 약관을 확인하지 않은 항목 반환
 	@Transactional(readOnly = true)
 	public List<PolicyDto> findUnConfirmedPolicies(Long userId, PolicyTiming policyTiming) {
 		List<PolicyDto> latestPolicies = findLatestPolicies(policyTiming);
