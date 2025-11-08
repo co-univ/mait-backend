@@ -30,7 +30,7 @@ public record LatestPoliciesApiResponse(
 
 	public static LatestPoliciesApiResponse from(PolicyDto policyDto) {
 		return new LatestPoliciesApiResponse(
-			policyDto.getPolicyVersionId(),
+			policyDto.getPolicyId(),
 			policyDto.getTitle(),
 			policyDto.getContent(),
 			policyDto.getPolicyType(),

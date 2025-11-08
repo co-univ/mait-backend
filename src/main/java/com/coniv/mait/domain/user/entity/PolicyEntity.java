@@ -12,12 +12,23 @@ import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.Index;
+import jakarta.persistence.Table;
+import jakarta.persistence.UniqueConstraint;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
+@Table(
+	indexes = {
+		@Index(name = "idx_policy_version_latest", columnList = "code, version DESC")
+	},
+	uniqueConstraints = {
+		@UniqueConstraint(name = "uk_policy_version_unique", columnNames = {"code", "version"})
+	}
+)
 @Entity
 @Getter
 @Builder
@@ -37,6 +48,15 @@ public class PolicyEntity extends BaseTimeEntity {
 	@Column(nullable = false)
 	@Enumerated(EnumType.STRING)
 	private PolicyCategory category;
+
+	@Column(nullable = false)
+	private Integer version;
+
+	@Column(nullable = false, columnDefinition = "TEXT")
+	private String content;
+
+	@Column(nullable = false)
+	private String code;
 
 	@Column(nullable = false)
 	@Enumerated(EnumType.STRING)

@@ -47,19 +47,19 @@ public class UserPolicyCheckHistory extends BaseTimeEntity {
 	private UserEntity user;
 
 	@ManyToOne(fetch = FetchType.LAZY)
-	@JoinColumn(name = "policy_version_id", nullable = false)
-	private PolicyVersionEntity policyVersion;
+	@JoinColumn(name = "policy_id", nullable = false)
+	private PolicyEntity policy;
 
-	private UserPolicyCheckHistory(Boolean isChecked, UserEntity user, PolicyVersionEntity policyVersion,
+	private UserPolicyCheckHistory(Boolean isChecked, UserEntity user, PolicyEntity policy,
 		LocalDateTime checkTime) {
 		this.isChecked = isChecked;
 		this.user = user;
-		this.policyVersion = policyVersion;
+		this.policy = policy;
 		this.checkTime = checkTime;
 	}
 
-	public static UserPolicyCheckHistory of(Boolean isChecked, UserEntity user, PolicyVersionEntity policyVersion,
+	public static UserPolicyCheckHistory of(Boolean isChecked, UserEntity user, PolicyEntity policy,
 		LocalDateTime checkTime) {
-		return new UserPolicyCheckHistory(isChecked, user, policyVersion, checkTime);
+		return new UserPolicyCheckHistory(isChecked, user, policy, checkTime);
 	}
 }

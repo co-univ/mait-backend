@@ -1,7 +1,6 @@
 package com.coniv.mait.domain.user.service.dto;
 
 import com.coniv.mait.domain.user.entity.PolicyEntity;
-import com.coniv.mait.domain.user.entity.PolicyVersionEntity;
 import com.coniv.mait.domain.user.enums.PolicyCategory;
 import com.coniv.mait.domain.user.enums.PolicyTiming;
 import com.coniv.mait.domain.user.enums.PolicyType;
@@ -19,8 +18,6 @@ public class PolicyDto {
 
 	private Long policyId;
 
-	private Long policyVersionId;
-
 	private String title;
 
 	private String content;
@@ -33,13 +30,12 @@ public class PolicyDto {
 
 	private PolicyCategory category;
 
-	public static PolicyDto from(PolicyEntity policy, PolicyVersionEntity policyVersion) {
+	public static PolicyDto from(PolicyEntity policy) {
 		return new PolicyDto(
 			policy.getId(),
-			policyVersion.getId(),
 			policy.getTitle(),
-			policyVersion.getContent(),
-			policyVersion.getVersion(),
+			policy.getContent(),
+			policy.getVersion(),
 			policy.getPolicyType(),
 			policy.getTiming(),
 			policy.getCategory()
