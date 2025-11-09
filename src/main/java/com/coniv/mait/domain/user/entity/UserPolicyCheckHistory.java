@@ -20,6 +20,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 @Table(
+	name = "user_policy_check_histories",
 	uniqueConstraints = {
 		@UniqueConstraint(name = "uk_user_policy_user_policy", columnNames = {"user_id", "policy_id"})
 	},

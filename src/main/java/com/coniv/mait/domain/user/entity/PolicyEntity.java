@@ -22,6 +22,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 @Table(
+	name = "policies",
 	indexes = {
 		@Index(name = "idx_policy_version_latest", columnList = "code, version DESC")
 	},
