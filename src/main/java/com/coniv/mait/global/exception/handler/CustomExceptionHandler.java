@@ -69,6 +69,7 @@ public class CustomExceptionHandler {
 		log.info("PolicyException 발생: {}, {}", exception.getMessage(), request.getRequestURI());
 		return ResponseEntity.badRequest()
 			.body(ErrorResponse.of(ExceptionCode.POLICY_EXCEPTION, List.of(exception.getMessage())));
+	}
 
 	@ExceptionHandler(S3FileException.class)
 	public ResponseEntity<ErrorResponse> handleS3FileException(S3FileException exception,
