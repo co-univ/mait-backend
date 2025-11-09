@@ -2,6 +2,7 @@ package com.coniv.mait.domain.question.service.component;
 
 import static com.coniv.mait.domain.question.constant.QuestionConstant.*;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import org.springframework.stereotype.Component;
@@ -25,6 +26,8 @@ import lombok.RequiredArgsConstructor;
 @Component
 @RequiredArgsConstructor
 public class MultipleQuestionFactory implements QuestionFactory<MultipleQuestionDto> {
+
+	private static final int DEFAULT_ANSWER_COUNT = 4;
 
 	private final QuestionEntityRepository questionEntityRepository;
 
@@ -65,6 +68,7 @@ public class MultipleQuestionFactory implements QuestionFactory<MultipleQuestion
 		multipleQuestion.updateAnswerCount(calculateAnswerCount(questionDto.getChoices()));
 	}
 
+	@Override
 	public MultipleQuestionEntity create(MultipleQuestionDto dto, QuestionSetEntity questionSet) {
 		return MultipleQuestionEntity.builder()
 			.content(dto.getContent())
@@ -74,6 +78,27 @@ public class MultipleQuestionFactory implements QuestionFactory<MultipleQuestion
 			.questionSet(questionSet)
 			.answerCount(calculateAnswerCount(dto.getChoices()))
 			.build();
+	}
+
+	@Override
+	@Transactional
+	public MultipleQuestionEntity createDefaultQuestion(String lexoRank, QuestionSetEntity questionSet) {
+		MultipleQuestionEntity multipleQuestion = MultipleQuestionEntity.builder()
+			.content(DEFAULT_QUESTION_CONTENT)
+			.displayDelayMilliseconds(MAX_DISPLAY_DELAY_MILLISECONDS)
+			.lexoRank(lexoRank)
+			.answerCount(DEFAULT_ANSWER_COUNT)
+			.questionSet(questionSet)
+			.build();
+
+		questionEntityRepository.save(multipleQuestion);
+
+		final List<MultipleChoiceEntity> choices = new ArrayList<>();
+		for (int number = 1; number <= DEFAULT_ANSWER_COUNT; number++) {
+			choices.add(MultipleChoiceEntity.defaultChoice(number, multipleQuestion));
+		}
+		multipleChoiceEntityRepository.saveAll(choices);
+		return multipleQuestion;
 	}
 
 	public List<MultipleChoiceEntity> createChoices(

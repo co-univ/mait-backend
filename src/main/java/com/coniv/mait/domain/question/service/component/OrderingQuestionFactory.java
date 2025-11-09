@@ -1,5 +1,6 @@
 package com.coniv.mait.domain.question.service.component;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import org.springframework.stereotype.Component;
@@ -24,6 +25,10 @@ import lombok.RequiredArgsConstructor;
 @Component
 @RequiredArgsConstructor
 public class OrderingQuestionFactory implements QuestionFactory<OrderingQuestionDto> {
+
+	private static final int DEFAULT_OPTION_COUNT = 2;
+
+	private static final String DEFAULT_OPTION_CONTENT_PREFIX = "보기 ";
 
 	private final QuestionEntityRepository questionEntityRepository;
 
@@ -63,6 +68,7 @@ public class OrderingQuestionFactory implements QuestionFactory<OrderingQuestion
 		orderingOptionEntityRepository.saveAll(options);
 	}
 
+	@Override
 	public OrderingQuestionEntity create(OrderingQuestionDto dto, QuestionSetEntity questionSetEntity) {
 		return OrderingQuestionEntity.builder()
 			.number(dto.getNumber())
@@ -71,6 +77,35 @@ public class OrderingQuestionFactory implements QuestionFactory<OrderingQuestion
 			.explanation(dto.getExplanation())
 			.displayDelayMilliseconds(RandomUtil.getRandomNumber(QuestionConstant.MAX_DISPLAY_DELAY_MILLISECONDS))
 			.build();
+	}
+
+	@Override
+	@Transactional
+	public OrderingQuestionEntity createDefaultQuestion(String lexoRank, QuestionSetEntity questionSetEntity) {
+		OrderingQuestionEntity orderingQuestion = OrderingQuestionEntity.builder()
+			.content(QuestionConstant.DEFAULT_QUESTION_CONTENT)
+			.displayDelayMilliseconds(QuestionConstant.MAX_DISPLAY_DELAY_MILLISECONDS)
+			.lexoRank(lexoRank)
+			.questionSet(questionSetEntity)
+			.build();
+
+		questionEntityRepository.save(orderingQuestion);
+
+		final List<OrderingOptionEntity> defaultOptions = new ArrayList<>();
+
+		for (int i = 1; i <= DEFAULT_OPTION_COUNT; i++) {
+			OrderingOptionEntity option = OrderingOptionEntity.builder()
+				.content(DEFAULT_OPTION_CONTENT_PREFIX + i)
+				.originOrder(i)
+				.answerOrder(i)
+				.orderingQuestionId(orderingQuestion.getId())
+				.build();
+			defaultOptions.add(option);
+		}
+
+		orderingOptionEntityRepository.saveAll(defaultOptions);
+
+		return orderingQuestion;
 	}
 
 	public List<OrderingOptionEntity> createOrderingQuestionOptions(

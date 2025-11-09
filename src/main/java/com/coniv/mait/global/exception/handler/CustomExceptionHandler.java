@@ -6,11 +6,13 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
+import com.coniv.mait.domain.user.exception.UserRoleException;
 import com.coniv.mait.global.exception.ExceptionCode;
 import com.coniv.mait.global.exception.custom.LoginFailException;
 import com.coniv.mait.global.exception.custom.PolicyException;
 import com.coniv.mait.global.exception.custom.QuestionSetLiveException;
 import com.coniv.mait.global.exception.custom.ResourceNotBelongException;
+import com.coniv.mait.global.exception.custom.S3FileException;
 import com.coniv.mait.global.exception.custom.TeamInviteFailException;
 import com.coniv.mait.global.exception.custom.UserParameterException;
 import com.coniv.mait.global.response.ErrorResponse;
@@ -67,5 +69,21 @@ public class CustomExceptionHandler {
 		log.info("PolicyException 발생: {}, {}", exception.getMessage(), request.getRequestURI());
 		return ResponseEntity.badRequest()
 			.body(ErrorResponse.of(ExceptionCode.POLICY_EXCEPTION, List.of(exception.getMessage())));
+
+	@ExceptionHandler(S3FileException.class)
+	public ResponseEntity<ErrorResponse> handleS3FileException(S3FileException exception,
+		HttpServletRequest request) {
+		log.error("S3FileException 발생: {}, bucket: {}, key: {}, URI: {}",
+			exception.getMessage(), exception.getBucket(), exception.getKey(), request.getRequestURI());
+		return ResponseEntity.status(ExceptionCode.S3_FILE_EXCEPTION.getStatus())
+			.body(ErrorResponse.of(ExceptionCode.S3_FILE_EXCEPTION, List.of(exception.getMessage())));
+	}
+
+	@ExceptionHandler(UserRoleException.class)
+	public ResponseEntity<ErrorResponse> handleUserRoleException(UserRoleException exception,
+		HttpServletRequest request) {
+		log.info("UserRoleException 발생: {}, {}", exception.getMessage(), request.getRequestURI());
+		return ResponseEntity.status(ExceptionCode.USER_ROLE_EXCEPTION.getStatus())
+			.body(ErrorResponse.of(ExceptionCode.USER_ROLE_EXCEPTION, List.of(exception.getMessage())));
 	}
 }

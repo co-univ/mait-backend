@@ -3,7 +3,9 @@ package com.coniv.mait.web.question.controller;
 import java.util.List;
 
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -12,15 +14,22 @@ import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.multipart.MultipartFile;
 
 import com.coniv.mait.domain.question.enums.DeliveryMode;
+import com.coniv.mait.domain.question.service.QuestionSetMaterialService;
 import com.coniv.mait.domain.question.service.QuestionSetService;
 import com.coniv.mait.domain.question.service.dto.QuestionSetDto;
+import com.coniv.mait.domain.user.entity.UserEntity;
 import com.coniv.mait.global.response.ApiResponse;
 import com.coniv.mait.web.question.dto.CreateQuestionSetApiRequest;
 import com.coniv.mait.web.question.dto.CreateQuestionSetApiResponse;
 import com.coniv.mait.web.question.dto.QuestionSetApiResponse;
+import com.coniv.mait.web.question.dto.QuestionSetContainer;
+import com.coniv.mait.web.question.dto.QuestionSetMaterialApiResponse;
+import com.coniv.mait.web.question.dto.QuestionSetsApiResponse;
 import com.coniv.mait.web.question.dto.QuestionValidationApiResponse;
 import com.coniv.mait.web.question.dto.UpdateQuestionSetApiRequest;
 import com.coniv.mait.web.question.dto.UpdateQuestionSetFieldApiRequest;
@@ -30,7 +39,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 
-@Tag(name = "QuestionSet", description = "문제 셋 API")
+@Tag(name = "문제 셋 API", description = "문제 셋 API")
 @RestController
 @RequestMapping("/api/v1/question-sets")
 @RequiredArgsConstructor
@@ -38,25 +47,36 @@ public class QuestionSetController {
 
 	private final QuestionSetService questionSetService;
 
+	private final QuestionSetMaterialService questionSetMaterialService;
+
 	@Operation(summary = "문제 셋 생성 API", description = "새로운 문제 셋을 생성합니다.")
 	@PostMapping
 	public ResponseEntity<ApiResponse<CreateQuestionSetApiResponse>> createQuestionSet(
+		@AuthenticationPrincipal UserEntity user,
 		@Valid @RequestBody CreateQuestionSetApiRequest request) {
-		QuestionSetDto questionSetDto = questionSetService.createQuestionSet(request.subject(), request.creationType());
+		QuestionSetDto questionSetDto = questionSetService.createQuestionSet(request.toQuestionSetDto(),
+			request.counts(), request.instruction(), request.difficulty(), user.getId());
 		return ResponseEntity.status(HttpStatus.CREATED)
 			.body(ApiResponse.ok(CreateQuestionSetApiResponse.from(questionSetDto)));
 	}
 
+	@Operation(summary = "문제 셋에 사용될 파일 업로드 API", description = "문제 셋 생성 과정에서 사용될 파일을 업로드합니다.")
+	@PostMapping(value = "/{questionSetId}/materials", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+	public ResponseEntity<ApiResponse<QuestionSetMaterialApiResponse>> uploadQuestionSetFiles(
+		@PathVariable("questionSetId") Long questionSetId,
+		@RequestPart("material") MultipartFile material) {
+		questionSetMaterialService.uploadQuestionSetMaterial(questionSetId, material);
+		return ResponseEntity.status(HttpStatus.NOT_IMPLEMENTED).body(ApiResponse.noContent());
+	}
+
 	@Operation(summary = "문제 셋 목록 조회")
 	@GetMapping
-	public ResponseEntity<ApiResponse<List<QuestionSetApiResponse>>> getQuestionSets(
+	public ResponseEntity<ApiResponse<QuestionSetsApiResponse>> getQuestionSets(
 		@RequestParam(value = "mode") DeliveryMode mode,
 		@RequestParam("teamId") Long teamId) {
-		List<QuestionSetApiResponse> responses = questionSetService.getQuestionSets(teamId, mode)
-			.stream()
-			.map(QuestionSetApiResponse::from)
-			.toList();
-		return ResponseEntity.ok(ApiResponse.ok(responses));
+		QuestionSetContainer questionSets = questionSetService.getQuestionSets(teamId, mode);
+		QuestionSetsApiResponse response = QuestionSetsApiResponse.of(mode, questionSets);
+		return ResponseEntity.ok(ApiResponse.ok(response));
 	}
 
 	@Operation(summary = "문제 셋 단건 조회")
@@ -73,7 +93,8 @@ public class QuestionSetController {
 		@PathVariable("questionSetId") Long questionSetId,
 		@Valid @RequestBody UpdateQuestionSetApiRequest request) {
 		return ResponseEntity.ok(ApiResponse.ok(QuestionSetApiResponse.from(
-			questionSetService.completeQuestionSet(questionSetId, request.title(), request.subject(), request.mode(),
+			questionSetService.completeQuestionSet(questionSetId, request.title(), request.subject(),
+				request.mode(),
 				request.levelDescription(), request.visibility()))));
 	}
 

@@ -30,14 +30,7 @@ public class FillBlankQuestionDto extends QuestionDto {
 
 	@Override
 	public FillBlankQuestionDto toQuestionDto() {
-		return FillBlankQuestionDto.builder()
-			.id(getId())
-			.content(getContent())
-			.explanation(getExplanation())
-			.number(getNumber())
-			.fillBlankAnswers(fillBlankAnswers)
-			.blankCount(blankCount)
-			.build();
+		return this;
 	}
 
 	public static FillBlankQuestionDto of(FillBlankQuestionEntity fillBlankQuestion,
@@ -59,6 +52,8 @@ public class FillBlankQuestionDto extends QuestionDto {
 			.content(fillBlankQuestion.getContent())
 			.explanation(fillBlankQuestion.getExplanation())
 			.number(fillBlankQuestion.getNumber())
+			.imageUrl(fillBlankQuestion.getImageUrl())
+			.imageId(fillBlankQuestion.getImageId())
 			.questionStatus(fillBlankQuestion.getQuestionStatus())
 			.fillBlankAnswers(fillBlankAnswerDtos)
 			.blankCount(blankCount)

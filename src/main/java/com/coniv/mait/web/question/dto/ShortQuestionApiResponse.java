@@ -34,6 +34,8 @@ public class ShortQuestionApiResponse extends QuestionApiResponse {
 			.explanation(dto.getExplanation())
 			.number(dto.getNumber())
 			.questionStatusType(dto.getQuestionStatus())
+			.imageUrl(dto.getImageUrl())
+			.imageId(dto.getImageId())
 			.type(QuestionType.SHORT)
 			.answers(answers)
 			.answerCount(dto.getAnswerCount())

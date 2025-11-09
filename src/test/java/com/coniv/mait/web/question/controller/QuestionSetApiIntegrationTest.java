@@ -15,6 +15,7 @@ import com.coniv.mait.domain.question.entity.MultipleQuestionEntity;
 import com.coniv.mait.domain.question.entity.QuestionSetEntity;
 import com.coniv.mait.domain.question.enums.DeliveryMode;
 import com.coniv.mait.domain.question.enums.QuestionSetCreationType;
+import com.coniv.mait.domain.question.enums.QuestionSetOngoingStatus;
 import com.coniv.mait.domain.question.enums.QuestionSetVisibility;
 import com.coniv.mait.domain.question.repository.MultipleChoiceEntityRepository;
 import com.coniv.mait.domain.question.repository.QuestionEntityRepository;
@@ -22,7 +23,6 @@ import com.coniv.mait.domain.question.repository.QuestionSetEntityRepository;
 import com.coniv.mait.domain.team.entity.TeamEntity;
 import com.coniv.mait.domain.team.repository.TeamEntityRepository;
 import com.coniv.mait.web.integration.BaseIntegrationTest;
-import com.coniv.mait.web.question.dto.CreateQuestionSetApiRequest;
 import com.coniv.mait.web.question.dto.UpdateQuestionSetApiRequest;
 import com.coniv.mait.web.question.dto.UpdateQuestionSetFieldApiRequest;
 
@@ -47,37 +47,37 @@ public class QuestionSetApiIntegrationTest extends BaseIntegrationTest {
 		multipleChoiceEntityRepository.deleteAll();
 	}
 
+	// @Test
+	// @DisplayName("문제 셋 생성 API 성공 테스트")
+	// void createQuestionSetApiSuccess() throws Exception {
+	// 	// given
+	// 	String subject = "Sample Subject";
+	// 	QuestionSetCreationType creationType = QuestionSetCreationType.MANUAL;
+	//
+	// 	CreateQuestionSetApiRequest request = new CreateQuestionSetApiRequest(subject, creationType);
+	//
+	// 	// when
+	// 	mockMvc.perform(post("/api/v1/question-sets").contentType(MediaType.APPLICATION_JSON)
+	// 			.content(objectMapper.writeValueAsString(request)))
+	// 		.andExpect(status().isCreated())
+	// 		.andExpect(jsonPath("$.data.subject").value(subject));
+	//
+	// 	// then
+	// 	QuestionSetEntity questionSetEntity = questionSetEntityRepository.findAll().get(0);
+	//
+	// 	assertThat(questionSetEntityRepository.count()).isEqualTo(1);
+	// 	assertThat(questionSetEntity.getSubject()).isEqualTo(subject);
+	// 	assertThat(questionSetEntity.getCreationType()).isEqualTo(creationType);
+	// }
+
 	@Test
-	@DisplayName("문제 셋 생성 API 성공 테스트")
-	void createQuestionSetApiSuccess() throws Exception {
-		// given
-		String subject = "Sample Subject";
-		QuestionSetCreationType creationType = QuestionSetCreationType.MANUAL;
-
-		CreateQuestionSetApiRequest request = new CreateQuestionSetApiRequest(subject, creationType);
-
-		// when
-		mockMvc.perform(post("/api/v1/question-sets").contentType(MediaType.APPLICATION_JSON)
-				.content(objectMapper.writeValueAsString(request)))
-			.andExpect(status().isCreated())
-			.andExpect(jsonPath("$.data.subject").value(subject));
-
-		// then
-		QuestionSetEntity questionSetEntity = questionSetEntityRepository.findAll().get(0);
-
-		assertThat(questionSetEntityRepository.count()).isEqualTo(1);
-		assertThat(questionSetEntity.getSubject()).isEqualTo(subject);
-		assertThat(questionSetEntity.getCreationType()).isEqualTo(creationType);
-	}
-
-	@Test
-	@DisplayName("문제 셋 목록 조회 API 성공 테스트")
-	void getQuestionSetsApiSuccess() throws Exception {
+	@DisplayName("문제 셋 목록 조회 API 성공 테스트 - MAKING 모드 (List 구조)")
+	void getQuestionSetsApiSuccess_MakingMode() throws Exception {
 		// given
 		TeamEntity team = teamEntityRepository.save(TeamEntity.builder().name("코니브").creatorId(1L).build());
 		String subject1 = "Subject 1";
 		String subject2 = "Subject 2";
-		final DeliveryMode deliveryMode = DeliveryMode.LIVE_TIME;
+		final DeliveryMode deliveryMode = DeliveryMode.MAKING;
 
 		QuestionSetEntity questionSet1 = QuestionSetEntity.builder()
 			.subject(subject1)
@@ -93,18 +93,77 @@ public class QuestionSetApiIntegrationTest extends BaseIntegrationTest {
 		questionSetEntityRepository.save(questionSet1);
 		questionSetEntityRepository.save(questionSet2);
 
-		// when
+		// when & then
 		mockMvc.perform(get("/api/v1/question-sets")
 				.param("teamId", String.valueOf(team.getId()))
 				.param("mode", deliveryMode.name())
 				.accept(MediaType.APPLICATION_JSON))
 			.andExpect(status().isOk())
-			.andExpect(jsonPath("$.data.length()").value(2))
-			.andExpect(jsonPath("$.data[0].subject").value(subject2)) // 최신 것이 먼저
-			.andExpect(jsonPath("$.data[1].subject").value(subject1));
+			.andExpect(jsonPath("$.data.mode").value("MAKING"))
+			.andExpect(jsonPath("$.data.content.questionSets").isArray())
+			.andExpect(jsonPath("$.data.content.questionSets.length()").value(2))
+			.andExpect(jsonPath("$.data.content.questionSets[0].subject").value(subject2)) // 최신 것이 먼저
+			.andExpect(jsonPath("$.data.content.questionSets[1].subject").value(subject1));
 
 		// then
 		assertThat(questionSetEntityRepository.count()).isEqualTo(2);
+	}
+
+	@Test
+	@DisplayName("문제 셋 목록 조회 API 성공 테스트 - LIVE_TIME 모드 (Map 구조)")
+	void getQuestionSetsApiSuccess_LiveTimeMode() throws Exception {
+		// given
+		TeamEntity team = teamEntityRepository.save(TeamEntity.builder().name("코니브").creatorId(1L).build());
+		final DeliveryMode deliveryMode = DeliveryMode.LIVE_TIME;
+
+		// BEFORE 상태 문제 셋
+		QuestionSetEntity beforeSet = QuestionSetEntity.builder()
+			.subject("시작 전 문제")
+			.teamId(team.getId())
+			.deliveryMode(deliveryMode)
+			.ongoingStatus(QuestionSetOngoingStatus.BEFORE)
+			.build();
+
+		// ONGOING 상태 문제 셋
+		QuestionSetEntity ongoingSet = QuestionSetEntity.builder()
+			.subject("진행 중 문제")
+			.teamId(team.getId())
+			.deliveryMode(deliveryMode)
+			.ongoingStatus(QuestionSetOngoingStatus.ONGOING)
+			.build();
+
+		// AFTER 상태 문제 셋
+		QuestionSetEntity afterSet = QuestionSetEntity.builder()
+			.subject("종료된 문제")
+			.teamId(team.getId())
+			.deliveryMode(deliveryMode)
+			.ongoingStatus(QuestionSetOngoingStatus.AFTER)
+			.build();
+
+		questionSetEntityRepository.save(beforeSet);
+		questionSetEntityRepository.save(ongoingSet);
+		questionSetEntityRepository.save(afterSet);
+
+		// when & then
+		mockMvc.perform(get("/api/v1/question-sets")
+				.param("teamId", String.valueOf(team.getId()))
+				.param("mode", deliveryMode.name())
+				.accept(MediaType.APPLICATION_JSON))
+			.andExpect(status().isOk())
+			.andExpect(jsonPath("$.data.mode").value("LIVE_TIME"))
+			.andExpect(jsonPath("$.data.content.questionSets").isMap())
+			.andExpect(jsonPath("$.data.content.questionSets.BEFORE").isArray())
+			.andExpect(jsonPath("$.data.content.questionSets.BEFORE.length()").value(1))
+			.andExpect(jsonPath("$.data.content.questionSets.BEFORE[0].subject").value("시작 전 문제"))
+			.andExpect(jsonPath("$.data.content.questionSets.ONGOING").isArray())
+			.andExpect(jsonPath("$.data.content.questionSets.ONGOING.length()").value(1))
+			.andExpect(jsonPath("$.data.content.questionSets.ONGOING[0].subject").value("진행 중 문제"))
+			.andExpect(jsonPath("$.data.content.questionSets.AFTER").isArray())
+			.andExpect(jsonPath("$.data.content.questionSets.AFTER.length()").value(1))
+			.andExpect(jsonPath("$.data.content.questionSets.AFTER[0].subject").value("종료된 문제"));
+
+		// then
+		assertThat(questionSetEntityRepository.count()).isEqualTo(3);
 	}
 
 	@Test

@@ -5,12 +5,13 @@ import java.io.IOException;
 import org.springframework.stereotype.Component;
 import org.springframework.web.multipart.MultipartFile;
 
-import com.coniv.mait.global.component.ImageUploader;
-import com.coniv.mait.global.component.dto.ImageInfo;
+import com.coniv.mait.global.component.FileUploader;
+import com.coniv.mait.global.component.dto.FileInfo;
 import com.coniv.mait.global.config.property.S3Property;
 import com.coniv.mait.global.enums.FileExtension;
-import com.coniv.mait.global.exception.code.S3ImageRequestCode;
-import com.coniv.mait.global.exception.custom.S3ImageException;
+import com.coniv.mait.global.exception.code.S3ExceptionCode;
+import com.coniv.mait.global.exception.custom.S3FileException;
+import com.coniv.mait.global.s3.dto.FileType;
 import com.coniv.mait.global.util.FileUtil;
 
 import lombok.RequiredArgsConstructor;
@@ -23,17 +24,20 @@ import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 @Slf4j
 @Component
 @RequiredArgsConstructor
-public class S3ImageUploader implements ImageUploader {
+public class S3FileUploader implements FileUploader {
 
 	private final S3Property s3Property;
 
 	private final S3Client s3Client;
 
 	@Override
-	public ImageInfo uploadImage(final MultipartFile file, final String directory) {
+	public FileInfo uploadFile(final MultipartFile file, final FileType type) {
 		final String originalFilename = file.getOriginalFilename();
 		final FileExtension extension = FileUtil.getFileExtension(originalFilename);
-		final String key = ImageUploader.generateKey(directory, extension);
+
+		validateFileExtensions(type, extension);
+
+		final String key = FileUploader.generateKey(type.getDirectory(), extension);
 
 		PutObjectRequest putObjectRequest = PutObjectRequest.builder()
 			.bucket(s3Property.getBucket())
@@ -51,19 +55,26 @@ public class S3ImageUploader implements ImageUploader {
 				.build()
 			).toExternalForm();
 
-		return ImageInfo.builder()
+		return FileInfo.builder()
 			.bucket(s3Property.getBucket())
 			.key(key)
 			.url(url)
+			.extension(extension)
 			.build();
+	}
+
+	private void validateFileExtensions(FileType type, FileExtension extension) {
+		if (!type.isSupportedExtension(extension)) {
+			throw new S3FileException(S3ExceptionCode.INVALID_TYPE, type.name(), extension.getExtension());
+		}
 	}
 
 	private void putObject(MultipartFile file, PutObjectRequest putObjectRequest) {
 		try {
 			s3Client.putObject(putObjectRequest, RequestBody.fromInputStream(file.getInputStream(), file.getSize()));
 		} catch (IOException e) {
-			log.error("[S3 사진 업로드 과정에서의 에러] bucket: {}, key: {}", putObjectRequest.bucket(), putObjectRequest.key());
-			throw new S3ImageException(S3ImageRequestCode.PUT, putObjectRequest.bucket(), putObjectRequest.key());
+			log.error("[S3 업로드 과정에서의 에러] bucket: {}, key: {}", putObjectRequest.bucket(), putObjectRequest.key());
+			throw new S3FileException(S3ExceptionCode.PUT, putObjectRequest.bucket(), putObjectRequest.key());
 		}
 	}
 }

@@ -68,6 +68,7 @@ public class ShortQuestionFactory implements QuestionFactory<ShortQuestionDto> {
 		shortQuestionEntity.updateAnswerCount(shortAnswers.size());
 	}
 
+	@Override
 	public ShortQuestionEntity create(ShortQuestionDto dto, QuestionSetEntity questionSetEntity) {
 		return ShortQuestionEntity.builder()
 			.number(dto.getNumber())
@@ -77,6 +78,17 @@ public class ShortQuestionFactory implements QuestionFactory<ShortQuestionDto> {
 			.displayDelayMilliseconds(RandomUtil.getRandomNumber(QuestionConstant.MAX_DISPLAY_DELAY_MILLISECONDS))
 			.answerCount(dto.getShortAnswers().size())
 			.build();
+	}
+
+	@Override
+	@Transactional
+	public ShortQuestionEntity createDefaultQuestion(String lexoRank, QuestionSetEntity questionSetEntity) {
+		return questionEntityRepository.save(ShortQuestionEntity.builder()
+			.content(QuestionConstant.DEFAULT_QUESTION_CONTENT)
+			.displayDelayMilliseconds(QuestionConstant.MAX_DISPLAY_DELAY_MILLISECONDS)
+			.lexoRank(lexoRank)
+			.questionSet(questionSetEntity)
+			.build());
 	}
 
 	public List<ShortAnswerEntity> createShortAnswers(List<ShortAnswerDto> shortAnswerDtos,

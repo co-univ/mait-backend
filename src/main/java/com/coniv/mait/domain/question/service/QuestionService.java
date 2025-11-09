@@ -23,6 +23,7 @@ import com.coniv.mait.domain.question.repository.QuestionEntityRepository;
 import com.coniv.mait.domain.question.repository.QuestionSetEntityRepository;
 import com.coniv.mait.domain.question.service.component.QuestionFactory;
 import com.coniv.mait.domain.question.service.dto.CurrentQuestionDto;
+import com.coniv.mait.domain.question.service.dto.QuestionCount;
 import com.coniv.mait.domain.question.service.dto.QuestionDto;
 import com.coniv.mait.domain.question.util.LexoRank;
 import com.coniv.mait.global.exception.custom.ResourceNotBelongException;
@@ -92,6 +93,18 @@ public class QuestionService {
 		return getQuestionFactory(DEFAULT_QUESTION_TYPE).getQuestion(defaultQuestion, true);
 	}
 
+	// @Async todo 재사용성이 없으면 부모스레드와 다르게 비동기로 태워도 될 것 같기도
+	public void createDefaultQuestions(final QuestionSetEntity questionSetEntity, final List<QuestionCount> counts) {
+		String currentRank = LexoRank.middle();
+
+		for (QuestionCount count : counts) {
+			QuestionFactory<QuestionDto> questionFactory = getQuestionFactory(count.type());
+			for (int i = 0; i < count.count(); i++) {
+				questionFactory.createDefaultQuestion(LexoRank.nextAfter(currentRank), questionSetEntity);
+			}
+		}
+	}
+
 	public QuestionDto getQuestion(final Long questionSetId, final Long questionId, final DeliveryMode mode) {
 		QuestionEntity question = questionEntityRepository.findById(questionId)
 			.orElseThrow(() -> new EntityNotFoundException("Question not found with id: " + questionId));
@@ -109,8 +122,7 @@ public class QuestionService {
 	public List<QuestionDto> getQuestions(final Long questionSetId) {
 		return questionEntityRepository.findAllByQuestionSetId(questionSetId).stream()
 			.sorted(Comparator
-				.comparing(QuestionEntity::getNumber, Comparator.nullsLast(Long::compareTo))
-				.thenComparing(QuestionEntity::getLexoRank))
+				.comparing(QuestionEntity::getLexoRank, Comparator.nullsLast(String::compareTo)))
 			.map(question -> getQuestionFactory(question.getType()).getQuestion(question, true))
 			.toList();
 	}
@@ -152,11 +164,14 @@ public class QuestionService {
 
 		QuestionFactory<QuestionDto> questionFactory = getQuestionFactory(questionDto.getType());
 
+		if (question.getImageId() != null && !question.getImageId().equals(questionDto.getImageId())) {
+			questionImageService.unUseExistImage(question.getImageId());
+		}
+
 		if (question.getType() == questionDto.getType()) {
 			question.updateContent(questionDto.getContent());
 			question.updateExplanation(questionDto.getExplanation());
-			question.updateImageUrl(questionDto.getImageUrl());
-			questionImageService.updateImage(question, questionDto.getImageId());
+			question.updateImage(questionDto.getImageUrl(), questionDto.getImageId());
 
 			questionFactory.deleteSubEntities(question);
 			questionFactory.createSubEntities(questionDto, question);
@@ -167,9 +182,12 @@ public class QuestionService {
 		oldQuestionFactory.deleteSubEntities(question);
 		questionEntityRepository.delete(question);
 
-		QuestionEntity createdQuestion = questionFactory.save(questionDto, question.getQuestionSet());
-		createdQuestion.updateImageUrl(questionDto.getImageUrl());
-		questionImageService.updateImage(createdQuestion, questionDto.getImageId());
+		QuestionEntity createdQuestion = questionFactory.create(questionDto, question.getQuestionSet());
+
+		createdQuestion.updateImage(questionDto.getImageUrl(), questionDto.getImageId());
+		createdQuestion.updateLexoRank(question.getLexoRank());
+		questionEntityRepository.save(createdQuestion);
+		questionFactory.createSubEntities(questionDto, createdQuestion);
 
 		return questionFactory.getQuestion(createdQuestion, true);
 	}

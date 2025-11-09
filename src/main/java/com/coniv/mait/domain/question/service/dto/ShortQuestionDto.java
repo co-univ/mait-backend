@@ -30,14 +30,7 @@ public class ShortQuestionDto extends QuestionDto {
 
 	@Override
 	public ShortQuestionDto toQuestionDto() {
-		return ShortQuestionDto.builder()
-			.id(getId())
-			.content(getContent())
-			.explanation(getExplanation())
-			.number(getNumber())
-			.shortAnswers(shortAnswers)
-			.answerCount(answerCount)
-			.build();
+		return this;
 	}
 
 	public static ShortQuestionDto of(ShortQuestionEntity shortQuestion, List<ShortAnswerEntity> shortAnswers,
@@ -53,6 +46,8 @@ public class ShortQuestionDto extends QuestionDto {
 			.content(shortQuestion.getContent())
 			.explanation(shortQuestion.getExplanation())
 			.number(shortQuestion.getNumber())
+			.imageUrl(shortQuestion.getImageUrl())
+			.imageId(shortQuestion.getImageId())
 			.shortAnswers(shortAnswerDtos)
 			.questionStatus(shortQuestion.getQuestionStatus())
 			.answerCount(shortAnswers.size())

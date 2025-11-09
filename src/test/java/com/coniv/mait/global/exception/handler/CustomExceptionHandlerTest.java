@@ -14,7 +14,10 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 
+import com.coniv.mait.domain.user.exception.UserRoleException;
+import com.coniv.mait.global.exception.code.S3ExceptionCode;
 import com.coniv.mait.global.exception.custom.ResourceNotBelongException;
+import com.coniv.mait.global.exception.custom.S3FileException;
 import com.coniv.mait.global.exception.custom.UserParameterException;
 import com.coniv.mait.global.response.ErrorResponse;
 
@@ -68,5 +71,64 @@ class CustomExceptionHandlerTest {
 		assertNotNull(errorResponse);
 		assertTrue(errorResponse.getBody().getReasons().contains(errorMessage));
 		assertThat(errorResponse.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
+	}
+
+	@Test
+	@DisplayName("S3FileException 처리 테스트 - PUT 오류")
+	void handleS3FileExceptionForPut() {
+		// given
+		String bucket = "mait-image-bucket";
+		String key = "images/test.jpg";
+		S3ExceptionCode code = S3ExceptionCode.PUT;
+		S3FileException exception = new S3FileException(code, bucket, key);
+
+		// when
+		ResponseEntity<ErrorResponse> errorResponse = customExceptionHandler.handleS3FileException(
+			exception, httpServletRequest);
+
+		// then
+		assertNotNull(errorResponse);
+		assertThat(errorResponse.getStatusCode()).isEqualTo(HttpStatus.INTERNAL_SERVER_ERROR);
+		assertTrue(errorResponse.getBody().getReasons().contains(code.getMessage()));
+		assertThat(errorResponse.getBody().getCode()).isEqualTo("F-001");
+	}
+
+	@Test
+	@DisplayName("S3FileException 처리 테스트 - INVALID_TYPE 오류")
+	void handleS3FileExceptionForInvalidType() {
+		// given
+		String bucket = "mait-image-bucket";
+		String key = "images/test.txt";
+		S3ExceptionCode code = S3ExceptionCode.INVALID_TYPE;
+		S3FileException exception = new S3FileException(code, bucket, key);
+
+		// when
+		ResponseEntity<ErrorResponse> errorResponse = customExceptionHandler.handleS3FileException(
+			exception, httpServletRequest);
+
+		// then
+		assertNotNull(errorResponse);
+		assertThat(errorResponse.getStatusCode()).isEqualTo(HttpStatus.INTERNAL_SERVER_ERROR);
+		assertTrue(errorResponse.getBody().getReasons().contains(code.getMessage()));
+		assertThat(errorResponse.getBody().getMessage()).isEqualTo("S3 파일 처리 중 오류가 발생했습니다.");
+	}
+
+	@Test
+	@DisplayName("UserRoleException 처리 테스트")
+	void handleUserRoleException() {
+		// given
+		String errorMessage = "문제 세트 생성 권한이 없습니다.";
+		UserRoleException exception = new UserRoleException(errorMessage);
+
+		// when
+		ResponseEntity<ErrorResponse> errorResponse = customExceptionHandler.handleUserRoleException(
+			exception, httpServletRequest);
+
+		// then
+		assertNotNull(errorResponse);
+		assertTrue(errorResponse.getBody().getReasons().contains(errorMessage));
+		assertThat(errorResponse.getStatusCode()).isEqualTo(HttpStatus.FORBIDDEN);
+		assertThat(errorResponse.getBody().getCode()).isEqualTo("C-008");
+		assertThat(errorResponse.getBody().getMessage()).isEqualTo("사용자 권한이 부족합니다.");
 	}
 }

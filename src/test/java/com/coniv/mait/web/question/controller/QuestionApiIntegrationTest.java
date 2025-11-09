@@ -485,11 +485,12 @@ public class QuestionApiIntegrationTest extends BaseIntegrationTest {
 				savedQuestionSet.getId(), savedQuestion.getId())
 				.contentType(MediaType.APPLICATION_JSON)
 				.content(json))
-			.andExpect(status().isOk())
-			.andExpect(jsonPath("$.isSuccess").value(true))
-			.andExpect(jsonPath("$.data").exists())
-			.andExpect(jsonPath("$.data.content").value("수정된 주관식 문제 내용"))
-			.andExpect(jsonPath("$.data.explanation").value("수정된 문제 해설"));
+			.andExpectAll(status().isOk(),
+				jsonPath("$.isSuccess").value(true),
+				jsonPath("$.data").exists(),
+				jsonPath("$.data.content").value("수정된 주관식 문제 내용"),
+				jsonPath("$.data.explanation").value("수정된 문제 해설")
+			);
 
 		// then - 수정된 문제 확인
 		ShortQuestionEntity updatedQuestion = (ShortQuestionEntity)questionEntityRepository

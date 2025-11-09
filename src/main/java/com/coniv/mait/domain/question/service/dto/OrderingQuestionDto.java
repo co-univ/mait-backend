@@ -43,6 +43,8 @@ public class OrderingQuestionDto extends QuestionDto {
 			.explanation(orderingQuestion.getExplanation())
 			.number(orderingQuestion.getNumber())
 			.questionStatus(orderingQuestion.getQuestionStatus())
+			.imageUrl(orderingQuestion.getImageUrl())
+			.imageId(orderingQuestion.getImageId())
 			.options(optionDtos)
 			.build();
 	}
