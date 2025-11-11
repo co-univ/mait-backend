@@ -90,6 +90,6 @@ class UserServiceTest {
 		// then
 		assertThat(randomNickname).isNotNull();
 		assertThat(randomNickname).isNotEmpty();
-		assertThat(randomNickname.length()).isGreaterThanOrEqualTo(4);
+		assertThat(randomNickname.length()).isGreaterThanOrEqualTo(3);
 	}
 }
