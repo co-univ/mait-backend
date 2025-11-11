@@ -5,6 +5,7 @@ import java.util.List;
 import com.coniv.mait.domain.question.entity.ShortAnswerEntity;
 import com.coniv.mait.domain.question.entity.ShortQuestionEntity;
 import com.coniv.mait.domain.question.enums.QuestionType;
+import com.fasterxml.jackson.annotation.JsonProperty;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -19,7 +20,8 @@ import lombok.experimental.SuperBuilder;
 @NoArgsConstructor
 public class ShortQuestionDto extends QuestionDto {
 
-	private List<ShortAnswerDto> shortAnswers;
+	@JsonProperty("answers")
+	private List<ShortAnswerDto> answers;
 
 	private Integer answerCount;
 
@@ -48,7 +50,7 @@ public class ShortQuestionDto extends QuestionDto {
 			.number(shortQuestion.getNumber())
 			.imageUrl(shortQuestion.getImageUrl())
 			.imageId(shortQuestion.getImageId())
-			.shortAnswers(shortAnswerDtos)
+			.answers(shortAnswerDtos)
 			.questionStatus(shortQuestion.getQuestionStatus())
 			.answerCount(shortAnswers.size())
 			.build();

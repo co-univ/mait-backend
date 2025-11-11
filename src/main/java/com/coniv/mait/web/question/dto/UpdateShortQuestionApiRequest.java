@@ -28,7 +28,7 @@ public class UpdateShortQuestionApiRequest extends UpdateQuestionApiRequest {
 			.imageUrl(getImageUrl())
 			.imageId(getImageId())
 			.number(getNumber())
-			.shortAnswers(shortAnswers)
+			.answers(shortAnswers)
 			.build();
 	}
 }

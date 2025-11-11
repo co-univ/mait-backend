@@ -25,7 +25,7 @@ public class CreateShortQuestionApiRequest extends CreateQuestionApiRequest {
 			.content(getContent())
 			.explanation(getExplanation())
 			.number(getNumber())
-			.shortAnswers(shortAnswers)
+			.answers(shortAnswers)
 			.build();
 	}
 }

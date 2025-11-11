@@ -60,7 +60,7 @@ public class FillBlankQuestionFactory implements QuestionFactory<FillBlankQuesti
 
 	@Override
 	public void createSubEntities(FillBlankQuestionDto questionDto, QuestionEntity question) {
-		List<FillBlankAnswerEntity> fillBlankAnswers = createFillBlankAnswers(questionDto.getFillBlankAnswers(),
+		List<FillBlankAnswerEntity> fillBlankAnswers = createFillBlankAnswers(questionDto.getAnswers(),
 			(FillBlankQuestionEntity)question);
 		fillBlankAnswerEntityRepository.saveAll(fillBlankAnswers);
 	}

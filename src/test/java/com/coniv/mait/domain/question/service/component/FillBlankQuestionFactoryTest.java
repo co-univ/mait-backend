@@ -64,7 +64,7 @@ class FillBlankQuestionFactoryTest {
 			.content("빈칸에 들어갈 적절한 단어는 ___입니다.")
 			.explanation("해설")
 			.number(1L)
-			.fillBlankAnswers(answers)
+			.answers(answers)
 			.build();
 
 		// when
@@ -198,7 +198,7 @@ class FillBlankQuestionFactoryTest {
 
 		FillBlankQuestionDto questionDto = FillBlankQuestionDto.builder()
 			.content("빈칸채우기 문제")
-			.fillBlankAnswers(answers)
+			.answers(answers)
 			.build();
 
 		FillBlankQuestionEntity question = mock(FillBlankQuestionEntity.class);

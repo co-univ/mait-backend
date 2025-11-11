@@ -29,7 +29,7 @@ public class CreateFillBlankQuestionApiRequest extends CreateQuestionApiRequest 
 			.content(getContent())
 			.explanation(getExplanation())
 			.number(getNumber())
-			.fillBlankAnswers(getFillBlankAnswers())
+			.answers(getFillBlankAnswers())
 			.build();
 	}
 }

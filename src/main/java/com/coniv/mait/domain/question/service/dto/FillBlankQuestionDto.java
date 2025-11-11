@@ -19,7 +19,7 @@ import lombok.experimental.SuperBuilder;
 @NoArgsConstructor
 public class FillBlankQuestionDto extends QuestionDto {
 
-	private List<FillBlankAnswerDto> fillBlankAnswers;
+	private List<FillBlankAnswerDto> answers;
 
 	private Integer blankCount;
 
@@ -55,7 +55,7 @@ public class FillBlankQuestionDto extends QuestionDto {
 			.imageUrl(fillBlankQuestion.getImageUrl())
 			.imageId(fillBlankQuestion.getImageId())
 			.questionStatus(fillBlankQuestion.getQuestionStatus())
-			.fillBlankAnswers(fillBlankAnswerDtos)
+			.answers(fillBlankAnswerDtos)
 			.blankCount(blankCount)
 			.build();
 	}

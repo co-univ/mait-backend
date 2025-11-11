@@ -63,7 +63,7 @@ class ShortQuestionFactoryTest {
 			.content("주관식 문제 내용")
 			.explanation("해설")
 			.number(1L)
-			.shortAnswers(answers)
+			.answers(answers)
 			.build();
 
 		// when
@@ -197,7 +197,7 @@ class ShortQuestionFactoryTest {
 
 		ShortQuestionDto questionDto = ShortQuestionDto.builder()
 			.content("주관식 문제")
-			.shortAnswers(answers)
+			.answers(answers)
 			.build();
 
 		ShortQuestionEntity question = mock(ShortQuestionEntity.class);
