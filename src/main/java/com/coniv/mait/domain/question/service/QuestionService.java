@@ -310,9 +310,9 @@ public class QuestionService {
 			aiRequestStatusManager.updateStatus(questionSetEntity.getId(), AiRequestStatus.PROCESSING);
 			List<QuestionDto> questions = createdQuestions.getContent();
 
-			for (QuestionDto question : questions) {
-				QuestionFactory<QuestionDto> questionFactory = getQuestionFactory(question.getType());
-				questionFactory.create(question, questionSetEntity);
+			for (QuestionDto questionDto : questions) {
+				QuestionFactory<QuestionDto> questionFactory = getQuestionFactory(questionDto.getType());
+				questionFactory.save(questionDto, questionSetEntity);
 			}
 
 			aiRequestStatusManager.updateStatus(questionSetEntity.getId(), AiRequestStatus.COMPLETED);
