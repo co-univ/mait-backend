@@ -21,4 +21,15 @@ public class AsyncConfig {
 		taskExecutor.initialize();
 		return taskExecutor;
 	}
+
+	@Bean("aiUploadThreadPoolExecutor")
+	public Executor aiUploadThreadPoolExecutor() {
+		ThreadPoolTaskExecutor taskExecutor = new ThreadPoolTaskExecutor();
+		taskExecutor.setCorePoolSize(20);
+		taskExecutor.setMaxPoolSize(100);
+		taskExecutor.setQueueCapacity(10000);
+		taskExecutor.setThreadNamePrefix("mait-ai");
+		taskExecutor.initialize();
+		return taskExecutor;
+	}
 }
