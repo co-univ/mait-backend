@@ -37,7 +37,7 @@ public class PolicyController {
 	@Operation(summary = "타이밍별 최신 정책 목록 조회")
 	@GetMapping
 	public ResponseEntity<ApiResponse<List<LatestPoliciesApiResponse>>> findLatestPolicies(
-		@RequestParam PolicyTiming timing) {
+		@RequestParam("timing") PolicyTiming timing) {
 		List<PolicyDto> policies = policyService.findLatestPolicies(timing);
 
 		return ResponseEntity.ok(ApiResponse.ok(policies.stream().map(LatestPoliciesApiResponse::from).toList()));
@@ -46,7 +46,7 @@ public class PolicyController {
 	@Operation(summary = "타이밍별 미확인 정책 목록 조회")
 	@GetMapping("/unchecked/{userId}")
 	public ResponseEntity<ApiResponse<List<UnconfirmedPoliciesApiResponse>>> findUnConfirmedPolicies(
-		@RequestParam PolicyTiming timing, @PathVariable("userId") Long userId) {
+		@RequestParam("timing") PolicyTiming timing, @PathVariable("userId") Long userId) {
 		List<PolicyDto> policies = policyService.findUnConfirmedPolicies(userId, timing);
 
 		return ResponseEntity.ok(ApiResponse.ok(policies.stream().map(UnconfirmedPoliciesApiResponse::from).toList()));
