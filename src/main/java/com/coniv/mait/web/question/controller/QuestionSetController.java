@@ -18,12 +18,14 @@ import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
+import com.coniv.mait.domain.question.enums.AiRequestStatus;
 import com.coniv.mait.domain.question.enums.DeliveryMode;
 import com.coniv.mait.domain.question.service.QuestionSetMaterialService;
 import com.coniv.mait.domain.question.service.QuestionSetService;
 import com.coniv.mait.domain.question.service.dto.QuestionSetDto;
 import com.coniv.mait.domain.user.entity.UserEntity;
 import com.coniv.mait.global.response.ApiResponse;
+import com.coniv.mait.web.question.dto.AiRequestStatusApiResponse;
 import com.coniv.mait.web.question.dto.CreateQuestionSetApiRequest;
 import com.coniv.mait.web.question.dto.CreateQuestionSetApiResponse;
 import com.coniv.mait.web.question.dto.QuestionSetApiResponse;
@@ -116,5 +118,13 @@ public class QuestionSetController {
 			.map(QuestionValidationApiResponse::from)
 			.toList();
 		return ResponseEntity.ok(ApiResponse.ok(responses));
+	}
+
+	@Operation(summary = "AI 문제 제작 상태 조회", description = "AI 문제 제작 상태를 조회합니다.")
+	@GetMapping("/{questionSetId}/ai-status")
+	public ResponseEntity<ApiResponse<AiRequestStatusApiResponse>> getAiRequestStatus(
+		@PathVariable("questionSetId") Long questionSetId) {
+		AiRequestStatus status = questionSetService.getAiRequestStatus(questionSetId);
+		return ResponseEntity.ok(ApiResponse.ok(AiRequestStatusApiResponse.of(questionSetId, status)));
 	}
 }

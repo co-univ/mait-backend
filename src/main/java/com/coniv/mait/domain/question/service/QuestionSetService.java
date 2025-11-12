@@ -9,9 +9,11 @@ import org.springframework.transaction.annotation.Transactional;
 import com.coniv.mait.domain.question.dto.MaterialDto;
 import com.coniv.mait.domain.question.entity.QuestionEntity;
 import com.coniv.mait.domain.question.entity.QuestionSetEntity;
+import com.coniv.mait.domain.question.enums.AiRequestStatus;
 import com.coniv.mait.domain.question.enums.DeliveryMode;
 import com.coniv.mait.domain.question.enums.QuestionSetCreationType;
 import com.coniv.mait.domain.question.enums.QuestionSetVisibility;
+import com.coniv.mait.domain.question.repository.AiRequestStatusManager;
 import com.coniv.mait.domain.question.repository.QuestionEntityRepository;
 import com.coniv.mait.domain.question.repository.QuestionSetEntityRepository;
 import com.coniv.mait.domain.question.service.component.QuestionChecker;
@@ -39,6 +41,8 @@ public class QuestionSetService {
 	private final QuestionChecker questionChecker;
 
 	private final TeamRoleValidator teamRoleValidator;
+
+	private final AiRequestStatusManager aiRequestStatusManager;
 
 	@Transactional
 	public QuestionSetDto createQuestionSet(final QuestionSetDto questionSetDto, final List<QuestionCount> counts,
@@ -132,5 +136,9 @@ public class QuestionSetService {
 			.map(questionChecker::validateQuestion)
 			.filter(dto -> !dto.isValid())
 			.toList();
+	}
+
+	public AiRequestStatus getAiRequestStatus(Long questionSetId) {
+		return aiRequestStatusManager.getStatus(questionSetId);
 	}
 }

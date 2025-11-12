@@ -19,6 +19,7 @@ public enum AiRequestStatus {
 	 */
 	COMPLETED,
 
+	NOT_FOUND,
 	/**
 	 * 실패 (AI 서버 에러, 타임아웃 등)
 	 */

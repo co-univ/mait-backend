@@ -19,5 +19,14 @@ public class AiRequestStatusManager {
 		String key = KEY_PREFIX + questionSetId;
 		redisTemplate.opsForValue().set(key, status.name());
 	}
+
+	public AiRequestStatus getStatus(Long questionSetId) {
+		String key = KEY_PREFIX + questionSetId;
+		String value = redisTemplate.opsForValue().get(key);
+		if (value == null) {
+			return AiRequestStatus.NOT_FOUND;
+		}
+		return AiRequestStatus.valueOf(value);
+	}
 }
 
