@@ -60,7 +60,7 @@ public class ShortQuestionFactory implements QuestionFactory<ShortQuestionDto> {
 	@Transactional
 	@Override
 	public void createSubEntities(ShortQuestionDto questionDto, QuestionEntity question) {
-		List<ShortAnswerEntity> shortAnswers = createShortAnswers(questionDto.getShortAnswers(),
+		List<ShortAnswerEntity> shortAnswers = createShortAnswers(questionDto.getAnswers(),
 			(ShortQuestionEntity)question);
 		shortAnswerEntityRepository.saveAll(shortAnswers);
 
@@ -76,7 +76,7 @@ public class ShortQuestionFactory implements QuestionFactory<ShortQuestionDto> {
 			.content(dto.getContent())
 			.explanation(dto.getExplanation())
 			.displayDelayMilliseconds(RandomUtil.getRandomNumber(QuestionConstant.MAX_DISPLAY_DELAY_MILLISECONDS))
-			.answerCount(dto.getShortAnswers().size())
+			.answerCount(dto.getAnswers().size())
 			.build();
 	}
 

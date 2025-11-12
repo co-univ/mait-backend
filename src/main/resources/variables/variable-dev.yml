@@ -9,3 +9,7 @@ mait:
     http-only: true
     secure: false
     same-site: "Lax"
+
+api:
+  ai:
+    url: "https://api.dev-ai.mait.kr"

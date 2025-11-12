@@ -8,16 +8,24 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.coniv.mait.domain.question.dto.MaterialDto;
 import com.coniv.mait.domain.question.entity.MultipleChoiceEntity;
 import com.coniv.mait.domain.question.entity.MultipleQuestionEntity;
 import com.coniv.mait.domain.question.entity.QuestionEntity;
 import com.coniv.mait.domain.question.entity.QuestionSetEntity;
+import com.coniv.mait.domain.question.enums.AiRequestStatus;
 import com.coniv.mait.domain.question.enums.DeliveryMode;
 import com.coniv.mait.domain.question.enums.QuestionStatusType;
 import com.coniv.mait.domain.question.enums.QuestionType;
+import com.coniv.mait.domain.question.external.AiCreateApiService;
+import com.coniv.mait.domain.question.external.dto.AiCreateRequest;
+import com.coniv.mait.domain.question.external.dto.AiCreateResponse;
+import com.coniv.mait.domain.question.repository.AiRequestStatusManager;
 import com.coniv.mait.domain.question.repository.MultipleChoiceEntityRepository;
 import com.coniv.mait.domain.question.repository.QuestionEntityRepository;
 import com.coniv.mait.domain.question.repository.QuestionSetEntityRepository;
@@ -29,7 +37,9 @@ import com.coniv.mait.domain.question.util.LexoRank;
 import com.coniv.mait.global.exception.custom.ResourceNotBelongException;
 
 import jakarta.persistence.EntityNotFoundException;
+import lombok.extern.slf4j.Slf4j;
 
+@Slf4j
 @Service
 public class QuestionService {
 
@@ -45,19 +55,28 @@ public class QuestionService {
 
 	private final MultipleChoiceEntityRepository multipleChoiceEntityRepository;
 
+	private final AiCreateApiService aiCreateApiService;
+
+	private final AiRequestStatusManager aiRequestStatusManager;
+
 	@Autowired
 	public QuestionService(
 		List<QuestionFactory<?>> factories,
 		QuestionEntityRepository questionEntityRepository,
 		QuestionSetEntityRepository questionSetEntityRepository,
 		MultipleChoiceEntityRepository multipleChoiceEntityRepository,
-		QuestionImageService questionImageService) {
+		QuestionImageService questionImageService,
+		AiCreateApiService aiCreateApiService,
+		AiRequestStatusManager aiRequestStatusManager
+	) {
 		questionFactories = factories.stream()
 			.collect(Collectors.toUnmodifiableMap(QuestionFactory::getQuestionType, Function.identity()));
 		this.questionEntityRepository = questionEntityRepository;
 		this.questionSetEntityRepository = questionSetEntityRepository;
 		this.questionImageService = questionImageService;
 		this.multipleChoiceEntityRepository = multipleChoiceEntityRepository;
+		this.aiCreateApiService = aiCreateApiService;
+		this.aiRequestStatusManager = aiRequestStatusManager;
 	}
 
 	public <T extends QuestionDto> void createQuestion(
@@ -252,5 +271,71 @@ public class QuestionService {
 
 		String newRank = LexoRank.between(prevRank, nextRank);
 		sourceQuestion.updateRank(newRank);
+	}
+
+	/**
+	 * AI 문제 생성 (비동기)
+	 *
+	 * Redis에 상태 저장:
+	 * - PROCESSING: 시작 시
+	 * - COMPLETED: 성공 시 (문제 수 포함)
+	 * - FAILED: 실패 시 (에러 메시지 포함)
+	 */
+	@Async("maitThreadPoolExecutor")
+	@Transactional(propagation = Propagation.REQUIRES_NEW)
+	public void createAiGeneratedQuestions(
+		Long questionSetId,
+		List<QuestionCount> counts,
+		List<MaterialDto> materials,
+		String instruction,
+		String difficulty
+	) {
+		aiRequestStatusManager.updateStatus(questionSetId, AiRequestStatus.PENDING);
+		log.info("[AI 문제 생성 시작] - QuestionSetId: {}, Status: PROCESSING", questionSetId);
+
+		// 비동기 트랜잭션 내에서 엔티티 다시 조회
+		QuestionSetEntity questionSetEntity = questionSetEntityRepository.findById(questionSetId)
+			.orElseThrow(() -> new EntityNotFoundException("QuestionSet not found with id: " + questionSetId));
+
+		AiCreateRequest aiRequest = AiCreateRequest.builder()
+			.subject(questionSetEntity.getSubject())
+			.urls(materials.stream().map(MaterialDto::getUrl).toList())
+			.instruction(instruction)
+			.difficulty(difficulty)
+			.counts(counts.stream()
+				.collect(
+					Collectors.toUnmodifiableMap(
+						cc -> cc.type().name(),
+						QuestionCount::count))
+			)
+			.build();
+
+		try {
+			AiCreateResponse createdQuestions = aiCreateApiService.createQuestionSet(aiRequest);
+			log.info("response: {}", createdQuestions.getContent());
+			aiRequestStatusManager.updateStatus(questionSetId, AiRequestStatus.PROCESSING);
+			List<QuestionDto> questions = createdQuestions.getContent();
+			String currentRank = LexoRank.middle();
+
+			for (QuestionDto questionDto : questions) {
+				QuestionFactory<QuestionDto> questionFactory = getQuestionFactory(questionDto.getType());
+				QuestionEntity question = questionFactory.create(questionDto, questionSetEntity);
+				question.updateLexoRank(currentRank);
+
+				questionEntityRepository.save(question);
+				questionFactory.createSubEntities(questionDto, question);
+				currentRank = LexoRank.nextAfter(currentRank);
+			}
+
+			aiRequestStatusManager.updateStatus(questionSetId, AiRequestStatus.COMPLETED);
+			log.info("[AI 문제 생성 완료] - QuestionSetId: {}, 문제 수: {}", questionSetId, questions.size());
+
+		} catch (Exception e) {
+			log.error("[AI 문제 생성 실패] - QuestionSetId: {}", questionSetId, e);
+			// Redis 상태는 트랜잭션 외부에서 관리되므로 실패 상태 저장
+			aiRequestStatusManager.updateStatus(questionSetId, AiRequestStatus.FAILED);
+			// 트랜잭션 롤백을 위해 예외를 다시 던짐
+			throw new RuntimeException("AI 문제 생성 중 오류 발생", e);
+		}
 	}
 }

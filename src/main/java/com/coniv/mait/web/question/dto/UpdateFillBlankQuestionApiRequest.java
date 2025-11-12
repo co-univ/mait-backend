@@ -28,7 +28,7 @@ public class UpdateFillBlankQuestionApiRequest extends UpdateQuestionApiRequest 
 			.imageUrl(getImageUrl())
 			.imageId(getImageId())
 			.number(getNumber())
-			.fillBlankAnswers(fillBlankAnswers)
+			.answers(fillBlankAnswers)
 			.build();
 	}
 }

@@ -20,7 +20,7 @@ public class FillBlankAnswerDto {
 	private String answer;
 
 	@Schema(description = "빈칸 문제의 메인 정답 여부", requiredMode = Schema.RequiredMode.REQUIRED)
-	private boolean isMain;
+	private boolean main;
 
 	@Schema(description = "빈칸 문제 정답 그룹 번호", requiredMode = Schema.RequiredMode.REQUIRED)
 	@NotNull(message = "빈칸 문제 정답 그룹 번호는 필수입니다.")
@@ -30,7 +30,7 @@ public class FillBlankAnswerDto {
 		return FillBlankAnswerDto.builder()
 			.id(fillBlankAnswerEntity.getId())
 			.answer(answerVisible ? fillBlankAnswerEntity.getAnswer() : null)
-			.isMain(fillBlankAnswerEntity.isMain())
+			.main(fillBlankAnswerEntity.isMain())
 			.number(fillBlankAnswerEntity.getNumber())
 			.build();
 	}

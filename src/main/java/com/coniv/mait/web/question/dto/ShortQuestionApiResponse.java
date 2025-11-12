@@ -22,8 +22,8 @@ public class ShortQuestionApiResponse extends QuestionApiResponse {
 	private final Integer answerCount;
 
 	public static ShortQuestionApiResponse from(ShortQuestionDto dto) {
-		List<ShortAnswerApiResponse> answers = dto.getShortAnswers() != null
-			? dto.getShortAnswers().stream()
+		List<ShortAnswerApiResponse> answers = dto.getAnswers() != null
+			? dto.getAnswers().stream()
 			.map(ShortAnswerApiResponse::from)
 			.toList()
 			: null;

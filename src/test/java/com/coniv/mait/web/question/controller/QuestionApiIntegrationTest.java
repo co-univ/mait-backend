@@ -461,12 +461,12 @@ public class QuestionApiIntegrationTest extends BaseIntegrationTest {
 		List<ShortAnswerDto> updatedAnswers = List.of(
 			ShortAnswerDto.builder()
 				.answer("수정된 정답1")
-				.isMain(true)
+				.main(true)
 				.number(1L)
 				.build(),
 			ShortAnswerDto.builder()
 				.answer("수정된 정답2")
-				.isMain(false)
+				.main(false)
 				.number(1L)  // number 1로 변경하여 같은 번호에 main/일반 답안 구성
 				.build()
 		);
@@ -722,17 +722,17 @@ public class QuestionApiIntegrationTest extends BaseIntegrationTest {
 		List<FillBlankAnswerDto> updatedAnswers = List.of(
 			FillBlankAnswerDto.builder()
 				.answer("수정된정답1")
-				.isMain(true)
+				.main(true)
 				.number(1L)
 				.build(),
 			FillBlankAnswerDto.builder()
 				.answer("수정된정답1_대안")
-				.isMain(false)
+				.main(false)
 				.number(1L)
 				.build(),
 			FillBlankAnswerDto.builder()
 				.answer("수정된정답2")
-				.isMain(true)
+				.main(true)
 				.number(2L)
 				.build()
 		);

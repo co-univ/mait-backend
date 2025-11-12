@@ -18,8 +18,9 @@ public class ShortAnswerDto {
 	private Long id;
 
 	private String answer;
+
 	@Schema(description = "주관식 문제의 메인 정답 여부", requiredMode = Schema.RequiredMode.REQUIRED)
-	private boolean isMain;
+	private boolean main;
 
 	@Schema(description = "주관식 문제 정답 그룹 번호", requiredMode = Schema.RequiredMode.REQUIRED)
 	@NotNull(message = "주관식 문제 정답 그룹 번호는 필수입니다.")
@@ -29,7 +30,7 @@ public class ShortAnswerDto {
 		return ShortAnswerDto.builder()
 			.id(shortAnswerEntity.getId())
 			.answer(answerVisible ? shortAnswerEntity.getAnswer() : null)
-			.isMain(shortAnswerEntity.isMain())
+			.main(shortAnswerEntity.isMain())
 			.number(shortAnswerEntity.getNumber())
 			.build();
 	}

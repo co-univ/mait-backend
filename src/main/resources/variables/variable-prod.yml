@@ -10,3 +10,7 @@ mait:
     http-only: true
     secure: true
     same-site: "None"
+
+api:
+  ai:
+    url: "https://api.ai.mait.kr"

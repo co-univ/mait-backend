@@ -22,8 +22,8 @@ public class FillBlankQuestionApiResponse extends QuestionApiResponse {
 	private final Integer blankCount;
 
 	public static FillBlankQuestionApiResponse from(FillBlankQuestionDto dto) {
-		List<FillBlankAnswerApiResponse> answers = dto.getFillBlankAnswers() != null
-			? dto.getFillBlankAnswers().stream()
+		List<FillBlankAnswerApiResponse> answers = dto.getAnswers() != null
+			? dto.getAnswers().stream()
 			.map(FillBlankAnswerApiResponse::from)
 			.toList()
 			: null;

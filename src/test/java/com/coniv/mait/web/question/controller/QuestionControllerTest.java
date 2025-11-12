@@ -218,12 +218,12 @@ class QuestionControllerTest {
 		var shortAnswers = List.of(
 			ShortAnswerDto.builder()
 				.answer("정답1")
-				.isMain(true)
+				.main(true)
 				.number(1L)
 				.build(),
 			ShortAnswerDto.builder()
 				.answer("정답2")
-				.isMain(false)
+				.main(false)
 				.number(2L)
 				.build()
 		);
@@ -283,7 +283,7 @@ class QuestionControllerTest {
 					setContent("주관식 문제 내용");
 					setExplanation("문제 해설");
 					setShortAnswers(List.of(
-						ShortAnswerDto.builder().answer("정답1").isMain(true).number(1L).build()
+						ShortAnswerDto.builder().answer("정답1").main(true).number(1L).build()
 					));
 					setNumber(null);
 				}
@@ -420,12 +420,12 @@ class QuestionControllerTest {
 		var fillBlankAnswers = List.of(
 			FillBlankAnswerDto.builder()
 				.answer("정답1")
-				.isMain(true)
+				.main(true)
 				.number(1L)
 				.build(),
 			FillBlankAnswerDto.builder()
 				.answer("정답2")
-				.isMain(false)
+				.main(false)
 				.number(2L)
 				.build()
 		);
@@ -489,7 +489,7 @@ class QuestionControllerTest {
 		var fillBlankAnswers = List.of(
 			FillBlankAnswerDto.builder()
 				.answer("정답1")
-				.isMain(true)
+				.main(true)
 				.number(1L)
 				.build()
 		);
@@ -630,7 +630,7 @@ class QuestionControllerTest {
 
 		ShortAnswerDto shortAnswerDto = ShortAnswerDto.builder()
 			.answer("주관식 정답")
-			.isMain(true)
+			.main(true)
 			.number(1L)
 			.build();
 
@@ -640,7 +640,7 @@ class QuestionControllerTest {
 				.content("주관식 문제 1")
 				.explanation("주관식 문제 해설")
 				.number(2L)
-				.shortAnswers(List.of(shortAnswerDto))
+				.answers(List.of(shortAnswerDto))
 				.build();
 
 		List<com.coniv.mait.domain.question.service.dto.QuestionDto> mockQuestions =
@@ -696,12 +696,12 @@ class QuestionControllerTest {
 		var shortAnswers = List.of(
 			ShortAnswerDto.builder()
 				.answer("수정된 정답1")
-				.isMain(true)
+				.main(true)
 				.number(1L)
 				.build(),
 			ShortAnswerDto.builder()
 				.answer("수정된 정답2")
-				.isMain(false)
+				.main(false)
 				.number(2L)
 				.build()
 		);
@@ -721,7 +721,7 @@ class QuestionControllerTest {
 				.content(request.getContent())
 				.explanation(request.getExplanation())
 				.number(request.getNumber())
-				.shortAnswers(request.getShortAnswers())
+				.answers(request.getShortAnswers())
 				.build();
 
 		when(questionService.updateQuestion(eq(questionSetId), eq(questionId), any())).thenReturn(mockResponse);
@@ -854,12 +854,12 @@ class QuestionControllerTest {
 		var fillBlankAnswers = List.of(
 			FillBlankAnswerDto.builder()
 				.answer("수정된 정답1")
-				.isMain(true)
+				.main(true)
 				.number(1L)
 				.build(),
 			FillBlankAnswerDto.builder()
 				.answer("수정된 정답2")
-				.isMain(false)
+				.main(false)
 				.number(2L)
 				.build()
 		);
@@ -880,7 +880,7 @@ class QuestionControllerTest {
 				.content(request.getContent())
 				.explanation(request.getExplanation())
 				.number(request.getNumber())
-				.fillBlankAnswers(request.getFillBlankAnswers())
+				.answers(request.getFillBlankAnswers())
 				.build();
 
 		when(questionService.updateQuestion(eq(questionSetId), eq(questionId), any())).thenReturn(mockResponse);
@@ -958,12 +958,12 @@ class QuestionControllerTest {
 		var shortAnswers = List.of(
 			ShortAnswerDto.builder()
 				.answer("변경된 정답1")
-				.isMain(true)
+				.main(true)
 				.number(1L)
 				.build(),
 			ShortAnswerDto.builder()
 				.answer("변경된 정답2")
-				.isMain(false)
+				.main(false)
 				.number(2L)
 				.build()
 		);
@@ -984,7 +984,7 @@ class QuestionControllerTest {
 				.content("객관식에서 주관식으로 변경된 문제")
 				.explanation("변경된 해설")
 				.number(1L)
-				.shortAnswers(shortAnswers)
+				.answers(shortAnswers)
 				.build();
 
 		when(questionService.updateQuestion(eq(questionSetId), eq(questionId), any())).thenReturn(mockResponse);

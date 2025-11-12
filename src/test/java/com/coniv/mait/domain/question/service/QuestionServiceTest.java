@@ -23,6 +23,8 @@ import com.coniv.mait.domain.question.entity.QuestionSetEntity;
 import com.coniv.mait.domain.question.entity.ShortQuestionEntity;
 import com.coniv.mait.domain.question.enums.DeliveryMode;
 import com.coniv.mait.domain.question.enums.QuestionType;
+import com.coniv.mait.domain.question.external.AiCreateApiService;
+import com.coniv.mait.domain.question.repository.AiRequestStatusManager;
 import com.coniv.mait.domain.question.repository.MultipleChoiceEntityRepository;
 import com.coniv.mait.domain.question.repository.QuestionEntityRepository;
 import com.coniv.mait.domain.question.repository.QuestionSetEntityRepository;
@@ -70,6 +72,12 @@ class QuestionServiceTest {
 	@Mock
 	private QuestionImageService questionImageService;
 
+	@Mock
+	private AiCreateApiService aiCreateApiService;
+
+	@Mock
+	private AiRequestStatusManager aiRequestStatusManager;
+
 	@BeforeEach
 	void setUp() {
 		// QuestionFactory들의 getQuestionType() 메서드 모킹 (QuestionService 생성자에서 호출됨)
@@ -91,7 +99,9 @@ class QuestionServiceTest {
 			questionEntityRepository,
 			questionSetEntityRepository,
 			multipleChoiceEntityRepository,
-			questionImageService);
+			questionImageService,
+			aiCreateApiService,
+			aiRequestStatusManager);
 	}
 
 	@Test

@@ -6,11 +6,14 @@ import java.util.List;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.coniv.mait.domain.question.dto.MaterialDto;
 import com.coniv.mait.domain.question.entity.QuestionEntity;
 import com.coniv.mait.domain.question.entity.QuestionSetEntity;
+import com.coniv.mait.domain.question.enums.AiRequestStatus;
 import com.coniv.mait.domain.question.enums.DeliveryMode;
 import com.coniv.mait.domain.question.enums.QuestionSetCreationType;
 import com.coniv.mait.domain.question.enums.QuestionSetVisibility;
+import com.coniv.mait.domain.question.repository.AiRequestStatusManager;
 import com.coniv.mait.domain.question.repository.QuestionEntityRepository;
 import com.coniv.mait.domain.question.repository.QuestionSetEntityRepository;
 import com.coniv.mait.domain.question.service.component.QuestionChecker;
@@ -24,7 +27,9 @@ import com.coniv.mait.web.question.dto.QuestionSetList;
 
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class QuestionSetService {
@@ -39,9 +44,11 @@ public class QuestionSetService {
 
 	private final TeamRoleValidator teamRoleValidator;
 
+	private final AiRequestStatusManager aiRequestStatusManager;
+
 	@Transactional
 	public QuestionSetDto createQuestionSet(final QuestionSetDto questionSetDto, final List<QuestionCount> counts,
-		final String instruction, final String difficulty, final Long userId) {
+		final List<MaterialDto> materials, final String instruction, final String difficulty, final Long userId) {
 		teamRoleValidator.checkHasCreateQuestionSetAuthority(questionSetDto.getTeamId(), userId);
 
 		QuestionSetEntity questionSetEntity = QuestionSetEntity.builder()
@@ -54,6 +61,11 @@ public class QuestionSetService {
 
 		if (questionSetDto.getCreationType() == QuestionSetCreationType.MANUAL) {
 			questionService.createDefaultQuestions(questionSetEntity, counts);
+		}
+
+		if (questionSetDto.getCreationType() == QuestionSetCreationType.AI_GENERATED) {
+			questionService.createAiGeneratedQuestions(questionSetEntity.getId(), counts, materials, instruction,
+				difficulty);
 		}
 
 		return QuestionSetDto.from(questionSetEntity);
@@ -127,5 +139,9 @@ public class QuestionSetService {
 			.map(questionChecker::validateQuestion)
 			.filter(dto -> !dto.isValid())
 			.toList();
+	}
+
+	public AiRequestStatus getAiRequestStatus(Long questionSetId) {
+		return aiRequestStatusManager.getStatus(questionSetId);
 	}
 }
