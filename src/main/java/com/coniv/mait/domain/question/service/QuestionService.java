@@ -4,7 +4,6 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.concurrent.CompletableFuture;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -18,12 +17,14 @@ import com.coniv.mait.domain.question.entity.MultipleChoiceEntity;
 import com.coniv.mait.domain.question.entity.MultipleQuestionEntity;
 import com.coniv.mait.domain.question.entity.QuestionEntity;
 import com.coniv.mait.domain.question.entity.QuestionSetEntity;
+import com.coniv.mait.domain.question.enums.AiRequestStatus;
 import com.coniv.mait.domain.question.enums.DeliveryMode;
 import com.coniv.mait.domain.question.enums.QuestionStatusType;
 import com.coniv.mait.domain.question.enums.QuestionType;
 import com.coniv.mait.domain.question.external.AiCreateApiService;
 import com.coniv.mait.domain.question.external.dto.AiCreateRequest;
 import com.coniv.mait.domain.question.external.dto.AiCreateResponse;
+import com.coniv.mait.domain.question.repository.AiRequestStatusManager;
 import com.coniv.mait.domain.question.repository.MultipleChoiceEntityRepository;
 import com.coniv.mait.domain.question.repository.QuestionEntityRepository;
 import com.coniv.mait.domain.question.repository.QuestionSetEntityRepository;
@@ -55,6 +56,8 @@ public class QuestionService {
 
 	private final AiCreateApiService aiCreateApiService;
 
+	private final AiRequestStatusManager aiRequestStatusManager;
+
 	@Autowired
 	public QuestionService(
 		List<QuestionFactory<?>> factories,
@@ -62,7 +65,8 @@ public class QuestionService {
 		QuestionSetEntityRepository questionSetEntityRepository,
 		MultipleChoiceEntityRepository multipleChoiceEntityRepository,
 		QuestionImageService questionImageService,
-		AiCreateApiService aiCreateApiService
+		AiCreateApiService aiCreateApiService,
+		AiRequestStatusManager aiRequestStatusManager
 	) {
 		questionFactories = factories.stream()
 			.collect(Collectors.toUnmodifiableMap(QuestionFactory::getQuestionType, Function.identity()));
@@ -71,6 +75,7 @@ public class QuestionService {
 		this.questionImageService = questionImageService;
 		this.multipleChoiceEntityRepository = multipleChoiceEntityRepository;
 		this.aiCreateApiService = aiCreateApiService;
+		this.aiRequestStatusManager = aiRequestStatusManager;
 	}
 
 	public <T extends QuestionDto> void createQuestion(
@@ -267,11 +272,25 @@ public class QuestionService {
 		sourceQuestion.updateRank(newRank);
 	}
 
+	/**
+	 * AI 문제 생성 (비동기)
+	 *
+	 * Redis에 상태 저장:
+	 * - PROCESSING: 시작 시
+	 * - COMPLETED: 성공 시 (문제 수 포함)
+	 * - FAILED: 실패 시 (에러 메시지 포함)
+	 */
 	@Async
 	@Transactional
-	public CompletableFuture<Void> createAiGeneratedQuestions(QuestionSetEntity questionSetEntity,
+	public void createAiGeneratedQuestions(
+		QuestionSetEntity questionSetEntity,
 		List<QuestionCount> counts,
-		List<MaterialDto> materials, String instruction, String difficulty) {
+		List<MaterialDto> materials,
+		String instruction,
+		String difficulty
+	) {
+		aiRequestStatusManager.updateStatus(questionSetEntity.getId(), AiRequestStatus.PENDING);
+		log.info("[AI 문제 생성 시작] - QuestionSetId: {}, Status: PROCESSING", questionSetEntity.getId());
 
 		AiCreateRequest aiRequest = AiCreateRequest.builder()
 			.subject(questionSetEntity.getSubject())
@@ -285,14 +304,23 @@ public class QuestionService {
 						QuestionCount::count))
 			)
 			.build();
-		AiCreateResponse createdQuestions = aiCreateApiService.createQuestionSet(aiRequest);
-		List<QuestionDto> questions = createdQuestions.getContent();
 
-		for (QuestionDto question : questions) {
-			QuestionFactory<QuestionDto> questionFactory = getQuestionFactory(question.getType());
-			questionFactory.create(question, questionSetEntity);
+		try {
+			AiCreateResponse createdQuestions = aiCreateApiService.createQuestionSet(aiRequest);
+			aiRequestStatusManager.updateStatus(questionSetEntity.getId(), AiRequestStatus.PROCESSING);
+			List<QuestionDto> questions = createdQuestions.getContent();
+
+			for (QuestionDto question : questions) {
+				QuestionFactory<QuestionDto> questionFactory = getQuestionFactory(question.getType());
+				questionFactory.create(question, questionSetEntity);
+			}
+
+			aiRequestStatusManager.updateStatus(questionSetEntity.getId(), AiRequestStatus.COMPLETED);
+			log.info("[AI 문제 생성 완료] - QuestionSetId: {}, 문제 수: {}", questionSetEntity.getId(), questions.size());
+
+		} catch (Exception e) {
+			log.error("[AI 문제 생성 실패] - QuestionSetId: {}", questionSetEntity.getId(), e);
+			aiRequestStatusManager.updateStatus(questionSetEntity.getId(), AiRequestStatus.FAILED);
 		}
-
-		return CompletableFuture.completedFuture(null);
 	}
 }
