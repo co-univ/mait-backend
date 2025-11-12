@@ -63,11 +63,10 @@ public class QuestionSetController {
 	}
 
 	@Operation(summary = "문제 셋에 사용될 파일 업로드 API", description = "문제 셋 생성 과정에서 사용될 파일을 업로드합니다.")
-	@PostMapping(value = "/{questionSetId}/materials", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+	@PostMapping(value = "/materials", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
 	public ResponseEntity<ApiResponse<QuestionSetMaterialApiResponse>> uploadQuestionSetFiles(
-		@PathVariable("questionSetId") Long questionSetId,
 		@RequestPart("material") MultipartFile material) {
-		questionSetMaterialService.uploadQuestionSetMaterial(questionSetId, material);
+		questionSetMaterialService.uploadQuestionSetMaterial(material);
 		return ResponseEntity.status(HttpStatus.NOT_IMPLEMENTED).body(ApiResponse.noContent());
 	}
 

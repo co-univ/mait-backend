@@ -281,7 +281,7 @@ public class QuestionService {
 	 * - COMPLETED: 성공 시 (문제 수 포함)
 	 * - FAILED: 실패 시 (에러 메시지 포함)
 	 */
-	@Async("maitThreadPoolExecutor")
+	@Async("aiUploadThreadPoolExecutor")
 	@Transactional(propagation = Propagation.REQUIRES_NEW)
 	public void createAiGeneratedQuestions(
 		Long questionSetId,

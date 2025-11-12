@@ -15,8 +15,6 @@ public class QuestionSetMaterialDto {
 
 	private Long id;
 
-	private Long questionSetId;
-
 	private String materialUrl;
 
 	private String materialKey;
@@ -24,7 +22,6 @@ public class QuestionSetMaterialDto {
 	public static QuestionSetMaterialDto from(QuestionSetMaterialEntity questionSetMaterial) {
 		return QuestionSetMaterialDto.builder()
 			.id(questionSetMaterial.getId())
-			.questionSetId(questionSetMaterial.getQuestionSet().getId())
 			.materialUrl(questionSetMaterial.getUrl())
 			.materialKey(questionSetMaterial.getFileKey())
 			.build();

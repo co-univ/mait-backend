@@ -44,6 +44,8 @@ public class QuestionSetService {
 
 	private final TeamRoleValidator teamRoleValidator;
 
+	private final QuestionSetMaterialService questionSetMaterialService;
+
 	private final AiRequestStatusManager aiRequestStatusManager;
 
 	@Transactional
@@ -67,6 +69,8 @@ public class QuestionSetService {
 			questionService.createAiGeneratedQuestions(questionSetEntity.getId(), counts, materials, instruction,
 				difficulty);
 		}
+
+		questionSetMaterialService.updateUsed(materials);
 
 		return QuestionSetDto.from(questionSetEntity);
 	}
