@@ -55,8 +55,8 @@ class ShortQuestionFactoryTest {
 	void save_Success() {
 		// given
 		List<ShortAnswerDto> answers = List.of(
-			ShortAnswerDto.builder().number(1L).answer("정답1").isMain(true).build(),
-			ShortAnswerDto.builder().number(1L).answer("정답2").isMain(false).build()
+			ShortAnswerDto.builder().number(1L).answer("정답1").main(true).build(),
+			ShortAnswerDto.builder().number(1L).answer("정답2").main(false).build()
 		);
 
 		ShortQuestionDto questionDto = ShortQuestionDto.builder()
@@ -123,9 +123,9 @@ class ShortQuestionFactoryTest {
 	void createShortAnswers_ValidMainAnswers() {
 		// given
 		List<ShortAnswerDto> answers = List.of(
-			ShortAnswerDto.builder().number(1L).answer("정답1").isMain(true).build(),
-			ShortAnswerDto.builder().number(1L).answer("정답2").isMain(false).build(),
-			ShortAnswerDto.builder().number(2L).answer("정답3").isMain(true).build()
+			ShortAnswerDto.builder().number(1L).answer("정답1").main(true).build(),
+			ShortAnswerDto.builder().number(1L).answer("정답2").main(false).build(),
+			ShortAnswerDto.builder().number(2L).answer("정답3").main(true).build()
 		);
 
 		ShortQuestionEntity question = mock(ShortQuestionEntity.class);
@@ -143,8 +143,8 @@ class ShortQuestionFactoryTest {
 	void createShortAnswers_NoMainAnswer_ThrowsException() {
 		// given
 		List<ShortAnswerDto> answers = List.of(
-			ShortAnswerDto.builder().number(1L).answer("정답1").isMain(false).build(),
-			ShortAnswerDto.builder().number(1L).answer("정답2").isMain(false).build() // 메인 답안 없음
+			ShortAnswerDto.builder().number(1L).answer("정답1").main(false).build(),
+			ShortAnswerDto.builder().number(1L).answer("정답2").main(false).build() // 메인 답안 없음
 		);
 
 		ShortQuestionEntity question = mock(ShortQuestionEntity.class);
@@ -160,8 +160,8 @@ class ShortQuestionFactoryTest {
 	void createShortAnswers_MultipleMainAnswers_ThrowsException() {
 		// given
 		List<ShortAnswerDto> answers = List.of(
-			ShortAnswerDto.builder().number(1L).answer("정답1").isMain(true).build(),
-			ShortAnswerDto.builder().number(1L).answer("정답2").isMain(true).build() // 메인 답안 중복
+			ShortAnswerDto.builder().number(1L).answer("정답1").main(true).build(),
+			ShortAnswerDto.builder().number(1L).answer("정답2").main(true).build() // 메인 답안 중복
 		);
 
 		ShortQuestionEntity question = mock(ShortQuestionEntity.class);
@@ -191,8 +191,8 @@ class ShortQuestionFactoryTest {
 	void createSubEntities() {
 		// given
 		List<ShortAnswerDto> answers = List.of(
-			ShortAnswerDto.builder().number(1L).answer("정답1").isMain(true).build(),
-			ShortAnswerDto.builder().number(2L).answer("정답2").isMain(true).build()
+			ShortAnswerDto.builder().number(1L).answer("정답1").main(true).build(),
+			ShortAnswerDto.builder().number(2L).answer("정답2").main(true).build()
 		);
 
 		ShortQuestionDto questionDto = ShortQuestionDto.builder()

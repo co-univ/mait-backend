@@ -55,9 +55,9 @@ class FillBlankQuestionFactoryTest {
 	void save_Success() {
 		// given
 		List<FillBlankAnswerDto> answers = List.of(
-			FillBlankAnswerDto.builder().number(1L).answer("정답1").isMain(true).build(),
-			FillBlankAnswerDto.builder().number(1L).answer("정답2").isMain(false).build(),
-			FillBlankAnswerDto.builder().number(2L).answer("정답3").isMain(true).build()
+			FillBlankAnswerDto.builder().number(1L).answer("정답1").main(true).build(),
+			FillBlankAnswerDto.builder().number(1L).answer("정답2").main(false).build(),
+			FillBlankAnswerDto.builder().number(2L).answer("정답3").main(true).build()
 		);
 
 		FillBlankQuestionDto questionDto = FillBlankQuestionDto.builder()
@@ -124,9 +124,9 @@ class FillBlankQuestionFactoryTest {
 	void createFillBlankAnswers_ValidMainAnswers() {
 		// given
 		List<FillBlankAnswerDto> answers = List.of(
-			FillBlankAnswerDto.builder().number(1L).answer("정답1").isMain(true).build(),
-			FillBlankAnswerDto.builder().number(1L).answer("정답2").isMain(false).build(),
-			FillBlankAnswerDto.builder().number(2L).answer("정답3").isMain(true).build()
+			FillBlankAnswerDto.builder().number(1L).answer("정답1").main(true).build(),
+			FillBlankAnswerDto.builder().number(1L).answer("정답2").main(false).build(),
+			FillBlankAnswerDto.builder().number(2L).answer("정답3").main(true).build()
 		);
 
 		FillBlankQuestionEntity question = mock(FillBlankQuestionEntity.class);
@@ -144,8 +144,8 @@ class FillBlankQuestionFactoryTest {
 	void createFillBlankAnswers_NoMainAnswer_ThrowsException() {
 		// given
 		List<FillBlankAnswerDto> answers = List.of(
-			FillBlankAnswerDto.builder().number(1L).answer("정답1").isMain(false).build(),
-			FillBlankAnswerDto.builder().number(1L).answer("정답2").isMain(false).build() // 메인 답안 없음
+			FillBlankAnswerDto.builder().number(1L).answer("정답1").main(false).build(),
+			FillBlankAnswerDto.builder().number(1L).answer("정답2").main(false).build() // 메인 답안 없음
 		);
 
 		FillBlankQuestionEntity question = mock(FillBlankQuestionEntity.class);
@@ -161,8 +161,8 @@ class FillBlankQuestionFactoryTest {
 	void createFillBlankAnswers_MultipleMainAnswers_ThrowsException() {
 		// given
 		List<FillBlankAnswerDto> answers = List.of(
-			FillBlankAnswerDto.builder().number(1L).answer("정답1").isMain(true).build(),
-			FillBlankAnswerDto.builder().number(1L).answer("정답2").isMain(true).build() // 메인 답안 중복
+			FillBlankAnswerDto.builder().number(1L).answer("정답1").main(true).build(),
+			FillBlankAnswerDto.builder().number(1L).answer("정답2").main(true).build() // 메인 답안 중복
 		);
 
 		FillBlankQuestionEntity question = mock(FillBlankQuestionEntity.class);
@@ -192,8 +192,8 @@ class FillBlankQuestionFactoryTest {
 	void createSubEntities() {
 		// given
 		List<FillBlankAnswerDto> answers = List.of(
-			FillBlankAnswerDto.builder().number(1L).answer("정답1").isMain(true).build(),
-			FillBlankAnswerDto.builder().number(2L).answer("정답2").isMain(true).build()
+			FillBlankAnswerDto.builder().number(1L).answer("정답1").main(true).build(),
+			FillBlankAnswerDto.builder().number(2L).answer("정답2").main(true).build()
 		);
 
 		FillBlankQuestionDto questionDto = FillBlankQuestionDto.builder()
