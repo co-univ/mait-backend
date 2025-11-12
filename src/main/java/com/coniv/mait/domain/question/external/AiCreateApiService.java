@@ -23,13 +23,6 @@ public class AiCreateApiService {
 		this.aiWebClient = aiWebClient;
 	}
 
-	/**
-	 * AI 서버에 문제 생성 요청
-	 * 
-	 * @param request AI 생성 요청 DTO
-	 * @return AI 생성 응답 (1-2분 소요)
-	 * @apiNote Timeout: 5분 (AI 서버 응답 대기 시간 고려)
-	 */
 	public AiCreateResponse createQuestionSet(final AiCreateRequest request) {
 		return aiWebClient.post()
 			.uri(apiUrl + "/api/ai/generate")
