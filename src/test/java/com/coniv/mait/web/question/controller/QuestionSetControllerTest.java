@@ -33,7 +33,6 @@ import com.coniv.mait.domain.question.service.dto.QuestionSetMaterialDto;
 import com.coniv.mait.domain.question.service.dto.QuestionValidateDto;
 import com.coniv.mait.global.filter.JwtAuthorizationFilter;
 import com.coniv.mait.global.interceptor.idempotency.IdempotencyInterceptor;
-import com.coniv.mait.web.question.dto.CreateQuestionSetApiRequest;
 import com.coniv.mait.web.question.dto.QuestionSetGroup;
 import com.coniv.mait.web.question.dto.QuestionSetList;
 import com.coniv.mait.web.question.dto.UpdateQuestionSetApiRequest;
@@ -460,12 +459,11 @@ class QuestionSetControllerTest {
 
 		QuestionSetMaterialDto mockResponse = QuestionSetMaterialDto.builder()
 			.id(materialId)
-			.questionSetId(questionSetId)
 			.materialUrl(fileUrl)
 			.materialKey(fileKey)
 			.build();
 
-		when(questionSetMaterialService.uploadQuestionSetMaterial(eq(questionSetId), any()))
+		when(questionSetMaterialService.uploadQuestionSetMaterial(any()))
 			.thenReturn(mockResponse);
 
 		// when & then
@@ -475,6 +473,6 @@ class QuestionSetControllerTest {
 			.andExpect(jsonPath("$.isSuccess").value(true))
 			.andExpect(jsonPath("$.data").doesNotExist());
 
-		verify(questionSetMaterialService).uploadQuestionSetMaterial(eq(questionSetId), any());
+		verify(questionSetMaterialService).uploadQuestionSetMaterial(any());
 	}
 }

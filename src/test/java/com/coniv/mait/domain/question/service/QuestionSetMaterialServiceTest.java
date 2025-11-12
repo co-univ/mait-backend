@@ -70,7 +70,6 @@ class QuestionSetMaterialServiceTest {
 
 		QuestionSetMaterialEntity savedMaterial = QuestionSetMaterialEntity.builder()
 			.id(materialId)
-			.questionSet(questionSet)
 			.url(fileUrl)
 			.fileKey(fileKey)
 			.bucket(bucketName)
@@ -81,12 +80,11 @@ class QuestionSetMaterialServiceTest {
 		when(questionSetMaterialEntityRepository.save(any(QuestionSetMaterialEntity.class))).thenReturn(savedMaterial);
 
 		// when
-		QuestionSetMaterialDto result = questionSetMaterialService.uploadQuestionSetMaterial(questionSetId, mockFile);
+		QuestionSetMaterialDto result = questionSetMaterialService.uploadQuestionSetMaterial(mockFile);
 
 		// then
 		assertThat(result).isNotNull();
 		assertThat(result.getId()).isEqualTo(materialId);
-		assertThat(result.getQuestionSetId()).isEqualTo(questionSetId);
 		assertThat(result.getMaterialUrl()).isEqualTo(fileUrl);
 		assertThat(result.getMaterialKey()).isEqualTo(fileKey);
 
@@ -104,8 +102,8 @@ class QuestionSetMaterialServiceTest {
 		when(questionSetEntityRepository.findById(nonExistentQuestionSetId)).thenReturn(Optional.empty());
 
 		// when & then
-		assertThatThrownBy(() -> questionSetMaterialService.uploadQuestionSetMaterial(nonExistentQuestionSetId,
-			mockFile)).isInstanceOf(EntityNotFoundException.class)
+		assertThatThrownBy(() -> questionSetMaterialService.uploadQuestionSetMaterial(mockFile)).isInstanceOf(
+				EntityNotFoundException.class)
 			.hasMessageContaining("Question Set not found with id: " + nonExistentQuestionSetId);
 
 		verify(questionSetEntityRepository).findById(nonExistentQuestionSetId);
@@ -135,7 +133,6 @@ class QuestionSetMaterialServiceTest {
 			QuestionSetMaterialEntity entity = invocation.getArgument(0);
 			return QuestionSetMaterialEntity.builder()
 				.id(1L)
-				.questionSet(entity.getQuestionSet())
 				.url(entity.getUrl())
 				.fileKey(entity.getFileKey())
 				.bucket(entity.getBucket())
@@ -143,7 +140,7 @@ class QuestionSetMaterialServiceTest {
 		});
 
 		// when
-		questionSetMaterialService.uploadQuestionSetMaterial(questionSetId, mockFile);
+		questionSetMaterialService.uploadQuestionSetMaterial(mockFile);
 
 		// then
 		verify(questionSetMaterialEntityRepository).save(any(QuestionSetMaterialEntity.class));
