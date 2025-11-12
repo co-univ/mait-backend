@@ -38,7 +38,7 @@ spring:
         access-key: ${AWS_ACCESS_KEY_ID}
         secret-key: ${AWS_SECRET_ACCESS_KEY}
       s3:
-        bucket: mait-dev
+        bucket: ${AWS_S3_BUCKET:mait-dev}
       region:
         static: ap-northeast-2
       stack:
@@ -46,11 +46,11 @@ spring:
 
 # 테스트용 JWT 설정
 jwt:
-  secretKey: test-secret-key-for-testing-purposes-only-minimum-256-bits-required
+  secretKey: ${JWT_SECRET_KEY:test-secret-key-for-testing-purposes-only-minimum-256-bits-required}
   access:
-    expiration: 3600000  # 1시간 (밀리초)
+    expiration: ${JWT_ACCESS_TOKEN_EXPIRATION:3600000}  # 1시간 (밀리초)
   refresh:
-    expiration: 604800000  # 7일 (밀리초)
+    expiration: ${JWT_REFRESH_TOKEN_EXPIRATION:604800000}  # 7일 (밀리초)
 
 # 테스트에서 Swagger 비활성화
 springdoc:
@@ -58,5 +58,11 @@ springdoc:
     enabled: false
   swagger-ui:
     enabled: false
+
 mait:
   base-url: http://localhost:3000
+
+# AI API 설정
+api:
+  ai:
+    url: https://api.dev-ai.mait.kr
