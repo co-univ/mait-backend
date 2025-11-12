@@ -27,7 +27,9 @@ import com.coniv.mait.web.question.dto.QuestionSetList;
 
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class QuestionSetService {
@@ -62,7 +64,8 @@ public class QuestionSetService {
 		}
 
 		if (questionSetDto.getCreationType() == QuestionSetCreationType.AI_GENERATED) {
-			questionService.createAiGeneratedQuestions(questionSetEntity, counts, materials, instruction, difficulty);
+			questionService.createAiGeneratedQuestions(questionSetEntity.getId(), counts, materials, instruction,
+				difficulty);
 		}
 
 		return QuestionSetDto.from(questionSetEntity);

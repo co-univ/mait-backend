@@ -26,6 +26,15 @@ public class FillBlankAnswerDto {
 	@NotNull(message = "빈칸 문제 정답 그룹 번호는 필수입니다.")
 	private Long number;
 
+	public boolean isMain() {
+		return isMain;
+	}
+
+	@SuppressWarnings("unchecked")
+	public void setIsMain(boolean isMain) {
+		this.isMain = isMain;
+	}
+
 	public static FillBlankAnswerDto of(FillBlankAnswerEntity fillBlankAnswerEntity, boolean answerVisible) {
 		return FillBlankAnswerDto.builder()
 			.id(fillBlankAnswerEntity.getId())

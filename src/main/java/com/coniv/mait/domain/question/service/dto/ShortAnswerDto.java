@@ -18,12 +18,22 @@ public class ShortAnswerDto {
 	private Long id;
 
 	private String answer;
+
 	@Schema(description = "주관식 문제의 메인 정답 여부", requiredMode = Schema.RequiredMode.REQUIRED)
 	private boolean isMain;
 
 	@Schema(description = "주관식 문제 정답 그룹 번호", requiredMode = Schema.RequiredMode.REQUIRED)
 	@NotNull(message = "주관식 문제 정답 그룹 번호는 필수입니다.")
 	private Long number;
+
+	public boolean isMain() {
+		return isMain;
+	}
+
+	@SuppressWarnings("unchecked")
+	public void setIsMain(boolean isMain) {
+		this.isMain = isMain;
+	}
 
 	public static ShortAnswerDto of(ShortAnswerEntity shortAnswerEntity, boolean answerVisible) {
 		return ShortAnswerDto.builder()

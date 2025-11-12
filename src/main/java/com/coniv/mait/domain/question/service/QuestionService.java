@@ -10,6 +10,7 @@ import java.util.stream.Collectors;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.coniv.mait.domain.question.dto.MaterialDto;
@@ -280,17 +281,21 @@ public class QuestionService {
 	 * - COMPLETED: 성공 시 (문제 수 포함)
 	 * - FAILED: 실패 시 (에러 메시지 포함)
 	 */
-	@Async
-	@Transactional
+	@Async("maitThreadPoolExecutor")
+	@Transactional(propagation = Propagation.REQUIRES_NEW)
 	public void createAiGeneratedQuestions(
-		QuestionSetEntity questionSetEntity,
+		Long questionSetId,
 		List<QuestionCount> counts,
 		List<MaterialDto> materials,
 		String instruction,
 		String difficulty
 	) {
-		aiRequestStatusManager.updateStatus(questionSetEntity.getId(), AiRequestStatus.PENDING);
-		log.info("[AI 문제 생성 시작] - QuestionSetId: {}, Status: PROCESSING", questionSetEntity.getId());
+		aiRequestStatusManager.updateStatus(questionSetId, AiRequestStatus.PENDING);
+		log.info("[AI 문제 생성 시작] - QuestionSetId: {}, Status: PROCESSING", questionSetId);
+
+		// 비동기 트랜잭션 내에서 엔티티 다시 조회
+		QuestionSetEntity questionSetEntity = questionSetEntityRepository.findById(questionSetId)
+			.orElseThrow(() -> new EntityNotFoundException("QuestionSet not found with id: " + questionSetId));
 
 		AiCreateRequest aiRequest = AiCreateRequest.builder()
 			.subject(questionSetEntity.getSubject())
@@ -307,20 +312,30 @@ public class QuestionService {
 
 		try {
 			AiCreateResponse createdQuestions = aiCreateApiService.createQuestionSet(aiRequest);
-			aiRequestStatusManager.updateStatus(questionSetEntity.getId(), AiRequestStatus.PROCESSING);
+			log.info("response: {}", createdQuestions.getContent());
+			aiRequestStatusManager.updateStatus(questionSetId, AiRequestStatus.PROCESSING);
 			List<QuestionDto> questions = createdQuestions.getContent();
+			String currentRank = LexoRank.middle();
 
 			for (QuestionDto questionDto : questions) {
 				QuestionFactory<QuestionDto> questionFactory = getQuestionFactory(questionDto.getType());
-				questionFactory.save(questionDto, questionSetEntity);
+				QuestionEntity question = questionFactory.create(questionDto, questionSetEntity);
+				question.updateLexoRank(currentRank);
+
+				questionEntityRepository.save(question);
+				questionFactory.createSubEntities(questionDto, question);
+				currentRank = LexoRank.nextAfter(currentRank);
 			}
 
-			aiRequestStatusManager.updateStatus(questionSetEntity.getId(), AiRequestStatus.COMPLETED);
-			log.info("[AI 문제 생성 완료] - QuestionSetId: {}, 문제 수: {}", questionSetEntity.getId(), questions.size());
+			aiRequestStatusManager.updateStatus(questionSetId, AiRequestStatus.COMPLETED);
+			log.info("[AI 문제 생성 완료] - QuestionSetId: {}, 문제 수: {}", questionSetId, questions.size());
 
 		} catch (Exception e) {
-			log.error("[AI 문제 생성 실패] - QuestionSetId: {}", questionSetEntity.getId(), e);
-			aiRequestStatusManager.updateStatus(questionSetEntity.getId(), AiRequestStatus.FAILED);
+			log.error("[AI 문제 생성 실패] - QuestionSetId: {}", questionSetId, e);
+			// Redis 상태는 트랜잭션 외부에서 관리되므로 실패 상태 저장
+			aiRequestStatusManager.updateStatus(questionSetId, AiRequestStatus.FAILED);
+			// 트랜잭션 롤백을 위해 예외를 다시 던짐
+			throw new RuntimeException("AI 문제 생성 중 오류 발생", e);
 		}
 	}
 }
