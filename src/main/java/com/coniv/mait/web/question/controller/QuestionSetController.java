@@ -59,7 +59,7 @@ public class QuestionSetController {
 		@Valid @RequestBody CreateQuestionSetApiRequest request) {
 		QuestionSetDto questionSetDto = questionSetService.createQuestionSet(request.toQuestionSetDto(),
 			request.counts(), request.materials(), request.instruction(), request.difficulty(), user.getId());
-		return ResponseEntity.status(HttpStatus.CREATED)
+		return ResponseEntity.status(HttpStatus.OK)
 			.body(ApiResponse.ok(CreateQuestionSetApiResponse.from(questionSetDto)));
 	}
 
@@ -68,7 +68,7 @@ public class QuestionSetController {
 	public ResponseEntity<ApiResponse<QuestionSetMaterialApiResponse>> uploadQuestionSetFiles(
 		@RequestPart("material") MultipartFile material) {
 		QuestionSetMaterialDto materialDto = questionSetMaterialService.uploadQuestionSetMaterial(material);
-		return ResponseEntity.status(HttpStatus.CREATED)
+		return ResponseEntity.status(HttpStatus.OK)
 			.body(ApiResponse.ok(QuestionSetMaterialApiResponse.from(materialDto)));
 	}
 
