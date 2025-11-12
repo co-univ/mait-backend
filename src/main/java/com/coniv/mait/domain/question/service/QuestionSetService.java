@@ -6,6 +6,7 @@ import java.util.List;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.coniv.mait.domain.question.dto.MaterialDto;
 import com.coniv.mait.domain.question.entity.QuestionEntity;
 import com.coniv.mait.domain.question.entity.QuestionSetEntity;
 import com.coniv.mait.domain.question.enums.DeliveryMode;
@@ -41,7 +42,7 @@ public class QuestionSetService {
 
 	@Transactional
 	public QuestionSetDto createQuestionSet(final QuestionSetDto questionSetDto, final List<QuestionCount> counts,
-		final String instruction, final String difficulty, final Long userId) {
+		final List<MaterialDto> materials, final String instruction, final String difficulty, final Long userId) {
 		teamRoleValidator.checkHasCreateQuestionSetAuthority(questionSetDto.getTeamId(), userId);
 
 		QuestionSetEntity questionSetEntity = QuestionSetEntity.builder()
@@ -54,6 +55,10 @@ public class QuestionSetService {
 
 		if (questionSetDto.getCreationType() == QuestionSetCreationType.MANUAL) {
 			questionService.createDefaultQuestions(questionSetEntity, counts);
+		}
+
+		if (questionSetDto.getCreationType() == QuestionSetCreationType.AI_GENERATED) {
+			questionService.createAiGeneratedQuestions(questionSetEntity, counts, materials, instruction, difficulty);
 		}
 
 		return QuestionSetDto.from(questionSetEntity);

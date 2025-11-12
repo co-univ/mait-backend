@@ -55,7 +55,7 @@ public class QuestionSetController {
 		@AuthenticationPrincipal UserEntity user,
 		@Valid @RequestBody CreateQuestionSetApiRequest request) {
 		QuestionSetDto questionSetDto = questionSetService.createQuestionSet(request.toQuestionSetDto(),
-			request.counts(), request.instruction(), request.difficulty(), user.getId());
+			request.counts(), request.materials(), request.instruction(), request.difficulty(), user.getId());
 		return ResponseEntity.status(HttpStatus.CREATED)
 			.body(ApiResponse.ok(CreateQuestionSetApiResponse.from(questionSetDto)));
 	}
