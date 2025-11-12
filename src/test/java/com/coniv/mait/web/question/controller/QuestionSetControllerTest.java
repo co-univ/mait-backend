@@ -469,9 +469,10 @@ class QuestionSetControllerTest {
 		// when & then
 		mockMvc.perform(multipart("/api/v1/question-sets/materials", questionSetId)
 				.file(mockFile))
-			.andExpect(status().isNotImplemented())
+			.andExpect(status().isCreated())
 			.andExpect(jsonPath("$.isSuccess").value(true))
-			.andExpect(jsonPath("$.data").doesNotExist());
+			.andExpect(jsonPath("$.data.id").value(materialId))
+			.andExpect(jsonPath("$.data.materialUrl").value(fileUrl));
 
 		verify(questionSetMaterialService).uploadQuestionSetMaterial(any());
 	}

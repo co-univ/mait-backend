@@ -15,10 +15,6 @@ public final class FileUtil {
 			throw new IllegalArgumentException("Invalid file name: " + fileName);
 		}
 		String extension = fileName.substring(fileName.lastIndexOf(".") + 1);
-		try {
-			return FileExtension.valueOf(extension.toUpperCase());
-		} catch (IllegalArgumentException e) {
-			throw new IllegalArgumentException("Unsupported file extension: " + extension, e);
-		}
+		return FileExtension.fromExtension(extension);
 	}
 }

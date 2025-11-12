@@ -23,6 +23,7 @@ import com.coniv.mait.domain.question.enums.DeliveryMode;
 import com.coniv.mait.domain.question.service.QuestionSetMaterialService;
 import com.coniv.mait.domain.question.service.QuestionSetService;
 import com.coniv.mait.domain.question.service.dto.QuestionSetDto;
+import com.coniv.mait.domain.question.service.dto.QuestionSetMaterialDto;
 import com.coniv.mait.domain.user.entity.UserEntity;
 import com.coniv.mait.global.response.ApiResponse;
 import com.coniv.mait.web.question.dto.AiRequestStatusApiResponse;
@@ -66,8 +67,9 @@ public class QuestionSetController {
 	@PostMapping(value = "/materials", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
 	public ResponseEntity<ApiResponse<QuestionSetMaterialApiResponse>> uploadQuestionSetFiles(
 		@RequestPart("material") MultipartFile material) {
-		questionSetMaterialService.uploadQuestionSetMaterial(material);
-		return ResponseEntity.status(HttpStatus.NOT_IMPLEMENTED).body(ApiResponse.noContent());
+		QuestionSetMaterialDto materialDto = questionSetMaterialService.uploadQuestionSetMaterial(material);
+		return ResponseEntity.status(HttpStatus.CREATED)
+			.body(ApiResponse.ok(QuestionSetMaterialApiResponse.from(materialDto)));
 	}
 
 	@Operation(summary = "문제 셋 목록 조회")
