@@ -467,7 +467,7 @@ class QuestionSetControllerTest {
 			.thenReturn(mockResponse);
 
 		// when & then
-		mockMvc.perform(multipart("/api/v1/question-sets/{questionSetId}/materials", questionSetId)
+		mockMvc.perform(multipart("/api/v1/question-sets/materials", questionSetId)
 				.file(mockFile))
 			.andExpect(status().isNotImplemented())
 			.andExpect(jsonPath("$.isSuccess").value(true))

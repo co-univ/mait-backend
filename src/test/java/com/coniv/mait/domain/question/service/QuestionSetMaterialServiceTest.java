@@ -4,8 +4,6 @@ import static org.assertj.core.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
-import java.util.Optional;
-
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -23,8 +21,6 @@ import com.coniv.mait.global.component.FileUploader;
 import com.coniv.mait.global.component.dto.FileInfo;
 import com.coniv.mait.global.enums.FileExtension;
 import com.coniv.mait.global.s3.dto.FileType;
-
-import jakarta.persistence.EntityNotFoundException;
 
 @ExtendWith(MockitoExtension.class)
 @DisplayName("QuestionSetMaterialService 단위 테스트")
@@ -75,7 +71,6 @@ class QuestionSetMaterialServiceTest {
 			.bucket(bucketName)
 			.build();
 
-		when(questionSetEntityRepository.findById(questionSetId)).thenReturn(Optional.of(questionSet));
 		when(fileUploader.uploadFile(mockFile, FileType.QUESTION_SET_MATERIAL)).thenReturn(fileInfo);
 		when(questionSetMaterialEntityRepository.save(any(QuestionSetMaterialEntity.class))).thenReturn(savedMaterial);
 
@@ -88,25 +83,8 @@ class QuestionSetMaterialServiceTest {
 		assertThat(result.getMaterialUrl()).isEqualTo(fileUrl);
 		assertThat(result.getMaterialKey()).isEqualTo(fileKey);
 
-		verify(questionSetEntityRepository).findById(questionSetId);
 		verify(fileUploader).uploadFile(mockFile, FileType.QUESTION_SET_MATERIAL);
 		verify(questionSetMaterialEntityRepository).save(any(QuestionSetMaterialEntity.class));
-	}
-
-	@Test
-	@DisplayName("존재하지 않는 문제 세트에 자료 업로드 시 EntityNotFoundException 발생")
-	void uploadQuestionSetMaterial_QuestionSetNotFound() {
-		// given
-		Long nonExistentQuestionSetId = 999L;
-
-		when(questionSetEntityRepository.findById(nonExistentQuestionSetId)).thenReturn(Optional.empty());
-
-		// when & then
-		assertThatThrownBy(() -> questionSetMaterialService.uploadQuestionSetMaterial(mockFile)).isInstanceOf(
-				EntityNotFoundException.class)
-			.hasMessageContaining("Question Set not found with id: " + nonExistentQuestionSetId);
-
-		verify(questionSetEntityRepository).findById(nonExistentQuestionSetId);
 	}
 
 	@Test
@@ -118,8 +96,6 @@ class QuestionSetMaterialServiceTest {
 		String fileKey = "question-set-materials/test-file.pdf";
 		String bucketName = "mait-bucket";
 
-		QuestionSetEntity questionSet = QuestionSetEntity.builder().id(questionSetId).subject("과학").build();
-
 		FileInfo fileInfo = FileInfo.builder()
 			.url(fileUrl)
 			.key(fileKey)
@@ -127,7 +103,6 @@ class QuestionSetMaterialServiceTest {
 			.extension(FileExtension.PDF)
 			.build();
 
-		when(questionSetEntityRepository.findById(questionSetId)).thenReturn(Optional.of(questionSet));
 		when(fileUploader.uploadFile(mockFile, FileType.QUESTION_SET_MATERIAL)).thenReturn(fileInfo);
 		when(questionSetMaterialEntityRepository.save(any(QuestionSetMaterialEntity.class))).thenAnswer(invocation -> {
 			QuestionSetMaterialEntity entity = invocation.getArgument(0);
