@@ -3,6 +3,13 @@ spring:
     import:
       classpath:variables/variable-prod.yml
 
+  jpa:
+    properties:
+      hibernate:
+        show_sql: false
+        format_sql: false
+        dialect: org.hibernate.dialect.MySQL8Dialect
+
   security:
     oauth2:
       client:
