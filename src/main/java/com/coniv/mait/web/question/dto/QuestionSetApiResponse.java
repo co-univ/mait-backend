@@ -34,7 +34,7 @@ public record QuestionSetApiResponse(
 	@Schema(requiredMode = Schema.RequiredMode.REQUIRED)
 	Long questionCount,
 	@Schema(requiredMode = Schema.RequiredMode.NOT_REQUIRED)
-	String levelDescription,
+	String difficulty,
 	@Schema(requiredMode = Schema.RequiredMode.REQUIRED)
 	LocalDateTime updatedAt
 
@@ -50,7 +50,7 @@ public record QuestionSetApiResponse(
 			.ongoingStatus(questionSetDto.getOngoingStatus())
 			.teamId(questionSetDto.getTeamId())
 			.questionCount(questionSetDto.getQuestionCount())
-			.levelDescription(questionSetDto.getLevelDescription())
+			.difficulty(questionSetDto.getDifficulty())
 			.updatedAt(questionSetDto.getUpdatedAt())
 			.build();
 	}

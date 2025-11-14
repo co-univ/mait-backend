@@ -251,21 +251,21 @@ class QuestionSetControllerTest {
 		final String subject = "Updated Subject";
 		final String title = "Updated Title";
 		final DeliveryMode mode = DeliveryMode.REVIEW;
-		final String levelDescription = "Intermediate";
+		final String difficulty = "Intermediate";
 		final QuestionSetVisibility visibility = QuestionSetVisibility.PRIVATE;
 
-		var request = new UpdateQuestionSetApiRequest(title, subject, mode, levelDescription, visibility);
+		var request = new UpdateQuestionSetApiRequest(title, subject, mode, difficulty, visibility);
 
 		QuestionSetDto questionSetDto = QuestionSetDto.builder()
 			.id(questionSetId)
 			.subject(subject)
 			.title(title)
 			.deliveryMode(mode)
-			.levelDescription(levelDescription)
+			.difficulty(difficulty)
 			.visibility(visibility)
 			.build();
 
-		when(questionSetService.completeQuestionSet(questionSetId, title, subject, mode, levelDescription, visibility))
+		when(questionSetService.completeQuestionSet(questionSetId, title, subject, mode, difficulty, visibility))
 			.thenReturn(questionSetDto);
 
 		// when & then
@@ -277,10 +277,10 @@ class QuestionSetControllerTest {
 			.andExpect(jsonPath("$.data.subject").value(subject))
 			.andExpect(jsonPath("$.data.title").value(title))
 			.andExpect(jsonPath("$.data.deliveryMode").value(mode.name()))
-			.andExpect(jsonPath("$.data.levelDescription").value(levelDescription))
+			.andExpect(jsonPath("$.data.difficulty").value(difficulty))
 			.andExpect(jsonPath("$.data.visibility").value(visibility.name()));
 
-		verify(questionSetService).completeQuestionSet(questionSetId, title, subject, mode, levelDescription,
+		verify(questionSetService).completeQuestionSet(questionSetId, title, subject, mode, difficulty,
 			visibility);
 	}
 
@@ -469,7 +469,7 @@ class QuestionSetControllerTest {
 		// when & then
 		mockMvc.perform(multipart("/api/v1/question-sets/materials", questionSetId)
 				.file(mockFile))
-			.andExpect(status().isCreated())
+			.andExpect(status().isOk())
 			.andExpect(jsonPath("$.isSuccess").value(true))
 			.andExpect(jsonPath("$.data.id").value(materialId))
 			.andExpect(jsonPath("$.data.materialUrl").value(fileUrl));

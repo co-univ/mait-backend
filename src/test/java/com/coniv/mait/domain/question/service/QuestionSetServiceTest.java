@@ -248,14 +248,14 @@ class QuestionSetServiceTest {
 		assertThat(questionSetEntity.getTitle()).isEqualTo(newTitle);
 		assertThat(questionSetEntity.getSubject()).isEqualTo(newSubject);
 		assertThat(questionSetEntity.getDeliveryMode()).isEqualTo(newMode);
-		assertThat(questionSetEntity.getLevelDescription()).isEqualTo(levelDescription);
+		assertThat(questionSetEntity.getDifficulty()).isEqualTo(levelDescription);
 		assertThat(questionSetEntity.getVisibility()).isEqualTo(newVisibility);
 
 		assertThat(result).isNotNull();
 		assertThat(result.getTitle()).isEqualTo(newTitle);
 		assertThat(result.getSubject()).isEqualTo(newSubject);
 		assertThat(result.getDeliveryMode()).isEqualTo(newMode);
-		assertThat(result.getLevelDescription()).isEqualTo(levelDescription);
+		assertThat(result.getDifficulty()).isEqualTo(levelDescription);
 		assertThat(result.getVisibility()).isEqualTo(newVisibility);
 	}
 
