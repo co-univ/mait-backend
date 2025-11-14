@@ -261,7 +261,7 @@ class QuestionSetControllerTest {
 			.subject(subject)
 			.title(title)
 			.deliveryMode(mode)
-			.levelDescription(levelDescription)
+			.difficulty(levelDescription)
 			.visibility(visibility)
 			.build();
 

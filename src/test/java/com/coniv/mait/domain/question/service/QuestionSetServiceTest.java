@@ -255,7 +255,7 @@ class QuestionSetServiceTest {
 		assertThat(result.getTitle()).isEqualTo(newTitle);
 		assertThat(result.getSubject()).isEqualTo(newSubject);
 		assertThat(result.getDeliveryMode()).isEqualTo(newMode);
-		assertThat(result.getLevelDescription()).isEqualTo(levelDescription);
+		assertThat(result.getDifficulty()).isEqualTo(levelDescription);
 		assertThat(result.getVisibility()).isEqualTo(newVisibility);
 	}
 
