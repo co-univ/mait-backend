@@ -62,7 +62,7 @@ public class QuestionSetEntity extends BaseTimeEntity {
 	@Builder.Default
 	private QuestionSetOngoingStatus ongoingStatus = QuestionSetOngoingStatus.BEFORE;
 
-	private String levelDescription;
+	private String difficulty;
 
 	private QuestionSetEntity(String subject, QuestionSetCreationType creationType) {
 		this.subject = subject;
@@ -107,7 +107,7 @@ public class QuestionSetEntity extends BaseTimeEntity {
 		this.title = title;
 		this.subject = subject;
 		this.deliveryMode = mode;
-		this.levelDescription = levelDescription;
+		this.difficulty = levelDescription;
 		this.visibility = visibility;
 	}
 

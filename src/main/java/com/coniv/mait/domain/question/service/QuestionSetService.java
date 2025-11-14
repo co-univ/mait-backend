@@ -57,6 +57,7 @@ public class QuestionSetService {
 			.subject(questionSetDto.getSubject())
 			.creationType(questionSetDto.getCreationType())
 			.teamId(questionSetDto.getTeamId())
+			.difficulty(difficulty)
 			.creatorId(userId)
 			.build();
 		questionSetEntityRepository.save(questionSetEntity);

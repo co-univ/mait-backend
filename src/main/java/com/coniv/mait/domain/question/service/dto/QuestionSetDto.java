@@ -43,7 +43,7 @@ public class QuestionSetDto {
 			.deliveryMode(questionSetEntity.getDeliveryMode())
 			.ongoingStatus(questionSetEntity.getOngoingStatus())
 			.teamId(questionSetEntity.getTeamId())
-			.levelDescription(questionSetEntity.getLevelDescription())
+			.levelDescription(questionSetEntity.getDifficulty())
 			.updatedAt(questionSetEntity.getModifiedAt())
 			.build();
 	}
@@ -57,7 +57,7 @@ public class QuestionSetDto {
 			.visibility(questionSetEntity.getVisibility())
 			.deliveryMode(questionSetEntity.getDeliveryMode())
 			.teamId(questionSetEntity.getTeamId())
-			.levelDescription(questionSetEntity.getLevelDescription())
+			.levelDescription(questionSetEntity.getDifficulty())
 			.ongoingStatus(questionSetEntity.getOngoingStatus())
 			.updatedAt(questionSetEntity.getModifiedAt())
 			.questionCount(questionCount)
