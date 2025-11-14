@@ -19,12 +19,12 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.coniv.mait.domain.auth.util.TemporaryPasswordGenerator;
 import com.coniv.mait.domain.team.entity.TeamEntity;
 import com.coniv.mait.domain.team.repository.TeamEntityRepository;
 import com.coniv.mait.domain.team.service.TeamService;
 import com.coniv.mait.domain.user.entity.UserEntity;
 import com.coniv.mait.domain.user.repository.UserEntityRepository;
-import com.coniv.mait.util.TemporaryPasswordGenerator;
 
 @SpringBootTest
 //@ActiveProfiles("production") //TODO: 프로덕션 yml파일 만들어야함 + 활성화

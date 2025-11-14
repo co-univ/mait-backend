@@ -1,4 +1,4 @@
-package com.coniv.mait.util;
+package com.coniv.mait.domain.auth.util;
 
 import java.security.SecureRandom;
 
