@@ -7,5 +7,5 @@ import com.coniv.mait.web.solve.dto.UpdateAnswerPayload;
 public interface QuestionAnswerUpdater {
 	QuestionType getQuestionType();
 
-	void updateAnswer(QuestionEntity question, QuestionType type, UpdateAnswerPayload payload);
+	void updateAnswer(QuestionEntity question, UpdateAnswerPayload payload);
 }
