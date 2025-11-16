@@ -5,6 +5,7 @@ import java.util.List;
 import com.coniv.mait.domain.solve.service.dto.MultipleQuestionSubmitAnswer;
 import com.coniv.mait.domain.solve.service.dto.SubmitAnswerDto;
 
+import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
@@ -22,6 +23,7 @@ public class MultipleQuestionSubmitApiRequest extends QuestionAnswerSubmitApiReq
 
 	@NotNull(message = "객관식 문제의 선택지는 필수입니다.")
 	@Size(min = 1, message = "객관식 문제는 최소 1개의 선택지를 선택해야 합니다.")
+	@Schema(description = "선택한 객관식 문제 정답 번호")
 	private List<Long> submitAnswers;
 
 	@Override
