@@ -16,6 +16,7 @@ public class AnswerSubmitRecordDto {
 	private Long id;
 	private Long userId;
 	private String userName;
+	private String userNickname;
 	private Long questionId;
 	private boolean isCorrect;
 	private Long submitOrder;
@@ -25,6 +26,7 @@ public class AnswerSubmitRecordDto {
 			.id(record.getId())
 			.userId(userEntity.getId())
 			.userName(userEntity.getName())
+			.userNickname(userEntity.getNickname())
 			.questionId(record.getQuestionId())
 			.isCorrect(record.isCorrect())
 			.submitOrder(record.getSubmitOrder())
