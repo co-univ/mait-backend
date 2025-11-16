@@ -28,10 +28,11 @@ public class FillBlankQuestionAnswerUpdater implements QuestionAnswerUpdater {
 	@Override
 	@Transactional
 	public void updateAnswer(QuestionEntity question, UpdateAnswerPayload payload) {
-		// 현재 구현 없음
 		if (!(payload instanceof FillBlankUpdateAnswerPayload fillBlankPayload)) {
 			throw new IllegalArgumentException("빈칸 채우기 문제에만 FillBlankQuestionAnswerUpdater를 사용할 수 있습니다.");
 		}
+
+		// Todo: 인정답안이 아닌 경우 및 존재에 대한 검증 필요
 		List<FillBlankAnswerEntity> answers = fillBlankPayload.answers().stream()
 			.map(dto -> FillBlankAnswerEntity.builder()
 				.fillBlankQuestionId(question.getId())
