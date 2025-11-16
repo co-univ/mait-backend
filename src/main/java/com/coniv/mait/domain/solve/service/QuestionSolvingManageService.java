@@ -5,6 +5,7 @@ import org.springframework.stereotype.Service;
 import com.coniv.mait.domain.question.entity.QuestionEntity;
 import com.coniv.mait.domain.question.enums.QuestionType;
 import com.coniv.mait.domain.question.service.component.QuestionReader;
+import com.coniv.mait.domain.solve.component.QuestionAnswerUpdater;
 import com.coniv.mait.domain.solve.repository.AnswerSubmitRecordEntityRepository;
 import com.coniv.mait.web.solve.dto.UpdateAnswerPayload;
 
@@ -18,6 +19,8 @@ public class QuestionSolvingManageService {
 
 	private final QuestionReader questionReader;
 
+	private final QuestionAnswerUpdater questionAnswerUpdater;
+
 	/**
 	 * 특정 문제에 대해 재채점을 수행한다.
 	 */
@@ -30,7 +33,7 @@ public class QuestionSolvingManageService {
 		// if (!questionSet.isOnLive()) {
 		// 	throw new RuntimeException("문제 세트가 라이브 상태가 아닙니다.");
 		// }
-		//
 
+		questionAnswerUpdater.updateAnswer(question, type, request);
 	}
 }

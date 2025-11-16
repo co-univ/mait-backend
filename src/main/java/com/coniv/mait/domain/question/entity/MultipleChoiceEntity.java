@@ -43,4 +43,8 @@ public class MultipleChoiceEntity {
 			.question(defaultQuestion)
 			.build();
 	}
+
+	public void updateIsCorrect(boolean isCorrect) {
+		this.isCorrect = isCorrect;
+	}
 }
