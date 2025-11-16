@@ -42,8 +42,7 @@ public class QuestionAnswerSubmitController {
 		JsonProcessingException {
 		return ResponseEntity.ok().body(ApiResponse.ok(
 			QuestionAnswerSubmitApiResponse.from(questionAnswerSubmitService.submitAnswer(questionSetId, questionId,
-				request.getUserId(),
-				request.getSubmitAnswers()))));
+				request.getUserId(), request.getSubmitAnswers()))));
 	}
 
 	@Operation(summary = "문제별 득점자 조회 API")
