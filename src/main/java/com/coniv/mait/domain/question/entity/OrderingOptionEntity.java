@@ -34,4 +34,8 @@ public class OrderingOptionEntity {
 
 	@Column(nullable = false)
 	private Long orderingQuestionId;
+
+	public void updateAnswerOrder(int newAnswerOrder) {
+		this.answerOrder = newAnswerOrder;
+	}
 }
