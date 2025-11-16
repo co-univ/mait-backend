@@ -39,7 +39,7 @@ public class QuestionSolvingManageService {
 		// }
 		QuestionAnswerUpdater questionAnswerUpdater = getQuestionAnswerUpdater(type);
 
-		questionAnswerUpdater.updateAnswer(question, type, request);
+		questionAnswerUpdater.updateAnswer(question, request);
 	}
 
 	public QuestionAnswerUpdater getQuestionAnswerUpdater(QuestionType type) {
