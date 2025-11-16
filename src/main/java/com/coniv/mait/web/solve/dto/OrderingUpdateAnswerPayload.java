@@ -6,7 +6,7 @@ import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotEmpty;
 
 public record OrderingUpdateAnswerPayload(
-	@NotEmpty List<@Valid OptionOrderPatch> optionOrders
+	@NotEmpty List<@Valid OptionOrderPatch> options
 ) implements UpdateAnswerPayload {
 
 }
