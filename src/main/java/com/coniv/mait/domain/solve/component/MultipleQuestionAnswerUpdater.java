@@ -22,6 +22,11 @@ public class MultipleQuestionAnswerUpdater implements QuestionAnswerUpdater {
 	private final MultipleChoiceEntityRepository multipleChoiceEntityRepository;
 
 	@Override
+	public QuestionType getQuestionType() {
+		return QuestionType.MULTIPLE;
+	}
+
+	@Override
 	@Transactional
 	public void updateAnswer(QuestionEntity question, QuestionType type, UpdateAnswerPayload payload) {
 		MultipleChoiceUpdateAnswerPayload answers = (MultipleChoiceUpdateAnswerPayload)payload;
