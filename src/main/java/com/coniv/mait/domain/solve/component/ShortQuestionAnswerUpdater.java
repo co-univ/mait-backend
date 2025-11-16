@@ -3,6 +3,7 @@ package com.coniv.mait.domain.solve.component;
 import java.util.List;
 
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.coniv.mait.domain.question.entity.QuestionEntity;
 import com.coniv.mait.domain.question.entity.ShortAnswerEntity;
@@ -25,6 +26,7 @@ public class ShortQuestionAnswerUpdater implements QuestionAnswerUpdater {
 	}
 
 	@Override
+	@Transactional
 	public void updateAnswer(QuestionEntity question, UpdateAnswerPayload payload) {
 		if (!(payload instanceof ShortUpdateAnswerPayload answers)) {
 			throw new IllegalArgumentException("단답형 문제에만 ShortQuestionAnswerUpdater를 사용할 수 있습니다.");
@@ -37,6 +39,7 @@ public class ShortQuestionAnswerUpdater implements QuestionAnswerUpdater {
 				.number(dto.getNumber())
 				.answer(dto.getAnswer())
 				.isMain(dto.isMain())
+				.shortQuestionId(question.getId())
 				.build())
 			.toList();
 
