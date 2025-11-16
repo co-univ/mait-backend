@@ -108,7 +108,7 @@ public class QuestionSetService {
 		final String title,
 		final String subject,
 		final DeliveryMode mode,
-		final String levelDescription,
+		final String difficulty,
 		final QuestionSetVisibility visibility) {
 		QuestionSetEntity questionSet = questionSetEntityRepository.findById(questionSetId)
 			.orElseThrow(() -> new EntityNotFoundException("Question set not found"));
@@ -122,7 +122,7 @@ public class QuestionSetService {
 			question.updateNumber(number++);
 		}
 
-		questionSet.completeQuestionSet(title, subject, mode, levelDescription, visibility);
+		questionSet.completeQuestionSet(title, subject, mode, difficulty, visibility);
 		return QuestionSetDto.from(questionSet);
 	}
 

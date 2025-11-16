@@ -18,7 +18,7 @@ public record UpdateQuestionSetApiRequest(
 	DeliveryMode mode,
 
 	@Schema(description = "문제 셋 난이도 설명")
-	String levelDescription,
+	String difficulty,
 
 	@Schema(description = "문제 셋 공개 단위", enumAsRef = true)
 	QuestionSetVisibility visibility
