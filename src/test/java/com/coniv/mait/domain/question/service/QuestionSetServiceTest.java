@@ -221,7 +221,7 @@ class QuestionSetServiceTest {
 		final String newTitle = "변경할 제목";
 		final String newSubject = "변경할 주제";
 		final DeliveryMode newMode = DeliveryMode.REVIEW;
-		final String levelDescription = "난이도 설명";
+		final String difficulty = "난이도 설명";
 		final QuestionSetVisibility newVisibility = QuestionSetVisibility.GROUP;
 
 		QuestionSetEntity questionSetEntity = QuestionSetEntity.builder()
@@ -239,7 +239,7 @@ class QuestionSetServiceTest {
 			newTitle,
 			newSubject,
 			newMode,
-			levelDescription,
+			difficulty,
 			newVisibility);
 
 		// then
@@ -248,14 +248,14 @@ class QuestionSetServiceTest {
 		assertThat(questionSetEntity.getTitle()).isEqualTo(newTitle);
 		assertThat(questionSetEntity.getSubject()).isEqualTo(newSubject);
 		assertThat(questionSetEntity.getDeliveryMode()).isEqualTo(newMode);
-		assertThat(questionSetEntity.getDifficulty()).isEqualTo(levelDescription);
+		assertThat(questionSetEntity.getDifficulty()).isEqualTo(difficulty);
 		assertThat(questionSetEntity.getVisibility()).isEqualTo(newVisibility);
 
 		assertThat(result).isNotNull();
 		assertThat(result.getTitle()).isEqualTo(newTitle);
 		assertThat(result.getSubject()).isEqualTo(newSubject);
 		assertThat(result.getDeliveryMode()).isEqualTo(newMode);
-		assertThat(result.getDifficulty()).isEqualTo(levelDescription);
+		assertThat(result.getDifficulty()).isEqualTo(difficulty);
 		assertThat(result.getVisibility()).isEqualTo(newVisibility);
 	}
 

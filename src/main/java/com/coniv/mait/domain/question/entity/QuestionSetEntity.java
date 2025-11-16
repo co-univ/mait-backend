@@ -102,12 +102,12 @@ public class QuestionSetEntity extends BaseTimeEntity {
 		}
 	}
 
-	public void completeQuestionSet(String title, String subject, DeliveryMode mode, String levelDescription,
+	public void completeQuestionSet(String title, String subject, DeliveryMode mode, String difficulty,
 		QuestionSetVisibility visibility) {
 		this.title = title;
 		this.subject = subject;
 		this.deliveryMode = mode;
-		this.difficulty = levelDescription;
+		this.difficulty = difficulty;
 		this.visibility = visibility;
 	}
 
