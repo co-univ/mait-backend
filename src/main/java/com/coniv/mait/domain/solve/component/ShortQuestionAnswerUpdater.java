@@ -30,6 +30,8 @@ public class ShortQuestionAnswerUpdater implements QuestionAnswerUpdater {
 			throw new IllegalArgumentException("단답형 문제에만 ShortQuestionAnswerUpdater를 사용할 수 있습니다.");
 		}
 
+		// Todo: 인정답안이 아닌 경우 및 존재에 대한 검증 필요
+
 		List<ShortAnswerEntity> shortAnswers = answers.shortAnswers().stream()
 			.map(dto -> ShortAnswerEntity.builder()
 				.number(dto.getNumber())
