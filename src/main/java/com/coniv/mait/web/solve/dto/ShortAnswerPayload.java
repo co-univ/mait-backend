@@ -3,18 +3,20 @@ package com.coniv.mait.web.solve.dto;
 import java.util.List;
 
 import com.coniv.mait.domain.question.enums.QuestionType;
-import com.coniv.mait.domain.question.service.dto.ShortAnswerDto;
 
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotEmpty;
+import jakarta.validation.constraints.NotNull;
 
 public record ShortAnswerPayload(
-	@NotEmpty List<@Valid ShortAnswerDto> shortAnswers
-) implements UpdateQuestionAnswerApiRequest {
+	@NotNull QuestionType type,
+	@NotEmpty List<@Valid ShortAnswerCandidate> answersToAdd
+) implements AnswerUpdatePayload {
 
-	@Override
-	public QuestionType type() {
-		return QuestionType.SHORT;
+	public ShortAnswerPayload {
+		if (type != QuestionType.SHORT) {
+			throw new IllegalArgumentException("ShortAnswerAppendPatch는 QuestionType.SHORT만 지원합니다.");
+		}
 	}
 }
 
