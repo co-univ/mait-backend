@@ -6,9 +6,13 @@ import com.coniv.mait.domain.question.enums.QuestionType;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 
 @Getter
+@Setter
 @AllArgsConstructor
+@NoArgsConstructor
 public class FillBlankQuestionSubmitAnswer implements SubmitAnswerDto<FillBlankSubmitAnswer> {
 
 	private List<FillBlankSubmitAnswer> submitAnswers;

@@ -3,6 +3,7 @@ package com.coniv.mait.domain.question.service.component;
 import java.util.List;
 
 import org.springframework.stereotype.Component;
+import org.springframework.util.StringUtils;
 
 import com.coniv.mait.domain.question.entity.MultipleChoiceEntity;
 import com.coniv.mait.domain.question.entity.MultipleQuestionEntity;
@@ -47,7 +48,7 @@ public class MultipleQuestionValidator implements QuestionValidator {
 			return QuestionValidateDto.invalid(multipleQuestion, QuestionValidationResult.NO_CORRECT_CHOICE);
 		}
 
-		if (choices.stream().anyMatch(choice -> choice.getContent().isBlank())) {
+		if (choices.stream().anyMatch(choice -> !StringUtils.hasText(choice.getContent()))) {
 			return QuestionValidateDto.invalid(multipleQuestion, QuestionValidationResult.EMPTY_CHOICE_CONTENT);
 		}
 

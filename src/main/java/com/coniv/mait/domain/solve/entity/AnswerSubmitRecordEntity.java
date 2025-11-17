@@ -7,6 +7,7 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.Index;
 import jakarta.persistence.Table;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
@@ -14,7 +15,9 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
-@Table(name = "answer_submit_records")
+@Table(name = "answer_submit_records", indexes = {
+	@Index(name = "idx_question_id_and_submit_order", columnList = "questionId, submitOrder")
+})
 @Entity
 @Getter
 @Builder

@@ -348,20 +348,19 @@ class QuestionAnswerSubmitControllerTest {
 					questionSetId, questionId))
 			.andExpect(status().isOk())
 			.andExpect(jsonPath("$.isSuccess").value(true))
-			.andExpect(jsonPath("$.data").isArray())
-			.andExpect(jsonPath("$.data.length()").value(2))
-			.andExpect(jsonPath("$.data[0].id").value(1))
-			.andExpect(jsonPath("$.data[0].userId").value(userId1))
-			.andExpect(jsonPath("$.data[0].userName").value("사용자1"))
-			.andExpect(jsonPath("$.data[0].questionId").value(questionId))
-			.andExpect(jsonPath("$.data[0].isCorrect").value(true))
-			.andExpect(jsonPath("$.data[0].submitOrder").value(1))
-			.andExpect(jsonPath("$.data[1].id").value(2))
-			.andExpect(jsonPath("$.data[1].userId").value(userId2))
-			.andExpect(jsonPath("$.data[1].userName").value("사용자2"))
-			.andExpect(jsonPath("$.data[1].questionId").value(questionId))
-			.andExpect(jsonPath("$.data[1].isCorrect").value(false))
-			.andExpect(jsonPath("$.data[1].submitOrder").value(2));
+			.andExpect(jsonPath("$.data.totalCounts").value(2))
+			.andExpect(jsonPath("$.data.submitRecords[0].id").value(1))
+			.andExpect(jsonPath("$.data.submitRecords[0].userId").value(userId1))
+			.andExpect(jsonPath("$.data.submitRecords[0].userName").value("사용자1"))
+			.andExpect(jsonPath("$.data.submitRecords[0].questionId").value(questionId))
+			.andExpect(jsonPath("$.data.submitRecords[0].isCorrect").value(true))
+			.andExpect(jsonPath("$.data.submitRecords[0].submitOrder").value(1))
+			.andExpect(jsonPath("$.data.submitRecords[1].id").value(2))
+			.andExpect(jsonPath("$.data.submitRecords[1].userId").value(userId2))
+			.andExpect(jsonPath("$.data.submitRecords[1].userName").value("사용자2"))
+			.andExpect(jsonPath("$.data.submitRecords[1].questionId").value(questionId))
+			.andExpect(jsonPath("$.data.submitRecords[1].isCorrect").value(false))
+			.andExpect(jsonPath("$.data.submitRecords[1].submitOrder").value(2));
 
 		verify(questionAnswerSubmitService).getSubmitRecords(questionSetId, questionId);
 	}

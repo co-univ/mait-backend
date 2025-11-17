@@ -25,6 +25,7 @@ import com.coniv.mait.domain.solve.entity.AnswerSubmitRecordEntity;
 import com.coniv.mait.domain.solve.entity.QuestionScorerEntity;
 import com.coniv.mait.domain.solve.repository.AnswerSubmitRecordEntityRepository;
 import com.coniv.mait.domain.solve.repository.QuestionScorerEntityRepository;
+import com.coniv.mait.domain.solve.service.dto.MultipleQuestionSubmitAnswer;
 import com.coniv.mait.domain.user.entity.UserEntity;
 import com.coniv.mait.domain.user.repository.UserEntityRepository;
 import com.coniv.mait.web.integration.BaseIntegrationTest;
@@ -219,13 +220,18 @@ public class QuestionAnswerSubmitApiIntegrationTest extends BaseIntegrationTest 
 				.build());
 
 		// 정답 제출 기록 생성
+		String correctSubmitAnswer = objectMapper.writeValueAsString(
+			new MultipleQuestionSubmitAnswer(List.of(1L)));
+		String incorrectSubmitAnswer = objectMapper.writeValueAsString(
+			new MultipleQuestionSubmitAnswer(List.of(2L)));
+
 		AnswerSubmitRecordEntity record1 = answerSubmitRecordEntityRepository.save(
 			AnswerSubmitRecordEntity.builder()
 				.userId(user1.getId())
 				.questionId(multipleQuestion.getId())
 				.submitOrder(1L)
 				.isCorrect(true)
-				.submittedAnswer("{\"answer\": \"A\"}")
+				.submittedAnswer(correctSubmitAnswer)
 				.build()
 		);
 
@@ -235,7 +241,7 @@ public class QuestionAnswerSubmitApiIntegrationTest extends BaseIntegrationTest 
 				.questionId(multipleQuestion.getId())
 				.submitOrder(2L)
 				.isCorrect(false)
-				.submittedAnswer("{\"answer\": \"B\"}")
+				.submittedAnswer(incorrectSubmitAnswer)
 				.build()
 		);
 
@@ -245,20 +251,19 @@ public class QuestionAnswerSubmitApiIntegrationTest extends BaseIntegrationTest 
 			.andExpect(status().isOk())
 			.andExpectAll(
 				jsonPath("$.isSuccess").value(true),
-				jsonPath("$.data").isArray(),
-				jsonPath("$.data.length()").value(2),
-				jsonPath("$.data[0].id").value(record1.getId()),
-				jsonPath("$.data[0].userId").value(user1.getId()),
-				jsonPath("$.data[0].userName").value("사용자1"),
-				jsonPath("$.data[0].questionId").value(multipleQuestion.getId()),
-				jsonPath("$.data[0].isCorrect").value(true),
-				jsonPath("$.data[0].submitOrder").value(1),
-				jsonPath("$.data[1].id").value(record2.getId()),
-				jsonPath("$.data[1].userId").value(user2.getId()),
-				jsonPath("$.data[1].userName").value("사용자2"),
-				jsonPath("$.data[1].questionId").value(multipleQuestion.getId()),
-				jsonPath("$.data[1].isCorrect").value(false),
-				jsonPath("$.data[1].submitOrder").value(2)
+				jsonPath("$.data.totalCounts").value(2),
+				jsonPath("$.data.submitRecords[0].id").value(record1.getId()),
+				jsonPath("$.data.submitRecords[0].userId").value(user1.getId()),
+				jsonPath("$.data.submitRecords[0].userName").value("사용자1"),
+				jsonPath("$.data.submitRecords[0].questionId").value(multipleQuestion.getId()),
+				jsonPath("$.data.submitRecords[0].isCorrect").value(true),
+				jsonPath("$.data.submitRecords[0].submitOrder").value(1),
+				jsonPath("$.data.submitRecords[1].id").value(record2.getId()),
+				jsonPath("$.data.submitRecords[1].userId").value(user2.getId()),
+				jsonPath("$.data.submitRecords[1].userName").value("사용자2"),
+				jsonPath("$.data.submitRecords[1].questionId").value(multipleQuestion.getId()),
+				jsonPath("$.data.submitRecords[1].isCorrect").value(false),
+				jsonPath("$.data.submitRecords[1].submitOrder").value(2)
 			);
 	}
 }
