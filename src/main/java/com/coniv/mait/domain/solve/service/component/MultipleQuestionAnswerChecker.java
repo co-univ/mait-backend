@@ -41,7 +41,7 @@ public class MultipleQuestionAnswerChecker implements AnswerChecker<Long> {
 
 		MultipleQuestionSubmitAnswer submitAnswer = (MultipleQuestionSubmitAnswer)request;
 
-		Set<Long> submitAnswerNumbers = new HashSet<>(submitAnswer.getSelectedChoiceNumbers());
+		Set<Long> submitAnswerNumbers = new HashSet<>(submitAnswer.getSubmitAnswers());
 
 		return SetUtils.isEqualSet(answerNumbers, submitAnswerNumbers);
 	}
