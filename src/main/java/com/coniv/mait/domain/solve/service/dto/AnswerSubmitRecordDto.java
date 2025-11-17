@@ -20,6 +20,7 @@ public class AnswerSubmitRecordDto {
 	private Long questionId;
 	private boolean isCorrect;
 	private Long submitOrder;
+	private SubmitAnswerDto<?> submittedAnswer;
 
 	public static AnswerSubmitRecordDto of(AnswerSubmitRecordEntity record, UserEntity userEntity) {
 		return AnswerSubmitRecordDto.builder()
@@ -30,6 +31,7 @@ public class AnswerSubmitRecordDto {
 			.questionId(record.getQuestionId())
 			.isCorrect(record.isCorrect())
 			.submitOrder(record.getSubmitOrder())
+			.submittedAnswer(SubmitAnswerDto.fromJson(record.getSubmittedAnswer()))
 			.build();
 	}
 }
