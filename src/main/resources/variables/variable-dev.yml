@@ -3,6 +3,7 @@ server:
 
 mait:
   base-url: "https://dev.mait.kr"
+  invite-url: "https://dev.mait.kr/invite/"
   cookie:
     path: "/"
     max-age: 259200  # 3 days

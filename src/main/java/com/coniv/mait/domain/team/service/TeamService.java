@@ -18,6 +18,7 @@ import com.coniv.mait.domain.team.service.component.InviteTokenGenerator;
 import com.coniv.mait.domain.team.service.dto.TeamInviteDto;
 import com.coniv.mait.domain.user.entity.UserEntity;
 import com.coniv.mait.domain.user.repository.UserEntityRepository;
+import com.coniv.mait.global.config.property.MaitProperty;
 import com.coniv.mait.global.enums.InviteTokenDuration;
 import com.coniv.mait.global.exception.custom.TeamInviteFailException;
 
@@ -27,6 +28,8 @@ import lombok.RequiredArgsConstructor;
 @Service
 @RequiredArgsConstructor
 public class TeamService {
+
+	private final MaitProperty maitProperty;
 
 	private final TeamEntityRepository teamEntityRepository;
 	private final TeamUserEntityRepository teamUserEntityRepository;
@@ -102,7 +105,7 @@ public class TeamService {
 			role, requiresApproval);
 		teamInviteEntityRepository.save(teamInviteEntity);
 
-		return privateCode;
+		return maitProperty.getInviteUrl() + privateCode;
 	}
 
 	private void validateInvitorRole(final TeamEntity team, final UserEntity invitor) {
