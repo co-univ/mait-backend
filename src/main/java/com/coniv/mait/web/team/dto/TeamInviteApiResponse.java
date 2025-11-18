@@ -1,5 +1,6 @@
 package com.coniv.mait.web.team.dto;
 
+import com.coniv.mait.domain.team.enums.InviteApplicationStatus;
 import com.coniv.mait.domain.team.enums.TeamUserRole;
 import com.coniv.mait.domain.team.service.dto.TeamInviteDto;
 
@@ -21,9 +22,10 @@ public record TeamInviteApiResponse(
 	boolean isExpired,
 
 	@Schema(description = "승인 필요 여부", requiredMode = Schema.RequiredMode.REQUIRED)
-	boolean requiresApproval
-
-	//승인 완료, 실패, 대기, 아예 한적 없는거
+	boolean requiresApproval,
+	
+	@Schema(description = "초대 신청 상태", requiredMode = Schema.RequiredMode.REQUIRED)
+	InviteApplicationStatus applicationStatus
 
 ) {
 	public static TeamInviteApiResponse from(TeamInviteDto dto) {
@@ -33,6 +35,7 @@ public record TeamInviteApiResponse(
 			.role(dto.getTeamUserRole())
 			.isExpired(dto.isValid())
 			.requiresApproval(dto.isRequiresApproval())
+			.applicationStatus(dto.getApplicationStatus())
 			.build();
 	}
 }
