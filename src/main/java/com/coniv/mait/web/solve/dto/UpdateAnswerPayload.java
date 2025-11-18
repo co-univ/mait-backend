@@ -13,7 +13,6 @@ import io.swagger.v3.oas.annotations.media.Schema;
 })
 @JsonTypeInfo(
 	use = JsonTypeInfo.Id.NAME,
-	include = JsonTypeInfo.As.EXTERNAL_PROPERTY,
 	property = "type"
 )
 @JsonSubTypes({
@@ -25,4 +24,6 @@ import io.swagger.v3.oas.annotations.media.Schema;
 public sealed interface UpdateAnswerPayload
 	permits MultipleChoiceUpdateAnswerPayload, OrderingUpdateAnswerPayload, FillBlankUpdateAnswerPayload,
 	ShortUpdateAnswerPayload {
+
+	com.coniv.mait.domain.question.enums.QuestionType getType();
 }

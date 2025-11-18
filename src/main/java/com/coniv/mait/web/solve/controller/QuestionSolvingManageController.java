@@ -30,8 +30,7 @@ public class QuestionSolvingManageController {
 		@PathVariable("questionId") Long questionId,
 		@RequestBody UpdateQuestionAnswerApiRequest request) {
 
-		questionSolvingManageService.updateQuestionAnswers(questionSetId, questionId, request.type(),
-			request.payload());
+		questionSolvingManageService.updateQuestionAnswers(questionSetId, questionId, request.payload());
 		return ResponseEntity.ok(ApiResponse.noContent());
 	}
 }
