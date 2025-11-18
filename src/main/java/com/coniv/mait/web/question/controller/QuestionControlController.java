@@ -4,13 +4,13 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.coniv.mait.domain.question.enums.QuestionStatusType;
 import com.coniv.mait.domain.question.service.QuestionControlService;
 import com.coniv.mait.global.response.ApiResponse;
+import com.coniv.mait.web.question.dto.UpdateQuestionStatusApiRequest;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -55,9 +55,9 @@ public class QuestionControlController {
 	public ResponseEntity<ApiResponse<Void>> updateQuestionStatus(
 		@PathVariable("questionSetId") Long questionSetId,
 		@PathVariable("questionId") Long questionId,
-		@RequestParam("status") QuestionStatusType statusType) {
+		@RequestBody UpdateQuestionStatusApiRequest request) {
 
-		questionControlService.updateQuestionStatus(questionSetId, questionId, statusType);
+		questionControlService.updateQuestionStatus(questionSetId, questionId, request.statusType());
 		return ResponseEntity.ok(ApiResponse.noContent());
 	}
 }
