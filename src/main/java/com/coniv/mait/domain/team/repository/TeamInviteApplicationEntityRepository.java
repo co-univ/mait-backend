@@ -8,5 +8,5 @@ import com.coniv.mait.domain.team.entity.TeamInviteApplicantEntity;
 
 public interface TeamInviteApplicationEntityRepository extends JpaRepository<TeamInviteApplicantEntity, Long> {
 
-	Optional<TeamInviteApplicantEntity> findByTeamIdAndUserId(Long teamId, Long userId);
+	Optional<TeamInviteApplicantEntity> findByTeamIdAndUserIdAndInviteId(Long teamId, Long userId, Long inviteId);
 }

@@ -68,9 +68,10 @@ public class TeamService {
 			throw new TeamInviteFailException("User is already a member of the team: " + team.getId());
 		}
 
-		return teamInviteApplicationEntityRepository.findByTeamIdAndUserId(
+		return teamInviteApplicationEntityRepository.findByTeamIdAndUserIdAndInviteId(
 				team.getId(),
-				user.getId()
+				user.getId(),
+				teamInvite.getId()
 			)
 			.map(app -> TeamInviteDto.from(teamInvite, team, true, app.getApplicationStatus()))
 			.orElse(TeamInviteDto.from(teamInvite, team, true, null));

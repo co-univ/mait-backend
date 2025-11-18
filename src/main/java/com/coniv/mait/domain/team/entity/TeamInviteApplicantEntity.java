@@ -22,7 +22,6 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 @Table(name = "team_invite_applicants", indexes = {
-	@Index(name = "idx_team_invite_applicant", columnList = "team_id, application_status"),
 	@Index(name = "idx_team_invite_teamid_userid", columnList = "team_id, user_id")
 })
 @Entity
@@ -41,6 +40,9 @@ public class TeamInviteApplicantEntity extends BaseTimeEntity {
 
 	@Column(nullable = false)
 	private Long userId;
+
+	@Column(nullable = false)
+	private Long inviteId;
 
 	@Enumerated(EnumType.STRING)
 	@Column(nullable = false)
