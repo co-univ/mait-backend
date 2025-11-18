@@ -14,6 +14,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import com.coniv.mait.domain.question.dto.AnswerRankDto;
 import com.coniv.mait.domain.question.entity.QuestionEntity;
 import com.coniv.mait.domain.question.entity.QuestionSetEntity;
 import com.coniv.mait.domain.question.entity.QuestionSetParticipantEntity;
@@ -21,7 +22,6 @@ import com.coniv.mait.domain.question.enums.ParticipantStatus;
 import com.coniv.mait.domain.question.repository.QuestionEntityRepository;
 import com.coniv.mait.domain.question.repository.QuestionSetEntityRepository;
 import com.coniv.mait.domain.question.repository.QuestionSetParticipantRepository;
-import com.coniv.mait.domain.question.dto.AnswerRankDto;
 import com.coniv.mait.domain.question.service.component.QuestionReader;
 import com.coniv.mait.domain.question.service.dto.ParticipantCorrectAnswerRankDto;
 import com.coniv.mait.domain.solve.entity.AnswerSubmitRecordEntity;
