@@ -63,7 +63,7 @@ public class TeamService {
 		String privateCode = inviteTokenGenerator.generateUniqueInviteToken();
 
 		TeamInviteEntity teamInviteEntity = TeamInviteEntity.createInvite(invitor, team, privateCode, duration,
-			requiresApproval);
+			role, requiresApproval);
 		teamInviteEntityRepository.save(teamInviteEntity);
 
 		return privateCode;

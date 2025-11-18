@@ -149,6 +149,9 @@ public class TeamApiIntegrationTest extends BaseIntegrationTest {
 		assertThat(savedInvite.getTokenDuration()).isEqualTo(InviteTokenDuration.ONE_DAY);
 		assertThat(savedInvite.getToken()).isNotBlank();
 		assertThat(savedInvite.getExpiredAt()).isNotNull();
+		// 새로운 필드 검증
+		assertThat(savedInvite.getRoleOnJoin()).isEqualTo(TeamUserRole.PLAYER);
+		assertThat(savedInvite.isRequiresApproval()).isFalse();
 	}
 
 	private TeamEntity createTeamWithOwner(String teamName, UserEntity owner) {

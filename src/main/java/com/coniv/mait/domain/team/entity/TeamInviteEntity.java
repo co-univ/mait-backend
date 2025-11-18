@@ -2,6 +2,7 @@ package com.coniv.mait.domain.team.entity;
 
 import java.time.LocalDateTime;
 
+import com.coniv.mait.domain.team.enums.TeamUserRole;
 import com.coniv.mait.domain.user.entity.UserEntity;
 import com.coniv.mait.global.entity.BaseTimeEntity;
 import com.coniv.mait.global.enums.InviteTokenDuration;
@@ -50,19 +51,24 @@ public class TeamInviteEntity extends BaseTimeEntity {
 	@Column(nullable = false)
 	private InviteTokenDuration tokenDuration;
 
-	@Column
+	@Enumerated(EnumType.STRING)
+	@Column(nullable = false)
+	private TeamUserRole roleOnJoin;
+
+	@Column(nullable = false)
 	private boolean requiresApproval;
 
 	@Column
 	private LocalDateTime expiredAt;
 
 	public static TeamInviteEntity createInvite(UserEntity invitor, TeamEntity team, String token,
-		InviteTokenDuration duration, boolean requiresApproval) {
+		InviteTokenDuration duration, TeamUserRole roleOnJoin, boolean requiresApproval) {
 		return TeamInviteEntity.builder()
 			.invitor(invitor)
 			.team(team)
 			.token(token)
 			.tokenDuration(duration)
+			.roleOnJoin(roleOnJoin)
 			.requiresApproval(requiresApproval)
 			.expiredAt(duration.calculateExpirationTime())
 			.build();
