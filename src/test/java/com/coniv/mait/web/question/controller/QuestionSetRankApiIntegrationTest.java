@@ -108,7 +108,6 @@ public class QuestionSetRankApiIntegrationTest extends BaseIntegrationTest {
 				.displayDelayMilliseconds(5000)
 				.build());
 
-		// user1: 3개 정답, user2: 1개 정답, user3: 2개 정답
 		answerSubmitRecordEntityRepository.save(
 			AnswerSubmitRecordEntity.builder()
 				.userId(user1.getId())
@@ -167,23 +166,25 @@ public class QuestionSetRankApiIntegrationTest extends BaseIntegrationTest {
 		mockMvc.perform(get("/api/v1/question-sets/{questionSetId}/ranks", questionSet.getId())
 				.param("type", "CORRECT")
 				.accept(MediaType.APPLICATION_JSON))
-			.andExpect(status().isOk())
-			.andExpect(jsonPath("$.isSuccess").value(true))
-			.andExpect(jsonPath("$.data.questionSetId").value(questionSet.getId()))
-			.andExpect(jsonPath("$.data.ranksGroup").isArray())
-			.andExpect(jsonPath("$.data.ranksGroup.length()").value(3))
-			.andExpect(jsonPath("$.data.ranksGroup[0].answerCount").value(1L))
-			.andExpect(jsonPath("$.data.ranksGroup[0].users.length()").value(1))
-			.andExpect(jsonPath("$.data.ranksGroup[0].users[0].userId").value(user2.getId()))
-			.andExpect(jsonPath("$.data.ranksGroup[0].users[0].name").value("사용자2"))
-			.andExpect(jsonPath("$.data.ranksGroup[1].answerCount").value(2L))
-			.andExpect(jsonPath("$.data.ranksGroup[1].users.length()").value(1))
-			.andExpect(jsonPath("$.data.ranksGroup[1].users[0].userId").value(user3.getId()))
-			.andExpect(jsonPath("$.data.ranksGroup[1].users[0].name").value("사용자3"))
-			.andExpect(jsonPath("$.data.ranksGroup[2].answerCount").value(3L))
-			.andExpect(jsonPath("$.data.ranksGroup[2].users.length()").value(1))
-			.andExpect(jsonPath("$.data.ranksGroup[2].users[0].userId").value(user1.getId()))
-			.andExpect(jsonPath("$.data.ranksGroup[2].users[0].name").value("사용자1"));
+			.andExpectAll(
+				status().isOk(),
+				jsonPath("$.isSuccess").value(true),
+				jsonPath("$.data.questionSetId").value(questionSet.getId()),
+				jsonPath("$.data.ranksGroup").isArray(),
+				jsonPath("$.data.ranksGroup.length()").value(3),
+				jsonPath("$.data.ranksGroup[0].answerCount").value(3L),
+				jsonPath("$.data.ranksGroup[0].users.length()").value(1),
+				jsonPath("$.data.ranksGroup[0].users[0].userId").value(user1.getId()),
+				jsonPath("$.data.ranksGroup[0].users[0].name").value("사용자1"),
+				jsonPath("$.data.ranksGroup[1].answerCount").value(2L),
+				jsonPath("$.data.ranksGroup[1].users.length()").value(1),
+				jsonPath("$.data.ranksGroup[1].users[0].userId").value(user3.getId()),
+				jsonPath("$.data.ranksGroup[1].users[0].name").value("사용자3"),
+				jsonPath("$.data.ranksGroup[2].answerCount").value(1L),
+				jsonPath("$.data.ranksGroup[2].users.length()").value(1),
+				jsonPath("$.data.ranksGroup[2].users[0].userId").value(user2.getId()),
+				jsonPath("$.data.ranksGroup[2].users[0].name").value("사용자2")
+			);
 
 		// then
 		assertThat(answerSubmitRecordEntityRepository.count()).isEqualTo(6);

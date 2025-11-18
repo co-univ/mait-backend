@@ -352,7 +352,7 @@ class QuestionRankServiceTest {
 	}
 
 	@Test
-	@DisplayName("정답자 랭킹 조회 성공 - 정답 개수별 그룹화 및 오름차순 정렬")
+	@DisplayName("정답자 랭킹 조회 성공 - 정답 개수별 그룹화 및 내림차순 정렬")
 	void getCorrectorsByQuestionSetId_Success() {
 		// given
 		final Long questionSetId = 1L;
@@ -424,18 +424,18 @@ class QuestionRankServiceTest {
 		assertNotNull(result);
 		assertThat(result).hasSize(3);
 
-		// 정답 개수 기준 오름차순 정렬 확인 (1개, 2개, 3개)
-		assertThat(result.get(0).getAnswerCount()).isEqualTo(1L);
+		// 정답 개수 기준 내림차순 정렬 확인 (3개, 2개, 1개)
+		assertThat(result.get(0).getAnswerCount()).isEqualTo(3L);
 		assertThat(result.get(0).getUsers()).hasSize(1);
-		assertThat(result.get(0).getUsers().get(0).getId()).isEqualTo(2L);
+		assertThat(result.get(0).getUsers().get(0).getId()).isEqualTo(1L);
 
 		assertThat(result.get(1).getAnswerCount()).isEqualTo(2L);
 		assertThat(result.get(1).getUsers()).hasSize(1);
 		assertThat(result.get(1).getUsers().get(0).getId()).isEqualTo(3L);
 
-		assertThat(result.get(2).getAnswerCount()).isEqualTo(3L);
+		assertThat(result.get(2).getAnswerCount()).isEqualTo(1L);
 		assertThat(result.get(2).getUsers()).hasSize(1);
-		assertThat(result.get(2).getUsers().get(0).getId()).isEqualTo(1L);
+		assertThat(result.get(2).getUsers().get(0).getId()).isEqualTo(2L);
 
 		verify(questionSetEntityRepository).findById(questionSetId);
 		verify(questionReader).getQuestionsByQuestionSet(questionSet);
@@ -494,14 +494,14 @@ class QuestionRankServiceTest {
 		assertNotNull(result);
 		assertThat(result).hasSize(2);
 
-		// 정답 개수 기준 오름차순 정렬 확인 (0개, 1개)
-		assertThat(result.get(0).getAnswerCount()).isEqualTo(0L);
+		// 정답 개수 기준 내림차순 정렬 확인 (1개, 0개)
+		assertThat(result.get(0).getAnswerCount()).isEqualTo(1L);
 		assertThat(result.get(0).getUsers()).hasSize(1);
-		assertThat(result.get(0).getUsers().get(0).getId()).isEqualTo(2L);
+		assertThat(result.get(0).getUsers().get(0).getId()).isEqualTo(1L);
 
-		assertThat(result.get(1).getAnswerCount()).isEqualTo(1L);
+		assertThat(result.get(1).getAnswerCount()).isEqualTo(0L);
 		assertThat(result.get(1).getUsers()).hasSize(1);
-		assertThat(result.get(1).getUsers().get(0).getId()).isEqualTo(1L);
+		assertThat(result.get(1).getUsers().get(0).getId()).isEqualTo(2L);
 
 		verify(questionSetEntityRepository).findById(questionSetId);
 		verify(questionReader).getQuestionsByQuestionSet(questionSet);
@@ -573,15 +573,15 @@ class QuestionRankServiceTest {
 		assertNotNull(result);
 		assertThat(result).hasSize(2);
 
-		// 정답 개수 기준 오름차순 정렬 확인 (0개, 1개)
-		assertThat(result.get(0).getAnswerCount()).isEqualTo(0L);
-		assertThat(result.get(0).getUsers()).hasSize(1);
-		assertThat(result.get(0).getUsers().get(0).getId()).isEqualTo(3L);
-
+		// 정답 개수 기준 내림차순 정렬 확인 (1개, 0개)
+		assertThat(result.get(0).getAnswerCount()).isEqualTo(1L);
 		// 동일한 정답 개수(1개)를 가진 사용자들이 같은 그룹에 포함되는지 확인
-		assertThat(result.get(1).getAnswerCount()).isEqualTo(1L);
-		assertThat(result.get(1).getUsers()).hasSize(2);
-		assertThat(result.get(1).getUsers()).extracting(UserDto::getId).containsExactlyInAnyOrder(1L, 2L);
+		assertThat(result.get(0).getUsers()).hasSize(2);
+		assertThat(result.get(0).getUsers()).extracting(UserDto::getId).containsExactlyInAnyOrder(1L, 2L);
+
+		assertThat(result.get(1).getAnswerCount()).isEqualTo(0L);
+		assertThat(result.get(1).getUsers()).hasSize(1);
+		assertThat(result.get(1).getUsers().get(0).getId()).isEqualTo(3L);
 
 		verify(questionSetEntityRepository).findById(questionSetId);
 		verify(questionReader).getQuestionsByQuestionSet(questionSet);
