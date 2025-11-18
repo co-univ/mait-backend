@@ -8,6 +8,7 @@ import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Service;
 
+import com.coniv.mait.domain.question.dto.AnswerRankDto;
 import com.coniv.mait.domain.question.dto.ParticipantDto;
 import com.coniv.mait.domain.question.entity.QuestionEntity;
 import com.coniv.mait.domain.question.entity.QuestionSetEntity;
@@ -16,10 +17,15 @@ import com.coniv.mait.domain.question.enums.ParticipantStatus;
 import com.coniv.mait.domain.question.repository.QuestionEntityRepository;
 import com.coniv.mait.domain.question.repository.QuestionSetEntityRepository;
 import com.coniv.mait.domain.question.repository.QuestionSetParticipantRepository;
+import com.coniv.mait.domain.question.service.component.QuestionReader;
 import com.coniv.mait.domain.question.service.dto.ParticipantCorrectAnswerRankDto;
 import com.coniv.mait.domain.question.service.dto.ParticipantCorrectAnswersDto;
 import com.coniv.mait.domain.solve.entity.AnswerSubmitRecordEntity;
 import com.coniv.mait.domain.solve.repository.AnswerSubmitRecordEntityRepository;
+import com.coniv.mait.domain.team.entity.TeamEntity;
+import com.coniv.mait.domain.team.service.component.TeamReader;
+import com.coniv.mait.domain.user.service.component.UserReader;
+import com.coniv.mait.domain.user.service.dto.UserDto;
 
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
@@ -29,6 +35,12 @@ import lombok.extern.slf4j.Slf4j;
 @RequiredArgsConstructor
 @Slf4j
 public class QuestionRankService {
+
+	private final UserReader userReader;
+
+	private final TeamReader teamReader;
+
+	private final QuestionReader questionReader;
 
 	private final QuestionSetParticipantRepository questionSetParticipantRepository;
 
@@ -92,5 +104,32 @@ public class QuestionRankService {
 	private QuestionSetEntity findQuestionSetById(Long questionSetId) {
 		return questionSetEntityRepository.findById(questionSetId)
 			.orElseThrow(() -> new EntityNotFoundException("해당 문제 세트가 존재하지 않습니다."));
+	}
+
+	public List<AnswerRankDto> getCorrectorsByQuestionSetId(final Long questionSetId) {
+		QuestionSetEntity questionSet = findQuestionSetById(questionSetId);
+
+		List<Long> questionIds = questionReader.getQuestionsByQuestionSet(questionSet).stream()
+			.map(QuestionEntity::getId).toList();
+
+		Map<Long, Long> answerCountByUserId = answerSubmitRecordEntityRepository.findAllByQuestionIdInAndIsCorrect(
+				questionIds, true).stream()
+			.collect(Collectors.groupingBy(AnswerSubmitRecordEntity::getUserId, Collectors.counting()));
+
+		TeamEntity team = teamReader.getTeam(questionSet.getTeamId());
+
+		Map<Long, List<UserDto>> usersByCorrectCount = userReader.getUsersByTeam(team).stream()
+			.map(UserDto::from)
+			.collect(Collectors.groupingBy(
+				user -> answerCountByUserId.getOrDefault(user.getId(), 0L)
+			));
+
+		return usersByCorrectCount.entrySet().stream()
+			.map(entry -> AnswerRankDto.builder()
+				.answerCount(entry.getKey())
+				.users(entry.getValue())
+				.build())
+			.sorted(Comparator.comparing(AnswerRankDto::getAnswerCount))
+			.toList();
 	}
 }
