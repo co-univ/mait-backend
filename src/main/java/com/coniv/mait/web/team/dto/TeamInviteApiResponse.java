@@ -31,7 +31,7 @@ public record TeamInviteApiResponse(
 			.teamId(dto.getTeamId())
 			.teamName(dto.getTeamName())
 			.role(dto.getTeamUserRole())
-			.isExpired(dto.isExpired())
+			.isExpired(dto.isValid())
 			.requiresApproval(dto.isRequiresApproval())
 			.build();
 	}

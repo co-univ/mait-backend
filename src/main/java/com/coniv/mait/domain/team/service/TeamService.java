@@ -11,6 +11,7 @@ import com.coniv.mait.domain.team.entity.TeamInviteEntity;
 import com.coniv.mait.domain.team.entity.TeamUserEntity;
 import com.coniv.mait.domain.team.enums.TeamUserRole;
 import com.coniv.mait.domain.team.repository.TeamEntityRepository;
+import com.coniv.mait.domain.team.repository.TeamInviteApplicationEntityRepository;
 import com.coniv.mait.domain.team.repository.TeamInviteEntityRepository;
 import com.coniv.mait.domain.team.repository.TeamUserEntityRepository;
 import com.coniv.mait.domain.team.service.component.InviteTokenGenerator;
@@ -32,6 +33,7 @@ public class TeamService {
 	private final InviteTokenGenerator inviteTokenGenerator;
 	private final TeamInviteEntityRepository teamInviteEntityRepository;
 	private final UserEntityRepository userEntityRepository;
+	private final TeamInviteApplicationEntityRepository teamInviteApplicationEntityRepository;
 
 	@Transactional
 	public void createTeam(final String teamName, final UserEntity ownerPrincipal) {
@@ -42,16 +44,36 @@ public class TeamService {
 	}
 
 	@Transactional(readOnly = true)
-	public TeamInviteDto getTeamInviteInfo(final String inviteToken) {
+	public TeamInviteDto getTeamInviteInfo(final UserEntity userPrincipal, final String inviteToken) {
 		LocalDateTime applicationTime = LocalDateTime.now();
 		TeamInviteEntity teamInvite = teamInviteEntityRepository.findByToken(inviteToken)
 			.orElseThrow(() -> new TeamInviteFailException("Invite token not found: " + inviteToken));
+		TeamEntity team = teamInvite.getTeam();
 
 		if (teamInvite.isExpired(applicationTime)) {
 			throw new TeamInviteFailException("Invite token has expired: " + inviteToken);
 		}
 
-		return TeamInviteDto.from(teamInvite, teamInvite.getTeam(), true);
+		if (userPrincipal == null) {
+			return TeamInviteDto.from(teamInvite, team, true, null);
+		}
+
+		UserEntity user = userEntityRepository.findById(userPrincipal.getId())
+			.orElseThrow(() -> new EntityNotFoundException(
+				"User not found with id: " + userPrincipal.getId()));
+
+		System.out.println("User " + user.getId() + " is trying to join team " + team.getId());
+
+		if (isUserInTeam(team, user)) {
+			throw new TeamInviteFailException("User is already a member of the team: " + team.getId());
+		}
+
+		return teamInviteApplicationEntityRepository.findByTeamIdAndUserId(
+				team.getId(),
+				user.getId()
+			)
+			.map(app -> TeamInviteDto.from(teamInvite, team, true, app.getApplicationStatus()))
+			.orElse(TeamInviteDto.from(teamInvite, team, true, null));
 	}
 
 	@Transactional
@@ -92,5 +114,10 @@ public class TeamService {
 		if (!teamUser.canInvite()) {
 			throw new TeamInviteFailException("Only team owners can create invite codes");
 		}
+	}
+
+	private boolean isUserInTeam(final TeamEntity team, final UserEntity user) {
+		System.out.println("Checking if user " + user.getId() + " is in team " + team.getId());
+		return teamUserEntityRepository.existsByTeamAndUser(team, user);
 	}
 }

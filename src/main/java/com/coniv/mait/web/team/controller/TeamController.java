@@ -21,7 +21,6 @@ import com.coniv.mait.web.team.dto.TeamInviteApiResponse;
 
 import io.swagger.v3.oas.annotations.Operation;
 import jakarta.validation.Valid;
-import jakarta.websocket.server.PathParam;
 import lombok.RequiredArgsConstructor;
 
 @RestController
@@ -54,10 +53,11 @@ public class TeamController {
 			));
 	}
 
-	@Operation(summary = "팀 정보 반환 API")
-	@GetMapping("/info")
-	public ResponseEntity<ApiResponse<TeamInviteApiResponse>> getTeamInfo(@PathParam("code") String code) {
-		TeamInviteDto teamInviteInfo = teamService.getTeamInviteInfo(code);
+	@Operation(summary = "초대 링크 팀 정보 반환 API")
+	@GetMapping("/invite/info")
+	public ResponseEntity<ApiResponse<TeamInviteApiResponse>> getTeamInfo(
+		@AuthenticationPrincipal UserEntity userPrincipal, @RequestParam("code") String code) {
+		TeamInviteDto teamInviteInfo = teamService.getTeamInviteInfo(userPrincipal, code);
 		return ResponseEntity.ok(ApiResponse.ok(TeamInviteApiResponse.from(teamInviteInfo)));
 	}
 }
