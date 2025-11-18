@@ -20,8 +20,8 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.coniv.mait.domain.team.entity.TeamEntity;
+import com.coniv.mait.domain.team.entity.TeamInvitationLinkEntity;
 import com.coniv.mait.domain.team.entity.TeamInviteApplicantEntity;
-import com.coniv.mait.domain.team.entity.TeamInviteEntity;
 import com.coniv.mait.domain.team.entity.TeamUserEntity;
 import com.coniv.mait.domain.team.enums.InviteApplicationStatus;
 import com.coniv.mait.domain.team.enums.TeamUserRole;
@@ -149,9 +149,9 @@ public class TeamApiIntegrationTest extends BaseIntegrationTest {
 			.andExpect(jsonPath("$.data.token").exists());
 
 		// then
-		List<TeamInviteEntity> invites = teamInviteEntityRepository.findAll();
+		List<TeamInvitationLinkEntity> invites = teamInviteEntityRepository.findAll();
 		assertThat(invites).hasSize(1);
-		TeamInviteEntity savedInvite = invites.get(0);
+		TeamInvitationLinkEntity savedInvite = invites.get(0);
 		assertThat(savedInvite.getTeam().getId()).isEqualTo(team.getId());
 		assertThat(savedInvite.getInvitor().getId()).isEqualTo(user.getId());
 		assertThat(savedInvite.getTokenDuration()).isEqualTo(InviteTokenDuration.ONE_DAY);
@@ -172,7 +172,8 @@ public class TeamApiIntegrationTest extends BaseIntegrationTest {
 		TeamEntity team = createTeamWithOwner("익명초대팀", owner);
 
 		String token = "ANON" + System.currentTimeMillis();
-		TeamInviteEntity invite = TeamInviteEntity.createInvite(owner, team, token, InviteTokenDuration.ONE_DAY,
+		TeamInvitationLinkEntity invite = TeamInvitationLinkEntity.createInvite(owner, team, token,
+			InviteTokenDuration.ONE_DAY,
 			TeamUserRole.PLAYER, false);
 		teamInviteEntityRepository.save(invite);
 
@@ -199,7 +200,8 @@ public class TeamApiIntegrationTest extends BaseIntegrationTest {
 
 		TeamEntity team = createTeamWithOwner("신청팀", owner);
 		String token = "APP" + System.currentTimeMillis();
-		TeamInviteEntity invite = TeamInviteEntity.createInvite(owner, team, token, InviteTokenDuration.ONE_DAY,
+		TeamInvitationLinkEntity invite = TeamInvitationLinkEntity.createInvite(owner, team, token,
+			InviteTokenDuration.ONE_DAY,
 			TeamUserRole.PLAYER, true);
 		teamInviteEntityRepository.save(invite);
 

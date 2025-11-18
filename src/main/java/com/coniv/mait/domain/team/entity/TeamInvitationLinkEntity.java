@@ -24,13 +24,13 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
-@Table(name = "team_invites")
+@Table(name = "team_invitation_links")
 @Entity
 @Getter
 @Builder
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-public class TeamInviteEntity extends BaseTimeEntity {
+public class TeamInvitationLinkEntity extends BaseTimeEntity {
 
 	@Id
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -61,9 +61,9 @@ public class TeamInviteEntity extends BaseTimeEntity {
 	@Column
 	private LocalDateTime expiredAt;
 
-	public static TeamInviteEntity createInvite(UserEntity invitor, TeamEntity team, String token,
+	public static TeamInvitationLinkEntity createInvite(UserEntity invitor, TeamEntity team, String token,
 		InviteTokenDuration duration, TeamUserRole roleOnJoin, boolean requiresApproval) {
-		return TeamInviteEntity.builder()
+		return TeamInvitationLinkEntity.builder()
 			.invitor(invitor)
 			.team(team)
 			.token(token)

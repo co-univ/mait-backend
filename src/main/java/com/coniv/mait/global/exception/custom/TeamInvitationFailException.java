@@ -5,7 +5,7 @@ import lombok.Getter;
 
 @Getter
 @AllArgsConstructor
-public class TeamInviteFailException extends RuntimeException {
+public class TeamInvitationFailException extends RuntimeException {
 
 	private final String message;
 }

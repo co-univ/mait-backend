@@ -3,7 +3,7 @@ package com.coniv.mait.domain.team.service.dto;
 import java.time.LocalDateTime;
 
 import com.coniv.mait.domain.team.entity.TeamEntity;
-import com.coniv.mait.domain.team.entity.TeamInviteEntity;
+import com.coniv.mait.domain.team.entity.TeamInvitationLinkEntity;
 import com.coniv.mait.domain.team.enums.InviteApplicationStatus;
 import com.coniv.mait.domain.team.enums.TeamUserRole;
 import com.coniv.mait.global.enums.InviteTokenDuration;
@@ -39,7 +39,7 @@ public class TeamInviteDto {
 
 	private InviteApplicationStatus applicationStatus;
 
-	public static TeamInviteDto from(final TeamInviteEntity inviteEntity, final TeamEntity teamEntity,
+	public static TeamInviteDto from(final TeamInvitationLinkEntity inviteEntity, final TeamEntity teamEntity,
 		final boolean isValid, final InviteApplicationStatus applicationStatus) {
 		return TeamInviteDto.builder()
 			.teamInviteId(inviteEntity.getId())
