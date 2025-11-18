@@ -132,6 +132,7 @@ public class TeamApiIntegrationTest extends BaseIntegrationTest {
 
 		// when & then
 		mockMvc.perform(post("/api/v1/teams/{teamId}/invite", team.getId())
+				.param("requiresApproval", "false")
 				.contentType(MediaType.APPLICATION_JSON)
 				.content(objectMapper.writeValueAsString(request))
 				.with(csrf()))

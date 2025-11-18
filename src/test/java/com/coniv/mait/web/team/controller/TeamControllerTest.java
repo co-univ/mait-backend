@@ -82,16 +82,18 @@ class TeamControllerTest {
 		// given
 		Long teamId = 1L;
 		TeamUserRole role = TeamUserRole.PLAYER;
+		boolean requiresApproval = true;
 		CreateTeamInviteApiRequest request = new CreateTeamInviteApiRequest(InviteTokenDuration.ONE_DAY, role);
 		String expectedInviteCode = "INVITE123";
 
 		when(teamService.createTeamInviteCode(eq(teamId), nullable(UserEntity.class),
-			eq(InviteTokenDuration.ONE_DAY), eq(role)))
+			eq(InviteTokenDuration.ONE_DAY), eq(role), eq(requiresApproval)))
 			.thenReturn(expectedInviteCode);
 
 		// when & then
 
 		mockMvc.perform(post("/api/v1/teams/{teamId}/invite", teamId)
+				.param("requiresApproval", String.valueOf(requiresApproval))
 				.contentType(MediaType.APPLICATION_JSON)
 				.content(objectMapper.writeValueAsString(request)))
 			.andExpectAll(
@@ -101,6 +103,6 @@ class TeamControllerTest {
 			);
 
 		verify(teamService).createTeamInviteCode(eq(teamId), nullable(UserEntity.class),
-			eq(InviteTokenDuration.ONE_DAY), eq(role));
+			eq(InviteTokenDuration.ONE_DAY), eq(role), eq(requiresApproval));
 	}
 }
