@@ -236,7 +236,7 @@ class TeamServiceTest {
 		assertThat(result.isRequiresApproval()).isEqualTo(requiresApproval);
 		assertThat(result.getTeamUserRole()).isEqualTo(role);
 		assertThat(result.getExpiredAt()).isNotNull();
-		assertThat(result.isExpired()).isTrue();
+		assertThat(result.isValid()).isTrue();
 	}
 
 	@Test
