@@ -8,7 +8,7 @@ import lombok.Builder;
 
 @Builder
 public record TeamInviteApiResponse(
-	@Schema(description = "팀 초대 토큰", requiredMode = Schema.RequiredMode.REQUIRED)
+	@Schema(description = "팀 아이디", requiredMode = Schema.RequiredMode.REQUIRED)
 	Long teamId,
 
 	@Schema(description = "팀 이름", requiredMode = Schema.RequiredMode.REQUIRED)
@@ -22,6 +22,8 @@ public record TeamInviteApiResponse(
 
 	@Schema(description = "승인 필요 여부", requiredMode = Schema.RequiredMode.REQUIRED)
 	boolean requiresApproval
+
+	//승인 완료, 실패, 대기, 아예 한적 없는거
 
 ) {
 	public static TeamInviteApiResponse from(TeamInviteDto dto) {
