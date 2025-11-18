@@ -3,7 +3,6 @@ server:
 
 mait:
   base-url: "http://localhost:3000"
-  invite-url: "http://localhost:3000/invite/"
   cookie:
     path: "/"
     max-age: 259200  # 3 days

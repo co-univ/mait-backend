@@ -106,7 +106,7 @@ public class TeamService {
 			role, requiresApproval);
 		teamInviteEntityRepository.save(teamInvitationLinkEntity);
 
-		return maitProperty.getInviteUrl() + privateCode;
+		return privateCode;
 	}
 
 	private void validateInvitorRole(final TeamEntity team, final UserEntity invitor) {
