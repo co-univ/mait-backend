@@ -139,7 +139,7 @@ public class TeamApiIntegrationTest extends BaseIntegrationTest {
 			TeamUserRole.PLAYER);
 
 		// when & then
-		mockMvc.perform(post("/api/v1/teams/{teamId}/invite", team.getId())
+		mockMvc.perform(post("/api/v1/teams/{teamId}/invitation", team.getId())
 				.param("requiresApproval", "false")
 				.contentType(MediaType.APPLICATION_JSON)
 				.content(objectMapper.writeValueAsString(request))
@@ -178,7 +178,7 @@ public class TeamApiIntegrationTest extends BaseIntegrationTest {
 		teamInviteEntityRepository.save(invite);
 
 		// when & then: call without authentication
-		mockMvc.perform(get("/api/v1/teams/invite/info").param("code", token)
+		mockMvc.perform(get("/api/v1/teams/invitation/info").param("code", token)
 				.with(csrf()))
 			.andExpect(status().isOk())
 			.andExpect(jsonPath("$.isSuccess").value(true))
@@ -217,7 +217,7 @@ public class TeamApiIntegrationTest extends BaseIntegrationTest {
 		teamInviteApplicationEntityRepository.save(application);
 
 		// when & then: authenticated request (WithCustomUser will set the principal)
-		mockMvc.perform(get("/api/v1/teams/invite/info").param("code", token)
+		mockMvc.perform(get("/api/v1/teams/invitation/info").param("code", token)
 				.with(csrf()))
 			.andExpect(status().isOk())
 			.andExpect(jsonPath("$.isSuccess").value(true))

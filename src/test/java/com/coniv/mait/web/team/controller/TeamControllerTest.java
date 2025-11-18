@@ -95,7 +95,7 @@ class TeamControllerTest {
 
 		// when & then
 
-		mockMvc.perform(post("/api/v1/teams/{teamId}/invite", teamId)
+		mockMvc.perform(post("/api/v1/teams/{teamId}/invitation", teamId)
 				.param("requiresApproval", String.valueOf(requiresApproval))
 				.contentType(MediaType.APPLICATION_JSON)
 				.content(objectMapper.writeValueAsString(request)))
@@ -128,7 +128,7 @@ class TeamControllerTest {
 		when(teamService.getTeamInviteInfo(nullable(UserEntity.class), eq(code))).thenReturn(dto);
 
 		// when & then
-		mockMvc.perform(get("/api/v1/teams/invite/info").param("code", code)
+		mockMvc.perform(get("/api/v1/teams/invitation/info").param("code", code)
 				.contentType(MediaType.APPLICATION_JSON))
 			.andExpect(status().isOk())
 			.andExpect(jsonPath("$.isSuccess").exists())
