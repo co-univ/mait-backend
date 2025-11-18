@@ -23,7 +23,7 @@ public record TeamInviteApiResponse(
 
 	@Schema(description = "승인 필요 여부", requiredMode = Schema.RequiredMode.REQUIRED)
 	boolean requiresApproval,
-	
+
 	@Schema(description = "초대 신청 상태", requiredMode = Schema.RequiredMode.REQUIRED)
 	InviteApplicationStatus applicationStatus
 
