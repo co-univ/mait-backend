@@ -44,7 +44,7 @@ public class TeamInviteDto {
 		return TeamInviteDto.builder()
 			.teamInviteId(inviteEntity.getId())
 			.teamId(teamEntity.getId())
-			.invitorId(teamEntity.getId())
+			.invitorId(inviteEntity.getInvitor().getId())
 			.teamName(teamEntity.getName())
 			.tokenDuration(inviteEntity.getTokenDuration())
 			.requiresApproval(inviteEntity.isRequiresApproval())
