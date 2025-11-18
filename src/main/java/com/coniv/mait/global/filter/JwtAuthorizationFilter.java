@@ -52,10 +52,21 @@ public class JwtAuthorizationFilter extends OncePerRequestFilter {
 		PathPatternRequestMatcher.withPathPatternParser(PARSER).matcher(HttpMethod.POST, "/api/v1/policies/check")
 	);
 
+	private final List<RequestMatcher> persistedOrNotMatchers = List.of(
+		PathPatternRequestMatcher.withPathPatternParser(PARSER).matcher(HttpMethod.GET, "/api/v1/teams/invite/info")
+	);
+
 	@Override
 	protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
 		throws ServletException, IOException {
 		final String authorizationHeader = request.getHeader(AUTH_HEADER);
+
+		if (persistedOrNotMatchers.stream().anyMatch(matcher -> matcher.matches(request))
+			&& (authorizationHeader == null)) {
+			filterChain.doFilter(request, response);
+			return;
+		}
+
 		final String bearerToken = getBearerToken(authorizationHeader);
 		try {
 			jwtTokenProvider.validateAccessToken(bearerToken);
