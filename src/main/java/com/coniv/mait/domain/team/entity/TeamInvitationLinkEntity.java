@@ -2,6 +2,7 @@ package com.coniv.mait.domain.team.entity;
 
 import java.time.LocalDateTime;
 
+import com.coniv.mait.domain.team.enums.TeamUserRole;
 import com.coniv.mait.domain.user.entity.UserEntity;
 import com.coniv.mait.global.entity.BaseTimeEntity;
 import com.coniv.mait.global.enums.InviteTokenDuration;
@@ -23,13 +24,13 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
-@Table(name = "team_invites")
+@Table(name = "team_invitation_links")
 @Entity
 @Getter
 @Builder
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-public class TeamInviteEntity extends BaseTimeEntity {
+public class TeamInvitationLinkEntity extends BaseTimeEntity {
 
 	@Id
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -50,21 +51,30 @@ public class TeamInviteEntity extends BaseTimeEntity {
 	@Column(nullable = false)
 	private InviteTokenDuration tokenDuration;
 
+	@Enumerated(EnumType.STRING)
+	@Column(nullable = false)
+	private TeamUserRole roleOnJoin;
+
+	@Column(nullable = false)
+	private boolean requiresApproval;
+
 	@Column
 	private LocalDateTime expiredAt;
 
-	public static TeamInviteEntity createInvite(UserEntity invitor, TeamEntity team, String token,
-		InviteTokenDuration duration) {
-		return TeamInviteEntity.builder()
+	public static TeamInvitationLinkEntity createInvite(UserEntity invitor, TeamEntity team, String token,
+		InviteTokenDuration duration, TeamUserRole roleOnJoin, boolean requiresApproval) {
+		return TeamInvitationLinkEntity.builder()
 			.invitor(invitor)
 			.team(team)
 			.token(token)
 			.tokenDuration(duration)
+			.roleOnJoin(roleOnJoin)
+			.requiresApproval(requiresApproval)
 			.expiredAt(duration.calculateExpirationTime())
 			.build();
 	}
 
-	public boolean isExpired() {
-		return expiredAt != null && LocalDateTime.now().isAfter(expiredAt);
+	public boolean isExpired(LocalDateTime applicationTime) {
+		return expiredAt != null && applicationTime.isAfter(expiredAt);
 	}
 }

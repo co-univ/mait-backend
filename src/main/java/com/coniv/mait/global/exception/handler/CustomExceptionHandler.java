@@ -13,7 +13,7 @@ import com.coniv.mait.global.exception.custom.PolicyException;
 import com.coniv.mait.global.exception.custom.QuestionSetLiveException;
 import com.coniv.mait.global.exception.custom.ResourceNotBelongException;
 import com.coniv.mait.global.exception.custom.S3FileException;
-import com.coniv.mait.global.exception.custom.TeamInviteFailException;
+import com.coniv.mait.global.exception.custom.TeamInvitationFailException;
 import com.coniv.mait.global.exception.custom.UserParameterException;
 import com.coniv.mait.global.response.ErrorResponse;
 
@@ -55,8 +55,8 @@ public class CustomExceptionHandler {
 			.body(ErrorResponse.of(ExceptionCode.Question_SET_LIVE_EXCEPTION, List.of(exception.getMessage())));
 	}
 
-	@ExceptionHandler(TeamInviteFailException.class)
-	public ResponseEntity<ErrorResponse> handleTeamInviteFailException(TeamInviteFailException exception,
+	@ExceptionHandler(TeamInvitationFailException.class)
+	public ResponseEntity<ErrorResponse> handleTeamInviteFailException(TeamInvitationFailException exception,
 		HttpServletRequest request) {
 		log.info("TeamInviteFailException 발생: {}, {}", exception.getMessage(), request.getRequestURI());
 		return ResponseEntity.badRequest()
