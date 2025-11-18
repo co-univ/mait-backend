@@ -14,6 +14,7 @@ import com.coniv.mait.global.response.ApiResponse;
 import com.coniv.mait.web.question.dto.CorrectorRanksApiResponse;
 
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 
@@ -25,7 +26,9 @@ public class QuestionSetRankController {
 
 	private final QuestionRankService questionRankService;
 
-	@Operation(summary = "정답 개수에 따른 등수 조회 API", description = "해당 문제 셋에 정답 개수에 따른 등수 그룹을 조회한다.")
+	@Operation(summary = "정답 개수에 따른 등수 조회 API", description = "해당 문제 셋에 정답 개수에 따른 등수 그룹을 조회한다.", parameters = {
+		@Parameter(name = "type", description = "랭킹 타입", required = true, example = "CORRECT")
+	})
 	@GetMapping(value = "/ranks", params = "type=CORRECT")
 	public ResponseEntity<ApiResponse<CorrectorRanksApiResponse>> getCorrectorsByQuestionSetId(
 		@PathVariable("questionSetId") Long questionSetId) {
