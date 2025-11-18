@@ -18,7 +18,6 @@ import com.coniv.mait.domain.team.service.component.InviteTokenGenerator;
 import com.coniv.mait.domain.team.service.dto.TeamInviteDto;
 import com.coniv.mait.domain.user.entity.UserEntity;
 import com.coniv.mait.domain.user.repository.UserEntityRepository;
-import com.coniv.mait.global.config.property.MaitProperty;
 import com.coniv.mait.global.enums.InviteTokenDuration;
 import com.coniv.mait.global.exception.custom.TeamInvitationFailException;
 
@@ -28,8 +27,6 @@ import lombok.RequiredArgsConstructor;
 @Service
 @RequiredArgsConstructor
 public class TeamService {
-
-	private final MaitProperty maitProperty;
 
 	private final TeamEntityRepository teamEntityRepository;
 	private final TeamUserEntityRepository teamUserEntityRepository;
@@ -58,7 +55,7 @@ public class TeamService {
 		}
 
 		if (userPrincipal == null) {
-			return TeamInviteDto.from(teamInvitationLink, team, true, null);
+			return TeamInviteDto.from(teamInvitationLink, team, null);
 		}
 
 		UserEntity user = userEntityRepository.findById(userPrincipal.getId())
@@ -74,8 +71,8 @@ public class TeamService {
 				user.getId(),
 				teamInvitationLink.getId()
 			)
-			.map(app -> TeamInviteDto.from(teamInvitationLink, team, true, app.getApplicationStatus()))
-			.orElseGet(() -> TeamInviteDto.from(teamInvitationLink, team, true, null));
+			.map(app -> TeamInviteDto.from(teamInvitationLink, team, app.getApplicationStatus()))
+			.orElseGet(() -> TeamInviteDto.from(teamInvitationLink, team, null));
 	}
 
 	@Transactional

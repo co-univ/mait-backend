@@ -35,12 +35,10 @@ public class TeamInviteDto {
 
 	private LocalDateTime expiredAt;
 
-	private boolean isValid;
-
 	private InviteApplicationStatus applicationStatus;
 
 	public static TeamInviteDto from(final TeamInvitationLinkEntity inviteEntity, final TeamEntity teamEntity,
-		final boolean isValid, final InviteApplicationStatus applicationStatus) {
+		final InviteApplicationStatus applicationStatus) {
 		return TeamInviteDto.builder()
 			.teamInviteId(inviteEntity.getId())
 			.teamId(teamEntity.getId())
@@ -50,7 +48,6 @@ public class TeamInviteDto {
 			.requiresApproval(inviteEntity.isRequiresApproval())
 			.teamUserRole(inviteEntity.getRoleOnJoin())
 			.expiredAt(inviteEntity.getExpiredAt())
-			.isValid(isValid)
 			.applicationStatus(applicationStatus)
 			.build();
 	}

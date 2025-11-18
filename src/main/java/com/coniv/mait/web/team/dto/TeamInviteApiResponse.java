@@ -18,9 +18,6 @@ public record TeamInviteApiResponse(
 	@Schema(description = "팀 초대 유형", requiredMode = Schema.RequiredMode.REQUIRED)
 	TeamUserRole role,
 
-	@Schema(description = "코드 유효 여부", requiredMode = Schema.RequiredMode.REQUIRED)
-	boolean isValid,
-
 	@Schema(description = "승인 필요 여부", requiredMode = Schema.RequiredMode.REQUIRED)
 	boolean requiresApproval,
 
@@ -33,7 +30,6 @@ public record TeamInviteApiResponse(
 			.teamId(dto.getTeamId())
 			.teamName(dto.getTeamName())
 			.role(dto.getTeamUserRole())
-			.isValid(dto.isValid())
 			.requiresApproval(dto.isRequiresApproval())
 			.applicationStatus(dto.getApplicationStatus())
 			.build();

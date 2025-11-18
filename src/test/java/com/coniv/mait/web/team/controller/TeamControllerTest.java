@@ -123,7 +123,6 @@ class TeamControllerTest {
 			.requiresApproval(false)
 			.teamUserRole(TeamUserRole.PLAYER)
 			.expiredAt(LocalDateTime.now().plusDays(1))
-			.isValid(true)
 			.build();
 
 		when(teamService.getTeamInviteInfo(nullable(UserEntity.class), eq(code))).thenReturn(dto);
