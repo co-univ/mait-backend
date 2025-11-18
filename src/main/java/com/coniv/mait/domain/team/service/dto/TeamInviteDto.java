@@ -4,6 +4,7 @@ import java.time.LocalDateTime;
 
 import com.coniv.mait.domain.team.entity.TeamEntity;
 import com.coniv.mait.domain.team.entity.TeamInviteEntity;
+import com.coniv.mait.domain.team.enums.InviteApplicationStatus;
 import com.coniv.mait.domain.team.enums.TeamUserRole;
 import com.coniv.mait.global.enums.InviteTokenDuration;
 
@@ -34,10 +35,12 @@ public class TeamInviteDto {
 
 	private LocalDateTime expiredAt;
 
-	private boolean isExpired;
+	private boolean isValid;
+
+	private InviteApplicationStatus applicationStatus;
 
 	public static TeamInviteDto from(final TeamInviteEntity inviteEntity, final TeamEntity teamEntity,
-		final boolean isExpired) {
+		final boolean isValid, final InviteApplicationStatus applicationStatus) {
 		return TeamInviteDto.builder()
 			.teamInviteId(inviteEntity.getId())
 			.teamId(teamEntity.getId())
@@ -47,7 +50,8 @@ public class TeamInviteDto {
 			.requiresApproval(inviteEntity.isRequiresApproval())
 			.teamUserRole(inviteEntity.getRoleOnJoin())
 			.expiredAt(inviteEntity.getExpiredAt())
-			.isExpired(isExpired)
+			.isValid(isValid)
+			.applicationStatus(applicationStatus)
 			.build();
 	}
 }
