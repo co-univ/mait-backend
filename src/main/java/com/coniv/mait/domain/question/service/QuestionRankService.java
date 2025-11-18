@@ -7,6 +7,7 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.coniv.mait.domain.question.dto.AnswerRankDto;
 import com.coniv.mait.domain.question.dto.ParticipantDto;
@@ -106,6 +107,7 @@ public class QuestionRankService {
 			.orElseThrow(() -> new EntityNotFoundException("해당 문제 세트가 존재하지 않습니다."));
 	}
 
+	@Transactional(readOnly = true)
 	public List<AnswerRankDto> getCorrectorsByQuestionSetId(final Long questionSetId) {
 		QuestionSetEntity questionSet = findQuestionSetById(questionSetId);
 
