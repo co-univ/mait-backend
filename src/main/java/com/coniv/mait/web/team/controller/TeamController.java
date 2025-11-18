@@ -40,7 +40,7 @@ public class TeamController {
 		@PathVariable("teamId") Long teamId,
 		@RequestBody @Valid CreateTeamInviteApiRequest request,
 		@AuthenticationPrincipal UserEntity ownerUser) {
-		String inviteCode = teamService.createTeamInviteCode(teamId, ownerUser, request.duration());
+		String inviteCode = teamService.createTeamInviteCode(teamId, ownerUser, request.duration(), request.role());
 		return ResponseEntity.ok()
 			.body(ApiResponse.ok(
 				CreateTeamInviteApiResponse.from(inviteCode)

@@ -8,6 +8,7 @@ import org.springframework.transaction.annotation.Transactional;
 import com.coniv.mait.domain.team.entity.TeamEntity;
 import com.coniv.mait.domain.team.entity.TeamInviteEntity;
 import com.coniv.mait.domain.team.entity.TeamUserEntity;
+import com.coniv.mait.domain.team.enums.TeamUserRole;
 import com.coniv.mait.domain.team.repository.TeamEntityRepository;
 import com.coniv.mait.domain.team.repository.TeamInviteEntityRepository;
 import com.coniv.mait.domain.team.repository.TeamUserEntityRepository;
@@ -48,7 +49,10 @@ public class TeamService {
 
 	@Transactional
 	public String createTeamInviteCode(final Long teamId, final UserEntity invitorPrincipal,
-		final InviteTokenDuration duration) {
+		final InviteTokenDuration duration, final TeamUserRole role) {
+		if (role == TeamUserRole.OWNER) {
+			throw new TeamInviteFailException("Cannot create invite code with OWNER role");
+		}
 		TeamEntity team = teamEntityRepository.findById(teamId)
 			.orElseThrow(() -> new EntityNotFoundException("Team not found with id: " + teamId));
 		UserEntity invitor = userEntityRepository.findById(invitorPrincipal.getId())
