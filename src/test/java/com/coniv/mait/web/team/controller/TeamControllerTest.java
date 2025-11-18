@@ -123,13 +123,13 @@ class TeamControllerTest {
 			.requiresApproval(false)
 			.teamUserRole(TeamUserRole.PLAYER)
 			.expiredAt(LocalDateTime.now().plusDays(1))
-			.isExpired(false)
+			.isValid(true)
 			.build();
 
-		when(teamService.getTeamInviteInfo(code)).thenReturn(dto);
+		when(teamService.getTeamInviteInfo(nullable(UserEntity.class), eq(code))).thenReturn(dto);
 
 		// when & then
-		mockMvc.perform(get("/api/v1/teams/info").param("code", code)
+		mockMvc.perform(get("/api/v1/teams/invite/info").param("code", code)
 				.contentType(MediaType.APPLICATION_JSON))
 			.andExpect(status().isOk())
 			.andExpect(jsonPath("$.isSuccess").exists())
@@ -138,7 +138,7 @@ class TeamControllerTest {
 			.andExpect(jsonPath("$.data.role").value(dto.getTeamUserRole().name()))
 			.andExpect(jsonPath("$.data.requiresApproval").value(dto.isRequiresApproval()));
 
-		verify(teamService).getTeamInviteInfo(code);
+		verify(teamService).getTeamInviteInfo(nullable(UserEntity.class), eq(code));
 	}
 
 }

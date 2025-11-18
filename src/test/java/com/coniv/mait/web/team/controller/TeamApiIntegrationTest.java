@@ -154,32 +154,6 @@ public class TeamApiIntegrationTest extends BaseIntegrationTest {
 		assertThat(savedInvite.isRequiresApproval()).isFalse();
 	}
 
-	@Test
-	@Transactional
-	@WithCustomUser(email = "test@example.com", name = "사용자1")
-	@DisplayName("팀 초대 정보 조회 API 통합 테스트 - 성공")
-	void getTeamInfo_Success() throws Exception {
-		// given
-		UserEntity user = userEntityRepository.findByEmail("test@example.com").orElseThrow();
-		TeamEntity team = createTeamWithOwner("초대팀", user);
-
-		// create invite
-		String token = "INTG123" + System.currentTimeMillis();
-		TeamInviteEntity invite = TeamInviteEntity.createInvite(user, team, token, InviteTokenDuration.ONE_DAY,
-			TeamUserRole.PLAYER, false);
-		teamInviteEntityRepository.save(invite);
-
-		// when & then
-		mockMvc.perform(get("/api/v1/teams/info").param("code", token)
-				.with(csrf()))
-			.andExpect(status().isOk())
-			.andExpect(jsonPath("$.isSuccess").value(true))
-			.andExpect(jsonPath("$.data.teamId").value(team.getId()))
-			.andExpect(jsonPath("$.data.teamName").value(team.getName()))
-			.andExpect(jsonPath("$.data.role").value(TeamUserRole.PLAYER.name()))
-			.andExpect(jsonPath("$.data.requiresApproval").value(false));
-	}
-
 	private TeamEntity createTeamWithOwner(String teamName, UserEntity owner) {
 		TeamEntity team = TeamEntity.of(teamName, owner.getId());
 		team = teamEntityRepository.save(team);

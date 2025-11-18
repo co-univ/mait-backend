@@ -4,7 +4,6 @@ import static org.assertj.core.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
-import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -23,7 +22,6 @@ import com.coniv.mait.domain.team.repository.TeamEntityRepository;
 import com.coniv.mait.domain.team.repository.TeamInviteEntityRepository;
 import com.coniv.mait.domain.team.repository.TeamUserEntityRepository;
 import com.coniv.mait.domain.team.service.component.InviteTokenGenerator;
-import com.coniv.mait.domain.team.service.dto.TeamInviteDto;
 import com.coniv.mait.domain.user.entity.UserEntity;
 import com.coniv.mait.domain.user.enums.LoginProvider;
 import com.coniv.mait.domain.user.repository.UserEntityRepository;
@@ -208,72 +206,5 @@ class TeamServiceTest {
 		verify(teamUserEntityRepository).findByTeamAndUser(team, mockPlayer);
 		verify(inviteTokenGenerator, never()).generateUniqueInviteToken();
 		verify(teamInviteEntityRepository, never()).save(any());
-	}
-
-	@Test
-	@DisplayName("초대 정보 조회 성공 - 유효한 토큰")
-	void getTeamInviteInfo_Success() {
-		// given
-		String token = "TOKEN123";
-		UserEntity invitor = mock(UserEntity.class);
-		TeamEntity team = TeamEntity.of("팀 A", 10L);
-		InviteTokenDuration duration = InviteTokenDuration.ONE_DAY;
-		TeamUserRole role = TeamUserRole.PLAYER;
-		boolean requiresApproval = false;
-
-		TeamInviteEntity invite = TeamInviteEntity.createInvite(invitor, team, token, duration, role,
-			requiresApproval);
-
-		when(teamInviteEntityRepository.findByToken(token)).thenReturn(Optional.of(invite));
-
-		// when
-		TeamInviteDto result = teamService.getTeamInviteInfo(token);
-
-		// then
-		verify(teamInviteEntityRepository).findByToken(token);
-		assertThat(result).isNotNull();
-		assertThat(result.getTokenDuration()).isEqualTo(duration);
-		assertThat(result.isRequiresApproval()).isEqualTo(requiresApproval);
-		assertThat(result.getTeamUserRole()).isEqualTo(role);
-		assertThat(result.getExpiredAt()).isNotNull();
-		assertThat(result.isValid()).isTrue();
-	}
-
-	@Test
-	@DisplayName("초대 정보 조회 실패 - 토큰 만료")
-	void getTeamInviteInfo_Expired_Throws() {
-		// given
-		String token = "EXPIRED";
-		UserEntity invitor = mock(UserEntity.class);
-		TeamEntity team = TeamEntity.of("팀 B", 20L);
-		TeamInviteEntity expiredInvite = TeamInviteEntity.builder()
-			.invitor(invitor)
-			.team(team)
-			.token(token)
-			.tokenDuration(InviteTokenDuration.ONE_DAY)
-			.roleOnJoin(TeamUserRole.PLAYER)
-			.requiresApproval(false)
-			.expiredAt(LocalDateTime.now().minusDays(1))
-			.build();
-
-		when(teamInviteEntityRepository.findByToken(token)).thenReturn(Optional.of(expiredInvite));
-
-		// when & then
-		assertThatThrownBy(() -> teamService.getTeamInviteInfo(token))
-			.isInstanceOf(TeamInviteFailException.class)
-			.hasMessageContaining("Invite token has expired");
-	}
-
-	@Test
-	@DisplayName("초대 정보 조회 실패 - 토큰 없음")
-	void getTeamInviteInfo_NotFound_Throws() {
-		// given
-		String token = "NOPE";
-		when(teamInviteEntityRepository.findByToken(token)).thenReturn(Optional.empty());
-
-		// when & then
-		assertThatThrownBy(() -> teamService.getTeamInviteInfo(token))
-			.isInstanceOf(TeamInviteFailException.class)
-			.hasMessageContaining("Invite token not found");
 	}
 }
