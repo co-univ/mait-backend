@@ -39,7 +39,7 @@ public class TeamController {
 	}
 
 	@Operation(summary = "팀 초대 링크 생성 API")
-	@PostMapping("/{teamId}/invite")
+	@PostMapping("/{teamId}/invitation")
 	public ResponseEntity<ApiResponse<CreateTeamInviteApiResponse>> createTeamInviteCode(
 		@PathVariable("teamId") Long teamId,
 		@RequestBody @Valid CreateTeamInviteApiRequest request,
@@ -54,7 +54,7 @@ public class TeamController {
 	}
 
 	@Operation(summary = "초대 링크 팀 정보 반환 API")
-	@GetMapping("/invite/info")
+	@GetMapping("/invitation/info")
 	public ResponseEntity<ApiResponse<TeamInviteApiResponse>> getTeamInfo(
 		@AuthenticationPrincipal UserEntity userPrincipal, @RequestParam("code") String code) {
 		TeamInviteDto teamInviteInfo = teamService.getTeamInviteInfo(userPrincipal, code);
