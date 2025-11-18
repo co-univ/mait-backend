@@ -131,7 +131,7 @@ public class QuestionRankService {
 				.answerCount(entry.getKey())
 				.users(entry.getValue())
 				.build())
-			.sorted(Comparator.comparing(AnswerRankDto::getAnswerCount))
+			.sorted(Comparator.comparing(AnswerRankDto::getAnswerCount).reversed())
 			.toList();
 	}
 }
