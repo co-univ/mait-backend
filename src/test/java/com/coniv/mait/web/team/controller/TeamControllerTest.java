@@ -5,6 +5,8 @@ import static org.mockito.Mockito.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
+import java.time.LocalDateTime;
+
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -16,6 +18,7 @@ import org.springframework.test.web.servlet.MockMvc;
 
 import com.coniv.mait.domain.team.enums.TeamUserRole;
 import com.coniv.mait.domain.team.service.TeamService;
+import com.coniv.mait.domain.team.service.dto.TeamInviteDto;
 import com.coniv.mait.domain.user.entity.UserEntity;
 import com.coniv.mait.global.enums.InviteTokenDuration;
 import com.coniv.mait.global.filter.JwtAuthorizationFilter;
@@ -105,4 +108,37 @@ class TeamControllerTest {
 		verify(teamService).createTeamInviteCode(eq(teamId), nullable(UserEntity.class),
 			eq(InviteTokenDuration.ONE_DAY), eq(role), eq(requiresApproval));
 	}
+
+	@Test
+	@DisplayName("팀 초대 정보 조회 API 성공 테스트")
+	void getTeamInfo_Success() throws Exception {
+		// given
+		String code = "INV123";
+		TeamInviteDto dto = TeamInviteDto.builder()
+			.teamInviteId(1L)
+			.teamId(2L)
+			.invitorId(3L)
+			.teamName("테스트팀")
+			.tokenDuration(InviteTokenDuration.ONE_DAY)
+			.requiresApproval(false)
+			.teamUserRole(TeamUserRole.PLAYER)
+			.expiredAt(LocalDateTime.now().plusDays(1))
+			.isExpired(false)
+			.build();
+
+		when(teamService.getTeamInviteInfo(code)).thenReturn(dto);
+
+		// when & then
+		mockMvc.perform(get("/api/v1/teams/info").param("code", code)
+				.contentType(MediaType.APPLICATION_JSON))
+			.andExpect(status().isOk())
+			.andExpect(jsonPath("$.isSuccess").exists())
+			.andExpect(jsonPath("$.data.teamId").value(dto.getTeamId()))
+			.andExpect(jsonPath("$.data.teamName").value(dto.getTeamName()))
+			.andExpect(jsonPath("$.data.role").value(dto.getTeamUserRole().name()))
+			.andExpect(jsonPath("$.data.requiresApproval").value(dto.isRequiresApproval()));
+
+		verify(teamService).getTeamInviteInfo(code);
+	}
+
 }
