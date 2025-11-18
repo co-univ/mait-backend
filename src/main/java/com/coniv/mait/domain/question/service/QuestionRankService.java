@@ -106,7 +106,7 @@ public class QuestionRankService {
 			.orElseThrow(() -> new EntityNotFoundException("해당 문제 세트가 존재하지 않습니다."));
 	}
 
-	public List<AnswerRankDto> getRanksByCorrector(final Long questionSetId) {
+	public List<AnswerRankDto> getCorrectorsByQuestionSetId(final Long questionSetId) {
 		QuestionSetEntity questionSet = findQuestionSetById(questionSetId);
 
 		List<Long> questionIds = questionReader.getQuestionsByQuestionSet(questionSet).stream()
