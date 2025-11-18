@@ -34,7 +34,7 @@ import lombok.extern.slf4j.Slf4j;
 @RequestMapping("/api/v1/question-sets/{questionSetId}/live-status")
 @RequiredArgsConstructor
 @Slf4j
-@Tag(name = "QuestionSet Live Control", description = "실시간 문제셋 제어 API")
+@Tag(name = "실시간 풀이 문제 셋 제어 API", description = "실시간 문제 풀이를 진행하는 문제 셋 제어 관련 API")
 public class QuestionSetLiveController {
 
 	private final QuestionSetLiveControlService questionSetLiveControlService;
