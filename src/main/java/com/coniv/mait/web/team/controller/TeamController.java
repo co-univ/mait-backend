@@ -2,6 +2,7 @@ package com.coniv.mait.web.team.controller;
 
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -10,14 +11,17 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.coniv.mait.domain.team.service.TeamService;
+import com.coniv.mait.domain.team.service.dto.TeamInviteDto;
 import com.coniv.mait.domain.user.entity.UserEntity;
 import com.coniv.mait.global.response.ApiResponse;
 import com.coniv.mait.web.team.dto.CreateTeamApiRequest;
 import com.coniv.mait.web.team.dto.CreateTeamInviteApiRequest;
 import com.coniv.mait.web.team.dto.CreateTeamInviteApiResponse;
+import com.coniv.mait.web.team.dto.TeamInviteApiResponse;
 
 import io.swagger.v3.oas.annotations.Operation;
 import jakarta.validation.Valid;
+import jakarta.websocket.server.PathParam;
 import lombok.RequiredArgsConstructor;
 
 @RestController
@@ -48,5 +52,12 @@ public class TeamController {
 			.body(ApiResponse.ok(
 				CreateTeamInviteApiResponse.from(inviteCode)
 			));
+	}
+
+	@Operation(summary = "팀 정보 반환 API")
+	@GetMapping("/info")
+	public ResponseEntity<ApiResponse<TeamInviteApiResponse>> getTeamInfo(@PathParam("code") String code) {
+		TeamInviteDto teamInviteInfo = teamService.getTeamInviteInfo(code);
+		return ResponseEntity.ok(ApiResponse.ok(TeamInviteApiResponse.from(teamInviteInfo)));
 	}
 }

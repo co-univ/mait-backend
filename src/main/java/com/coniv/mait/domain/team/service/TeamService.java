@@ -1,5 +1,6 @@
 package com.coniv.mait.domain.team.service;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 import org.springframework.stereotype.Service;
@@ -13,6 +14,7 @@ import com.coniv.mait.domain.team.repository.TeamEntityRepository;
 import com.coniv.mait.domain.team.repository.TeamInviteEntityRepository;
 import com.coniv.mait.domain.team.repository.TeamUserEntityRepository;
 import com.coniv.mait.domain.team.service.component.InviteTokenGenerator;
+import com.coniv.mait.domain.team.service.dto.TeamInviteDto;
 import com.coniv.mait.domain.user.entity.UserEntity;
 import com.coniv.mait.domain.user.repository.UserEntityRepository;
 import com.coniv.mait.global.enums.InviteTokenDuration;
@@ -37,6 +39,19 @@ public class TeamService {
 			.orElseThrow(() -> new EntityNotFoundException("Owner user not found with id: " + ownerPrincipal.getId()));
 		TeamEntity teamEntity = teamEntityRepository.save(TeamEntity.of(teamName, owner.getId()));
 		teamUserEntityRepository.save(TeamUserEntity.createOwnerUser(owner, teamEntity));
+	}
+
+	@Transactional(readOnly = true)
+	public TeamInviteDto getTeamInviteInfo(final String inviteToken) {
+		LocalDateTime applicationTime = LocalDateTime.now();
+		TeamInviteEntity teamInvite = teamInviteEntityRepository.findByToken(inviteToken)
+			.orElseThrow(() -> new TeamInviteFailException("Invite token not found: " + inviteToken));
+
+		if (teamInvite.isExpired(applicationTime)) {
+			throw new TeamInviteFailException("Invite token has expired: " + inviteToken);
+		}
+
+		return TeamInviteDto.from(teamInvite, teamInvite.getTeam(), true);
 	}
 
 	@Transactional

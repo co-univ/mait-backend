@@ -74,7 +74,7 @@ public class TeamInviteEntity extends BaseTimeEntity {
 			.build();
 	}
 
-	public boolean isExpired() {
-		return expiredAt != null && LocalDateTime.now().isAfter(expiredAt);
+	public boolean isExpired(LocalDateTime applicationTime) {
+		return expiredAt != null && applicationTime.isAfter(expiredAt);
 	}
 }
