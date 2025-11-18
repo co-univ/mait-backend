@@ -16,17 +16,17 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import com.coniv.mait.domain.team.entity.TeamEntity;
+import com.coniv.mait.domain.team.entity.TeamInvitationApplicantEntity;
 import com.coniv.mait.domain.team.entity.TeamInvitationLinkEntity;
-import com.coniv.mait.domain.team.entity.TeamInviteApplicantEntity;
 import com.coniv.mait.domain.team.entity.TeamUserEntity;
-import com.coniv.mait.domain.team.enums.InviteApplicationStatus;
+import com.coniv.mait.domain.team.enums.InvitationApplicationStatus;
 import com.coniv.mait.domain.team.enums.TeamUserRole;
 import com.coniv.mait.domain.team.repository.TeamEntityRepository;
-import com.coniv.mait.domain.team.repository.TeamInviteApplicationEntityRepository;
-import com.coniv.mait.domain.team.repository.TeamInviteEntityRepository;
+import com.coniv.mait.domain.team.repository.TeamInvitationApplicationEntityRepository;
+import com.coniv.mait.domain.team.repository.TeamInvitationEntityRepository;
 import com.coniv.mait.domain.team.repository.TeamUserEntityRepository;
 import com.coniv.mait.domain.team.service.component.InviteTokenGenerator;
-import com.coniv.mait.domain.team.service.dto.TeamInviteDto;
+import com.coniv.mait.domain.team.service.dto.TeamInvitationDto;
 import com.coniv.mait.domain.user.entity.UserEntity;
 import com.coniv.mait.domain.user.enums.LoginProvider;
 import com.coniv.mait.domain.user.repository.UserEntityRepository;
@@ -45,7 +45,7 @@ class TeamServiceTest {
 	private TeamUserEntityRepository teamUserEntityRepository;
 
 	@Mock
-	private TeamInviteEntityRepository teamInviteEntityRepository;
+	private TeamInvitationEntityRepository teamInvitationEntityRepository;
 
 	@Mock
 	private InviteTokenGenerator inviteTokenGenerator;
@@ -54,7 +54,7 @@ class TeamServiceTest {
 	private UserEntityRepository userEntityRepository;
 
 	@Mock
-	private TeamInviteApplicationEntityRepository teamInviteApplicationEntityRepository;
+	private TeamInvitationApplicationEntityRepository teamInvitationApplicationEntityRepository;
 
 	@InjectMocks
 	private TeamService teamService;
@@ -120,7 +120,7 @@ class TeamServiceTest {
 		when(userEntityRepository.findById(ownerId)).thenReturn(Optional.of(mockOwner));
 		when(teamUserEntityRepository.findByTeamAndUser(team, mockOwner)).thenReturn(Optional.of(ownerTeamUser));
 		when(inviteTokenGenerator.generateUniqueInviteToken()).thenReturn(expectedToken);
-		when(teamInviteEntityRepository.save(any(TeamInvitationLinkEntity.class))).thenAnswer(
+		when(teamInvitationEntityRepository.save(any(TeamInvitationLinkEntity.class))).thenAnswer(
 			invocation -> invocation.getArgument(0));
 
 		// when
@@ -132,7 +132,7 @@ class TeamServiceTest {
 		verify(userEntityRepository).findById(ownerId);
 		verify(teamUserEntityRepository).findByTeamAndUser(team, mockOwner);
 		verify(inviteTokenGenerator).generateUniqueInviteToken();
-		verify(teamInviteEntityRepository).save(any(TeamInvitationLinkEntity.class));
+		verify(teamInvitationEntityRepository).save(any(TeamInvitationLinkEntity.class));
 	}
 
 	@Test
@@ -155,7 +155,7 @@ class TeamServiceTest {
 		verify(teamEntityRepository).findById(teamId);
 		verify(teamUserEntityRepository, never()).findByTeamAndUser(any(), any());
 		verify(inviteTokenGenerator, never()).generateUniqueInviteToken();
-		verify(teamInviteEntityRepository, never()).save(any());
+		verify(teamInvitationEntityRepository, never()).save(any());
 	}
 
 	@Test
@@ -183,7 +183,7 @@ class TeamServiceTest {
 		verify(userEntityRepository).findById(999L);
 		verify(teamUserEntityRepository).findByTeamAndUser(team, mockUser);
 		verify(inviteTokenGenerator, never()).generateUniqueInviteToken();
-		verify(teamInviteEntityRepository, never()).save(any());
+		verify(teamInvitationEntityRepository, never()).save(any());
 	}
 
 	@Test
@@ -213,7 +213,7 @@ class TeamServiceTest {
 		verify(userEntityRepository).findById(playerId);
 		verify(teamUserEntityRepository).findByTeamAndUser(team, mockPlayer);
 		verify(inviteTokenGenerator, never()).generateUniqueInviteToken();
-		verify(teamInviteEntityRepository, never()).save(any());
+		verify(teamInvitationEntityRepository, never()).save(any());
 	}
 
 	@Test
@@ -232,28 +232,28 @@ class TeamServiceTest {
 		UserEntity applicant = mock(UserEntity.class);
 		when(applicant.getId()).thenReturn(applicantId);
 
-		TeamInviteApplicantEntity application = TeamInviteApplicantEntity.builder()
+		TeamInvitationApplicantEntity application = TeamInvitationApplicantEntity.builder()
 			.teamId(team.getId())
 			.userId(applicantId)
-			.inviteId(invite.getId())
+			.invitationLinkId(invite.getId())
 			.role(TeamUserRole.PLAYER)
 			.appliedAt(LocalDateTime.now())
-			.applicationStatus(InviteApplicationStatus.PENDING)
+			.applicationStatus(InvitationApplicationStatus.PENDING)
 			.build();
 
-		when(teamInviteEntityRepository.findByToken(token)).thenReturn(Optional.of(invite));
+		when(teamInvitationEntityRepository.findByToken(token)).thenReturn(Optional.of(invite));
 		when(userEntityRepository.findById(applicantId)).thenReturn(Optional.of(applicant));
 		when(teamUserEntityRepository.existsByTeamAndUser(team, applicant)).thenReturn(false);
-		when(teamInviteApplicationEntityRepository.findByTeamIdAndUserIdAndInviteId(
+		when(teamInvitationApplicationEntityRepository.findByTeamIdAndUserIdAndInvitationLinkId(
 			eq(team.getId()), eq(applicantId), eq(invite.getId())
 		)).thenReturn(Optional.of(application));
 
 		// when
-		TeamInviteDto result = teamService.getTeamInviteInfo(applicant, token);
+		TeamInvitationDto result = teamService.getTeamInviteInfo(applicant, token);
 
 		// then
 		assertThat(result).isNotNull();
-		assertThat(result.getApplicationStatus()).isEqualTo(InviteApplicationStatus.PENDING);
+		assertThat(result.getApplicationStatus()).isEqualTo(InvitationApplicationStatus.PENDING);
 	}
 
 	@Test
@@ -271,7 +271,7 @@ class TeamServiceTest {
 		UserEntity user = mock(UserEntity.class);
 		when(user.getId()).thenReturn(userId);
 
-		when(teamInviteEntityRepository.findByToken(token)).thenReturn(Optional.of(invite));
+		when(teamInvitationEntityRepository.findByToken(token)).thenReturn(Optional.of(invite));
 		when(userEntityRepository.findById(userId)).thenReturn(Optional.of(user));
 		when(teamUserEntityRepository.existsByTeamAndUser(team, user)).thenReturn(true);
 

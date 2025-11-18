@@ -2,7 +2,7 @@ package com.coniv.mait.domain.team.entity;
 
 import java.time.LocalDateTime;
 
-import com.coniv.mait.domain.team.enums.InviteApplicationStatus;
+import com.coniv.mait.domain.team.enums.InvitationApplicationStatus;
 import com.coniv.mait.domain.team.enums.TeamUserRole;
 import com.coniv.mait.global.entity.BaseTimeEntity;
 
@@ -21,15 +21,15 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
-@Table(name = "team_invite_applicants", indexes = {
-	@Index(name = "idx_team_invite_teamid_userid", columnList = "team_id, user_id")
+@Table(name = "team_invitation_applicants", indexes = {
+	@Index(name = "idx_team_invitation_teamid_userid", columnList = "team_id, user_id")
 })
 @Entity
 @Getter
 @Builder
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
-public class TeamInviteApplicantEntity extends BaseTimeEntity {
+public class TeamInvitationApplicantEntity extends BaseTimeEntity {
 
 	@Id
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -42,7 +42,7 @@ public class TeamInviteApplicantEntity extends BaseTimeEntity {
 	private Long userId;
 
 	@Column(nullable = false)
-	private Long inviteId;
+	private Long invitationLinkId;
 
 	@Enumerated(EnumType.STRING)
 	@Column(nullable = false)
@@ -53,5 +53,5 @@ public class TeamInviteApplicantEntity extends BaseTimeEntity {
 
 	@Enumerated(EnumType.STRING)
 	@Column(nullable = false)
-	private InviteApplicationStatus applicationStatus;
+	private InvitationApplicationStatus applicationStatus;
 }

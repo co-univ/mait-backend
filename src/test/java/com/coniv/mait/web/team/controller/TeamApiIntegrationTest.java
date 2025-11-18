@@ -20,14 +20,14 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.coniv.mait.domain.team.entity.TeamEntity;
+import com.coniv.mait.domain.team.entity.TeamInvitationApplicantEntity;
 import com.coniv.mait.domain.team.entity.TeamInvitationLinkEntity;
-import com.coniv.mait.domain.team.entity.TeamInviteApplicantEntity;
 import com.coniv.mait.domain.team.entity.TeamUserEntity;
-import com.coniv.mait.domain.team.enums.InviteApplicationStatus;
+import com.coniv.mait.domain.team.enums.InvitationApplicationStatus;
 import com.coniv.mait.domain.team.enums.TeamUserRole;
 import com.coniv.mait.domain.team.repository.TeamEntityRepository;
-import com.coniv.mait.domain.team.repository.TeamInviteApplicationEntityRepository;
-import com.coniv.mait.domain.team.repository.TeamInviteEntityRepository;
+import com.coniv.mait.domain.team.repository.TeamInvitationApplicationEntityRepository;
+import com.coniv.mait.domain.team.repository.TeamInvitationEntityRepository;
 import com.coniv.mait.domain.team.repository.TeamUserEntityRepository;
 import com.coniv.mait.domain.user.entity.UserEntity;
 import com.coniv.mait.domain.user.repository.UserEntityRepository;
@@ -64,15 +64,15 @@ public class TeamApiIntegrationTest extends BaseIntegrationTest {
 	private TeamUserEntityRepository teamUserEntityRepository;
 
 	@Autowired
-	private TeamInviteEntityRepository teamInviteEntityRepository;
+	private TeamInvitationEntityRepository teamInvitationEntityRepository;
 
 	@Autowired
-	private TeamInviteApplicationEntityRepository teamInviteApplicationEntityRepository;
+	private TeamInvitationApplicationEntityRepository teamInvitationApplicationEntityRepository;
 
 	@AfterEach
 	void clear() {
-		teamInviteApplicationEntityRepository.deleteAll();
-		teamInviteEntityRepository.deleteAll();
+		teamInvitationApplicationEntityRepository.deleteAll();
+		teamInvitationEntityRepository.deleteAll();
 		teamUserEntityRepository.deleteAll();
 		teamEntityRepository.deleteAll();
 		userEntityRepository.deleteAll();
@@ -149,7 +149,7 @@ public class TeamApiIntegrationTest extends BaseIntegrationTest {
 			.andExpect(jsonPath("$.data.token").exists());
 
 		// then
-		List<TeamInvitationLinkEntity> invites = teamInviteEntityRepository.findAll();
+		List<TeamInvitationLinkEntity> invites = teamInvitationEntityRepository.findAll();
 		assertThat(invites).hasSize(1);
 		TeamInvitationLinkEntity savedInvite = invites.get(0);
 		assertThat(savedInvite.getTeam().getId()).isEqualTo(team.getId());
@@ -175,7 +175,7 @@ public class TeamApiIntegrationTest extends BaseIntegrationTest {
 		TeamInvitationLinkEntity invite = TeamInvitationLinkEntity.createInvite(owner, team, token,
 			InviteTokenDuration.ONE_DAY,
 			TeamUserRole.PLAYER, false);
-		teamInviteEntityRepository.save(invite);
+		teamInvitationEntityRepository.save(invite);
 
 		// when & then: call without authentication
 		mockMvc.perform(get("/api/v1/teams/invitation/info").param("code", token)
@@ -203,18 +203,18 @@ public class TeamApiIntegrationTest extends BaseIntegrationTest {
 		TeamInvitationLinkEntity invite = TeamInvitationLinkEntity.createInvite(owner, team, token,
 			InviteTokenDuration.ONE_DAY,
 			TeamUserRole.PLAYER, true);
-		teamInviteEntityRepository.save(invite);
+		teamInvitationEntityRepository.save(invite);
 
 		// create application record
-		TeamInviteApplicantEntity application = TeamInviteApplicantEntity.builder()
+		TeamInvitationApplicantEntity application = TeamInvitationApplicantEntity.builder()
 			.teamId(team.getId())
 			.userId(applicant.getId())
-			.inviteId(invite.getId())
+			.invitationLinkId(invite.getId())
 			.role(TeamUserRole.PLAYER)
 			.appliedAt(LocalDateTime.now())
-			.applicationStatus(InviteApplicationStatus.PENDING)
+			.applicationStatus(InvitationApplicationStatus.PENDING)
 			.build();
-		teamInviteApplicationEntityRepository.save(application);
+		teamInvitationApplicationEntityRepository.save(application);
 
 		// when & then: authenticated request (WithCustomUser will set the principal)
 		mockMvc.perform(get("/api/v1/teams/invitation/info").param("code", token)

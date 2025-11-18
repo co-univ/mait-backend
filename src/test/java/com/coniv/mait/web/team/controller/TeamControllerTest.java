@@ -18,7 +18,7 @@ import org.springframework.test.web.servlet.MockMvc;
 
 import com.coniv.mait.domain.team.enums.TeamUserRole;
 import com.coniv.mait.domain.team.service.TeamService;
-import com.coniv.mait.domain.team.service.dto.TeamInviteDto;
+import com.coniv.mait.domain.team.service.dto.TeamInvitationDto;
 import com.coniv.mait.domain.user.entity.UserEntity;
 import com.coniv.mait.global.enums.InviteTokenDuration;
 import com.coniv.mait.global.filter.JwtAuthorizationFilter;
@@ -114,7 +114,7 @@ class TeamControllerTest {
 	void getTeamInfo_Success() throws Exception {
 		// given
 		String code = "INV123";
-		TeamInviteDto dto = TeamInviteDto.builder()
+		TeamInvitationDto dto = TeamInvitationDto.builder()
 			.teamInviteId(1L)
 			.teamId(2L)
 			.invitorId(3L)

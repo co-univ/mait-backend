@@ -11,7 +11,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.coniv.mait.domain.team.service.TeamService;
-import com.coniv.mait.domain.team.service.dto.TeamInviteDto;
+import com.coniv.mait.domain.team.service.dto.TeamInvitationDto;
 import com.coniv.mait.domain.user.entity.UserEntity;
 import com.coniv.mait.global.response.ApiResponse;
 import com.coniv.mait.web.team.dto.CreateTeamApiRequest;
@@ -57,7 +57,7 @@ public class TeamController {
 	@GetMapping("/invitation/info")
 	public ResponseEntity<ApiResponse<TeamInviteApiResponse>> getTeamInfo(
 		@AuthenticationPrincipal UserEntity userPrincipal, @RequestParam("code") String code) {
-		TeamInviteDto teamInviteInfo = teamService.getTeamInviteInfo(userPrincipal, code);
+		TeamInvitationDto teamInviteInfo = teamService.getTeamInviteInfo(userPrincipal, code);
 		return ResponseEntity.ok(ApiResponse.ok(TeamInviteApiResponse.from(teamInviteInfo)));
 	}
 }

@@ -8,7 +8,7 @@ import org.springframework.data.repository.query.Param;
 
 import com.coniv.mait.domain.team.entity.TeamInvitationLinkEntity;
 
-public interface TeamInviteEntityRepository extends JpaRepository<TeamInvitationLinkEntity, Long> {
+public interface TeamInvitationEntityRepository extends JpaRepository<TeamInvitationLinkEntity, Long> {
 	boolean existsByToken(String token);
 
 	@Query("select ti from TeamInvitationLinkEntity ti join fetch ti.team where ti.token = :token")

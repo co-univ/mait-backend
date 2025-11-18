@@ -4,7 +4,7 @@ import java.time.LocalDateTime;
 
 import com.coniv.mait.domain.team.entity.TeamEntity;
 import com.coniv.mait.domain.team.entity.TeamInvitationLinkEntity;
-import com.coniv.mait.domain.team.enums.InviteApplicationStatus;
+import com.coniv.mait.domain.team.enums.InvitationApplicationStatus;
 import com.coniv.mait.domain.team.enums.TeamUserRole;
 import com.coniv.mait.global.enums.InviteTokenDuration;
 
@@ -17,7 +17,7 @@ import lombok.NoArgsConstructor;
 @Builder
 @AllArgsConstructor
 @NoArgsConstructor
-public class TeamInviteDto {
+public class TeamInvitationDto {
 
 	private Long teamInviteId;
 
@@ -35,11 +35,11 @@ public class TeamInviteDto {
 
 	private LocalDateTime expiredAt;
 
-	private InviteApplicationStatus applicationStatus;
+	private InvitationApplicationStatus applicationStatus;
 
-	public static TeamInviteDto from(final TeamInvitationLinkEntity inviteEntity, final TeamEntity teamEntity,
-		final InviteApplicationStatus applicationStatus) {
-		return TeamInviteDto.builder()
+	public static TeamInvitationDto from(final TeamInvitationLinkEntity inviteEntity, final TeamEntity teamEntity,
+		final InvitationApplicationStatus applicationStatus) {
+		return TeamInvitationDto.builder()
 			.teamInviteId(inviteEntity.getId())
 			.teamId(teamEntity.getId())
 			.invitorId(inviteEntity.getInvitor().getId())

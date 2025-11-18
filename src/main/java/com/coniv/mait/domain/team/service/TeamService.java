@@ -11,11 +11,11 @@ import com.coniv.mait.domain.team.entity.TeamInvitationLinkEntity;
 import com.coniv.mait.domain.team.entity.TeamUserEntity;
 import com.coniv.mait.domain.team.enums.TeamUserRole;
 import com.coniv.mait.domain.team.repository.TeamEntityRepository;
-import com.coniv.mait.domain.team.repository.TeamInviteApplicationEntityRepository;
-import com.coniv.mait.domain.team.repository.TeamInviteEntityRepository;
+import com.coniv.mait.domain.team.repository.TeamInvitationApplicationEntityRepository;
+import com.coniv.mait.domain.team.repository.TeamInvitationEntityRepository;
 import com.coniv.mait.domain.team.repository.TeamUserEntityRepository;
 import com.coniv.mait.domain.team.service.component.InviteTokenGenerator;
-import com.coniv.mait.domain.team.service.dto.TeamInviteDto;
+import com.coniv.mait.domain.team.service.dto.TeamInvitationDto;
 import com.coniv.mait.domain.user.entity.UserEntity;
 import com.coniv.mait.domain.user.repository.UserEntityRepository;
 import com.coniv.mait.global.enums.InviteTokenDuration;
@@ -31,9 +31,9 @@ public class TeamService {
 	private final TeamEntityRepository teamEntityRepository;
 	private final TeamUserEntityRepository teamUserEntityRepository;
 	private final InviteTokenGenerator inviteTokenGenerator;
-	private final TeamInviteEntityRepository teamInviteEntityRepository;
+	private final TeamInvitationEntityRepository teamInvitationEntityRepository;
 	private final UserEntityRepository userEntityRepository;
-	private final TeamInviteApplicationEntityRepository teamInviteApplicationEntityRepository;
+	private final TeamInvitationApplicationEntityRepository teamInvitationApplicationEntityRepository;
 
 	@Transactional
 	public void createTeam(final String teamName, final UserEntity ownerPrincipal) {
@@ -44,9 +44,9 @@ public class TeamService {
 	}
 
 	@Transactional(readOnly = true)
-	public TeamInviteDto getTeamInviteInfo(final UserEntity userPrincipal, final String invitationToken) {
+	public TeamInvitationDto getTeamInviteInfo(final UserEntity userPrincipal, final String invitationToken) {
 		LocalDateTime applicationTime = LocalDateTime.now();
-		TeamInvitationLinkEntity teamInvitationLink = teamInviteEntityRepository.findByToken(invitationToken)
+		TeamInvitationLinkEntity teamInvitationLink = teamInvitationEntityRepository.findByToken(invitationToken)
 			.orElseThrow(() -> new TeamInvitationFailException("Invitation token not found: " + invitationToken));
 		TeamEntity team = teamInvitationLink.getTeam();
 
@@ -55,7 +55,7 @@ public class TeamService {
 		}
 
 		if (userPrincipal == null) {
-			return TeamInviteDto.from(teamInvitationLink, team, null);
+			return TeamInvitationDto.from(teamInvitationLink, team, null);
 		}
 
 		UserEntity user = userEntityRepository.findById(userPrincipal.getId())
@@ -66,13 +66,13 @@ public class TeamService {
 			throw new TeamInvitationFailException("User is already a member of the team: " + team.getId());
 		}
 
-		return teamInviteApplicationEntityRepository.findByTeamIdAndUserIdAndInviteId(
+		return teamInvitationApplicationEntityRepository.findByTeamIdAndUserIdAndInvitationLinkId(
 				team.getId(),
 				user.getId(),
 				teamInvitationLink.getId()
 			)
-			.map(app -> TeamInviteDto.from(teamInvitationLink, team, app.getApplicationStatus()))
-			.orElseGet(() -> TeamInviteDto.from(teamInvitationLink, team, null));
+			.map(app -> TeamInvitationDto.from(teamInvitationLink, team, app.getApplicationStatus()))
+			.orElseGet(() -> TeamInvitationDto.from(teamInvitationLink, team, null));
 	}
 
 	@Transactional
@@ -101,7 +101,7 @@ public class TeamService {
 		TeamInvitationLinkEntity teamInvitationLinkEntity = TeamInvitationLinkEntity.createInvite(invitor, team,
 			privateCode, duration,
 			role, requiresApproval);
-		teamInviteEntityRepository.save(teamInvitationLinkEntity);
+		teamInvitationEntityRepository.save(teamInvitationLinkEntity);
 
 		return privateCode;
 	}

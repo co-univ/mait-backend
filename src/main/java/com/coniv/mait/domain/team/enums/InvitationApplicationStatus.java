@@ -5,7 +5,7 @@ import lombok.Getter;
 
 @Getter
 @AllArgsConstructor
-public enum InviteApplicationStatus {
+public enum InvitationApplicationStatus {
 
 	PENDING("대기 중"),
 
