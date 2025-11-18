@@ -29,7 +29,7 @@ public class QuestionSolvingManageService {
 	 * 특정 문제에 대해 재채점을 수행한다.
 	 */
 	public void updateQuestionAnswers(final Long questionSetId, final Long questionId,
-		final QuestionType type, final UpdateAnswerPayload request) {
+		final UpdateAnswerPayload request) {
 		QuestionEntity question = questionReader.getQuestion(questionId, questionSetId);
 		// Todo 문제 셋이 풀이 중인지 확인
 		// QuestionSetEntity questionSet = question.getQuestionSet();
@@ -37,6 +37,7 @@ public class QuestionSolvingManageService {
 		// if (!questionSet.isOnLive()) {
 		// 	throw new RuntimeException("문제 세트가 라이브 상태가 아닙니다.");
 		// }
+		QuestionType type = request.getType();
 		QuestionAnswerUpdater questionAnswerUpdater = getQuestionAnswerUpdater(type);
 
 		questionAnswerUpdater.updateAnswer(question, request);
