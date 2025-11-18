@@ -62,8 +62,6 @@ public class TeamService {
 			.orElseThrow(() -> new EntityNotFoundException(
 				"User not found with id: " + userPrincipal.getId()));
 
-		System.out.println("User " + user.getId() + " is trying to join team " + team.getId());
-
 		if (isUserInTeam(team, user)) {
 			throw new TeamInviteFailException("User is already a member of the team: " + team.getId());
 		}
@@ -118,7 +116,6 @@ public class TeamService {
 	}
 
 	private boolean isUserInTeam(final TeamEntity team, final UserEntity user) {
-		System.out.println("Checking if user " + user.getId() + " is in team " + team.getId());
 		return teamUserEntityRepository.existsByTeamAndUser(team, user);
 	}
 }
