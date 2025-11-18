@@ -5,6 +5,7 @@ import static org.springframework.security.test.web.servlet.request.SecurityMock
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 import org.junit.jupiter.api.AfterEach;
@@ -19,10 +20,13 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.coniv.mait.domain.team.entity.TeamEntity;
+import com.coniv.mait.domain.team.entity.TeamInviteApplicantEntity;
 import com.coniv.mait.domain.team.entity.TeamInviteEntity;
 import com.coniv.mait.domain.team.entity.TeamUserEntity;
+import com.coniv.mait.domain.team.enums.InviteApplicationStatus;
 import com.coniv.mait.domain.team.enums.TeamUserRole;
 import com.coniv.mait.domain.team.repository.TeamEntityRepository;
+import com.coniv.mait.domain.team.repository.TeamInviteApplicationEntityRepository;
 import com.coniv.mait.domain.team.repository.TeamInviteEntityRepository;
 import com.coniv.mait.domain.team.repository.TeamUserEntityRepository;
 import com.coniv.mait.domain.user.entity.UserEntity;
@@ -62,8 +66,12 @@ public class TeamApiIntegrationTest extends BaseIntegrationTest {
 	@Autowired
 	private TeamInviteEntityRepository teamInviteEntityRepository;
 
+	@Autowired
+	private TeamInviteApplicationEntityRepository teamInviteApplicationEntityRepository;
+
 	@AfterEach
 	void clear() {
+		teamInviteApplicationEntityRepository.deleteAll();
 		teamInviteEntityRepository.deleteAll();
 		teamUserEntityRepository.deleteAll();
 		teamEntityRepository.deleteAll();
@@ -152,6 +160,69 @@ public class TeamApiIntegrationTest extends BaseIntegrationTest {
 		// 새로운 필드 검증
 		assertThat(savedInvite.getRoleOnJoin()).isEqualTo(TeamUserRole.PLAYER);
 		assertThat(savedInvite.isRequiresApproval()).isFalse();
+	}
+
+	@Test
+	@Transactional
+	@DisplayName("팀 초대 정보 조회 API 통합 테스트 - 익명 사용자 성공")
+	void getTeamInfo_Anonymous_Success() throws Exception {
+		// given: create owner user and team and invite
+		UserEntity owner = UserEntity.socialLoginUser("owner@example.com", "오너", "provider", null);
+		userEntityRepository.save(owner);
+		TeamEntity team = createTeamWithOwner("익명초대팀", owner);
+
+		String token = "ANON" + System.currentTimeMillis();
+		TeamInviteEntity invite = TeamInviteEntity.createInvite(owner, team, token, InviteTokenDuration.ONE_DAY,
+			TeamUserRole.PLAYER, false);
+		teamInviteEntityRepository.save(invite);
+
+		// when & then: call without authentication
+		mockMvc.perform(get("/api/v1/teams/invite/info").param("code", token)
+				.with(csrf()))
+			.andExpect(status().isOk())
+			.andExpect(jsonPath("$.isSuccess").value(true))
+			.andExpect(jsonPath("$.data.teamId").value(team.getId()))
+			.andExpect(jsonPath("$.data.teamName").value(team.getName()))
+			.andExpect(jsonPath("$.data.requiresApproval").value(false))
+			.andExpect(jsonPath("$.data.applicationStatus").doesNotExist());
+	}
+
+	@Test
+	@Transactional
+	@WithCustomUser(email = "applicant@example.com", name = "신청자")
+	@DisplayName("팀 초대 정보 조회 API 통합 테스트 - 인증된 사용자, 신청 기록 존재")
+	void getTeamInfo_Authenticated_WithApplication() throws Exception {
+		// given: owner, team, invite and applicant user
+		UserEntity owner = UserEntity.socialLoginUser("owner2@example.com", "오너2", "provider", null);
+		userEntityRepository.save(owner);
+		UserEntity applicant = userEntityRepository.findByEmail("applicant@example.com").orElseThrow();
+
+		TeamEntity team = createTeamWithOwner("신청팀", owner);
+		String token = "APP" + System.currentTimeMillis();
+		TeamInviteEntity invite = TeamInviteEntity.createInvite(owner, team, token, InviteTokenDuration.ONE_DAY,
+			TeamUserRole.PLAYER, true);
+		teamInviteEntityRepository.save(invite);
+
+		// create application record
+		TeamInviteApplicantEntity application = TeamInviteApplicantEntity.builder()
+			.teamId(team.getId())
+			.userId(applicant.getId())
+			.inviteId(invite.getId())
+			.role(TeamUserRole.PLAYER)
+			.appliedAt(LocalDateTime.now())
+			.applicationStatus(InviteApplicationStatus.PENDING)
+			.build();
+		teamInviteApplicationEntityRepository.save(application);
+
+		// when & then: authenticated request (WithCustomUser will set the principal)
+		mockMvc.perform(get("/api/v1/teams/invite/info").param("code", token)
+				.with(csrf()))
+			.andExpect(status().isOk())
+			.andExpect(jsonPath("$.isSuccess").value(true))
+			.andExpect(jsonPath("$.data.teamId").value(team.getId()))
+			.andExpect(jsonPath("$.data.teamName").value(team.getName()))
+			.andExpect(jsonPath("$.data.requiresApproval").value(true))
+			.andExpect(jsonPath("$.data.applicationStatus").value("PENDING"));
 	}
 
 	private TeamEntity createTeamWithOwner(String teamName, UserEntity owner) {
