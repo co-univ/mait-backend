@@ -1,8 +1,11 @@
 package com.coniv.mait.domain.question.service.component;
 
+import java.util.List;
+
 import org.springframework.stereotype.Component;
 
 import com.coniv.mait.domain.question.entity.QuestionEntity;
+import com.coniv.mait.domain.question.entity.QuestionSetEntity;
 import com.coniv.mait.domain.question.repository.QuestionEntityRepository;
 import com.coniv.mait.global.exception.custom.ResourceNotBelongException;
 
@@ -24,5 +27,9 @@ public class QuestionReader {
 		}
 
 		return question;
+	}
+
+	public List<QuestionEntity> getQuestionsByQuestionSet(QuestionSetEntity questionSet) {
+		return questionEntityRepository.findAllByQuestionSetId(questionSet.getId());
 	}
 }
