@@ -49,7 +49,7 @@ public class TeamService {
 
 	@Transactional
 	public String createTeamInviteCode(final Long teamId, final UserEntity invitorPrincipal,
-		final InviteTokenDuration duration, final TeamUserRole role) {
+		final InviteTokenDuration duration, final TeamUserRole role, final boolean requiresApproval) {
 		if (role == TeamUserRole.OWNER) {
 			throw new TeamInviteFailException("Cannot create invite code with OWNER role");
 		}
@@ -62,7 +62,8 @@ public class TeamService {
 		validateInvitorRole(team, invitor);
 		String privateCode = inviteTokenGenerator.generateUniqueInviteToken();
 
-		TeamInviteEntity teamInviteEntity = TeamInviteEntity.createInvite(invitor, team, privateCode, duration);
+		TeamInviteEntity teamInviteEntity = TeamInviteEntity.createInvite(invitor, team, privateCode, duration,
+			requiresApproval);
 		teamInviteEntityRepository.save(teamInviteEntity);
 
 		return privateCode;

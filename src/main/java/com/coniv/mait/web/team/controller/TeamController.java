@@ -6,6 +6,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.coniv.mait.domain.team.service.TeamService;
@@ -39,8 +40,10 @@ public class TeamController {
 	public ResponseEntity<ApiResponse<CreateTeamInviteApiResponse>> createTeamInviteCode(
 		@PathVariable("teamId") Long teamId,
 		@RequestBody @Valid CreateTeamInviteApiRequest request,
-		@AuthenticationPrincipal UserEntity ownerUser) {
-		String inviteCode = teamService.createTeamInviteCode(teamId, ownerUser, request.duration(), request.role());
+		@AuthenticationPrincipal UserEntity ownerUser,
+		@RequestParam(defaultValue = "false") boolean requiresApproval) {
+		String inviteCode = teamService.createTeamInviteCode(teamId, ownerUser, request.duration(), request.role(),
+			requiresApproval);
 		return ResponseEntity.ok()
 			.body(ApiResponse.ok(
 				CreateTeamInviteApiResponse.from(inviteCode)

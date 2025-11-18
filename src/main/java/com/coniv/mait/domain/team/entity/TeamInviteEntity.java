@@ -51,15 +51,19 @@ public class TeamInviteEntity extends BaseTimeEntity {
 	private InviteTokenDuration tokenDuration;
 
 	@Column
+	private boolean requiresApproval;
+
+	@Column
 	private LocalDateTime expiredAt;
 
 	public static TeamInviteEntity createInvite(UserEntity invitor, TeamEntity team, String token,
-		InviteTokenDuration duration) {
+		InviteTokenDuration duration, boolean requiresApproval) {
 		return TeamInviteEntity.builder()
 			.invitor(invitor)
 			.team(team)
 			.token(token)
 			.tokenDuration(duration)
+			.requiresApproval(requiresApproval)
 			.expiredAt(duration.calculateExpirationTime())
 			.build();
 	}
