@@ -14,6 +14,7 @@ import org.springframework.http.MediaType;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
+import com.coniv.mait.domain.team.enums.TeamUserRole;
 import com.coniv.mait.domain.team.service.TeamService;
 import com.coniv.mait.domain.user.entity.UserEntity;
 import com.coniv.mait.global.enums.InviteTokenDuration;
@@ -80,10 +81,12 @@ class TeamControllerTest {
 	void createTeamInviteCode_Success() throws Exception {
 		// given
 		Long teamId = 1L;
-		CreateTeamInviteApiRequest request = new CreateTeamInviteApiRequest(InviteTokenDuration.ONE_DAY);
+		TeamUserRole role = TeamUserRole.PLAYER;
+		CreateTeamInviteApiRequest request = new CreateTeamInviteApiRequest(InviteTokenDuration.ONE_DAY, role);
 		String expectedInviteCode = "INVITE123";
 
-		when(teamService.createTeamInviteCode(eq(teamId), nullable(UserEntity.class), eq(InviteTokenDuration.ONE_DAY)))
+		when(teamService.createTeamInviteCode(eq(teamId), nullable(UserEntity.class),
+			eq(InviteTokenDuration.ONE_DAY), eq(role)))
 			.thenReturn(expectedInviteCode);
 
 		// when & then
@@ -98,6 +101,6 @@ class TeamControllerTest {
 			);
 
 		verify(teamService).createTeamInviteCode(eq(teamId), nullable(UserEntity.class),
-			eq(InviteTokenDuration.ONE_DAY));
+			eq(InviteTokenDuration.ONE_DAY), eq(role));
 	}
 }

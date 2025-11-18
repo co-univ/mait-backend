@@ -127,7 +127,8 @@ public class TeamApiIntegrationTest extends BaseIntegrationTest {
 		// given
 		UserEntity user = userEntityRepository.findByEmail("test@example.com").orElseThrow();
 		TeamEntity team = createTeamWithOwner("테스트 팀", user);
-		CreateTeamInviteApiRequest request = new CreateTeamInviteApiRequest(InviteTokenDuration.ONE_DAY);
+		CreateTeamInviteApiRequest request = new CreateTeamInviteApiRequest(InviteTokenDuration.ONE_DAY,
+			TeamUserRole.PLAYER);
 
 		// when & then
 		mockMvc.perform(post("/api/v1/teams/{teamId}/invite", team.getId())
