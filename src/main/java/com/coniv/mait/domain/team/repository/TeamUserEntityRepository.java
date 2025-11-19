@@ -4,6 +4,8 @@ import java.util.List;
 import java.util.Optional;
 
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
 import com.coniv.mait.domain.team.entity.TeamEntity;
 import com.coniv.mait.domain.team.entity.TeamUserEntity;
@@ -15,4 +17,7 @@ public interface TeamUserEntityRepository extends JpaRepository<TeamUserEntity, 
 	Optional<TeamUserEntity> findByTeamAndUser(TeamEntity team, UserEntity user);
 
 	boolean existsByTeamAndUser(TeamEntity team, UserEntity user);
+
+	@Query("select tu from TeamUserEntity tu join fetch tu.team where tu.user = :user")
+	List<TeamUserEntity> findAllByUserFetchJoinTeam(@Param("user") final UserEntity user);
 }

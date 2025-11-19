@@ -1,5 +1,7 @@
 package com.coniv.mait.web.team.controller;
 
+import java.util.List;
+
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -11,12 +13,17 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.coniv.mait.domain.team.service.TeamService;
+import com.coniv.mait.domain.team.service.dto.TeamDto;
 import com.coniv.mait.domain.team.service.dto.TeamInvitationDto;
+import com.coniv.mait.domain.team.service.dto.TeamInvitationResultDto;
 import com.coniv.mait.domain.user.entity.UserEntity;
 import com.coniv.mait.global.response.ApiResponse;
+import com.coniv.mait.web.team.dto.ApproveTeamApplicationApiRequest;
 import com.coniv.mait.web.team.dto.CreateTeamApiRequest;
 import com.coniv.mait.web.team.dto.CreateTeamInviteApiRequest;
 import com.coniv.mait.web.team.dto.CreateTeamInviteApiResponse;
+import com.coniv.mait.web.team.dto.TeamApiResponse;
+import com.coniv.mait.web.team.dto.TeamInvitationApplyApiResponse;
 import com.coniv.mait.web.team.dto.TeamInviteApiResponse;
 
 import io.swagger.v3.oas.annotations.Operation;
@@ -53,11 +60,46 @@ public class TeamController {
 			));
 	}
 
+	@Operation(summary = "초대 링크 팀 참가 API")
+	@PostMapping("/{teamId}/applicant")
+	public ResponseEntity<ApiResponse<TeamInvitationApplyApiResponse>> applyTeamInvitation(
+		@PathVariable("teamId") Long teamId,
+		@RequestParam("code") String code,
+		@AuthenticationPrincipal UserEntity userPrincipal) {
+		TeamInvitationResultDto result = teamService.applyTeamInvitation(teamId, code, userPrincipal);
+		return ResponseEntity.ok(ApiResponse.ok(
+			TeamInvitationApplyApiResponse.of(teamId, result)
+		));
+	}
+
+	@Operation(summary = "초대 링크 신청 허용 API")
+	@PostMapping("/{teamId}/applicant/{applicationId}")
+	public ResponseEntity<ApiResponse<Void>> approveTeamApplication(
+		@PathVariable("teamId") Long teamId,
+		@PathVariable("applicationId") Long applicationId,
+		@Valid @RequestBody ApproveTeamApplicationApiRequest request,
+		@AuthenticationPrincipal UserEntity userPrincipal
+	) {
+		teamService.approveTeamApplication(teamId, applicationId, request.status(), userPrincipal);
+		return ResponseEntity.ok(ApiResponse.noContent());
+	}
+
 	@Operation(summary = "초대 링크 팀 정보 반환 API")
 	@GetMapping("/invitation/info")
 	public ResponseEntity<ApiResponse<TeamInviteApiResponse>> getTeamInfo(
 		@AuthenticationPrincipal UserEntity userPrincipal, @RequestParam("code") String code) {
 		TeamInvitationDto teamInviteInfo = teamService.getTeamInviteInfo(userPrincipal, code);
 		return ResponseEntity.ok(ApiResponse.ok(TeamInviteApiResponse.from(teamInviteInfo)));
+	}
+
+	@Operation(summary = "가입 팀 목록 반환 API")
+	@GetMapping("/joined")
+	public ResponseEntity<ApiResponse<List<TeamApiResponse>>> getJoinedTeams(
+		@AuthenticationPrincipal UserEntity userPrincipal) {
+		List<TeamDto> joinedTeams = teamService.getJoinedTeams(userPrincipal);
+		List<TeamApiResponse> response = joinedTeams.stream()
+			.map(TeamApiResponse::of)
+			.toList();
+		return ResponseEntity.ok(ApiResponse.ok(response));
 	}
 }

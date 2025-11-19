@@ -1,4 +1,4 @@
-package com.coniv.mait.global.exception.custom;
+package com.coniv.mait.domain.team.exception;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -6,6 +6,5 @@ import lombok.Getter;
 @Getter
 @AllArgsConstructor
 public class TeamInvitationFailException extends RuntimeException {
-
-	private final String message;
+	private final InvitationErrorCode errorCode;
 }

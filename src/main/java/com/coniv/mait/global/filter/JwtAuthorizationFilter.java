@@ -46,8 +46,11 @@ public class JwtAuthorizationFilter extends OncePerRequestFilter {
 		PathPatternRequestMatcher.withPathPatternParser(PARSER).matcher(HttpMethod.GET, "/api/v1/users/me"),
 		PathPatternRequestMatcher.withPathPatternParser(PARSER).matcher(HttpMethod.PATCH, "/api/v1/users/nickname"),
 		PathPatternRequestMatcher.withPathPatternParser(PARSER).matcher(HttpMethod.POST, "/api/v1/teams"),
+		PathPatternRequestMatcher.withPathPatternParser(PARSER).matcher(HttpMethod.GET, "/api/v1/teams/joined"),
 		PathPatternRequestMatcher.withPathPatternParser(PARSER)
 			.matcher(HttpMethod.GET, "/api/v1/teams/invitation/info"),
+		PathPatternRequestMatcher.withPathPatternParser(PARSER).matcher(HttpMethod.POST, "/api/v1/teams/*/applicant"),
+		PathPatternRequestMatcher.withPathPatternParser(PARSER).matcher(HttpMethod.POST, "/api/v1/teams/*/applicant/*"),
 		PathPatternRequestMatcher.withPathPatternParser(PARSER).matcher(HttpMethod.POST, "/api/v1/teams/*/invitation"),
 		PathPatternRequestMatcher.withPathPatternParser(PARSER).matcher(HttpMethod.POST, "/api/v1/question-sets"),
 		PathPatternRequestMatcher.withPathPatternParser(PARSER).matcher(HttpMethod.POST, "/api/v1/policies/check")

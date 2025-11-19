@@ -54,4 +54,24 @@ public class TeamInvitationApplicantEntity extends BaseTimeEntity {
 	@Enumerated(EnumType.STRING)
 	@Column(nullable = false)
 	private InvitationApplicationStatus applicationStatus;
+
+	public static TeamInvitationApplicantEntity createApplication(Long teamId, Long userId, Long invitationLinkId,
+		TeamUserRole role, LocalDateTime appliedAt) {
+		return TeamInvitationApplicantEntity.builder()
+			.teamId(teamId)
+			.userId(userId)
+			.invitationLinkId(invitationLinkId)
+			.role(role)
+			.appliedAt(appliedAt)
+			.applicationStatus(InvitationApplicationStatus.PENDING)
+			.build();
+	}
+
+	public void approveApplication() {
+		this.applicationStatus = InvitationApplicationStatus.APPROVED;
+	}
+
+	public void rejectApplication() {
+		this.applicationStatus = InvitationApplicationStatus.REJECTED;
+	}
 }
