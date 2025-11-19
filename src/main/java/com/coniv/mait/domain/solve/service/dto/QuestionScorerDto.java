@@ -25,6 +25,8 @@ public class QuestionScorerDto {
 
 	private String userName;
 
+	private String userNickname;
+
 	private Long submitOrder;
 
 	public static QuestionScorerDto of(QuestionScorerEntity entity, final UserEntity user) {
@@ -32,6 +34,7 @@ public class QuestionScorerDto {
 			.id(entity.getId())
 			.questionId(entity.getQuestionId())
 			.userName(user.getName())
+			.userNickname(user.getNickname())
 			.userId(user.getId())
 			.submitOrder(entity.getSubmitOrder())
 			.build();
@@ -44,6 +47,7 @@ public class QuestionScorerDto {
 			.questionId(question.getId())
 			.questionNumber(question.getNumber())
 			.userName(user.getName())
+			.userNickname(user.getNickname())
 			.userId(user.getId())
 			.submitOrder(entity.getSubmitOrder())
 			.build();

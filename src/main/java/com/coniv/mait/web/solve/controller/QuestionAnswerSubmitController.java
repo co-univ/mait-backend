@@ -45,7 +45,7 @@ public class QuestionAnswerSubmitController {
 	}
 
 	@Operation(summary = "문제별 득점자 조회 API")
-	@GetMapping("/scorer")
+	@GetMapping("/scorers")
 	public ResponseEntity<ApiResponse<QuestionScorerApiResponse>> getScorer(
 		@PathVariable("questionSetId") Long questionSetId,
 		@PathVariable("questionId") Long questionId

@@ -181,7 +181,7 @@ public class QuestionAnswerSubmitApiIntegrationTest extends BaseIntegrationTest 
 		);
 
 		// When & Then
-		mockMvc.perform(get("/api/v1/question-sets/{questionSetId}/questions/{questionId}/scorer",
+		mockMvc.perform(get("/api/v1/question-sets/{questionSetId}/questions/{questionId}/scorers",
 				questionSet.getId(), multipleQuestion.getId()))
 			.andExpect(status().isOk())
 			.andExpectAll(
