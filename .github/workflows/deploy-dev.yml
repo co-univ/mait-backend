@@ -1,4 +1,4 @@
-name: Docker Build, Push, and Deploy
+name: Docker Build, Push, and Deploy (Development)
 
 on:
   push:
@@ -57,15 +57,11 @@ jobs:
           key: ${{ secrets.EC2_PRIVATE_KEY }}
           port: 22
           script: |
-            # Stop any container using port 8080
-            CONTAINER_ID=$(docker ps -q --filter "publish=8080")
-            if [ ! -z "$CONTAINER_ID" ]; then
-              echo "Found container using port 8080. Stopping it..."
-              docker stop $CONTAINER_ID
-              docker rm $CONTAINER_ID
-            fi
+            # Define Variables for Development
+            export APP_IMAGE_NAME=mait-dev-app
+            export PORT=8040
             
-            # Create .env file with required environment variables
+            # Create .env file for docker-compose
             cat > ~/.env << EOL
             DOCKER_USERNAME=${{ secrets.DOCKER_USERNAME }}
             SPRING_PROFILES_ACTIVE=dev
@@ -84,14 +80,23 @@ jobs:
             JWT_REFRESH_TOKEN_EXPIRATION=${{ secrets.JWT_REFRESH_TOKEN_EXPIRATION }}
             GOOGLE_CLIENT_ID=${{ secrets.GOOGLE_CLIENT_ID }}
             GOOGLE_CLIENT_SECRET=${{ secrets.GOOGLE_CLIENT_SECRET }}
+            # Compose Variables
+            APP_IMAGE_NAME=mait-dev-app
+            PORT=8040
             EOL
             
-            # Clean up existing deployment
-            docker compose down -v || true
-            
-            # Deploy using docker compose
             cd ~
-            docker compose pull
-            docker compose up -d
             
-            echo "Application is running on port $PORT"
+            # Pull the latest image
+            docker compose -p mait-dev pull
+            
+            # Stop existing development containers (if any)
+            docker compose -p mait-dev down || true
+            
+            # Start development containers
+            docker compose -p mait-dev up -d
+            
+            # Cleanup unused images
+            docker image prune -f
+            
+            echo "Development Application is running on port 8040 (Project: mait-dev)"
