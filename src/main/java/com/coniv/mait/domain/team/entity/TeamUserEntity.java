@@ -53,6 +53,10 @@ public class TeamUserEntity extends BaseTimeEntity {
 		return new TeamUserEntity(user, team, TeamUserRole.OWNER);
 	}
 
+	public static TeamUserEntity createTeamUser(UserEntity user, TeamEntity team, TeamUserRole role) {
+		return new TeamUserEntity(user, team, role);
+	}
+
 	public boolean canInvite() {
 		return this.userRole == TeamUserRole.OWNER || this.userRole == TeamUserRole.MAKER;
 	}

@@ -12,5 +12,5 @@ public interface TeamInvitationEntityRepository extends JpaRepository<TeamInvita
 	boolean existsByToken(String token);
 
 	@Query("select ti from TeamInvitationLinkEntity ti join fetch ti.team where ti.token = :token")
-	Optional<TeamInvitationLinkEntity> findByToken(@Param("token") String token);
+	Optional<TeamInvitationLinkEntity> findByTokenFetchJoinTeam(@Param("token") String token);
 }

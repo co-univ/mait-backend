@@ -17,6 +17,7 @@ import com.coniv.mait.global.response.ApiResponse;
 import com.coniv.mait.web.team.dto.CreateTeamApiRequest;
 import com.coniv.mait.web.team.dto.CreateTeamInviteApiRequest;
 import com.coniv.mait.web.team.dto.CreateTeamInviteApiResponse;
+import com.coniv.mait.web.team.dto.TeamInvitationApplyApiResponse;
 import com.coniv.mait.web.team.dto.TeamInviteApiResponse;
 
 import io.swagger.v3.oas.annotations.Operation;
@@ -51,6 +52,18 @@ public class TeamController {
 			.body(ApiResponse.ok(
 				CreateTeamInviteApiResponse.from(inviteCode)
 			));
+	}
+
+	@Operation(summary = "초대 링크 팀 참가 API")
+	@PostMapping("/{teamId}/applicant")
+	public ResponseEntity<ApiResponse<TeamInvitationApplyApiResponse>> applyTeamInvitation(
+		@PathVariable("teamId") Long teamId,
+		@RequestParam("code") String code,
+		@AuthenticationPrincipal UserEntity userPrincipal) {
+		boolean joinedImmediately = teamService.applyTeamInvitation(teamId, code, userPrincipal);
+		return ResponseEntity.ok(ApiResponse.ok(
+			TeamInvitationApplyApiResponse.from(teamId, joinedImmediately)
+		));
 	}
 
 	@Operation(summary = "초대 링크 팀 정보 반환 API")

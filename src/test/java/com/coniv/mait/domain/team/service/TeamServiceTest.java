@@ -241,7 +241,7 @@ class TeamServiceTest {
 			.applicationStatus(InvitationApplicationStatus.PENDING)
 			.build();
 
-		when(teamInvitationEntityRepository.findByToken(token)).thenReturn(Optional.of(invite));
+		when(teamInvitationEntityRepository.findByTokenFetchJoinTeam(token)).thenReturn(Optional.of(invite));
 		when(userEntityRepository.findById(applicantId)).thenReturn(Optional.of(applicant));
 		when(teamUserEntityRepository.existsByTeamAndUser(team, applicant)).thenReturn(false);
 		when(teamInvitationApplicationEntityRepository.findByTeamIdAndUserIdAndInvitationLinkId(
@@ -271,7 +271,7 @@ class TeamServiceTest {
 		UserEntity user = mock(UserEntity.class);
 		when(user.getId()).thenReturn(userId);
 
-		when(teamInvitationEntityRepository.findByToken(token)).thenReturn(Optional.of(invite));
+		when(teamInvitationEntityRepository.findByTokenFetchJoinTeam(token)).thenReturn(Optional.of(invite));
 		when(userEntityRepository.findById(userId)).thenReturn(Optional.of(user));
 		when(teamUserEntityRepository.existsByTeamAndUser(team, user)).thenReturn(true);
 

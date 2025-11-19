@@ -10,4 +10,6 @@ public interface TeamInvitationApplicationEntityRepository extends JpaRepository
 
 	Optional<TeamInvitationApplicantEntity> findByTeamIdAndUserIdAndInvitationLinkId(Long teamId, Long userId,
 		Long invitationLinkId);
+
+	boolean existsByTeamIdAndUserIdAndInvitationLinkId(Long teamId, Long userId, Long invitationLinkId);
 }

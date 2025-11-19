@@ -7,6 +7,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.coniv.mait.domain.team.entity.TeamEntity;
+import com.coniv.mait.domain.team.entity.TeamInvitationApplicantEntity;
 import com.coniv.mait.domain.team.entity.TeamInvitationLinkEntity;
 import com.coniv.mait.domain.team.entity.TeamUserEntity;
 import com.coniv.mait.domain.team.enums.TeamUserRole;
@@ -46,7 +47,8 @@ public class TeamService {
 	@Transactional(readOnly = true)
 	public TeamInvitationDto getTeamInviteInfo(final UserEntity userPrincipal, final String invitationToken) {
 		LocalDateTime applicationTime = LocalDateTime.now();
-		TeamInvitationLinkEntity teamInvitationLink = teamInvitationEntityRepository.findByToken(invitationToken)
+		TeamInvitationLinkEntity teamInvitationLink = teamInvitationEntityRepository.findByTokenFetchJoinTeam(
+				invitationToken)
 			.orElseThrow(() -> new TeamInvitationFailException("Invitation token not found: " + invitationToken));
 		TeamEntity team = teamInvitationLink.getTeam();
 
@@ -104,6 +106,49 @@ public class TeamService {
 		teamInvitationEntityRepository.save(teamInvitationLinkEntity);
 
 		return privateCode;
+	}
+
+	@Transactional
+	public boolean applyTeamInvitation(final Long teamId, final String code, final UserEntity userPrincipal) {
+		LocalDateTime applyTime = LocalDateTime.now();
+
+		TeamInvitationLinkEntity invitationLink = teamInvitationEntityRepository.findByTokenFetchJoinTeam(code)
+			.orElseThrow(() -> new TeamInvitationFailException("Invitation token not found: " + code));
+		TeamEntity team = invitationLink.getTeam();
+		if (!teamId.equals(team.getId())) {
+			throw new TeamInvitationFailException(
+				"Invitation token does not belong to the team. token: " + code + ", teamId: " + teamId);
+		}
+
+		if (invitationLink.isExpired(applyTime)) {
+			throw new TeamInvitationFailException("Invitation token has expired: " + code);
+		}
+
+		UserEntity applicant = userEntityRepository.findById(userPrincipal.getId())
+			.orElseThrow(
+				() -> new EntityNotFoundException("Owner user not found with id: " + userPrincipal.getId()));
+
+		if (isUserInTeam(team, applicant)) {
+			throw new TeamInvitationFailException("User is already a member of the team: " + team.getId());
+		}
+
+		if (teamInvitationApplicationEntityRepository.existsByTeamIdAndUserIdAndInvitationLinkId(
+			team.getId(), applicant.getId(), invitationLink.getId())) {
+			throw new TeamInvitationFailException(
+				"User has already applied with this invitation code for team: " + team.getId());
+		}
+
+		if (invitationLink.isRequiresApproval()) {
+			TeamInvitationApplicantEntity application = TeamInvitationApplicantEntity.createApplication(team.getId(),
+				applicant.getId(), invitationLink.getId(), invitationLink.getRoleOnJoin(), applyTime
+			);
+			teamInvitationApplicationEntityRepository.save(application);
+			return false;
+		}
+
+		TeamUserEntity teamUser = TeamUserEntity.createTeamUser(applicant, team, invitationLink.getRoleOnJoin());
+		teamUserEntityRepository.save(teamUser);
+		return true;
 	}
 
 	private void validateInvitorRole(final TeamEntity team, final UserEntity invitor) {
