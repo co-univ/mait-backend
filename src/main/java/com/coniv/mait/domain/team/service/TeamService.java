@@ -11,6 +11,7 @@ import com.coniv.mait.domain.team.entity.TeamInvitationApplicantEntity;
 import com.coniv.mait.domain.team.entity.TeamInvitationLinkEntity;
 import com.coniv.mait.domain.team.entity.TeamUserEntity;
 import com.coniv.mait.domain.team.enums.InvitationApplicationStatus;
+import com.coniv.mait.domain.team.enums.JoinedImmediate;
 import com.coniv.mait.domain.team.enums.TeamUserRole;
 import com.coniv.mait.domain.team.exception.InvitationErrorCode;
 import com.coniv.mait.domain.team.exception.TeamInvitationFailException;
@@ -20,6 +21,7 @@ import com.coniv.mait.domain.team.repository.TeamInvitationEntityRepository;
 import com.coniv.mait.domain.team.repository.TeamUserEntityRepository;
 import com.coniv.mait.domain.team.service.component.InviteTokenGenerator;
 import com.coniv.mait.domain.team.service.dto.TeamInvitationDto;
+import com.coniv.mait.domain.team.service.dto.TeamInvitationResultDto;
 import com.coniv.mait.domain.user.entity.UserEntity;
 import com.coniv.mait.domain.user.repository.UserEntityRepository;
 import com.coniv.mait.global.enums.InviteTokenDuration;
@@ -164,7 +166,8 @@ public class TeamService {
 	}
 
 	@Transactional
-	public boolean applyTeamInvitation(final Long teamId, final String code, final UserEntity userPrincipal) {
+	public TeamInvitationResultDto applyTeamInvitation(final Long teamId, final String code,
+		final UserEntity userPrincipal) {
 		LocalDateTime applyTime = LocalDateTime.now();
 
 		TeamInvitationLinkEntity invitationLink = teamInvitationEntityRepository.findByTokenFetchJoinTeam(code)
@@ -196,12 +199,12 @@ public class TeamService {
 				applicant.getId(), invitationLink.getId(), invitationLink.getRoleOnJoin(), applyTime
 			);
 			teamInvitationApplicationEntityRepository.save(application);
-			return false;
+			return TeamInvitationResultDto.from(JoinedImmediate.APPROVAL_REQUIRED);
 		}
 
 		TeamUserEntity teamUser = TeamUserEntity.createTeamUser(applicant, team, invitationLink.getRoleOnJoin());
 		teamUserEntityRepository.save(teamUser);
-		return true;
+		return TeamInvitationResultDto.from(JoinedImmediate.IMMEDIATE);
 	}
 
 	private void validateInvitorRole(final TeamEntity team, final UserEntity invitor) {

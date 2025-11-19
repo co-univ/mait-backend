@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.coniv.mait.domain.team.service.TeamService;
 import com.coniv.mait.domain.team.service.dto.TeamInvitationDto;
+import com.coniv.mait.domain.team.service.dto.TeamInvitationResultDto;
 import com.coniv.mait.domain.user.entity.UserEntity;
 import com.coniv.mait.global.response.ApiResponse;
 import com.coniv.mait.web.team.dto.ApproveTeamApplicationApiRequest;
@@ -61,9 +62,9 @@ public class TeamController {
 		@PathVariable("teamId") Long teamId,
 		@RequestParam("code") String code,
 		@AuthenticationPrincipal UserEntity userPrincipal) {
-		boolean joinedImmediately = teamService.applyTeamInvitation(teamId, code, userPrincipal);
+		TeamInvitationResultDto result = teamService.applyTeamInvitation(teamId, code, userPrincipal);
 		return ResponseEntity.ok(ApiResponse.ok(
-			TeamInvitationApplyApiResponse.of(teamId, joinedImmediately)
+			TeamInvitationApplyApiResponse.of(teamId, result)
 		));
 	}
 
