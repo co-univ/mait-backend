@@ -43,15 +43,17 @@ RUN chown -R mait:mait /app
 # 사용자 변경
 USER mait
 
-# 애플리케이션 포트 노출
 EXPOSE 8080
 
 # JVM 최적화 옵션 설정
 ENV JAVA_OPTS="-Xmx512m -Xms256m -XX:+UseG1GC -XX:+UseContainerSupport"
-ENV DB_URL=jdbc:mysql://localhost:3306/mait
-ENV DB_USERNAME=sa
-ENV DB_PASSWORD=
+
+ENV SPRING_PROFILES_ACTIVE=
 ENV JPA_DDL_AUTO=none
+# DB 관련 환경변수는 docker-compose.yml에서 주입 필요
+ENV DB_URL=
+ENV DB_USERNAME=
+ENV DB_PASSWORD=
 
 # 애플리케이션 실행
 ENTRYPOINT ["sh", "-c", "java $JAVA_OPTS -jar /app/app.jar"] 
