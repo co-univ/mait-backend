@@ -17,6 +17,7 @@ import org.springframework.test.web.servlet.MockMvc;
 
 import com.coniv.mait.domain.question.dto.AnswerRankDto;
 import com.coniv.mait.domain.question.service.QuestionRankService;
+import com.coniv.mait.domain.solve.service.QuestionScorerService;
 import com.coniv.mait.domain.user.service.dto.UserDto;
 import com.coniv.mait.global.filter.JwtAuthorizationFilter;
 import com.coniv.mait.global.interceptor.idempotency.IdempotencyInterceptor;
@@ -27,6 +28,9 @@ class QuestionSetRankControllerTest {
 
 	@MockitoBean
 	private QuestionRankService questionRankService;
+
+	@MockitoBean
+	private QuestionScorerService questionScorerService;
 
 	@Autowired
 	private MockMvc mockMvc;

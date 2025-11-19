@@ -10,9 +10,12 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.coniv.mait.domain.question.dto.AnswerRankDto;
 import com.coniv.mait.domain.question.service.QuestionRankService;
+import com.coniv.mait.domain.solve.service.QuestionScorerService;
+import com.coniv.mait.domain.solve.service.dto.QuestionScorerDto;
 import com.coniv.mait.global.response.ApiResponse;
 import com.coniv.mait.web.question.dto.CorrectorRanksApiResponse;
 import com.coniv.mait.web.question.dto.ScorerRanksApiResponse;
+import com.coniv.mait.web.solve.dto.QuestionScorerApiResponse;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -26,6 +29,8 @@ import lombok.RequiredArgsConstructor;
 public class QuestionSetRankController {
 
 	private final QuestionRankService questionRankService;
+
+	private final QuestionScorerService questionScorerService;
 
 	@Operation(summary = "정답 개수에 따른 등수 조회 API", description = "해당 문제 셋에 정답 개수에 따른 등수 그룹을 조회한다.", parameters = {
 		@Parameter(name = "type", description = "랭킹 타입", required = true, example = "CORRECT")
@@ -43,5 +48,15 @@ public class QuestionSetRankController {
 		@PathVariable("questionSetId") Long questionSetId) {
 		List<AnswerRankDto> scoreRanks = questionRankService.getScorersByQuestionSetId(questionSetId);
 		return ResponseEntity.ok().body(ApiResponse.ok(ScorerRanksApiResponse.of(questionSetId, scoreRanks)));
+	}
+
+	@Operation(summary = "문제 셋 문제별 득점자 조회")
+	@GetMapping("/scorers")
+	public ResponseEntity<ApiResponse<List<QuestionScorerApiResponse>>> getScorers(
+		@PathVariable("questionSetId") Long questionSetId) {
+		List<QuestionScorerApiResponse> scorers = questionScorerService.getScorers(questionSetId).stream()
+			.map(QuestionScorerApiResponse::from)
+			.toList();
+		return ResponseEntity.ok(ApiResponse.ok(scorers));
 	}
 }

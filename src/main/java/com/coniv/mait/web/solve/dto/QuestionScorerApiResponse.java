@@ -11,6 +11,8 @@ public record QuestionScorerApiResponse(
 	Long id,
 	@Schema(description = "문제 PK", requiredMode = Schema.RequiredMode.REQUIRED)
 	Long questionId,
+	@Schema(description = "문제 번호 PK", requiredMode = Schema.RequiredMode.NOT_REQUIRED)
+	Long questionNumber,
 	@Schema(description = "득점한 사용자 PK", requiredMode = Schema.RequiredMode.NOT_REQUIRED)
 	Long userId,
 	@Schema(description = "득점한 사용자 이름", requiredMode = Schema.RequiredMode.NOT_REQUIRED)
@@ -22,6 +24,7 @@ public record QuestionScorerApiResponse(
 		return QuestionScorerApiResponse.builder()
 			.id(questionScorerDto.getId())
 			.questionId(questionScorerDto.getQuestionId())
+			.questionNumber(questionScorerDto.getQuestionNumber())
 			.userId(questionScorerDto.getUserId())
 			.userName(questionScorerDto.getUserName())
 			.submitOrder(questionScorerDto.getSubmitOrder())
