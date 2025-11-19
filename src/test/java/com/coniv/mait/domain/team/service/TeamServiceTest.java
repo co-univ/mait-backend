@@ -21,6 +21,7 @@ import com.coniv.mait.domain.team.entity.TeamInvitationLinkEntity;
 import com.coniv.mait.domain.team.entity.TeamUserEntity;
 import com.coniv.mait.domain.team.enums.InvitationApplicationStatus;
 import com.coniv.mait.domain.team.enums.TeamUserRole;
+import com.coniv.mait.domain.team.exception.InvitationErrorCode;
 import com.coniv.mait.domain.team.exception.TeamInvitationFailException;
 import com.coniv.mait.domain.team.repository.TeamEntityRepository;
 import com.coniv.mait.domain.team.repository.TeamInvitationApplicationEntityRepository;
@@ -205,9 +206,11 @@ class TeamServiceTest {
 		when(teamUserEntityRepository.findByTeamAndUser(team, mockPlayer)).thenReturn(Optional.of(playerTeamUser));
 
 		// when & then
-		assertThatThrownBy(() -> teamService.createTeamInviteCode(teamId, mockPlayer, duration, role, requiresApproval))
-			.isInstanceOf(TeamInvitationFailException.class)
-			.hasMessageContaining("Only team owners can create invite codes");
+		Throwable thrown = catchThrowable(
+			() -> teamService.createTeamInviteCode(teamId, mockPlayer, duration, role, requiresApproval));
+		assertThat(thrown).isInstanceOf(TeamInvitationFailException.class);
+		assertThat(((TeamInvitationFailException)thrown).getErrorCode()).isEqualTo(
+			InvitationErrorCode.CANT_CREATE_INVITE);
 
 		verify(teamEntityRepository).findById(teamId);
 		verify(userEntityRepository).findById(playerId);
@@ -276,8 +279,8 @@ class TeamServiceTest {
 		when(teamUserEntityRepository.existsByTeamAndUser(team, user)).thenReturn(true);
 
 		// when & then
-		assertThatThrownBy(() -> teamService.getTeamInviteInfo(user, token))
-			.isInstanceOf(TeamInvitationFailException.class)
-			.hasMessageContaining("User is already a member of the team");
+		Throwable thrown = catchThrowable(() -> teamService.getTeamInviteInfo(user, token));
+		assertThat(thrown).isInstanceOf(TeamInvitationFailException.class);
+		assertThat(((TeamInvitationFailException)thrown).getErrorCode()).isEqualTo(InvitationErrorCode.ALREADY_MEMBER);
 	}
 }
