@@ -299,7 +299,7 @@ class QuestionAnswerSubmitControllerTest {
 			.thenReturn(mockResponse);
 
 		mockMvc.perform(
-				get("/api/v1/question-sets/{questionSetId}/questions/{questionId}/scorer", questionSetId, questionId))
+				get("/api/v1/question-sets/{questionSetId}/questions/{questionId}/scorers", questionSetId, questionId))
 			.andExpect(status().isOk())
 			.andExpect(jsonPath("$.isSuccess").value(true))
 			.andExpect(jsonPath("$.data.id").value(1))
