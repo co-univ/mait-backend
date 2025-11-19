@@ -153,7 +153,8 @@ public class TeamService {
 
 	private void validateApplicationApprover(TeamEntity team, UserEntity approverPrincipal) {
 		UserEntity approver = userEntityRepository.findById(approverPrincipal.getId())
-			.orElseThrow(() -> new EntityNotFoundException("Approver user not found with id: "));
+			.orElseThrow(
+				() -> new EntityNotFoundException("Approver user not found with id: " + approverPrincipal.getId()));
 
 		TeamUserEntity approverTeamUser = teamUserEntityRepository.findByTeamAndUser(team, approver)
 			.orElseThrow(() -> new EntityNotFoundException(
@@ -182,7 +183,7 @@ public class TeamService {
 
 		UserEntity applicant = userEntityRepository.findById(userPrincipal.getId())
 			.orElseThrow(
-				() -> new EntityNotFoundException("Owner user not found with id: " + userPrincipal.getId()));
+				() -> new EntityNotFoundException("Applicant user not found with id: " + userPrincipal.getId()));
 
 		if (isUserInTeam(team, applicant)) {
 			throw new TeamInvitationFailException("User is already a member of the team: " + team.getId());
