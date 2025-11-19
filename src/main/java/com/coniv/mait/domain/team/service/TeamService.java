@@ -128,7 +128,7 @@ public class TeamService {
 				"Application does not belong to the specified team. applicationId: "
 				+ applicationId + ", teamId: " + team.getId());
 		}
-		
+
 		if (application.getApplicationStatus() != InvitationApplicationStatus.PENDING) {
 			throw new TeamInvitationFailException(
 				"Application has already been processed: " + application.getApplicationStatus());
