@@ -35,7 +35,7 @@ public class QuestionControlService {
 	@Transactional
 	public void allowQuestionAccess(Long questionSetId, Long questionId) {
 		QuestionEntity question = questionEntityRepository.findById(questionId)
-			.orElseThrow(() -> new EntityNotFoundException("Question not found with id: " + questionId));
+				.orElseThrow(() -> new EntityNotFoundException("Question not found with id: " + questionId));
 
 		checkQuestionSetIsOnLive(question.getQuestionSet());
 		checkQuestionBelongsToSet(questionSetId, question);
@@ -44,10 +44,10 @@ public class QuestionControlService {
 
 		question.updateQuestionStatus(QuestionStatusType.ACCESS_PERMISSION);
 		QuestionStatusMessage message = QuestionStatusMessage.builder()
-			.questionSetId(questionSetId)
-			.questionId(questionId)
-			.statusType(QuestionStatusType.ACCESS_PERMISSION)
-			.build();
+				.questionSetId(questionSetId)
+				.questionId(questionId)
+				.statusType(QuestionStatusType.ACCESS_PERMISSION)
+				.build();
 
 		questionWebSocketSender.broadcastQuestionStatus(questionSetId, message);
 	}
@@ -59,7 +59,7 @@ public class QuestionControlService {
 	@Transactional
 	public void allowQuestionSolve(Long questionSetId, Long questionId) {
 		QuestionEntity question = questionEntityRepository.findById(questionId)
-			.orElseThrow(() -> new EntityNotFoundException("Question not found with id: " + questionId));
+				.orElseThrow(() -> new EntityNotFoundException("Question not found with id: " + questionId));
 
 		checkQuestionSetIsOnLive(question.getQuestionSet());
 		checkQuestionBelongsToSet(questionSetId, question);
@@ -74,10 +74,10 @@ public class QuestionControlService {
 
 		question.updateQuestionStatus(QuestionStatusType.SOLVE_PERMISSION);
 		QuestionStatusMessage message = QuestionStatusMessage.builder()
-			.questionSetId(questionSetId)
-			.questionId(questionId)
-			.statusType(QuestionStatusType.SOLVE_PERMISSION)
-			.build();
+				.questionSetId(questionSetId)
+				.questionId(questionId)
+				.statusType(QuestionStatusType.SOLVE_PERMISSION)
+				.build();
 
 		questionWebSocketSender.broadcastQuestionStatus(questionSetId, message);
 	}
@@ -85,16 +85,15 @@ public class QuestionControlService {
 	private void checkQuestionBelongsToSet(Long questionSetId, QuestionEntity question) {
 		if (!question.getQuestionSet().getId().equals(questionSetId)) {
 			throw new ResourceNotBelongException(
-				"Question with id " + question.getQuestionSet().getId() + " does not belong to Set with id "
-					+ questionSetId
-			);
+					"Question with id " + question.getQuestionSet().getId() + " does not belong to Set with id "
+							+ questionSetId);
 		}
 	}
 
 	private void closeAllQuestionStatus(Long questionSetId) {
 		// 모든 문제의 상태를 초기화
 		questionEntityRepository.findAllByQuestionSetId(questionSetId)
-			.forEach(question -> question.updateQuestionStatus(QuestionStatusType.NOT_OPEN));
+				.forEach(question -> question.updateQuestionStatus(QuestionStatusType.NOT_OPEN));
 	}
 
 	private void checkQuestionSetIsOnLive(QuestionSetEntity questionSet) {
@@ -110,27 +109,24 @@ public class QuestionControlService {
 
 		checkQuestionSetIsOnLive(question.getQuestionSet());
 
-		closeAllQuestionStatus(questionSetId);
-
 		if (statusType == QuestionStatusType.SOLVE_PERMISSION) {
 			if (question.getQuestionStatus() != QuestionStatusType.ACCESS_PERMISSION) {
 				throw new QuestionSetLiveException("Question must be in ACCESS_PERMISSION status before solving.");
 			}
 
 			ThreadUtil.sleep(question.getDisplayDelayMilliseconds());
-
-			closeAllQuestionStatus(questionSetId);
 		}
+		closeAllQuestionStatus(questionSetId);
 
 		question.updateQuestionStatus(statusType);
 		QuestionStatusMessage message = QuestionStatusMessage.builder()
-			.questionSetId(questionSetId)
-			.questionId(questionId)
-			.statusType(statusType)
-			.build();
+				.questionSetId(questionSetId)
+				.questionId(questionId)
+				.statusType(statusType)
+				.build();
 
 		questionWebSocketSender.broadcastQuestionStatus(questionSetId, message);
 	}
 
-	//TODO: 신청 관리자가 해당 팀의 관리자인지 확인하는 로직 추가 필요
+	// TODO: 신청 관리자가 해당 팀의 관리자인지 확인하는 로직 추가 필요
 }
