@@ -22,7 +22,9 @@ import com.coniv.mait.domain.question.service.component.QuestionReader;
 import com.coniv.mait.domain.question.service.dto.ParticipantCorrectAnswerRankDto;
 import com.coniv.mait.domain.question.service.dto.ParticipantCorrectAnswersDto;
 import com.coniv.mait.domain.solve.entity.AnswerSubmitRecordEntity;
+import com.coniv.mait.domain.solve.entity.QuestionScorerEntity;
 import com.coniv.mait.domain.solve.repository.AnswerSubmitRecordEntityRepository;
+import com.coniv.mait.domain.solve.repository.QuestionScorerEntityRepository;
 import com.coniv.mait.domain.team.entity.TeamEntity;
 import com.coniv.mait.domain.team.service.component.TeamReader;
 import com.coniv.mait.domain.user.service.component.UserReader;
@@ -50,6 +52,7 @@ public class QuestionRankService {
 	private final QuestionEntityRepository questionEntityRepository;
 
 	private final AnswerSubmitRecordEntityRepository answerSubmitRecordEntityRepository;
+	private final QuestionScorerEntityRepository questionScorerEntityRepository;
 
 	public ParticipantCorrectAnswerRankDto getParticipantCorrectRank(Long questionSetId) {
 		QuestionSetEntity questionSet = findQuestionSetById(questionSetId);
@@ -128,10 +131,36 @@ public class QuestionRankService {
 
 		return usersByCorrectCount.entrySet().stream()
 			.map(entry -> AnswerRankDto.builder()
-				.answerCount(entry.getKey())
+				.count(entry.getKey())
 				.users(entry.getValue())
 				.build())
-			.sorted(Comparator.comparing(AnswerRankDto::getAnswerCount).reversed())
+			.sorted(Comparator.comparing(AnswerRankDto::getCount).reversed())
+			.toList();
+	}
+
+	@Transactional(readOnly = true)
+	public List<AnswerRankDto> getScorersByQuestionSetId(final Long questionSetId) {
+		QuestionSetEntity questionSet = findQuestionSetById(questionSetId);
+
+		List<Long> questionIds = questionReader.getQuestionsByQuestionSet(questionSet).stream()
+			.map(QuestionEntity::getId).toList();
+
+		Map<Long, Long> scoreCountByUserId = questionScorerEntityRepository.findAllByQuestionIdIn(questionIds).stream()
+			.collect(Collectors.groupingBy(QuestionScorerEntity::getUserId, Collectors.counting()));
+
+		TeamEntity team = teamReader.getTeam(questionSet.getTeamId());
+		Map<Long, List<UserDto>> usersByScoreCount = userReader.getUsersByTeam(team).stream()
+			.map(UserDto::from)
+			.collect(Collectors.groupingBy(
+				user -> scoreCountByUserId.getOrDefault(user.getId(), 0L)
+			));
+
+		return usersByScoreCount.entrySet().stream()
+			.map(entry -> AnswerRankDto.builder()
+				.count(entry.getKey())
+				.users(entry.getValue())
+				.build())
+			.sorted(Comparator.comparing(AnswerRankDto::getCount).reversed())
 			.toList();
 	}
 }
