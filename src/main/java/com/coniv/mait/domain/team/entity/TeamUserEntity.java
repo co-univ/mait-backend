@@ -60,4 +60,8 @@ public class TeamUserEntity extends BaseTimeEntity {
 	public boolean canInvite() {
 		return this.userRole == TeamUserRole.OWNER || this.userRole == TeamUserRole.MAKER;
 	}
+
+	public boolean canApproveApplications() {
+		return this.userRole == TeamUserRole.OWNER || this.userRole == TeamUserRole.MAKER;
+	}
 }

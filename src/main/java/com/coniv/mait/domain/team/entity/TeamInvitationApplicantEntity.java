@@ -66,4 +66,12 @@ public class TeamInvitationApplicantEntity extends BaseTimeEntity {
 			.applicationStatus(InvitationApplicationStatus.PENDING)
 			.build();
 	}
+
+	public void approveApplication() {
+		this.applicationStatus = InvitationApplicationStatus.APPROVED;
+	}
+
+	public void rejectApplication() {
+		this.applicationStatus = InvitationApplicationStatus.REJECTED;
+	}
 }

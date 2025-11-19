@@ -10,6 +10,7 @@ import com.coniv.mait.domain.team.entity.TeamEntity;
 import com.coniv.mait.domain.team.entity.TeamInvitationApplicantEntity;
 import com.coniv.mait.domain.team.entity.TeamInvitationLinkEntity;
 import com.coniv.mait.domain.team.entity.TeamUserEntity;
+import com.coniv.mait.domain.team.enums.InvitationApplicationStatus;
 import com.coniv.mait.domain.team.enums.TeamUserRole;
 import com.coniv.mait.domain.team.repository.TeamEntityRepository;
 import com.coniv.mait.domain.team.repository.TeamInvitationApplicationEntityRepository;
@@ -106,6 +107,61 @@ public class TeamService {
 		teamInvitationEntityRepository.save(teamInvitationLinkEntity);
 
 		return privateCode;
+	}
+
+	@Transactional
+	public void approveTeamApplication(Long teamId, Long applicationId, final InvitationApplicationStatus newStatus,
+		UserEntity approverPrincipal) {
+		if (newStatus == InvitationApplicationStatus.PENDING) {
+			throw new TeamInvitationFailException("Cannot set application status to PENDING");
+		}
+
+		TeamEntity team = teamEntityRepository.findById(teamId)
+			.orElseThrow(() -> new EntityNotFoundException("Team not found with id: " + teamId));
+
+		validateApplicationApprover(team, approverPrincipal);
+
+		TeamInvitationApplicantEntity application = teamInvitationApplicationEntityRepository.findById(applicationId)
+			.orElseThrow(() -> new EntityNotFoundException("Application not found with id: " + applicationId));
+		if (!application.getTeamId().equals(team.getId())) {
+			throw new TeamInvitationFailException(
+				"Application does not belong to the specified team. applicationId: "
+				+ applicationId + ", teamId: " + team.getId());
+		}
+		
+		if (application.getApplicationStatus() != InvitationApplicationStatus.PENDING) {
+			throw new TeamInvitationFailException(
+				"Application has already been processed: " + application.getApplicationStatus());
+		}
+
+		if (newStatus == InvitationApplicationStatus.REJECTED) {
+			application.rejectApplication();
+			return;
+		}
+
+		UserEntity applicant = userEntityRepository.findById(application.getUserId())
+			.orElseThrow(
+				() -> new EntityNotFoundException("Applicant user not found with id: " + application.getUserId()));
+		if (isUserInTeam(team, applicant)) {
+			throw new TeamInvitationFailException("Applicant is already a member of the team: " + team.getId());
+		}
+
+		application.approveApplication();
+		TeamUserEntity teamUser = TeamUserEntity.createTeamUser(applicant, team, application.getRole());
+		teamUserEntityRepository.save(teamUser);
+	}
+
+	private void validateApplicationApprover(TeamEntity team, UserEntity approverPrincipal) {
+		UserEntity approver = userEntityRepository.findById(approverPrincipal.getId())
+			.orElseThrow(() -> new EntityNotFoundException("Approver user not found with id: "));
+
+		TeamUserEntity approverTeamUser = teamUserEntityRepository.findByTeamAndUser(team, approver)
+			.orElseThrow(() -> new EntityNotFoundException(
+				"Approver is not a member of the team " + team.getId() + ", user: " + approver.getId()));
+
+		if (!approverTeamUser.canApproveApplications()) {
+			throw new TeamInvitationFailException("Only team owners or makers can approve invitation applications");
+		}
 	}
 
 	@Transactional
