@@ -37,7 +37,8 @@ public class QuestionScorerDto {
 			.build();
 	}
 
-	public static QuestionScorerDto of(final QuestionScorerEntity entity, final QuestionEntity question, final UserEntity user) {
+	public static QuestionScorerDto of(final QuestionScorerEntity entity, final QuestionEntity question,
+		final UserEntity user) {
 		return QuestionScorerDto.builder()
 			.id(entity.getId())
 			.questionId(question.getId())

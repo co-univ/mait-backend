@@ -77,7 +77,8 @@ public class QuestionScorerService {
 			.collect(Collectors.toUnmodifiableMap(UserEntity::getId, Function.identity()));
 
 		return scorerByQuestion.entrySet().stream()
-			.map(entry -> QuestionScorerDto.of(entry.getValue(), entry.getKey(), userById.get(entry.getValue().getUserId())))
+			.map(entry -> QuestionScorerDto.of(entry.getValue(), entry.getKey(),
+				userById.get(entry.getValue().getUserId())))
 			.sorted(Comparator.comparing(QuestionScorerDto::getQuestionNumber, Comparator.nullsLast(Long::compareTo)))
 			.toList();
 	}
