@@ -257,7 +257,8 @@ public class TeamService {
 		Map<Long, TeamInvitationApplicantEntity> byUserId = pendingApplicants.stream()
 			.collect(Collectors.toMap(
 				TeamInvitationApplicantEntity::getUserId,
-				applicant -> applicant
+				applicant -> applicant,
+				(existing, replacement) -> existing
 			));
 
 		List<Long> userIds = pendingApplicants.stream()
