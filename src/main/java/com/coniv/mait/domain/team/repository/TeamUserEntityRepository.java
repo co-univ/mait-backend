@@ -20,4 +20,7 @@ public interface TeamUserEntityRepository extends JpaRepository<TeamUserEntity, 
 
 	@Query("select tu from TeamUserEntity tu join fetch tu.team where tu.user = :user")
 	List<TeamUserEntity> findAllByUserFetchJoinTeam(@Param("user") final UserEntity user);
+
+	@Query("select tu from TeamUserEntity tu join fetch tu.user where tu.team.id = :teamId")
+	List<TeamUserEntity> findAllByTeamIdFetchJoinUser(@Param("teamId") Long teamId);
 }

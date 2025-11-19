@@ -16,12 +16,14 @@ import com.coniv.mait.domain.team.service.TeamService;
 import com.coniv.mait.domain.team.service.dto.TeamDto;
 import com.coniv.mait.domain.team.service.dto.TeamInvitationDto;
 import com.coniv.mait.domain.team.service.dto.TeamInvitationResultDto;
+import com.coniv.mait.domain.team.service.dto.TeamUserDto;
 import com.coniv.mait.domain.user.entity.UserEntity;
 import com.coniv.mait.global.response.ApiResponse;
 import com.coniv.mait.web.team.dto.ApproveTeamApplicationApiRequest;
 import com.coniv.mait.web.team.dto.CreateTeamApiRequest;
 import com.coniv.mait.web.team.dto.CreateTeamInviteApiRequest;
 import com.coniv.mait.web.team.dto.CreateTeamInviteApiResponse;
+import com.coniv.mait.web.team.dto.JoinedTeamUserApiResponse;
 import com.coniv.mait.web.team.dto.TeamApiResponse;
 import com.coniv.mait.web.team.dto.TeamInvitationApplyApiResponse;
 import com.coniv.mait.web.team.dto.TeamInviteApiResponse;
@@ -101,5 +103,17 @@ public class TeamController {
 			.map(TeamApiResponse::of)
 			.toList();
 		return ResponseEntity.ok(ApiResponse.ok(response));
+	}
+
+	@Operation(summary = "팀 가입 회원 목록 반환 API")
+	@GetMapping("/{teamId}/users")
+	public ResponseEntity<ApiResponse<List<JoinedTeamUserApiResponse>>> getTeamUsers(
+		@PathVariable("teamId") Long teamId) {
+		List<TeamUserDto> teamUsers = teamService.getTeamUsers(teamId);
+		return ResponseEntity.ok(ApiResponse.ok(
+			teamUsers.stream()
+				.map(JoinedTeamUserApiResponse::from)
+				.toList()
+		));
 	}
 }

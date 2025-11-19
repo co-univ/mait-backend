@@ -1,6 +1,7 @@
 package com.coniv.mait.domain.team.service;
 
 import java.time.LocalDateTime;
+import java.util.Comparator;
 import java.util.List;
 
 import org.springframework.stereotype.Service;
@@ -23,6 +24,7 @@ import com.coniv.mait.domain.team.service.component.InviteTokenGenerator;
 import com.coniv.mait.domain.team.service.dto.TeamDto;
 import com.coniv.mait.domain.team.service.dto.TeamInvitationDto;
 import com.coniv.mait.domain.team.service.dto.TeamInvitationResultDto;
+import com.coniv.mait.domain.team.service.dto.TeamUserDto;
 import com.coniv.mait.domain.user.entity.UserEntity;
 import com.coniv.mait.domain.user.repository.UserEntityRepository;
 import com.coniv.mait.global.enums.InviteTokenDuration;
@@ -230,6 +232,16 @@ public class TeamService {
 		return teamUserEntityRepository.findAllByUserFetchJoinTeam(user).stream()
 			.map(TeamUserEntity::getTeam)
 			.map(TeamDto::from)
+			.toList();
+	}
+
+	@Transactional(readOnly = true)
+	public List<TeamUserDto> getTeamUsers(final Long teamId) {
+		List<TeamUserEntity> teamUsers = teamUserEntityRepository.findAllByTeamIdFetchJoinUser(teamId);
+
+		return teamUsers.stream()
+			.map(TeamUserDto::from)
+			.sorted(Comparator.comparing(TeamUserDto::getName))
 			.toList();
 	}
 }
