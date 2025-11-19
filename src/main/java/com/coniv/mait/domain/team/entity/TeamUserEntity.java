@@ -61,6 +61,10 @@ public class TeamUserEntity extends BaseTimeEntity {
 		return this.userRole == TeamUserRole.OWNER || this.userRole == TeamUserRole.MAKER;
 	}
 
+	public void updateUserRole(TeamUserRole newRole) {
+		this.userRole = newRole;
+	}
+
 	public boolean canApproveApplications() {
 		return this.userRole == TeamUserRole.OWNER || this.userRole == TeamUserRole.MAKER;
 	}

@@ -24,6 +24,8 @@ public enum ExceptionCode {
 
 	POLICY_EXCEPTION(HttpStatus.BAD_REQUEST, "P-001", "정책 처리 중 오류가 발생했습니다."),
 
+	TEAM_MANAGER_EXCEPTION(HttpStatus.BAD_REQUEST, "T-001", "팀 관리 처리 중 오류가 발생했습니다."),
+
 	S3_FILE_EXCEPTION(HttpStatus.INTERNAL_SERVER_ERROR, "F-001", "S3 파일 처리 중 오류가 발생했습니다."),
 
 	UNEXPECTED_EXCEPTION(HttpStatus.INTERNAL_SERVER_ERROR, "S-000", "예기치 못한 오류가 발생했습니다."),

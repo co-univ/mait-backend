@@ -6,6 +6,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -30,6 +31,7 @@ import com.coniv.mait.web.team.dto.JoinedTeamUserApiResponse;
 import com.coniv.mait.web.team.dto.TeamApiResponse;
 import com.coniv.mait.web.team.dto.TeamInvitationApplyApiResponse;
 import com.coniv.mait.web.team.dto.TeamInviteApiResponse;
+import com.coniv.mait.web.team.dto.UpdateTeamUserRoleApiRequest;
 
 import io.swagger.v3.oas.annotations.Operation;
 import jakarta.validation.Valid;
@@ -136,6 +138,15 @@ public class TeamController {
 	@DeleteMapping("/team-users/{teamUserId}")
 	public ResponseEntity<ApiResponse<Void>> deleteTeamUser(@PathVariable("teamUserId") Long teamUserId) {
 		teamService.deleteTeamUser(teamUserId);
+		return ResponseEntity.ok(ApiResponse.noContent());
+	}
+
+	@Operation(summary = "팀 유저 역할 변경 API")
+	@PatchMapping("/team-users/{teamUserId}/role")
+	public ResponseEntity<ApiResponse<Void>> updateTeamUserRole(
+		@PathVariable("teamUserId") Long teamUserId,
+		@Valid @RequestBody UpdateTeamUserRoleApiRequest request) {
+		teamService.updateTeamUserRole(teamUserId, request.role());
 		return ResponseEntity.ok(ApiResponse.noContent());
 	}
 }

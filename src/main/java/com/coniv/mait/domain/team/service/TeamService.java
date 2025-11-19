@@ -18,6 +18,7 @@ import com.coniv.mait.domain.team.enums.JoinedImmediate;
 import com.coniv.mait.domain.team.enums.TeamUserRole;
 import com.coniv.mait.domain.team.exception.InvitationErrorCode;
 import com.coniv.mait.domain.team.exception.TeamInvitationFailException;
+import com.coniv.mait.domain.team.exception.TeamManagerException;
 import com.coniv.mait.domain.team.repository.TeamEntityRepository;
 import com.coniv.mait.domain.team.repository.TeamInvitationApplicationEntityRepository;
 import com.coniv.mait.domain.team.repository.TeamInvitationEntityRepository;
@@ -279,5 +280,20 @@ public class TeamService {
 			.orElseThrow(() -> new EntityNotFoundException("Team user not found with id: " + teamUserId));
 
 		teamUserEntityRepository.delete(teamUser);
+	}
+
+	@Transactional
+	public void updateTeamUserRole(Long teamUserId, TeamUserRole role) {
+		if (role == TeamUserRole.OWNER) {
+			throw new TeamManagerException("Cannot set team user role to OWNER.");
+		}
+		TeamUserEntity teamUser = teamUserEntityRepository.findById(teamUserId)
+			.orElseThrow(() -> new EntityNotFoundException("Team user not found with id: " + teamUserId));
+
+		if (teamUser.getUserRole() == TeamUserRole.OWNER) {
+			throw new TeamManagerException("Cannot change role of OWNER.");
+		}
+
+		teamUser.updateUserRole(role);
 	}
 }

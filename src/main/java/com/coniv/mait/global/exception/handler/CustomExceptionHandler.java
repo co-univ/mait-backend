@@ -7,6 +7,7 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
 import com.coniv.mait.domain.team.exception.TeamInvitationFailException;
+import com.coniv.mait.domain.team.exception.TeamManagerException;
 import com.coniv.mait.domain.user.exception.UserRoleException;
 import com.coniv.mait.global.exception.ExceptionCode;
 import com.coniv.mait.global.exception.custom.LoginFailException;
@@ -88,5 +89,13 @@ public class CustomExceptionHandler {
 		log.info("UserRoleException 발생: {}, {}", exception.getMessage(), request.getRequestURI());
 		return ResponseEntity.status(ExceptionCode.USER_ROLE_EXCEPTION.getStatus())
 			.body(ErrorResponse.of(ExceptionCode.USER_ROLE_EXCEPTION, List.of(exception.getMessage())));
+	}
+
+	@ExceptionHandler(TeamManagerException.class)
+	public ResponseEntity<ErrorResponse> handleTeamManagerException(TeamManagerException exception,
+		HttpServletRequest request) {
+		log.info("teamManagerException 발생: {}, {}", exception.getMessage(), request.getRequestURI());
+		return ResponseEntity.status(ExceptionCode.TEAM_MANAGER_EXCEPTION.getStatus())
+			.body(ErrorResponse.of(ExceptionCode.TEAM_MANAGER_EXCEPTION, List.of(exception.getMessage())));
 	}
 }
