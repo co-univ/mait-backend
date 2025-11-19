@@ -15,4 +15,10 @@ spring:
       client:
         registration:
           google:
-            redirect-uri: "https://api.dev.mait.kr/login/oauth2/code/google"
+            redirect-uri: "https://api.mait.kr/login/oauth2/code/google"
+
+springdoc:
+  api-docs:
+    enabled: false
+  swagger-ui:
+    enabled: false
