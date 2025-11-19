@@ -3,6 +3,8 @@ package com.coniv.mait.domain.team.service;
 import java.time.LocalDateTime;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -21,6 +23,7 @@ import com.coniv.mait.domain.team.repository.TeamInvitationApplicationEntityRepo
 import com.coniv.mait.domain.team.repository.TeamInvitationEntityRepository;
 import com.coniv.mait.domain.team.repository.TeamUserEntityRepository;
 import com.coniv.mait.domain.team.service.component.InviteTokenGenerator;
+import com.coniv.mait.domain.team.service.dto.TeamApplicantDto;
 import com.coniv.mait.domain.team.service.dto.TeamDto;
 import com.coniv.mait.domain.team.service.dto.TeamInvitationDto;
 import com.coniv.mait.domain.team.service.dto.TeamInvitationResultDto;
@@ -242,6 +245,31 @@ public class TeamService {
 		return teamUsers.stream()
 			.map(TeamUserDto::from)
 			.sorted(Comparator.comparing(TeamUserDto::getName))
+			.toList();
+	}
+
+	@Transactional(readOnly = true)
+	public List<TeamApplicantDto> getApplicants(Long teamId) {
+		List<TeamInvitationApplicantEntity> pendingApplicants = teamInvitationApplicationEntityRepository
+			.findAllByTeamIdAndApplicationStatus(teamId, InvitationApplicationStatus.PENDING);
+
+		Map<Long, TeamInvitationApplicantEntity> byUserId = pendingApplicants.stream()
+			.collect(Collectors.toMap(
+				TeamInvitationApplicantEntity::getUserId,
+				applicant -> applicant
+			));
+
+		List<Long> userIds = pendingApplicants.stream()
+			.map(TeamInvitationApplicantEntity::getUserId)
+			.toList();
+		List<UserEntity> users = userEntityRepository.findAllById(userIds);
+
+		return users.stream()
+			.map(user -> {
+				TeamInvitationApplicantEntity applicant = byUserId.get(user.getId());
+				return TeamApplicantDto.of(applicant, user);
+			})
+			.sorted(Comparator.comparing(TeamApplicantDto::getName))
 			.toList();
 	}
 }

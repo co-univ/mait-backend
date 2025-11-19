@@ -13,12 +13,14 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.coniv.mait.domain.team.service.TeamService;
+import com.coniv.mait.domain.team.service.dto.TeamApplicantDto;
 import com.coniv.mait.domain.team.service.dto.TeamDto;
 import com.coniv.mait.domain.team.service.dto.TeamInvitationDto;
 import com.coniv.mait.domain.team.service.dto.TeamInvitationResultDto;
 import com.coniv.mait.domain.team.service.dto.TeamUserDto;
 import com.coniv.mait.domain.user.entity.UserEntity;
 import com.coniv.mait.global.response.ApiResponse;
+import com.coniv.mait.web.team.dto.ApplyTeamUserApiResponse;
 import com.coniv.mait.web.team.dto.ApproveTeamApplicationApiRequest;
 import com.coniv.mait.web.team.dto.CreateTeamApiRequest;
 import com.coniv.mait.web.team.dto.CreateTeamInviteApiRequest;
@@ -113,6 +115,18 @@ public class TeamController {
 		return ResponseEntity.ok(ApiResponse.ok(
 			teamUsers.stream()
 				.map(JoinedTeamUserApiResponse::from)
+				.toList()
+		));
+	}
+
+	@Operation(summary = "팀 가입 승인 대기 회원 목록 반환 API")
+	@GetMapping("/{teamId}/applicants")
+	public ResponseEntity<ApiResponse<List<ApplyTeamUserApiResponse>>> getTeamApplicants(
+		@PathVariable("teamId") Long teamId) {
+		List<TeamApplicantDto> applicants = teamService.getApplicants(teamId);
+		return ResponseEntity.ok(ApiResponse.ok(
+			applicants.stream()
+				.map(ApplyTeamUserApiResponse::from)
 				.toList()
 		));
 	}
