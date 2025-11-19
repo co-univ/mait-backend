@@ -272,4 +272,12 @@ public class TeamService {
 			.sorted(Comparator.comparing(TeamApplicantDto::getName))
 			.toList();
 	}
+
+	@Transactional
+	public void deleteTeamUser(Long teamUserId) {
+		TeamUserEntity teamUser = teamUserEntityRepository.findById(teamUserId)
+			.orElseThrow(() -> new EntityNotFoundException("Team user not found with id: " + teamUserId));
+
+		teamUserEntityRepository.delete(teamUser);
+	}
 }
