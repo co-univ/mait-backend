@@ -9,7 +9,7 @@ public record TeamInvitationApplyApiResponse(
 	@Schema(description = "팀 즉시 가입되는지 유무", requiredMode = Schema.RequiredMode.REQUIRED)
 	boolean joinedImmediate
 ) {
-	public static TeamInvitationApplyApiResponse from(Long teamId, boolean joinedImmediate) {
+	public static TeamInvitationApplyApiResponse of(Long teamId, boolean joinedImmediate) {
 		return new TeamInvitationApplyApiResponse(teamId, joinedImmediate);
 	}
 }

@@ -63,7 +63,7 @@ public class TeamController {
 		@AuthenticationPrincipal UserEntity userPrincipal) {
 		boolean joinedImmediately = teamService.applyTeamInvitation(teamId, code, userPrincipal);
 		return ResponseEntity.ok(ApiResponse.ok(
-			TeamInvitationApplyApiResponse.from(teamId, joinedImmediately)
+			TeamInvitationApplyApiResponse.of(teamId, joinedImmediately)
 		));
 	}
 
