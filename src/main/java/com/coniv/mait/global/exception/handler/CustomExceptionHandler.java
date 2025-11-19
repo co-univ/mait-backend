@@ -6,6 +6,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
+import com.coniv.mait.domain.team.exception.TeamInvitationFailException;
 import com.coniv.mait.domain.user.exception.UserRoleException;
 import com.coniv.mait.global.exception.ExceptionCode;
 import com.coniv.mait.global.exception.custom.LoginFailException;
@@ -13,7 +14,6 @@ import com.coniv.mait.global.exception.custom.PolicyException;
 import com.coniv.mait.global.exception.custom.QuestionSetLiveException;
 import com.coniv.mait.global.exception.custom.ResourceNotBelongException;
 import com.coniv.mait.global.exception.custom.S3FileException;
-import com.coniv.mait.global.exception.custom.TeamInvitationFailException;
 import com.coniv.mait.global.exception.custom.UserParameterException;
 import com.coniv.mait.global.response.ErrorResponse;
 
@@ -58,9 +58,11 @@ public class CustomExceptionHandler {
 	@ExceptionHandler(TeamInvitationFailException.class)
 	public ResponseEntity<ErrorResponse> handleTeamInviteFailException(TeamInvitationFailException exception,
 		HttpServletRequest request) {
-		log.info("TeamInviteFailException 발생: {}, {}", exception.getMessage(), request.getRequestURI());
+		log.info("TeamInviteFailException 발생: {}, {}", exception.getErrorCode().name(),
+			request.getRequestURI());
 		return ResponseEntity.badRequest()
-			.body(ErrorResponse.of(ExceptionCode.TEAM_INVITE_FAIL_EXCEPTION, List.of(exception.getMessage())));
+			.body(ErrorResponse.of(ExceptionCode.TEAM_INVITE_FAIL_EXCEPTION,
+				List.of(exception.getErrorCode().name())));
 	}
 
 	@ExceptionHandler(PolicyException.class)

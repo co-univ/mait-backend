@@ -21,6 +21,7 @@ import com.coniv.mait.domain.team.entity.TeamInvitationLinkEntity;
 import com.coniv.mait.domain.team.entity.TeamUserEntity;
 import com.coniv.mait.domain.team.enums.InvitationApplicationStatus;
 import com.coniv.mait.domain.team.enums.TeamUserRole;
+import com.coniv.mait.domain.team.exception.TeamInvitationFailException;
 import com.coniv.mait.domain.team.repository.TeamEntityRepository;
 import com.coniv.mait.domain.team.repository.TeamInvitationApplicationEntityRepository;
 import com.coniv.mait.domain.team.repository.TeamInvitationEntityRepository;
@@ -31,7 +32,6 @@ import com.coniv.mait.domain.user.entity.UserEntity;
 import com.coniv.mait.domain.user.enums.LoginProvider;
 import com.coniv.mait.domain.user.repository.UserEntityRepository;
 import com.coniv.mait.global.enums.InviteTokenDuration;
-import com.coniv.mait.global.exception.custom.TeamInvitationFailException;
 
 import jakarta.persistence.EntityNotFoundException;
 
