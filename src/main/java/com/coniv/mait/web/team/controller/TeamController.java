@@ -1,5 +1,7 @@
 package com.coniv.mait.web.team.controller;
 
+import java.util.List;
+
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -11,6 +13,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.coniv.mait.domain.team.service.TeamService;
+import com.coniv.mait.domain.team.service.dto.TeamDto;
 import com.coniv.mait.domain.team.service.dto.TeamInvitationDto;
 import com.coniv.mait.domain.team.service.dto.TeamInvitationResultDto;
 import com.coniv.mait.domain.user.entity.UserEntity;
@@ -19,6 +22,7 @@ import com.coniv.mait.web.team.dto.ApproveTeamApplicationApiRequest;
 import com.coniv.mait.web.team.dto.CreateTeamApiRequest;
 import com.coniv.mait.web.team.dto.CreateTeamInviteApiRequest;
 import com.coniv.mait.web.team.dto.CreateTeamInviteApiResponse;
+import com.coniv.mait.web.team.dto.TeamApiResponse;
 import com.coniv.mait.web.team.dto.TeamInvitationApplyApiResponse;
 import com.coniv.mait.web.team.dto.TeamInviteApiResponse;
 
@@ -86,5 +90,16 @@ public class TeamController {
 		@AuthenticationPrincipal UserEntity userPrincipal, @RequestParam("code") String code) {
 		TeamInvitationDto teamInviteInfo = teamService.getTeamInviteInfo(userPrincipal, code);
 		return ResponseEntity.ok(ApiResponse.ok(TeamInviteApiResponse.from(teamInviteInfo)));
+	}
+
+	@Operation(summary = "가입 팀 목록 반환 API")
+	@GetMapping("/joined")
+	public ResponseEntity<ApiResponse<List<TeamApiResponse>>> getJoinedTeams(
+		@AuthenticationPrincipal UserEntity userPrincipal) {
+		List<TeamDto> joinedTeams = teamService.getJoinedTeams(userPrincipal);
+		List<TeamApiResponse> response = joinedTeams.stream()
+			.map(TeamApiResponse::of)
+			.toList();
+		return ResponseEntity.ok(ApiResponse.ok(response));
 	}
 }

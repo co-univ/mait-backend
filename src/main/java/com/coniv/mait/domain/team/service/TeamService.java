@@ -20,6 +20,7 @@ import com.coniv.mait.domain.team.repository.TeamInvitationApplicationEntityRepo
 import com.coniv.mait.domain.team.repository.TeamInvitationEntityRepository;
 import com.coniv.mait.domain.team.repository.TeamUserEntityRepository;
 import com.coniv.mait.domain.team.service.component.InviteTokenGenerator;
+import com.coniv.mait.domain.team.service.dto.TeamDto;
 import com.coniv.mait.domain.team.service.dto.TeamInvitationDto;
 import com.coniv.mait.domain.team.service.dto.TeamInvitationResultDto;
 import com.coniv.mait.domain.user.entity.UserEntity;
@@ -219,5 +220,16 @@ public class TeamService {
 
 	private boolean isUserInTeam(final TeamEntity team, final UserEntity user) {
 		return teamUserEntityRepository.existsByTeamAndUser(team, user);
+	}
+
+	@Transactional(readOnly = true)
+	public List<TeamDto> getJoinedTeams(final UserEntity userPrincipal) {
+		UserEntity user = userEntityRepository.findById(userPrincipal.getId())
+			.orElseThrow(() -> new EntityNotFoundException("User not found with id: " + userPrincipal.getId()));
+
+		return teamUserEntityRepository.findAllByUserFetchJoinTeam(user).stream()
+			.map(TeamUserEntity::getTeam)
+			.map(TeamDto::from)
+			.toList();
 	}
 }
