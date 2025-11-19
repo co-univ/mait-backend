@@ -15,7 +15,6 @@ public final class AuthConstant {
 	private final MaitProperty maitProperty;
 
 	public String getOAuthSuccessRedirectUrl() {
-		//return maitProperty.getBaseUrl() + "/oauth/success"; //TODO 배포 후 수정
-		return "http://localhost:3000/oauth/success";
+		return maitProperty.getBaseUrl() + "/oauth/success";
 	}
 }
