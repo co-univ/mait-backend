@@ -76,17 +76,17 @@ class QuestionSetRankControllerTest {
 			.build();
 
 		AnswerRankDto rank1 = AnswerRankDto.builder()
-			.answerCount(1L)
+			.count(1L)
 			.users(List.of(user2))
 			.build();
 
 		AnswerRankDto rank2 = AnswerRankDto.builder()
-			.answerCount(2L)
+			.count(2L)
 			.users(List.of(user3))
 			.build();
 
 		AnswerRankDto rank3 = AnswerRankDto.builder()
-			.answerCount(3L)
+			.count(3L)
 			.users(List.of(user1))
 			.build();
 

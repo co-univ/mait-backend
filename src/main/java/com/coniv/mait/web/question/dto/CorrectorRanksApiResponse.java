@@ -26,7 +26,7 @@ public record CorrectorRanksApiResponse(
 	) {
 		static AnswerRankApiResponse from(AnswerRankDto answerRanks) {
 			return AnswerRankApiResponse.builder()
-				.answerCount(answerRanks.getAnswerCount())
+				.answerCount(answerRanks.getCount())
 				.users(answerRanks.getUsers().stream().map(UserApiResponse::from).toList())
 				.build();
 		}

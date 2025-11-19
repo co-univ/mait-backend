@@ -425,15 +425,15 @@ class QuestionRankServiceTest {
 		assertThat(result).hasSize(3);
 
 		// 정답 개수 기준 내림차순 정렬 확인 (3개, 2개, 1개)
-		assertThat(result.get(0).getAnswerCount()).isEqualTo(3L);
+		assertThat(result.get(0).getCount()).isEqualTo(3L);
 		assertThat(result.get(0).getUsers()).hasSize(1);
 		assertThat(result.get(0).getUsers().get(0).getId()).isEqualTo(1L);
 
-		assertThat(result.get(1).getAnswerCount()).isEqualTo(2L);
+		assertThat(result.get(1).getCount()).isEqualTo(2L);
 		assertThat(result.get(1).getUsers()).hasSize(1);
 		assertThat(result.get(1).getUsers().get(0).getId()).isEqualTo(3L);
 
-		assertThat(result.get(2).getAnswerCount()).isEqualTo(1L);
+		assertThat(result.get(2).getCount()).isEqualTo(1L);
 		assertThat(result.get(2).getUsers()).hasSize(1);
 		assertThat(result.get(2).getUsers().get(0).getId()).isEqualTo(2L);
 
@@ -495,11 +495,11 @@ class QuestionRankServiceTest {
 		assertThat(result).hasSize(2);
 
 		// 정답 개수 기준 내림차순 정렬 확인 (1개, 0개)
-		assertThat(result.get(0).getAnswerCount()).isEqualTo(1L);
+		assertThat(result.get(0).getCount()).isEqualTo(1L);
 		assertThat(result.get(0).getUsers()).hasSize(1);
 		assertThat(result.get(0).getUsers().get(0).getId()).isEqualTo(1L);
 
-		assertThat(result.get(1).getAnswerCount()).isEqualTo(0L);
+		assertThat(result.get(1).getCount()).isEqualTo(0L);
 		assertThat(result.get(1).getUsers()).hasSize(1);
 		assertThat(result.get(1).getUsers().get(0).getId()).isEqualTo(2L);
 
@@ -574,12 +574,12 @@ class QuestionRankServiceTest {
 		assertThat(result).hasSize(2);
 
 		// 정답 개수 기준 내림차순 정렬 확인 (1개, 0개)
-		assertThat(result.get(0).getAnswerCount()).isEqualTo(1L);
+		assertThat(result.get(0).getCount()).isEqualTo(1L);
 		// 동일한 정답 개수(1개)를 가진 사용자들이 같은 그룹에 포함되는지 확인
 		assertThat(result.get(0).getUsers()).hasSize(2);
 		assertThat(result.get(0).getUsers()).extracting(UserDto::getId).containsExactlyInAnyOrder(1L, 2L);
 
-		assertThat(result.get(1).getAnswerCount()).isEqualTo(0L);
+		assertThat(result.get(1).getCount()).isEqualTo(0L);
 		assertThat(result.get(1).getUsers()).hasSize(1);
 		assertThat(result.get(1).getUsers().get(0).getId()).isEqualTo(3L);
 

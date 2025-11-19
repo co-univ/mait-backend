@@ -14,7 +14,7 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @NoArgsConstructor
 public class AnswerRankDto {
-	private long answerCount;
+	private long count;
 
 	private List<UserDto> users;
 }
