@@ -1,0 +1,108 @@
+name: Docker Build, Push, and Deploy (Production)
+
+on:
+  push:
+    branches: [ main ]
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      # Step 1: Checkout the code
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      # Step 2: Set up Docker Buildx
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      # Step 3: Log in to Docker Hub
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      # Step 4: Build and push Docker image
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          platforms: linux/amd64
+          push: true
+          tags: |
+            ${{ secrets.DOCKER_USERNAME }}/mait-prod-app:latest
+            ${{ secrets.DOCKER_USERNAME }}/mait-prod-app:${{ github.sha }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          build-args: |
+            APP_PORT=8080
+
+      # Step 5: Copy docker-compose.yml to EC2
+      - name: Copy docker-compose file
+        uses: appleboy/scp-action@v0.1.4
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USER }}
+          key: ${{ secrets.EC2_PRIVATE_KEY }}
+          port: 22
+          source: "docker-compose.yml"
+          target: "~/"
+
+      # Step 6: Deploy to EC2
+      - name: Deploy to EC2
+        uses: appleboy/ssh-action@v1.0.0
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USER }}
+          key: ${{ secrets.EC2_PRIVATE_KEY }}
+          port: 22
+          script: |
+            # Define Variables for Production
+            export APP_IMAGE_NAME=mait-prod-app
+            export PORT=8080
+            
+            # Create .env file for docker-compose
+            # Note: PORT and APP_IMAGE_NAME are passed via env vars, not .env file in this setup
+            # but we can add them to .env to be safe or use export as above.
+            cat > ~/.env << EOL
+            DOCKER_USERNAME=${{ secrets.DOCKER_USERNAME }}
+            SPRING_PROFILES_ACTIVE=prod
+            AWS_REGION=${{ secrets.AWS_REGION }}
+            AWS_ACCESS_KEY_ID=${{ secrets.AWS_ACCESS_KEY_ID_PROD }}
+            AWS_SECRET_ACCESS_KEY=${{ secrets.AWS_SECRET_ACCESS_KEY_PROD }}
+            AWS_S3_BUCKET=${{ secrets.AWS_S3_BUCKET_PROD }}
+            DB_URL=${{ secrets.PROD_DB_URL }}
+            DB_USERNAME=${{ secrets.PROD_DB_USERNAME }}
+            DB_PASSWORD=${{ secrets.PROD_DB_PASSWORD }}
+            JPA_DDL_AUTO=${{ secrets.PROD_JPA_DDL_AUTO }}
+            REDIS_HOST=${{ secrets.REDIS_HOST }}
+            REDIS_PORT=${{ secrets.REDIS_PORT }}
+            JWT_SECRET_KEY=${{ secrets.PROD_JWT_SECRET_KEY }}
+            JWT_ACCESS_TOKEN_EXPIRATION=${{ secrets.PROD_JWT_ACCESS_TOKEN_EXPIRATION }}
+            JWT_REFRESH_TOKEN_EXPIRATION=${{ secrets.PROD_JWT_REFRESH_TOKEN_EXPIRATION }}
+            GOOGLE_CLIENT_ID=${{ secrets.PROD_GOOGLE_CLIENT_ID }}
+            GOOGLE_CLIENT_SECRET=${{ secrets.PROD_GOOGLE_CLIENT_SECRET }}
+            # Compose Variables
+            APP_IMAGE_NAME=mait-prod-app
+            PORT=8080
+            EOL
+            
+            cd ~
+            
+            # Pull the latest image
+            # We need to make sure env vars are available for the command
+            docker compose -p mait-prod pull
+            
+            # Stop existing production containers (if any)
+            docker compose -p mait-prod down || true
+            
+            # Start production containers
+            docker compose -p mait-prod up -d
+            
+            # Cleanup unused images
+            docker image prune -f
+            
+            echo "Production Application is running on port 8080 (Project: mait-prod)"
+
