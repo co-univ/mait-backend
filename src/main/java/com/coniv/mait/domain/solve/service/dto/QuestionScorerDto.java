@@ -1,5 +1,6 @@
 package com.coniv.mait.domain.solve.service.dto;
 
+import com.coniv.mait.domain.question.entity.QuestionEntity;
 import com.coniv.mait.domain.solve.entity.QuestionScorerEntity;
 import com.coniv.mait.domain.user.entity.UserEntity;
 
@@ -18,6 +19,8 @@ public class QuestionScorerDto {
 
 	private Long questionId;
 
+	private Long questionNumber;
+
 	private Long userId;
 
 	private String userName;
@@ -28,6 +31,17 @@ public class QuestionScorerDto {
 		return QuestionScorerDto.builder()
 			.id(entity.getId())
 			.questionId(entity.getQuestionId())
+			.userName(user.getName())
+			.userId(user.getId())
+			.submitOrder(entity.getSubmitOrder())
+			.build();
+	}
+
+	public static QuestionScorerDto of(final QuestionScorerEntity entity, final QuestionEntity question, final UserEntity user) {
+		return QuestionScorerDto.builder()
+			.id(entity.getId())
+			.questionId(question.getId())
+			.questionNumber(question.getNumber())
 			.userName(user.getName())
 			.userId(user.getId())
 			.submitOrder(entity.getSubmitOrder())
