@@ -4,7 +4,9 @@ import java.util.List;
 
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -13,18 +15,23 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.coniv.mait.domain.team.service.TeamService;
+import com.coniv.mait.domain.team.service.dto.TeamApplicantDto;
 import com.coniv.mait.domain.team.service.dto.TeamDto;
 import com.coniv.mait.domain.team.service.dto.TeamInvitationDto;
 import com.coniv.mait.domain.team.service.dto.TeamInvitationResultDto;
+import com.coniv.mait.domain.team.service.dto.TeamUserDto;
 import com.coniv.mait.domain.user.entity.UserEntity;
 import com.coniv.mait.global.response.ApiResponse;
+import com.coniv.mait.web.team.dto.ApplyTeamUserApiResponse;
 import com.coniv.mait.web.team.dto.ApproveTeamApplicationApiRequest;
 import com.coniv.mait.web.team.dto.CreateTeamApiRequest;
 import com.coniv.mait.web.team.dto.CreateTeamInviteApiRequest;
 import com.coniv.mait.web.team.dto.CreateTeamInviteApiResponse;
+import com.coniv.mait.web.team.dto.JoinedTeamUserApiResponse;
 import com.coniv.mait.web.team.dto.TeamApiResponse;
 import com.coniv.mait.web.team.dto.TeamInvitationApplyApiResponse;
 import com.coniv.mait.web.team.dto.TeamInviteApiResponse;
+import com.coniv.mait.web.team.dto.UpdateTeamUserRoleApiRequest;
 
 import io.swagger.v3.oas.annotations.Operation;
 import jakarta.validation.Valid;
@@ -101,5 +108,45 @@ public class TeamController {
 			.map(TeamApiResponse::of)
 			.toList();
 		return ResponseEntity.ok(ApiResponse.ok(response));
+	}
+
+	@Operation(summary = "팀 가입 회원 목록 반환 API")
+	@GetMapping("/{teamId}/users")
+	public ResponseEntity<ApiResponse<List<JoinedTeamUserApiResponse>>> getTeamUsers(
+		@PathVariable("teamId") Long teamId) {
+		List<TeamUserDto> teamUsers = teamService.getTeamUsers(teamId);
+		return ResponseEntity.ok(ApiResponse.ok(
+			teamUsers.stream()
+				.map(JoinedTeamUserApiResponse::from)
+				.toList()
+		));
+	}
+
+	@Operation(summary = "팀 가입 승인 대기 회원 목록 반환 API")
+	@GetMapping("/{teamId}/applicants")
+	public ResponseEntity<ApiResponse<List<ApplyTeamUserApiResponse>>> getTeamApplicants(
+		@PathVariable("teamId") Long teamId) {
+		List<TeamApplicantDto> applicants = teamService.getApplicants(teamId);
+		return ResponseEntity.ok(ApiResponse.ok(
+			applicants.stream()
+				.map(ApplyTeamUserApiResponse::from)
+				.toList()
+		));
+	}
+
+	@Operation(summary = "팀 유저 삭제 API")
+	@DeleteMapping("/team-users/{teamUserId}")
+	public ResponseEntity<ApiResponse<Void>> deleteTeamUser(@PathVariable("teamUserId") Long teamUserId) {
+		teamService.deleteTeamUser(teamUserId);
+		return ResponseEntity.ok(ApiResponse.noContent());
+	}
+
+	@Operation(summary = "팀 유저 역할 변경 API")
+	@PatchMapping("/team-users/{teamUserId}/role")
+	public ResponseEntity<ApiResponse<Void>> updateTeamUserRole(
+		@PathVariable("teamUserId") Long teamUserId,
+		@Valid @RequestBody UpdateTeamUserRoleApiRequest request) {
+		teamService.updateTeamUserRole(teamUserId, request.role());
+		return ResponseEntity.ok(ApiResponse.noContent());
 	}
 }

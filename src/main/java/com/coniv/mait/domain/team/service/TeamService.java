@@ -1,7 +1,10 @@
 package com.coniv.mait.domain.team.service;
 
 import java.time.LocalDateTime;
+import java.util.Comparator;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -15,14 +18,17 @@ import com.coniv.mait.domain.team.enums.JoinedImmediate;
 import com.coniv.mait.domain.team.enums.TeamUserRole;
 import com.coniv.mait.domain.team.exception.InvitationErrorCode;
 import com.coniv.mait.domain.team.exception.TeamInvitationFailException;
+import com.coniv.mait.domain.team.exception.TeamManagerException;
 import com.coniv.mait.domain.team.repository.TeamEntityRepository;
 import com.coniv.mait.domain.team.repository.TeamInvitationApplicationEntityRepository;
 import com.coniv.mait.domain.team.repository.TeamInvitationEntityRepository;
 import com.coniv.mait.domain.team.repository.TeamUserEntityRepository;
 import com.coniv.mait.domain.team.service.component.InviteTokenGenerator;
+import com.coniv.mait.domain.team.service.dto.TeamApplicantDto;
 import com.coniv.mait.domain.team.service.dto.TeamDto;
 import com.coniv.mait.domain.team.service.dto.TeamInvitationDto;
 import com.coniv.mait.domain.team.service.dto.TeamInvitationResultDto;
+import com.coniv.mait.domain.team.service.dto.TeamUserDto;
 import com.coniv.mait.domain.user.entity.UserEntity;
 import com.coniv.mait.domain.user.repository.UserEntityRepository;
 import com.coniv.mait.global.enums.InviteTokenDuration;
@@ -231,5 +237,63 @@ public class TeamService {
 			.map(TeamUserEntity::getTeam)
 			.map(TeamDto::from)
 			.toList();
+	}
+
+	@Transactional(readOnly = true)
+	public List<TeamUserDto> getTeamUsers(final Long teamId) {
+		List<TeamUserEntity> teamUsers = teamUserEntityRepository.findAllByTeamIdFetchJoinUser(teamId);
+
+		return teamUsers.stream()
+			.map(TeamUserDto::from)
+			.sorted(Comparator.comparing(TeamUserDto::getName))
+			.toList();
+	}
+
+	@Transactional(readOnly = true)
+	public List<TeamApplicantDto> getApplicants(Long teamId) {
+		List<TeamInvitationApplicantEntity> pendingApplicants = teamInvitationApplicationEntityRepository
+			.findAllByTeamIdAndApplicationStatus(teamId, InvitationApplicationStatus.PENDING);
+
+		Map<Long, TeamInvitationApplicantEntity> byUserId = pendingApplicants.stream()
+			.collect(Collectors.toMap(
+				TeamInvitationApplicantEntity::getUserId,
+				applicant -> applicant
+			));
+
+		List<Long> userIds = pendingApplicants.stream()
+			.map(TeamInvitationApplicantEntity::getUserId)
+			.toList();
+		List<UserEntity> users = userEntityRepository.findAllById(userIds);
+
+		return users.stream()
+			.map(user -> {
+				TeamInvitationApplicantEntity applicant = byUserId.get(user.getId());
+				return TeamApplicantDto.of(applicant, user);
+			})
+			.sorted(Comparator.comparing(TeamApplicantDto::getName))
+			.toList();
+	}
+
+	@Transactional
+	public void deleteTeamUser(Long teamUserId) {
+		TeamUserEntity teamUser = teamUserEntityRepository.findById(teamUserId)
+			.orElseThrow(() -> new EntityNotFoundException("Team user not found with id: " + teamUserId));
+
+		teamUserEntityRepository.delete(teamUser);
+	}
+
+	@Transactional
+	public void updateTeamUserRole(Long teamUserId, TeamUserRole role) {
+		if (role == TeamUserRole.OWNER) {
+			throw new TeamManagerException("Cannot set team user role to OWNER.");
+		}
+		TeamUserEntity teamUser = teamUserEntityRepository.findById(teamUserId)
+			.orElseThrow(() -> new EntityNotFoundException("Team user not found with id: " + teamUserId));
+
+		if (teamUser.getUserRole() == TeamUserRole.OWNER) {
+			throw new TeamManagerException("Cannot change role of OWNER.");
+		}
+
+		teamUser.updateUserRole(role);
 	}
 }
