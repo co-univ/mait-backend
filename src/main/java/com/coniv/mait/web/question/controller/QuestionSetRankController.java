@@ -12,6 +12,7 @@ import com.coniv.mait.domain.question.dto.AnswerRankDto;
 import com.coniv.mait.domain.question.service.QuestionRankService;
 import com.coniv.mait.global.response.ApiResponse;
 import com.coniv.mait.web.question.dto.CorrectorRanksApiResponse;
+import com.coniv.mait.web.question.dto.ScorerRanksApiResponse;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -34,5 +35,13 @@ public class QuestionSetRankController {
 		@PathVariable("questionSetId") Long questionSetId) {
 		List<AnswerRankDto> answerRanks = questionRankService.getCorrectorsByQuestionSetId(questionSetId);
 		return ResponseEntity.ok(ApiResponse.ok(CorrectorRanksApiResponse.of(questionSetId, answerRanks)));
+	}
+
+	@Operation(summary = "문제 풀이 정답 제출 기록 조회 API")
+	@GetMapping(value = "/ranks", params = "type=SCORER")
+	public ResponseEntity<ApiResponse<ScorerRanksApiResponse>> getScorersByQuestionSetId(
+		@PathVariable("questionSetId") Long questionSetId) {
+		List<AnswerRankDto> scoreRanks = questionRankService.getScorersByQuestionSetId(questionSetId);
+		return ResponseEntity.ok().body(ApiResponse.ok(ScorerRanksApiResponse.of(questionSetId, scoreRanks)));
 	}
 }
