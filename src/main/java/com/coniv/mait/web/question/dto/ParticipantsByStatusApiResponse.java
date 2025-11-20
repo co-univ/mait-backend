@@ -16,7 +16,7 @@ import lombok.Builder;
 public record ParticipantsByStatusApiResponse(
 	@Schema(description = "현재 진행 중인 문제 풀이에 풀이가 가능한 인원", requiredMode = Schema.RequiredMode.REQUIRED)
 	List<ParticipantInfoApiResponse> activeParticipants,
-	@Schema(description = "현재 ")
+	@Schema(description = "현재 풀이가 불가능한 인원 목록 조회", requiredMode = Schema.RequiredMode.REQUIRED)
 	List<ParticipantInfoApiResponse> eliminatedParticipants
 ) {
 	public static ParticipantsByStatusApiResponse from(List<ParticipantDto> participants) {
@@ -25,8 +25,8 @@ public record ParticipantsByStatusApiResponse(
 			.collect(Collectors.groupingBy(ParticipantInfoApiResponse::status));
 
 		return ParticipantsByStatusApiResponse.builder()
-			.activeParticipants(participantsByStatus.get(ParticipantStatus.ACTIVE))
-			.eliminatedParticipants(participantsByStatus.get(ParticipantStatus.ELIMINATED))
+			.activeParticipants(participantsByStatus.getOrDefault(ParticipantStatus.ACTIVE, List.of()))
+			.eliminatedParticipants(participantsByStatus.getOrDefault(ParticipantStatus.ELIMINATED, List.of()))
 			.build();
 	}
 }
