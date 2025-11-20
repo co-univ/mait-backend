@@ -200,6 +200,10 @@ public class TeamService {
 			team.getId(), applicant.getId(), invitationLink.getId())) {
 			throw new TeamInvitationFailException(InvitationErrorCode.USER_ALREADY_APPLIED);
 		}
+		if (teamInvitationApplicationEntityRepository.existsByTeamIdAndUserIdAndApplicationStatus(
+			team.getId(), applicant.getId(), InvitationApplicationStatus.PENDING)) {
+			throw new TeamInvitationFailException(InvitationErrorCode.USER_ALREADY_APPLIED);
+		}
 
 		if (invitationLink.isRequiresApproval()) {
 			TeamInvitationApplicantEntity application = TeamInvitationApplicantEntity.createApplication(team.getId(),
