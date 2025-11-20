@@ -31,28 +31,28 @@ public class QuestionSetParticipantService {
 
 	public List<ParticipantDto> getParticipants(final Long questionSetId) {
 		QuestionSetEntity questionSet = questionSetEntityRepository.findById(questionSetId)
-				.orElseThrow(() -> new EntityNotFoundException("해당 문제 셋을 조회할 수 없음 id: " + questionSetId));
+			.orElseThrow(() -> new EntityNotFoundException("해당 문제 셋을 조회할 수 없음 id: " + questionSetId));
 
 		return questionSetParticipantRepository.findAllByQuestionSetWithFetchJoinUser(questionSet).stream()
-				.map(ParticipantDto::from)
-				.toList();
+			.map(ParticipantDto::from)
+			.toList();
 
 	}
 
 	@Transactional
-	public List<ParticipantDto> updateParticipantsStatus(final Long questionSetId, final List<ParticipantDto> activeUsers,
-			final List<ParticipantDto> eliminatedUsers) {
+	public List<ParticipantDto> updateParticipantsStatus(final Long questionSetId,
+		final List<ParticipantDto> activeUsers, final List<ParticipantDto> eliminatedUsers) {
 		validateParticipants(activeUsers, eliminatedUsers);
 
 		QuestionSetEntity questionSet = questionSetEntityRepository.findById(questionSetId)
-				.orElseThrow(() -> new EntityNotFoundException("해당 문제 셋을 조회할 수 없음 id: " + questionSetId));
+			.orElseThrow(() -> new EntityNotFoundException("해당 문제 셋을 조회할 수 없음 id: " + questionSetId));
 
 		Map<Long, QuestionSetParticipantEntity> participantByUserId = questionSetParticipantRepository
-				.findAllByQuestionSetWithFetchJoinUser(
-						questionSet)
-				.stream()
-				.collect(Collectors.toUnmodifiableMap(participant -> participant.getUser().getId(),
-						Function.identity()));
+			.findAllByQuestionSetWithFetchJoinUser(
+				questionSet)
+			.stream()
+			.collect(Collectors.toUnmodifiableMap(participant -> participant.getUser().getId(),
+				Function.identity()));
 
 		for (ParticipantDto activeUserId : activeUsers) {
 			QuestionSetParticipantEntity activeUser = participantByUserId.get(activeUserId.getUserId());
