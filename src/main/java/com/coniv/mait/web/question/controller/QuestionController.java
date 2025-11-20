@@ -78,7 +78,7 @@ public class QuestionController {
 	@GetMapping
 	public ResponseEntity<ApiResponse<List<QuestionApiResponse>>> getQuestions(
 		@PathVariable("questionSetId") final Long questionSetId,
-		@RequestParam(value = "mode") DeliveryMode mode) {
+		@RequestParam(value = "mode", defaultValue = "MAKING") DeliveryMode mode) {
 		final List<QuestionApiResponse> result = questionService.getQuestions(questionSetId, mode).stream()
 			.map(QuestionApiResponse::from)
 			.toList();
