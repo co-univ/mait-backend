@@ -40,7 +40,7 @@ public class QuestionSetParticipantService {
 	}
 
 	@Transactional
-	public void updateParticipantsStatus(final Long questionSetId, final List<ParticipantDto> activeUsers,
+	public List<ParticipantDto> updateParticipantsStatus(final Long questionSetId, final List<ParticipantDto> activeUsers,
 			final List<ParticipantDto> eliminatedUsers) {
 		validateParticipants(activeUsers, eliminatedUsers);
 
@@ -63,6 +63,8 @@ public class QuestionSetParticipantService {
 			QuestionSetParticipantEntity eliminated = participantByUserId.get(eliminatedUser.getUserId());
 			eliminated.updateStatus(ParticipantStatus.ELIMINATED);
 		}
+
+		return participantByUserId.values().stream().map(ParticipantDto::from).toList();
 	}
 
 	private void validateParticipants(final List<ParticipantDto> activeDtos,
