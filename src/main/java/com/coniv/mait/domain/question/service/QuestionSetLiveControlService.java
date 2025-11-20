@@ -204,25 +204,24 @@ public class QuestionSetLiveControlService {
 	public void sendParticipants(Long questionSetId, ParticipantSendType type) {
 		QuestionSetEntity questionSet = findQuestionSetById(questionSetId);
 
-		List<QuestionSetParticipantEntity> activeParticipants =
+		List<ParticipantDto> activeParticipants =
 			questionSetParticipantRepository.findAllByQuestionSetWithFetchJoinUser(questionSet).stream()
 				.filter(QuestionSetParticipantEntity::isActive)
+				.map(ParticipantDto::from)
 				.toList();
 
 		if (type == ParticipantSendType.NEXT_ROUND) {
-			List<ParticipantDto> nextRoundParticipants = activeParticipants.stream().map(ParticipantDto::from).toList();
 			QuestionSetStatusMessage message = QuestionSetParticipantsMessage.builder()
 				.questionSetId(questionSetId)
 				.commandType(QuestionSetCommandType.ACTIVE_PARTICIPANTS)
-				.activeParticipants(nextRoundParticipants)
+				.activeParticipants(activeParticipants)
 				.build();
 			questionWebSocketSender.broadcastQuestionStatus(questionSetId, message);
 			return;
 		}
 
 		List<ParticipantDto> winnerParticipants = activeParticipants.stream()
-			.filter(QuestionSetParticipantEntity::isWinner)
-			.map(ParticipantDto::from)
+			.filter(ParticipantDto::isWinner)
 			.toList();
 		QuestionSetStatusMessage message = QuestionSetParticipantsMessage.builder()
 			.questionSetId(questionSetId)
