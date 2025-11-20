@@ -10,7 +10,6 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.coniv.mait.domain.question.dto.ParticipantDto;
 import com.coniv.mait.domain.question.enums.QuestionSetOngoingStatus;
 import com.coniv.mait.domain.question.service.QuestionRankService;
 import com.coniv.mait.domain.question.service.QuestionService;
@@ -24,9 +23,11 @@ import com.coniv.mait.web.question.dto.ParticipantsCorrectAnswerRankResponse;
 import com.coniv.mait.web.question.dto.QuestionSetLiveStatusResponse;
 import com.coniv.mait.web.question.dto.SendWinnerRequest;
 import com.coniv.mait.web.question.dto.UpdateActiveParticipantsRequest;
+import com.coniv.mait.web.question.dto.UpdateWinnerApiRequest;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
@@ -85,6 +86,14 @@ public class QuestionSetLiveController {
 		return ResponseEntity.ok(ApiResponse.ok(
 			ParticipantsByStatusApiResponse.from(questionSetParticipantService.updateParticipantsStatus(questionSetId,
 				request.activeParticipants(), request.eliminatedParticipants()))));
+	}
+
+	@Operation(summary = "우승자 확정하기")
+	@PutMapping("/participants/winners")
+	public ResponseEntity<ApiResponse<?>> updateWinner(
+		@PathVariable("questionSetId") Long questionSetId, @RequestBody @Valid UpdateWinnerApiRequest request) {
+		questionSetParticipantService.updateWinners(questionSetId, request.winners());
+		return ResponseEntity.ok(ApiResponse.noContent());
 	}
 
 	@Operation(summary = "우승자 전송")

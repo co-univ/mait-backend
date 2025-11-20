@@ -76,4 +76,18 @@ public class QuestionSetParticipantService {
 			throw new UserParameterException("제거 또는 추가할 셋에 중복된 유저가 존재");
 		}
 	}
+
+	@Transactional
+	public void updateWinners(final Long questionSetId, final List<ParticipantDto> winners) {
+		QuestionSetEntity questionSet = questionSetEntityRepository.findById(questionSetId)
+			.orElseThrow(() -> new EntityNotFoundException("해당 문제 셋을 조회할 수 없음 id: " + questionSetId));
+
+		Set<Long> winnerParticipantIds = winners.stream()
+			.map(ParticipantDto::getParticipantId)
+			.collect(Collectors.toUnmodifiableSet());
+
+		questionSetParticipantRepository.findAllByQuestionSetId(questionSet.getId()).forEach(participant -> {
+			participant.updateWinner(winnerParticipantIds.contains(participant.getId()));
+		});
+	}
 }
