@@ -8,6 +8,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.coniv.mait.domain.question.enums.QuestionSetOngoingStatus;
@@ -18,6 +19,7 @@ import com.coniv.mait.domain.question.service.QuestionSetParticipantService;
 import com.coniv.mait.domain.question.service.dto.CurrentQuestionDto;
 import com.coniv.mait.global.response.ApiResponse;
 import com.coniv.mait.web.question.dto.CurrentQuestionApiResponse;
+import com.coniv.mait.web.question.dto.ParticipantSendType;
 import com.coniv.mait.web.question.dto.ParticipantsByStatusApiResponse;
 import com.coniv.mait.web.question.dto.ParticipantsCorrectAnswerRankResponse;
 import com.coniv.mait.web.question.dto.QuestionSetLiveStatusResponse;
@@ -86,6 +88,15 @@ public class QuestionSetLiveController {
 		return ResponseEntity.ok(ApiResponse.ok(
 			ParticipantsByStatusApiResponse.from(questionSetParticipantService.updateParticipantsStatus(questionSetId,
 				request.activeParticipants(), request.eliminatedParticipants()))));
+	}
+
+	@Operation(summary = "다음 단계 진출자 전송 API", description = "다음 단계 진출 예정인 사용자에게 알림을 소켓으로 전송")
+	@PostMapping("/participants/send")
+	public ResponseEntity<ApiResponse<Void>> sendParticpants(@PathVariable Long questionSetId,
+		@RequestParam("type") ParticipantSendType type) {
+		questionSetLiveControlService.sendParticipants(questionSetId, type);
+		return ResponseEntity.ok(ApiResponse.noContent());
+
 	}
 
 	@Operation(summary = "우승자 확정하기")
