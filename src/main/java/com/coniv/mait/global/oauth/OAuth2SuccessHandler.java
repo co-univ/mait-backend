@@ -60,7 +60,7 @@ public class OAuth2SuccessHandler implements AuthenticationSuccessHandler {
 			String signupKey = Base62Convertor.uuidToBase62(UUID.randomUUID());
 			oauthPendingRedisRepository.save(signupKey, json);
 
-			response.addCookie(cookieUtil.createOauthSignupCookie(signupKey));
+			response.addHeader("Set-Cookie", cookieUtil.createOauthSignupCookie(signupKey).toString());
 			response.sendRedirect(authConstant.getOauthSignupUrl());
 			return;
 		}

@@ -40,13 +40,13 @@ public final class CookieUtil {
 		return cookie;
 	}
 
-	public Cookie createOauthSignupCookie(String signupKey) {
-		Cookie cookie = new Cookie(OAUTH_SIGNUP_KEY, signupKey);
-		cookie.setPath("/");
-		cookie.setMaxAge(OAUTH_SIGNUP_COOKIE_MAX_AGE);
-		cookie.setHttpOnly(true);
-		cookie.setSecure(true);
-
-		return cookie;
+	public ResponseCookie createOauthSignupCookie(final String signupKey) {
+		return ResponseCookie.from(OAUTH_SIGNUP_KEY, signupKey)
+			.domain(cookieProperty.getDomain())
+			.path(cookieProperty.getPath())
+			.maxAge(OAUTH_SIGNUP_COOKIE_MAX_AGE)
+			.httpOnly(cookieProperty.isHttpOnly())
+			.sameSite(cookieProperty.getSameSite())
+			.build();
 	}
 }
