@@ -46,6 +46,7 @@ public final class CookieUtil {
 			.path(cookieProperty.getPath())
 			.maxAge(OAUTH_SIGNUP_COOKIE_MAX_AGE)
 			.httpOnly(cookieProperty.isHttpOnly())
+			.secure(cookieProperty.isSecure())
 			.sameSite(cookieProperty.getSameSite())
 			.build();
 	}
