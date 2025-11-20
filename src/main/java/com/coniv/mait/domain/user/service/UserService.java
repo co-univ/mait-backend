@@ -1,8 +1,6 @@
 package com.coniv.mait.domain.user.service;
 
 import java.util.List;
-import java.util.Map;
-import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -11,13 +9,10 @@ import com.coniv.mait.domain.auth.dto.OauthPendingPayload;
 import com.coniv.mait.domain.user.component.UserNickNameGenerator;
 import com.coniv.mait.domain.user.entity.UserEntity;
 import com.coniv.mait.domain.user.enums.LoginProvider;
-import com.coniv.mait.domain.user.enums.PolicyType;
 import com.coniv.mait.domain.user.repository.UserEntityRepository;
 import com.coniv.mait.domain.user.service.component.PolicyReader;
-import com.coniv.mait.domain.user.service.dto.PolicyDto;
 import com.coniv.mait.domain.user.service.dto.UserDto;
 import com.coniv.mait.domain.user.util.RandomNicknameUtil;
-import com.coniv.mait.global.exception.custom.PolicyException;
 import com.coniv.mait.global.jwt.cache.OauthPendingRedisRepository;
 import com.coniv.mait.web.user.dto.PolicyCheckRequest;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -81,28 +76,5 @@ public class UserService {
 
 		oauthPendingRedisRepository.deleteByKey(signupToken);
 		return UserDto.from(saved);
-	}
-
-	private void validatePolicyChecks(List<PolicyDto> latestPolicies,
-		List<PolicyCheckRequest> policyChecks) {
-
-		Map<Long, PolicyCheckRequest> checksById = policyChecks.stream()
-			.collect(Collectors.toMap(
-				PolicyCheckRequest::policyId,
-				pc -> pc
-			));
-
-		for (PolicyDto policy : latestPolicies) {
-			Long policyId = policy.getPolicyId();
-
-			PolicyCheckRequest check = checksById.get(policyId);
-			if (check == null) {
-				throw new PolicyException("필수 약관이 누락되었습니다. policyId=" + policyId);
-			}
-
-			if (policy.getPolicyType() == PolicyType.ESSENTIAL && !check.isChecked()) {
-				throw new PolicyException("필수 약관에 동의해야 합니다. policyId=" + policyId);
-			}
-		}
 	}
 }
