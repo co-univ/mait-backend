@@ -28,11 +28,22 @@ public final class CookieUtil {
 	}
 
 	private static final int COOKIE_MAX_AGE = 60 * 60 * 24 * 3; // 3 days
+	private static final int OAUTH_SIGNUP_COOKIE_MAX_AGE = 10 * 60; // 10 minutes
 
 	public static Cookie createRefreshCookie(final String refreshToken) {
 		Cookie cookie = new Cookie(REFRESH_TOKEN, refreshToken);
 		cookie.setPath("/");
 		cookie.setMaxAge(COOKIE_MAX_AGE);
+		cookie.setHttpOnly(true);
+		cookie.setSecure(true);
+
+		return cookie;
+	}
+
+	public Cookie createOauthSignupCookie(String signupKey) {
+		Cookie cookie = new Cookie(OAUTH_SIGNUP_KEY, signupKey);
+		cookie.setPath("/");
+		cookie.setMaxAge(OAUTH_SIGNUP_COOKIE_MAX_AGE);
 		cookie.setHttpOnly(true);
 		cookie.setSecure(true);
 

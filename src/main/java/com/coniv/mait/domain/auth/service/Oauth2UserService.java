@@ -1,13 +1,12 @@
 package com.coniv.mait.domain.auth.service;
 
-import java.util.Map;
-
 import org.springframework.security.oauth2.client.userinfo.DefaultOAuth2UserService;
 import org.springframework.security.oauth2.client.userinfo.OAuth2UserRequest;
 import org.springframework.security.oauth2.core.OAuth2AuthenticationException;
 import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.stereotype.Service;
 
+import com.coniv.mait.domain.auth.enums.PendingSignupKey;
 import com.coniv.mait.domain.auth.oauth.GoogleUserDetails;
 import com.coniv.mait.domain.auth.oauth.OAuth2UserInfo;
 import com.coniv.mait.domain.auth.oauth.Oauth2UserDetails;
@@ -38,18 +37,15 @@ public class Oauth2UserService extends DefaultOAuth2UserService {
 		String loginId = provider + "_" + providerId;
 		String name = oAuth2UserInfo.getName();
 
-		UserEntity user = userEntityRepository.findByProviderId(loginId)
+		return userEntityRepository.findByProviderId(loginId)
+			.map(user -> new Oauth2UserDetails(user, oAuth2User.getAttributes(), PendingSignupKey.LOGIN))
 			.orElseGet(() -> {
-				UserEntity newUser = UserEntity.socialLoginUser(
-					email, name, loginId, loginProvider
-				);
-				return userEntityRepository.save(newUser);
+				UserEntity newUser = UserEntity.socialLoginUser(email, name, loginId, loginProvider);
+				return new Oauth2UserDetails(newUser, oAuth2User.getAttributes(), PendingSignupKey.SIGNUP);
 			});
-
-		return new Oauth2UserDetails(user, oAuth2User.getAttributes());
 	}
 
-	private OAuth2UserInfo mapToOAuth2UserInfo(LoginProvider loginProvider, Map<String, Object> attributes) {
+	private OAuth2UserInfo mapToOAuth2UserInfo(LoginProvider loginProvider, java.util.Map<String, Object> attributes) {
 		if (loginProvider == LoginProvider.GOOGLE) {
 			return new GoogleUserDetails(attributes);
 		}
