@@ -2,8 +2,10 @@ package com.coniv.mait.web.user.controller;
 
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.web.bind.annotation.CookieValue;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -13,11 +15,13 @@ import com.coniv.mait.domain.user.service.UserService;
 import com.coniv.mait.domain.user.service.dto.UserDto;
 import com.coniv.mait.global.response.ApiResponse;
 import com.coniv.mait.web.user.dto.RandomNicknameResponse;
+import com.coniv.mait.web.user.dto.SignUpApiRequest;
 import com.coniv.mait.web.user.dto.UpdateNicknameRequest;
 import com.coniv.mait.web.user.dto.UpdateNicknameResponse;
 import com.coniv.mait.web.user.dto.UserInfoApiResponse;
 
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 
@@ -49,5 +53,14 @@ public class UserController {
 	public ResponseEntity<ApiResponse<RandomNicknameResponse>> getRandomNickname() {
 		String randomNickname = userService.getRandomNickname();
 		return ResponseEntity.ok(ApiResponse.ok(RandomNicknameResponse.from(randomNickname)));
+	}
+
+	@Operation(summary = "회원 가입")
+	@PostMapping("/sign-up")
+	public ResponseEntity<ApiResponse<UserInfoApiResponse>> signup(
+		@Parameter(hidden = true) @CookieValue(name = "OAUTH_SIGNUP_KEY") String signupToken,
+		@Valid @RequestBody SignUpApiRequest request) {
+		UserDto dto = userService.signup(signupToken, request.nickname().trim(), request.policyChecks());
+		return ResponseEntity.ok(ApiResponse.ok(UserInfoApiResponse.from(dto)));
 	}
 }

@@ -17,4 +17,8 @@ public final class AuthConstant {
 	public String getOAuthSuccessRedirectUrl() {
 		return maitProperty.getBaseUrl() + "/oauth/success";
 	}
+
+	public String getOauthSignupUrl() {
+		return maitProperty.getBaseUrl() + "/oauth/signup";
+	}
 }

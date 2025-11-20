@@ -1,10 +1,8 @@
 package com.coniv.mait.domain.user.service;
 
 import java.time.LocalDateTime;
-import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -19,6 +17,7 @@ import com.coniv.mait.domain.user.enums.PolicyType;
 import com.coniv.mait.domain.user.repository.PolicyEntityRepository;
 import com.coniv.mait.domain.user.repository.UserEntityRepository;
 import com.coniv.mait.domain.user.repository.UserPolicyCheckHistoryRepository;
+import com.coniv.mait.domain.user.service.component.PolicyReader;
 import com.coniv.mait.domain.user.service.dto.PolicyDto;
 import com.coniv.mait.global.exception.custom.PolicyException;
 import com.coniv.mait.web.user.dto.PolicyCheckRequest;
@@ -33,25 +32,11 @@ public class PolicyService {
 	private final PolicyEntityRepository policyRepository;
 	private final UserPolicyCheckHistoryRepository userPolicyCheckHistoryRepository;
 	private final UserEntityRepository userRepository;
+	private final PolicyReader policyReader;
 
 	@Transactional(readOnly = true)
 	public List<PolicyDto> findLatestPolicies(PolicyTiming policyTiming) {
-		List<PolicyEntity> policies = policyRepository.findAllByTiming(policyTiming);
-		if (policies.isEmpty()) {
-			return List.of();
-		}
-
-		Map<String, List<PolicyEntity>> groupByCode = policies.stream()
-			.collect(Collectors.groupingBy(PolicyEntity::getCode));
-
-		return groupByCode.values().stream()
-			.map(list -> list.stream()
-				.max(Comparator.comparing(PolicyEntity::getVersion))
-				.orElse(null)
-			)
-			.filter(Objects::nonNull)
-			.map(PolicyDto::from)
-			.toList();
+		return policyReader.findLatestPolicies(policyTiming);
 	}
 
 	@Transactional(readOnly = true)

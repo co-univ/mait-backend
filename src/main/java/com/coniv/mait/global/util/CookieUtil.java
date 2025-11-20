@@ -28,6 +28,7 @@ public final class CookieUtil {
 	}
 
 	private static final int COOKIE_MAX_AGE = 60 * 60 * 24 * 3; // 3 days
+	private static final int OAUTH_SIGNUP_COOKIE_MAX_AGE = 10 * 60; // 10 minutes
 
 	public static Cookie createRefreshCookie(final String refreshToken) {
 		Cookie cookie = new Cookie(REFRESH_TOKEN, refreshToken);
@@ -37,5 +38,15 @@ public final class CookieUtil {
 		cookie.setSecure(true);
 
 		return cookie;
+	}
+
+	public ResponseCookie createOauthSignupCookie(final String signupKey) {
+		return ResponseCookie.from(OAUTH_SIGNUP_KEY, signupKey)
+			.domain(cookieProperty.getDomain())
+			.path(cookieProperty.getPath())
+			.maxAge(OAUTH_SIGNUP_COOKIE_MAX_AGE)
+			.httpOnly(cookieProperty.isHttpOnly())
+			.sameSite(cookieProperty.getSameSite())
+			.build();
 	}
 }
