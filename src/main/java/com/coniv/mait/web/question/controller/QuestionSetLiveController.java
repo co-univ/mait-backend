@@ -1,7 +1,5 @@
 package com.coniv.mait.web.question.controller;
 
-import java.util.List;
-
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
@@ -20,7 +18,6 @@ import com.coniv.mait.domain.question.service.QuestionSetParticipantService;
 import com.coniv.mait.domain.question.service.dto.CurrentQuestionDto;
 import com.coniv.mait.global.response.ApiResponse;
 import com.coniv.mait.web.question.dto.CurrentQuestionApiResponse;
-import com.coniv.mait.web.question.dto.ParticipantInfoApiResponse;
 import com.coniv.mait.web.question.dto.ParticipantsByStatusApiResponse;
 import com.coniv.mait.web.question.dto.ParticipantsCorrectAnswerRankResponse;
 import com.coniv.mait.web.question.dto.QuestionSetLiveStatusResponse;
@@ -73,7 +70,7 @@ public class QuestionSetLiveController {
 
 	@Operation(summary = "상태에 따른 실시간 풀이 참여 인원 조회 API", description = "현재 풀이가 가능한 인원 및 불가능한 인원 반환")
 	@GetMapping("/participants")
-	public ResponseEntity<ApiResponse<ParticipantsByStatusApiResponse>> getActiveParticipants(
+	public ResponseEntity<ApiResponse<ParticipantsByStatusApiResponse>> getParticipants(
 		@PathVariable Long questionSetId) {
 		return ResponseEntity.ok(ApiResponse.ok(
 			ParticipantsByStatusApiResponse.from(questionSetParticipantService.getParticipants(questionSetId))));
