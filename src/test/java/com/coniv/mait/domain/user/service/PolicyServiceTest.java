@@ -22,6 +22,7 @@ import com.coniv.mait.domain.user.enums.PolicyType;
 import com.coniv.mait.domain.user.repository.PolicyEntityRepository;
 import com.coniv.mait.domain.user.repository.UserEntityRepository;
 import com.coniv.mait.domain.user.repository.UserPolicyCheckHistoryRepository;
+import com.coniv.mait.domain.user.service.component.PolicyReader;
 import com.coniv.mait.domain.user.service.dto.PolicyDto;
 import com.coniv.mait.global.exception.custom.PolicyException;
 import com.coniv.mait.web.user.dto.PolicyCheckRequest;
@@ -39,6 +40,9 @@ class PolicyServiceTest {
 
 	@Mock
 	private UserEntityRepository userRepository;
+
+	@Mock
+	private PolicyReader policyReader;
 
 	@InjectMocks
 	private PolicyService policyService;
@@ -79,15 +83,15 @@ class PolicyServiceTest {
 			.content("개인정보 처리방침 내용...")
 			.build();
 
-		when(policyRepository.findAllByTiming(timing))
-			.thenReturn(List.of(policy1V1, policy1V2, policy2V1));
+		when(policyReader.findLatestPolicies(timing))
+			.thenReturn(List.of(PolicyDto.from(policy1V2), PolicyDto.from(policy2V1)));
 
 		// when
 		List<PolicyDto> result = policyService.findLatestPolicies(timing);
 
 		// then
 		assertThat(result).hasSize(2); // TERMS_SERVICE v2, PRIVACY_POLICY v1
-		verify(policyRepository).findAllByTiming(timing);
+		verify(policyReader).findLatestPolicies(timing);
 	}
 
 	@Test
@@ -95,14 +99,14 @@ class PolicyServiceTest {
 	void findLatestPolicies_EmptyList() {
 		// given
 		PolicyTiming timing = PolicyTiming.SIGN_UP;
-		when(policyRepository.findAllByTiming(timing)).thenReturn(List.of());
+		when(policyReader.findLatestPolicies(timing)).thenReturn(List.of());
 
 		// when
 		List<PolicyDto> result = policyService.findLatestPolicies(timing);
 
 		// then
 		assertThat(result).isEmpty();
-		verify(policyRepository).findAllByTiming(timing);
+		verify(policyReader).findLatestPolicies(timing);
 	}
 
 	@Test
@@ -114,13 +118,6 @@ class PolicyServiceTest {
 
 		PolicyEntity policy1 = mock(PolicyEntity.class);
 		when(policy1.getId()).thenReturn(1L);
-		when(policy1.getCode()).thenReturn("TERMS_SERVICE");
-		when(policy1.getVersion()).thenReturn(1);
-		when(policy1.getPolicyType()).thenReturn(PolicyType.ESSENTIAL);
-		when(policy1.getCategory()).thenReturn(PolicyCategory.TERMS_OF_SERVICE);
-		when(policy1.getTiming()).thenReturn(PolicyTiming.SIGN_UP);
-		when(policy1.getTitle()).thenReturn("서비스 이용약관");
-		when(policy1.getContent()).thenReturn("서비스 이용약관 내용...");
 
 		PolicyEntity policy2 = PolicyEntity.builder()
 			.policyType(PolicyType.ESSENTIAL)
@@ -142,8 +139,20 @@ class PolicyServiceTest {
 			.content("마케팅 수신 동의 내용...")
 			.build();
 
-		when(policyRepository.findAllByTiming(timing))
-			.thenReturn(List.of(policy1, policy2, policy3));
+		when(policyReader.findLatestPolicies(timing))
+			.thenReturn(List.of(
+				PolicyDto.builder()
+					.policyId(1L)
+					.title("서비스 이용약관")
+					.content("서비스 이용약관 내용...")
+					.version(1)
+					.policyType(PolicyType.ESSENTIAL)
+					.timing(PolicyTiming.SIGN_UP)
+					.category(PolicyCategory.TERMS_OF_SERVICE)
+					.build(),
+				PolicyDto.from(policy2),
+				PolicyDto.from(policy3)
+			));
 
 		UserPolicyCheckHistory mockHistory = mock(UserPolicyCheckHistory.class);
 		when(mockHistory.getPolicy()).thenReturn(policy1);
@@ -156,7 +165,7 @@ class PolicyServiceTest {
 
 		// then
 		assertThat(result).hasSize(2); // policy2, policy3
-		verify(policyRepository).findAllByTiming(timing);
+		verify(policyReader).findLatestPolicies(timing);
 		verify(userPolicyCheckHistoryRepository).findAllByUserId(userId);
 	}
 
@@ -169,16 +178,19 @@ class PolicyServiceTest {
 
 		PolicyEntity policy1 = mock(PolicyEntity.class);
 		when(policy1.getId()).thenReturn(1L);
-		when(policy1.getCode()).thenReturn("TERMS_SERVICE");
-		when(policy1.getVersion()).thenReturn(1);
-		when(policy1.getPolicyType()).thenReturn(PolicyType.ESSENTIAL);
-		when(policy1.getCategory()).thenReturn(PolicyCategory.TERMS_OF_SERVICE);
-		when(policy1.getTiming()).thenReturn(PolicyTiming.SIGN_UP);
-		when(policy1.getTitle()).thenReturn("서비스 이용약관");
-		when(policy1.getContent()).thenReturn("서비스 이용약관 내용...");
 
-		when(policyRepository.findAllByTiming(timing))
-			.thenReturn(List.of(policy1));
+		when(policyReader.findLatestPolicies(timing))
+			.thenReturn(List.of(
+				PolicyDto.builder()
+					.policyId(1L)
+					.title("서비스 이용약관")
+					.content("서비스 이용약관 내용...")
+					.version(1)
+					.policyType(PolicyType.ESSENTIAL)
+					.timing(PolicyTiming.SIGN_UP)
+					.category(PolicyCategory.TERMS_OF_SERVICE)
+					.build()
+			));
 
 		UserPolicyCheckHistory mockHistory = mock(UserPolicyCheckHistory.class);
 		when(mockHistory.getPolicy()).thenReturn(policy1);
@@ -191,7 +203,7 @@ class PolicyServiceTest {
 
 		// then
 		assertThat(result).isEmpty();
-		verify(policyRepository).findAllByTiming(timing);
+		verify(policyReader).findLatestPolicies(timing);
 		verify(userPolicyCheckHistoryRepository).findAllByUserId(userId);
 	}
 
