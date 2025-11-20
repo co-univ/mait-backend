@@ -17,4 +17,7 @@ public interface TeamInvitationApplicationEntityRepository extends JpaRepository
 
 	List<TeamInvitationApplicantEntity> findAllByTeamIdAndApplicationStatus(Long teamId,
 		InvitationApplicationStatus status);
+
+	boolean existsByTeamIdAndUserIdAndApplicationStatus(Long teamId, Long userId,
+		InvitationApplicationStatus status);
 }
