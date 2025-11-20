@@ -81,7 +81,8 @@ public class QuestionSetLiveController {
 	public ResponseEntity<ApiResponse<Void>> updateActiveParticipants(
 		@PathVariable Long questionSetId,
 		@RequestBody UpdateActiveParticipantsRequest request) {
-		questionSetLiveControlService.updateActiveParticipants(questionSetId, request.activeUserIds());
+		questionSetParticipantService.updateParticipantsStatus(questionSetId, request.activeParticipants(),
+			request.eliminatedParticipants());
 		return ResponseEntity.ok(ApiResponse.noContent());
 	}
 
