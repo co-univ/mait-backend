@@ -196,6 +196,10 @@ public class TeamService {
 			throw new TeamInvitationFailException(InvitationErrorCode.ALREADY_MEMBER);
 		}
 
+		if (teamInvitationApplicationEntityRepository.existsByTeamIdAndUserIdAndApplicationStatus(
+			team.getId(), applicant.getId(), InvitationApplicationStatus.PENDING)) {
+			throw new TeamInvitationFailException(InvitationErrorCode.USER_ALREADY_APPLIED);
+		}
 		if (teamInvitationApplicationEntityRepository.existsByTeamIdAndUserIdAndInvitationLinkId(
 			team.getId(), applicant.getId(), invitationLink.getId())) {
 			throw new TeamInvitationFailException(InvitationErrorCode.USER_ALREADY_APPLIED);
@@ -257,7 +261,8 @@ public class TeamService {
 		Map<Long, TeamInvitationApplicantEntity> byUserId = pendingApplicants.stream()
 			.collect(Collectors.toMap(
 				TeamInvitationApplicantEntity::getUserId,
-				applicant -> applicant
+				applicant -> applicant,
+				(existing, replacement) -> existing
 			));
 
 		List<Long> userIds = pendingApplicants.stream()
