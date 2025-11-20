@@ -1,8 +1,8 @@
 package com.coniv.mait.web.team.dto;
 
-import com.coniv.mait.domain.team.enums.InvitationApplicationStatus;
 import com.coniv.mait.domain.team.enums.TeamUserRole;
 import com.coniv.mait.domain.team.service.dto.TeamInvitationDto;
+import com.coniv.mait.web.team.dto.enums.InvitationApplicationApiStatus;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Builder;
@@ -22,7 +22,7 @@ public record TeamInviteApiResponse(
 	boolean requiresApproval,
 
 	@Schema(description = "초대 신청 상태", requiredMode = Schema.RequiredMode.REQUIRED)
-	InvitationApplicationStatus applicationStatus
+	InvitationApplicationApiStatus applicationStatus
 
 ) {
 	public static TeamInviteApiResponse from(TeamInvitationDto dto) {
@@ -31,7 +31,9 @@ public record TeamInviteApiResponse(
 			.teamName(dto.getTeamName())
 			.role(dto.getTeamUserRole())
 			.requiresApproval(dto.isRequiresApproval())
-			.applicationStatus(dto.getApplicationStatus())
+			.applicationStatus(InvitationApplicationApiStatus.toApiStatus(
+				dto.getApplicationStatus()))
 			.build();
 	}
+
 }
