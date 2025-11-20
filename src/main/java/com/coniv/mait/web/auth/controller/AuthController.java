@@ -17,6 +17,7 @@ import com.coniv.mait.global.util.CookieUtil;
 import com.coniv.mait.web.auth.dto.LoginApiRequest;
 
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletResponse;
@@ -56,7 +57,7 @@ public class AuthController {
 
 	@Operation(summary = "쿠키 조회")
 	@GetMapping("/cookie")
-	public ResponseEntity<String > cookie(@CookieValue(name = "OAUTH_SIGNUP_KEY") String cookieValue) {
+	public ResponseEntity<String > cookie(@Parameter(hidden = true) @CookieValue(name = "OAUTH_SIGNUP_KEY") String cookieValue) {
 		return ResponseEntity.ok(cookieValue);
 	}
 }
