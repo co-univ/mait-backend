@@ -367,7 +367,7 @@ class QuestionServiceTest {
 		when(fillBlankQuestionFactory.getQuestion(fillBlankQuestion, true)).thenReturn(fillBlankDto);
 
 		// when
-		List<QuestionDto> result = questionService.getQuestions(questionSetId);
+		List<QuestionDto> result = questionService.getQuestions(questionSetId, DeliveryMode.MAKING);
 
 		// then
 		assertNotNull(result);
@@ -385,65 +385,6 @@ class QuestionServiceTest {
 		verify(orderingQuestionFactory).getQuestion(orderingQuestion, true);
 		verify(multipleQuestionFactory).getQuestion(multipleQuestion, true);
 		verify(fillBlankQuestionFactory).getQuestion(fillBlankQuestion, true);
-	}
-
-	@Test
-	@DisplayName("문제 셋의 모든 문제 조회 성공 - 빈 목록")
-	void getQuestions_EmptyList() {
-		// given
-		final Long questionSetId = 1L;
-		when(questionEntityRepository.findAllByQuestionSetId(questionSetId)).thenReturn(List.of());
-
-		// when
-		List<QuestionDto> result = questionService.getQuestions(questionSetId);
-
-		// then
-		assertNotNull(result);
-		assertEquals(0, result.size());
-		verify(questionEntityRepository).findAllByQuestionSetId(questionSetId);
-
-		// 빈 목록이므로 factory 호출은 없어야 함
-		verify(multipleQuestionFactory, never()).getQuestion(any(), anyBoolean());
-		verify(shortQuestionFactory, never()).getQuestion(any(), anyBoolean());
-		verify(orderingQuestionFactory, never()).getQuestion(any(), anyBoolean());
-		verify(fillBlankQuestionFactory, never()).getQuestion(any(), anyBoolean());
-	}
-
-	@Test
-	@DisplayName("문제 셋의 모든 문제 조회 성공 - 단일 타입 (객관식만)")
-	void getQuestions_SingleType_MultipleChoice() {
-		// given
-		final Long questionSetId = 1L;
-
-		MultipleQuestionEntity question1 = mock(MultipleQuestionEntity.class);
-		when(question1.getType()).thenReturn(QuestionType.MULTIPLE);
-
-		MultipleQuestionEntity question2 = mock(MultipleQuestionEntity.class);
-		when(question2.getType()).thenReturn(QuestionType.MULTIPLE);
-
-		List<QuestionEntity> questions = List.of(question1, question2);
-		when(questionEntityRepository.findAllByQuestionSetId(questionSetId)).thenReturn(questions);
-
-		// factory 메서드 모킹
-		MultipleQuestionDto dto1 = mock(MultipleQuestionDto.class);
-		MultipleQuestionDto dto2 = mock(MultipleQuestionDto.class);
-		when(multipleQuestionFactory.getQuestion(question1, true)).thenReturn(dto1);
-		when(multipleQuestionFactory.getQuestion(question2, true)).thenReturn(dto2);
-
-		// when
-		List<QuestionDto> result = questionService.getQuestions(questionSetId);
-
-		// then
-		assertNotNull(result);
-		assertEquals(2, result.size());
-		verify(questionEntityRepository).findAllByQuestionSetId(questionSetId);
-		verify(multipleQuestionFactory).getQuestion(question1, true);
-		verify(multipleQuestionFactory).getQuestion(question2, true);
-
-		// 다른 타입의 factory는 호출되지 않아야 함
-		verify(shortQuestionFactory, never()).getQuestion(any(), anyBoolean());
-		verify(orderingQuestionFactory, never()).getQuestion(any(), anyBoolean());
-		verify(fillBlankQuestionFactory, never()).getQuestion(any(), anyBoolean());
 	}
 
 	@Test

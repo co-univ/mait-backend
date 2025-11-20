@@ -77,8 +77,9 @@ public class QuestionController {
 	@Operation(summary = "문제 셋에 속한 모든 문제 조회 API")
 	@GetMapping
 	public ResponseEntity<ApiResponse<List<QuestionApiResponse>>> getQuestions(
-		@PathVariable("questionSetId") final Long questionSetId) {
-		final List<QuestionApiResponse> result = questionService.getQuestions(questionSetId).stream()
+		@PathVariable("questionSetId") final Long questionSetId,
+		@RequestParam(value = "mode") DeliveryMode mode) {
+		final List<QuestionApiResponse> result = questionService.getQuestions(questionSetId, mode).stream()
 			.map(QuestionApiResponse::from)
 			.toList();
 		return ResponseEntity.ok(ApiResponse.ok(result));

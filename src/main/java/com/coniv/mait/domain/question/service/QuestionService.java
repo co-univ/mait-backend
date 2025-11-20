@@ -1,6 +1,5 @@
 package com.coniv.mait.domain.question.service;
 
-import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -138,11 +137,11 @@ public class QuestionService {
 	}
 
 	// Todo: 조회 성능 개선
-	public List<QuestionDto> getQuestions(final Long questionSetId) {
-		return questionEntityRepository.findAllByQuestionSetId(questionSetId).stream()
-			.sorted(Comparator
-				.comparing(QuestionEntity::getLexoRank, Comparator.nullsLast(String::compareTo)))
-			.map(question -> getQuestionFactory(question.getType()).getQuestion(question, true))
+	public List<QuestionDto> getQuestions(final Long questionSetId, final DeliveryMode mode) {
+		List<QuestionEntity> questions = questionEntityRepository.findAllByQuestionSetId(questionSetId);
+		return questions.stream()
+			.sorted(mode.questionComparator())
+			.map(question -> getQuestionFactory(question.getType()).getQuestion(question, mode.isAnswerVisible()))
 			.toList();
 	}
 
