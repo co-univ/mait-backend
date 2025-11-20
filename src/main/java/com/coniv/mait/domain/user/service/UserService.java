@@ -1,13 +1,26 @@
 package com.coniv.mait.domain.user.service;
 
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
+
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.coniv.mait.domain.auth.dto.OauthPendingPayload;
 import com.coniv.mait.domain.user.component.UserNickNameGenerator;
 import com.coniv.mait.domain.user.entity.UserEntity;
+import com.coniv.mait.domain.user.enums.LoginProvider;
+import com.coniv.mait.domain.user.enums.PolicyType;
 import com.coniv.mait.domain.user.repository.UserEntityRepository;
+import com.coniv.mait.domain.user.service.component.PolicyReader;
+import com.coniv.mait.domain.user.service.dto.PolicyDto;
 import com.coniv.mait.domain.user.service.dto.UserDto;
 import com.coniv.mait.domain.user.util.RandomNicknameUtil;
+import com.coniv.mait.global.exception.custom.PolicyException;
+import com.coniv.mait.global.jwt.cache.OauthPendingRedisRepository;
+import com.coniv.mait.web.user.dto.PolicyCheckRequest;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
@@ -18,6 +31,10 @@ public class UserService {
 
 	private final UserEntityRepository userEntityRepository;
 	private final UserNickNameGenerator userNickNameGenerator;
+	private final PolicyReader policyReader;
+	private final PolicyService policyService;
+	private final OauthPendingRedisRepository oauthPendingRedisRepository;
+	private final ObjectMapper objectMapper;
 
 	public UserDto getUserInfo(final UserEntity user) {
 		return UserDto.from(user);
@@ -36,5 +53,56 @@ public class UserService {
 
 	public String getRandomNickname() {
 		return RandomNicknameUtil.generateRandomNickname();
+	}
+
+	@Transactional
+	public UserDto signup(String signupToken, String nickname, List<PolicyCheckRequest> policyChecks) {
+		String value = oauthPendingRedisRepository.findByKey(signupToken);
+		if (value == null) {
+			throw new EntityNotFoundException("Signup token not found or expired");
+		}
+
+		OauthPendingPayload payload;
+		try {
+			payload = objectMapper.readValue(value, OauthPendingPayload.class);
+		} catch (Exception e) {
+			throw new RuntimeException("Failed to parse pending signup payload", e);
+		}
+
+		LoginProvider provider = LoginProvider.findByProvider(payload.getProvider());
+		UserEntity user = UserEntity.socialLoginUser(payload.getEmail(), payload.getName(), payload.getProviderId(),
+			provider);
+
+		String code = userNickNameGenerator.generateNicknameCode(nickname);
+		user.updateNickname(nickname, code);
+		UserEntity saved = userEntityRepository.save(user);
+
+		policyService.checkPolicies(saved.getId(), policyChecks);
+
+		oauthPendingRedisRepository.deleteByKey(signupToken);
+		return UserDto.from(saved);
+	}
+
+	private void validatePolicyChecks(List<PolicyDto> latestPolicies,
+		List<PolicyCheckRequest> policyChecks) {
+
+		Map<Long, PolicyCheckRequest> checksById = policyChecks.stream()
+			.collect(Collectors.toMap(
+				PolicyCheckRequest::policyId,
+				pc -> pc
+			));
+
+		for (PolicyDto policy : latestPolicies) {
+			Long policyId = policy.getPolicyId();
+
+			PolicyCheckRequest check = checksById.get(policyId);
+			if (check == null) {
+				throw new PolicyException("필수 약관이 누락되었습니다. policyId=" + policyId);
+			}
+
+			if (policy.getPolicyType() == PolicyType.ESSENTIAL && !check.isChecked()) {
+				throw new PolicyException("필수 약관에 동의해야 합니다. policyId=" + policyId);
+			}
+		}
 	}
 }
