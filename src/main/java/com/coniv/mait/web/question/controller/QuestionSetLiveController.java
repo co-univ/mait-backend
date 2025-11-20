@@ -12,14 +12,16 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.coniv.mait.domain.question.dto.ParticipantDto;
 import com.coniv.mait.domain.question.enums.QuestionSetOngoingStatus;
 import com.coniv.mait.domain.question.service.QuestionRankService;
 import com.coniv.mait.domain.question.service.QuestionService;
 import com.coniv.mait.domain.question.service.QuestionSetLiveControlService;
+import com.coniv.mait.domain.question.service.QuestionSetParticipantService;
 import com.coniv.mait.domain.question.service.dto.CurrentQuestionDto;
 import com.coniv.mait.global.response.ApiResponse;
 import com.coniv.mait.web.question.dto.CurrentQuestionApiResponse;
-import com.coniv.mait.web.question.dto.ParticipantInfoResponse;
+import com.coniv.mait.web.question.dto.ParticipantsByStatusApiResponse;
 import com.coniv.mait.web.question.dto.ParticipantsCorrectAnswerRankResponse;
 import com.coniv.mait.web.question.dto.QuestionSetLiveStatusResponse;
 import com.coniv.mait.web.question.dto.SendWinnerRequest;
@@ -42,6 +44,8 @@ public class QuestionSetLiveController {
 	private final QuestionService questionService;
 
 	private final QuestionRankService questionRankService;
+
+	private final QuestionSetParticipantService questionSetParticipantService;
 
 	@Operation(summary = "실시간 문제셋 시작")
 	@PatchMapping("/start")
@@ -67,24 +71,22 @@ public class QuestionSetLiveController {
 		return ResponseEntity.ok(ApiResponse.ok(QuestionSetLiveStatusResponse.from(questionSetId, status)));
 	}
 
-	@Operation(summary = "다음 문제 진출자 조회")
+	@Operation(summary = "상태에 따른 실시간 풀이 참여 인원 조회 API", description = "현재 풀이가 가능한 인원 및 불가능한 인원 반환")
 	@GetMapping("/participants")
-	public ResponseEntity<ApiResponse<List<ParticipantInfoResponse>>> getActiveParticipants(
+	public ResponseEntity<ApiResponse<ParticipantsByStatusApiResponse>> getParticipants(
 		@PathVariable Long questionSetId) {
-		List<ParticipantInfoResponse> response = questionSetLiveControlService.getActiveParticipants(questionSetId)
-			.stream()
-			.map(ParticipantInfoResponse::from)
-			.toList();
-		return ResponseEntity.ok(ApiResponse.ok(response));
+		return ResponseEntity.ok(ApiResponse.ok(
+			ParticipantsByStatusApiResponse.from(questionSetParticipantService.getParticipants(questionSetId))));
 	}
 
 	@Operation(summary = "다음 문제 진출자 수정")
 	@PutMapping("/participants")
-	public ResponseEntity<ApiResponse<Void>> updateActiveParticipants(
+	public ResponseEntity<ApiResponse<ParticipantsByStatusApiResponse>> updateActiveParticipants(
 		@PathVariable Long questionSetId,
 		@RequestBody UpdateActiveParticipantsRequest request) {
-		questionSetLiveControlService.updateActiveParticipants(questionSetId, request.activeUserIds());
-		return ResponseEntity.ok(ApiResponse.noContent());
+		return ResponseEntity.ok(ApiResponse.ok(
+			ParticipantsByStatusApiResponse.from(questionSetParticipantService.updateParticipantsStatus(questionSetId,
+				request.activeParticipants(), request.eliminatedParticipants()))));
 	}
 
 	@Operation(summary = "우승자 전송")
