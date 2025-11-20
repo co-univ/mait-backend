@@ -635,22 +635,22 @@ class QuestionControllerTest {
 			.number(1L)
 			.build();
 
-		com.coniv.mait.domain.question.service.dto.ShortQuestionDto shortQuestionDto =
-			com.coniv.mait.domain.question.service.dto.ShortQuestionDto.builder()
-				.id(2L)
-				.content("주관식 문제 1")
-				.explanation("주관식 문제 해설")
-				.number(2L)
-				.answers(List.of(shortAnswerDto))
-				.build();
+		ShortQuestionDto shortQuestionDto = ShortQuestionDto.builder()
+			.id(2L)
+			.content("주관식 문제 1")
+			.explanation("주관식 문제 해설")
+			.number(2L)
+			.answers(List.of(shortAnswerDto))
+			.build();
 
 		List<com.coniv.mait.domain.question.service.dto.QuestionDto> mockQuestions =
 			List.of(multipleQuestionDto, shortQuestionDto);
 
-		when(questionService.getQuestions(questionSetId, DeliveryMode.LIVE_TIME)).thenReturn(mockQuestions);
+		when(questionService.getQuestions(questionSetId, DeliveryMode.MAKING)).thenReturn(mockQuestions);
 
 		// when & then
 		mockMvc.perform(get("/api/v1/question-sets/{questionSetId}/questions", questionSetId)
+				.param("mode", "MAKING")
 				.contentType(MediaType.APPLICATION_JSON))
 			.andExpectAll(
 				status().isOk(),
@@ -663,7 +663,7 @@ class QuestionControllerTest {
 				jsonPath("$.data[1].number").value(2)
 			);
 
-		verify(questionService).getQuestions(questionSetId, DeliveryMode.LIVE_TIME);
+		verify(questionService).getQuestions(questionSetId, DeliveryMode.MAKING);
 	}
 
 	@Test
