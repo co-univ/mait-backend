@@ -121,6 +121,24 @@ public class TeamService {
 	}
 
 	@Transactional
+	public void addUserInTeam(final Long teamId, final Long userId, final TeamUserRole role) {
+		if (role == TeamUserRole.OWNER) {
+			throw new TeamManagerException("Cannot add team user with OWNER role.");
+		}
+		TeamEntity team = teamEntityRepository.findById(teamId)
+			.orElseThrow(() -> new EntityNotFoundException("Team not found with id: " + teamId));
+		UserEntity user = userEntityRepository.findById(userId)
+			.orElseThrow(() -> new EntityNotFoundException("User not found with id: " + userId));
+
+		if (isUserInTeam(team, user)) {
+			throw new TeamManagerException("User is already a member of the team.");
+		}
+
+		TeamUserEntity teamUser = TeamUserEntity.createTeamUser(user, team, role);
+		teamUserEntityRepository.save(teamUser);
+	}
+
+	@Transactional
 	public void approveTeamApplication(Long teamId, Long applicationId, final InvitationApplicationStatus newStatus,
 		UserEntity approverPrincipal) {
 		if (newStatus == InvitationApplicationStatus.PENDING) {
