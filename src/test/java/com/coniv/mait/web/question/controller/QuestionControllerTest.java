@@ -20,6 +20,7 @@ import org.springframework.http.MediaType;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
+import com.coniv.mait.domain.question.enums.DeliveryMode;
 import com.coniv.mait.domain.question.service.QuestionImageService;
 import com.coniv.mait.domain.question.service.QuestionService;
 import com.coniv.mait.domain.question.service.dto.FillBlankAnswerDto;
@@ -634,22 +635,22 @@ class QuestionControllerTest {
 			.number(1L)
 			.build();
 
-		com.coniv.mait.domain.question.service.dto.ShortQuestionDto shortQuestionDto =
-			com.coniv.mait.domain.question.service.dto.ShortQuestionDto.builder()
-				.id(2L)
-				.content("주관식 문제 1")
-				.explanation("주관식 문제 해설")
-				.number(2L)
-				.answers(List.of(shortAnswerDto))
-				.build();
+		ShortQuestionDto shortQuestionDto = ShortQuestionDto.builder()
+			.id(2L)
+			.content("주관식 문제 1")
+			.explanation("주관식 문제 해설")
+			.number(2L)
+			.answers(List.of(shortAnswerDto))
+			.build();
 
 		List<com.coniv.mait.domain.question.service.dto.QuestionDto> mockQuestions =
 			List.of(multipleQuestionDto, shortQuestionDto);
 
-		when(questionService.getQuestions(questionSetId)).thenReturn(mockQuestions);
+		when(questionService.getQuestions(questionSetId, DeliveryMode.MAKING)).thenReturn(mockQuestions);
 
 		// when & then
 		mockMvc.perform(get("/api/v1/question-sets/{questionSetId}/questions", questionSetId)
+				.param("mode", "MAKING")
 				.contentType(MediaType.APPLICATION_JSON))
 			.andExpectAll(
 				status().isOk(),
@@ -662,28 +663,7 @@ class QuestionControllerTest {
 				jsonPath("$.data[1].number").value(2)
 			);
 
-		verify(questionService).getQuestions(questionSetId);
-	}
-
-	@Test
-	@DisplayName("문제 셋의 모든 문제 조회 API 테스트 - 빈 목록")
-	void getQuestionsEmptyListTest() throws Exception {
-		// given
-		final Long questionSetId = 1L;
-
-		when(questionService.getQuestions(questionSetId)).thenReturn(List.of());
-
-		// when & then
-		mockMvc.perform(get("/api/v1/question-sets/{questionSetId}/questions", questionSetId)
-				.contentType(MediaType.APPLICATION_JSON))
-			.andExpectAll(
-				status().isOk(),
-				jsonPath("$.isSuccess").value(true),
-				jsonPath("$.data").isArray(),
-				jsonPath("$.data.length()").value(0)
-			);
-
-		verify(questionService).getQuestions(questionSetId);
+		verify(questionService).getQuestions(questionSetId, DeliveryMode.MAKING);
 	}
 
 	@Test

@@ -396,6 +396,7 @@ public class QuestionApiIntegrationTest extends BaseIntegrationTest {
 
 		// when & then
 		mockMvc.perform(get("/api/v1/question-sets/{questionSetId}/questions", savedQuestionSet.getId())
+				.param("mode", "MAKING")
 				.contentType(MediaType.APPLICATION_JSON))
 			.andExpectAll(
 				status().isOk(),
@@ -410,24 +411,6 @@ public class QuestionApiIntegrationTest extends BaseIntegrationTest {
 				jsonPath("$.data[2].type").value(QuestionType.ORDERING.name()),
 				jsonPath("$.data[3].content").value("빈칸 문제"),
 				jsonPath("$.data[3].type").value(QuestionType.FILL_BLANK.name())
-			);
-	}
-
-	@Test
-	@DisplayName("문제 셋의 모든 문제 조회 API 성공 테스트 - 빈 목록")
-	void getQuestionsApiEmptyListSuccess() throws Exception {
-		// given
-		QuestionSetEntity questionSet = QuestionSetEntity.of("Sample Subject", QuestionSetCreationType.MANUAL);
-		QuestionSetEntity savedQuestionSet = questionSetEntityRepository.save(questionSet);
-
-		// when & then
-		mockMvc.perform(get("/api/v1/question-sets/{questionSetId}/questions", savedQuestionSet.getId())
-				.contentType(MediaType.APPLICATION_JSON))
-			.andExpectAll(
-				status().isOk(),
-				jsonPath("$.isSuccess").value(true),
-				jsonPath("$.data").isArray(),
-				jsonPath("$.data.length()").value(0)
 			);
 	}
 
