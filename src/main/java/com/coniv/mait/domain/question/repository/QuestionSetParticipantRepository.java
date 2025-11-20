@@ -15,6 +15,8 @@ public interface QuestionSetParticipantRepository extends JpaRepository<Question
 	@Query("SELECT p FROM QuestionSetParticipantEntity p join fetch p.user WHERE p.questionSet = :questionSet")
 	List<QuestionSetParticipantEntity> findAllByQuestionSetWithFetchJoinUser(
 		@Param("questionSet") QuestionSetEntity questionSet);
+
+	List<QuestionSetParticipantEntity> findAllByQuestionSetId(Long questionSetId);
 }
 
 

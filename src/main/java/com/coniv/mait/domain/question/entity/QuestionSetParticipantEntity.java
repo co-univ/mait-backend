@@ -47,6 +47,9 @@ public class QuestionSetParticipantEntity extends BaseTimeEntity {
 	@JoinColumn(name = "user_id", nullable = false)
 	private UserEntity user;
 
+	@Builder.Default
+	private boolean winner = false;
+
 	@Enumerated(EnumType.STRING)
 	@Column(nullable = false)
 	@Builder.Default
@@ -66,5 +69,9 @@ public class QuestionSetParticipantEntity extends BaseTimeEntity {
 
 	public void updateStatus(ParticipantStatus participantStatus) {
 		this.status = participantStatus;
+	}
+
+	public void updateWinner(boolean isWinner) {
+		this.winner = isWinner;
 	}
 }
