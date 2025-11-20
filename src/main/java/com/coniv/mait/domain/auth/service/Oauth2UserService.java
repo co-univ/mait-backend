@@ -1,5 +1,7 @@
 package com.coniv.mait.domain.auth.service;
 
+import java.util.Map;
+
 import org.springframework.security.oauth2.client.userinfo.DefaultOAuth2UserService;
 import org.springframework.security.oauth2.client.userinfo.OAuth2UserRequest;
 import org.springframework.security.oauth2.core.OAuth2AuthenticationException;
@@ -45,7 +47,7 @@ public class Oauth2UserService extends DefaultOAuth2UserService {
 			});
 	}
 
-	private OAuth2UserInfo mapToOAuth2UserInfo(LoginProvider loginProvider, java.util.Map<String, Object> attributes) {
+	private OAuth2UserInfo mapToOAuth2UserInfo(LoginProvider loginProvider, Map<String, Object> attributes) {
 		if (loginProvider == LoginProvider.GOOGLE) {
 			return new GoogleUserDetails(attributes);
 		}
