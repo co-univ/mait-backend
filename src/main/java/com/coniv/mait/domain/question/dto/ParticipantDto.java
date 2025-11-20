@@ -15,6 +15,7 @@ public class ParticipantDto {
 	Long userId;
 	String participantName;
 	String userNickname;
+	boolean winner;
 	ParticipantStatus status;
 
 	public static ParticipantDto from(QuestionSetParticipantEntity participant) {
@@ -24,6 +25,7 @@ public class ParticipantDto {
 			.participantName(participant.getParticipantName())
 			.status(participant.getStatus())
 			.userNickname(participant.getUser().getNickname())
+			.winner(participant.isWinner())
 			.build();
 	}
 }

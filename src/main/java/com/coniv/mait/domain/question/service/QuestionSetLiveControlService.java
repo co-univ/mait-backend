@@ -30,6 +30,7 @@ import com.coniv.mait.domain.team.entity.TeamUserEntity;
 import com.coniv.mait.domain.team.repository.TeamUserEntityRepository;
 import com.coniv.mait.domain.user.entity.UserEntity;
 import com.coniv.mait.global.exception.custom.ResourceNotBelongException;
+import com.coniv.mait.web.question.dto.ParticipantSendType;
 
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
@@ -198,5 +199,35 @@ public class QuestionSetLiveControlService {
 
 		questionWebSocketSender.broadcastQuestionStatus(questionSetId, message);
 		log.info("Updated active participants for question set ID: {}", questionSetId);
+	}
+
+	public void sendParticipants(Long questionSetId, ParticipantSendType type) {
+		QuestionSetEntity questionSet = findQuestionSetById(questionSetId);
+
+		List<ParticipantDto> activeParticipants =
+			questionSetParticipantRepository.findAllByQuestionSetWithFetchJoinUser(questionSet).stream()
+				.filter(QuestionSetParticipantEntity::isActive)
+				.map(ParticipantDto::from)
+				.toList();
+
+		if (type == ParticipantSendType.NEXT_ROUND) {
+			QuestionSetStatusMessage message = QuestionSetParticipantsMessage.builder()
+				.questionSetId(questionSetId)
+				.commandType(QuestionSetCommandType.ACTIVE_PARTICIPANTS)
+				.activeParticipants(activeParticipants)
+				.build();
+			questionWebSocketSender.broadcastQuestionStatus(questionSetId, message);
+			return;
+		}
+
+		List<ParticipantDto> winnerParticipants = activeParticipants.stream()
+			.filter(ParticipantDto::isWinner)
+			.toList();
+		QuestionSetStatusMessage message = QuestionSetParticipantsMessage.builder()
+			.questionSetId(questionSetId)
+			.commandType(QuestionSetCommandType.WINNER)
+			.activeParticipants(winnerParticipants)
+			.build();
+		questionWebSocketSender.broadcastQuestionStatus(questionSetId, message);
 	}
 }

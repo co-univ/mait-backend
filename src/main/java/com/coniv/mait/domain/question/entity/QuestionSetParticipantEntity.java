@@ -74,4 +74,8 @@ public class QuestionSetParticipantEntity extends BaseTimeEntity {
 	public void updateWinner(boolean isWinner) {
 		this.winner = isWinner;
 	}
+
+	public boolean isActive() {
+		return this.status == ParticipantStatus.ACTIVE;
+	}
 }

@@ -18,6 +18,9 @@ public record ParticipantInfoApiResponse(
 	@Schema(description = "유저 닉네임")
 	String userNickname,
 
+	@Schema(description = "해당 유저가 우승자인지 여부", requiredMode = Schema.RequiredMode.REQUIRED)
+	boolean winner,
+
 	@Schema(description = "진행 상태", requiredMode = Schema.RequiredMode.REQUIRED, enumAsRef = true)
 	ParticipantStatus status
 ) {
@@ -29,6 +32,7 @@ public record ParticipantInfoApiResponse(
 			.participantName(participant.getParticipantName())
 			.userNickname(participant.getUserNickname())
 			.status(participant.getStatus())
+			.winner(participant.isWinner())
 			.build();
 	}
 }
