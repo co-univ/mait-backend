@@ -185,7 +185,7 @@ public class TeamApiIntegrationTest extends BaseIntegrationTest {
 			.andExpect(jsonPath("$.data.teamId").value(team.getId()))
 			.andExpect(jsonPath("$.data.teamName").value(team.getName()))
 			.andExpect(jsonPath("$.data.requiresApproval").value(false))
-			.andExpect(jsonPath("$.data.applicationStatus").doesNotExist());
+			.andExpect(jsonPath("$.data.applicationStatus").value("NOT_APPLIED"));
 	}
 
 	@Test
