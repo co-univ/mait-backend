@@ -23,6 +23,9 @@ public record UserInfoApiResponse(
 ) {
 
 	public static UserInfoApiResponse from(UserDto userDto) {
+		if (userDto == null) {
+			return null;
+		}
 		return new UserInfoApiResponse(
 			userDto.getId(),
 			userDto.getName(),
