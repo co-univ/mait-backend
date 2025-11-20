@@ -1,6 +1,8 @@
 package com.coniv.mait.web.auth.controller;
 
+import org.springframework.context.annotation.Profile;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.CookieValue;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -50,5 +52,11 @@ public class AuthController {
 	@GetMapping("/access-token")
 	public ResponseEntity<ApiResponse<String>> getAccessToken(@RequestParam("code") String code) {
 		return ResponseEntity.ok(ApiResponse.ok(authService.getAccessTokenFromCode(code)));
+	}
+
+	@Operation(summary = "쿠키 조회")
+	@GetMapping("/cookie")
+	public ResponseEntity<String > cookie(@CookieValue(name = "OAUTH_SIGNUP_KEY") String cookieValue) {
+		return ResponseEntity.ok(cookieValue);
 	}
 }

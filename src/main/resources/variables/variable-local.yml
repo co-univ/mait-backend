@@ -4,12 +4,12 @@ server:
 mait:
   base-url: "http://localhost:3000"
   cookie:
-    domain: ".mait.kr"
+    domain: "localhost"
     path: "/"
     max-age: 604800000  # 7 days
     http-only: true
     secure: false
-    same-site: "Lax"
+    same-site: "None"
 
 api:
   ai:
