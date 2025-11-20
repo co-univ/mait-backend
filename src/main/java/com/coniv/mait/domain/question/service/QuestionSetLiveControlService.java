@@ -209,7 +209,7 @@ public class QuestionSetLiveControlService {
 				.filter(QuestionSetParticipantEntity::isActive)
 				.toList();
 
-		if (type == ParticipantSendType.WINNER) {
+		if (type == ParticipantSendType.NEXT_ROUND) {
 			List<ParticipantDto> nextRoundParticipants = activeParticipants.stream().map(ParticipantDto::from).toList();
 			QuestionSetStatusMessage message = QuestionSetParticipantsMessage.builder()
 				.questionSetId(questionSetId)
