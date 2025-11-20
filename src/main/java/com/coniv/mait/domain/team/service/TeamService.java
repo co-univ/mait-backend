@@ -196,12 +196,12 @@ public class TeamService {
 			throw new TeamInvitationFailException(InvitationErrorCode.ALREADY_MEMBER);
 		}
 
-		if (teamInvitationApplicationEntityRepository.existsByTeamIdAndUserIdAndInvitationLinkId(
-			team.getId(), applicant.getId(), invitationLink.getId())) {
-			throw new TeamInvitationFailException(InvitationErrorCode.USER_ALREADY_APPLIED);
-		}
 		if (teamInvitationApplicationEntityRepository.existsByTeamIdAndUserIdAndApplicationStatus(
 			team.getId(), applicant.getId(), InvitationApplicationStatus.PENDING)) {
+			throw new TeamInvitationFailException(InvitationErrorCode.USER_ALREADY_APPLIED);
+		}
+		if (teamInvitationApplicationEntityRepository.existsByTeamIdAndUserIdAndInvitationLinkId(
+			team.getId(), applicant.getId(), invitationLink.getId())) {
 			throw new TeamInvitationFailException(InvitationErrorCode.USER_ALREADY_APPLIED);
 		}
 
