@@ -1,10 +1,13 @@
 package com.coniv.mait.web.user.controller;
 
+import java.util.List;
+
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.CookieValue;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -62,5 +65,16 @@ public class UserController {
 		@Valid @RequestBody SignUpApiRequest request) {
 		UserDto dto = userService.signup(signupToken, request.nickname().trim(), request.policyChecks());
 		return ResponseEntity.ok(ApiResponse.ok(UserInfoApiResponse.from(dto)));
+	}
+
+	@Operation(summary = "이메일로 유저 찾기")
+	@GetMapping("/find-by-email/{email}")
+	public ResponseEntity<ApiResponse<List<UserInfoApiResponse>>> findUserByEmail(
+		@PathVariable("email") String email
+	) {
+		List<UserDto> dto = userService.findUserByEmail(email);
+		return ResponseEntity.ok(ApiResponse.ok(
+			dto.stream().map(UserInfoApiResponse::from).toList()
+		));
 	}
 }

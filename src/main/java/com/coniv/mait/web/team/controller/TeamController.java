@@ -23,6 +23,7 @@ import com.coniv.mait.domain.team.service.dto.TeamInvitationResultDto;
 import com.coniv.mait.domain.team.service.dto.TeamUserDto;
 import com.coniv.mait.domain.user.entity.UserEntity;
 import com.coniv.mait.global.response.ApiResponse;
+import com.coniv.mait.web.team.dto.AddTeamUserApiRequest;
 import com.coniv.mait.web.team.dto.ApplyTeamUserApiResponse;
 import com.coniv.mait.web.team.dto.ApproveTeamApplicationApiRequest;
 import com.coniv.mait.web.team.dto.CreateTeamApiRequest;
@@ -168,6 +169,15 @@ public class TeamController {
 		@PathVariable("teamUserId") Long teamUserId,
 		@Valid @RequestBody UpdateTeamUserRoleApiRequest request) {
 		teamService.updateTeamUserRole(teamUserId, request.role());
+		return ResponseEntity.ok(ApiResponse.noContent());
+	}
+
+	@Operation(summary = "팀에 유저 추가 API")
+	@PostMapping("/{teamId}/team-users")
+	public ResponseEntity<ApiResponse<Void>> addUserInTeam(
+		@PathVariable("teamId") Long teamId,
+		@Valid @RequestBody AddTeamUserApiRequest request) {
+		teamService.addUserInTeam(teamId, request.userId(), request.role());
 		return ResponseEntity.ok(ApiResponse.noContent());
 	}
 }

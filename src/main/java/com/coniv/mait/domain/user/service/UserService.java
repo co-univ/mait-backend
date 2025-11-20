@@ -77,4 +77,11 @@ public class UserService {
 		oauthPendingRedisRepository.deleteByKey(signupToken);
 		return UserDto.from(saved);
 	}
+
+	@Transactional(readOnly = true)
+	public List<UserDto> findUserByEmail(String email) {
+		return userEntityRepository.findAllByEmail(email).stream()
+			.map(UserDto::from)
+			.toList();
+	}
 }
