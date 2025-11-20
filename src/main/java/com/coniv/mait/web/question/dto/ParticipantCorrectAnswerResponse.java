@@ -8,12 +8,12 @@ import lombok.Getter;
 @Getter
 @AllArgsConstructor
 public class ParticipantCorrectAnswerResponse {
-	ParticipantInfoResponse participantInfos;
+	ParticipantInfoApiResponse participantInfos;
 	long correctAnswerCount;
 
 	public static ParticipantCorrectAnswerResponse from(ParticipantCorrectAnswersDto participantCorrectAnswersDto) {
 		return new ParticipantCorrectAnswerResponse(
-			ParticipantInfoResponse.from(participantCorrectAnswersDto.getParticipantDto()),
+			ParticipantInfoApiResponse.from(participantCorrectAnswersDto.getParticipantDto()),
 			participantCorrectAnswersDto.getCorrectAnswerCount()
 		);
 	}
