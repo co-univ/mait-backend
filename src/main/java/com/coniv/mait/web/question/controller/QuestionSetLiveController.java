@@ -10,6 +10,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.coniv.mait.domain.question.dto.ParticipantDto;
 import com.coniv.mait.domain.question.enums.QuestionSetOngoingStatus;
 import com.coniv.mait.domain.question.service.QuestionRankService;
 import com.coniv.mait.domain.question.service.QuestionService;
@@ -78,11 +79,12 @@ public class QuestionSetLiveController {
 
 	@Operation(summary = "다음 문제 진출자 수정")
 	@PutMapping("/participants")
-	public ResponseEntity<ApiResponse<Void>> updateActiveParticipants(
+	public ResponseEntity<ApiResponse<ParticipantsByStatusApiResponse>> updateActiveParticipants(
 		@PathVariable Long questionSetId,
 		@RequestBody UpdateActiveParticipantsRequest request) {
-		questionSetLiveControlService.updateActiveParticipants(questionSetId, request.activeUserIds());
-		return ResponseEntity.ok(ApiResponse.noContent());
+		return ResponseEntity.ok(ApiResponse.ok(
+			ParticipantsByStatusApiResponse.from(questionSetParticipantService.updateParticipantsStatus(questionSetId,
+				request.activeParticipants(), request.eliminatedParticipants()))));
 	}
 
 	@Operation(summary = "우승자 전송")

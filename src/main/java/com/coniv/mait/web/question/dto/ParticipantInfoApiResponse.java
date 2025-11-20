@@ -27,6 +27,7 @@ public record ParticipantInfoApiResponse(
 			.participantId(participant.getParticipantId())
 			.userId(participant.getUserId())
 			.participantName(participant.getParticipantName())
+			.userNickname(participant.getUserNickname())
 			.status(participant.getStatus())
 			.build();
 	}
