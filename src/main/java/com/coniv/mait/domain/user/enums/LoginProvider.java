@@ -23,7 +23,7 @@ public enum LoginProvider {
 		));
 
 	public static LoginProvider findByProvider(String provider) {
-		LoginProvider loginProvider = PROVIDER_MAP.get(provider);
+		LoginProvider loginProvider = PROVIDER_MAP.get(provider.toLowerCase());
 		if (loginProvider == null) {
 			throw new IllegalArgumentException("지원되지 않는 LoginProvider: " + provider);
 		}
