@@ -1,11 +1,14 @@
 package com.coniv.mait.domain.team.repository;
 
+import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Optional;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import com.coniv.mait.domain.team.entity.TeamEntity;
 import com.coniv.mait.domain.team.entity.TeamInvitationLinkEntity;
 
 public interface TeamInvitationEntityRepository extends JpaRepository<TeamInvitationLinkEntity, Long> {
@@ -13,4 +16,10 @@ public interface TeamInvitationEntityRepository extends JpaRepository<TeamInvita
 
 	@Query("select ti from TeamInvitationLinkEntity ti join fetch ti.team where ti.token = :token")
 	Optional<TeamInvitationLinkEntity> findByTokenFetchJoinTeam(@Param("token") String token);
+
+	@Query("select t from TeamInvitationLinkEntity t where t.team = :team and (t.expiredAt > :now)")
+	List<TeamInvitationLinkEntity> findActiveLinksByTeam(
+		@Param("team") TeamEntity team,
+		@Param("now") LocalDateTime now
+	);
 }

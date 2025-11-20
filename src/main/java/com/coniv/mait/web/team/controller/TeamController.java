@@ -18,6 +18,7 @@ import com.coniv.mait.domain.team.service.TeamService;
 import com.coniv.mait.domain.team.service.dto.TeamApplicantDto;
 import com.coniv.mait.domain.team.service.dto.TeamDto;
 import com.coniv.mait.domain.team.service.dto.TeamInvitationDto;
+import com.coniv.mait.domain.team.service.dto.TeamInvitationLinkDto;
 import com.coniv.mait.domain.team.service.dto.TeamInvitationResultDto;
 import com.coniv.mait.domain.team.service.dto.TeamUserDto;
 import com.coniv.mait.domain.user.entity.UserEntity;
@@ -30,6 +31,7 @@ import com.coniv.mait.web.team.dto.CreateTeamInviteApiResponse;
 import com.coniv.mait.web.team.dto.JoinedTeamUserApiResponse;
 import com.coniv.mait.web.team.dto.TeamApiResponse;
 import com.coniv.mait.web.team.dto.TeamInvitationApplyApiResponse;
+import com.coniv.mait.web.team.dto.TeamInvitationLinksApiResponse;
 import com.coniv.mait.web.team.dto.TeamInviteApiResponse;
 import com.coniv.mait.web.team.dto.UpdateTeamUserRoleApiRequest;
 
@@ -97,6 +99,17 @@ public class TeamController {
 		@AuthenticationPrincipal UserEntity userPrincipal, @RequestParam("code") String code) {
 		TeamInvitationDto teamInviteInfo = teamService.getTeamInviteInfo(userPrincipal, code);
 		return ResponseEntity.ok(ApiResponse.ok(TeamInviteApiResponse.from(teamInviteInfo)));
+	}
+
+	@Operation(summary = "초대 링크 목록 반환 API")
+	@GetMapping("/{teamId}/invitations")
+	public ResponseEntity<ApiResponse<List<TeamInvitationLinksApiResponse>>> getTeamInvitations(
+		@PathVariable("teamId") Long teamId) {
+		List<TeamInvitationLinkDto> invitations = teamService.getTeamInvitations(teamId);
+		List<TeamInvitationLinksApiResponse> response = invitations.stream()
+			.map(TeamInvitationLinksApiResponse::from)
+			.toList();
+		return ResponseEntity.ok(ApiResponse.ok(response));
 	}
 
 	@Operation(summary = "가입 팀 목록 반환 API")

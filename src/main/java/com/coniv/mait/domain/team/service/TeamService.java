@@ -27,6 +27,7 @@ import com.coniv.mait.domain.team.service.component.InviteTokenGenerator;
 import com.coniv.mait.domain.team.service.dto.TeamApplicantDto;
 import com.coniv.mait.domain.team.service.dto.TeamDto;
 import com.coniv.mait.domain.team.service.dto.TeamInvitationDto;
+import com.coniv.mait.domain.team.service.dto.TeamInvitationLinkDto;
 import com.coniv.mait.domain.team.service.dto.TeamInvitationResultDto;
 import com.coniv.mait.domain.team.service.dto.TeamUserDto;
 import com.coniv.mait.domain.user.entity.UserEntity;
@@ -300,5 +301,16 @@ public class TeamService {
 		}
 
 		teamUser.updateUserRole(role);
+	}
+
+	@Transactional(readOnly = true)
+	public List<TeamInvitationLinkDto> getTeamInvitations(Long teamId) {
+		TeamEntity team = teamEntityRepository.findById(teamId)
+			.orElseThrow(() -> new EntityNotFoundException("Team not found with id: " + teamId));
+
+		return teamInvitationEntityRepository.findActiveLinksByTeam(team, LocalDateTime.now()).stream()
+			.map(TeamInvitationLinkDto::from)
+			.sorted(Comparator.comparing(TeamInvitationLinkDto::getExpiredAt))
+			.toList();
 	}
 }
