@@ -77,4 +77,8 @@ public class TeamInvitationLinkEntity extends BaseTimeEntity {
 	public boolean isExpired(LocalDateTime applicationTime) {
 		return expiredAt != null && applicationTime.isAfter(expiredAt);
 	}
+
+	public void changeToExpired() {
+		this.expiredAt = LocalDateTime.now();
+	}
 }

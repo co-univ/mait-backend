@@ -31,6 +31,8 @@ public class TeamInvitationDto {
 
 	private boolean requiresApproval;
 
+	private String token;
+
 	private TeamUserRole teamUserRole;
 
 	private LocalDateTime expiredAt;
@@ -46,6 +48,7 @@ public class TeamInvitationDto {
 			.teamName(teamEntity.getName())
 			.tokenDuration(inviteEntity.getTokenDuration())
 			.requiresApproval(inviteEntity.isRequiresApproval())
+			.token(inviteEntity.getToken())
 			.teamUserRole(inviteEntity.getRoleOnJoin())
 			.expiredAt(inviteEntity.getExpiredAt())
 			.applicationStatus(applicationStatus)
