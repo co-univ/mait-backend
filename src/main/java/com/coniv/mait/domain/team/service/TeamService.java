@@ -313,4 +313,12 @@ public class TeamService {
 			.sorted(Comparator.comparing(TeamInvitationLinkDto::getExpiredAt))
 			.toList();
 	}
+
+	@Transactional
+	public void deleteTeamInvitation(Long invitationId) {
+		TeamInvitationLinkEntity invitationLink = teamInvitationEntityRepository.findById(invitationId)
+			.orElseThrow(() -> new EntityNotFoundException("Team invitation not found with id: " + invitationId));
+
+		invitationLink.changeToExpired();
+	}
 }

@@ -112,6 +112,14 @@ public class TeamController {
 		return ResponseEntity.ok(ApiResponse.ok(response));
 	}
 
+	@Operation(summary = "초대 링크 삭제 API")
+	@DeleteMapping("/invitations/{invitationId}")
+	public ResponseEntity<ApiResponse<Void>> deleteTeamInvitation(
+		@PathVariable("invitationId") Long invitationId) {
+		teamService.deleteTeamInvitation(invitationId);
+		return ResponseEntity.ok(ApiResponse.noContent());
+	}
+
 	@Operation(summary = "가입 팀 목록 반환 API")
 	@GetMapping("/joined")
 	public ResponseEntity<ApiResponse<List<TeamApiResponse>>> getJoinedTeams(
