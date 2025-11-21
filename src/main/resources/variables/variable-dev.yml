@@ -9,7 +9,7 @@ mait:
     max-age: 604800000  # 7 days
     http-only: true
     secure: true
-    same-site: "Lax"
+    same-site: "None"
 
 api:
   ai:
