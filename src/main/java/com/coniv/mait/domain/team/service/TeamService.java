@@ -25,7 +25,6 @@ import com.coniv.mait.domain.team.repository.TeamInvitationEntityRepository;
 import com.coniv.mait.domain.team.repository.TeamUserEntityRepository;
 import com.coniv.mait.domain.team.service.component.InviteTokenGenerator;
 import com.coniv.mait.domain.team.service.dto.TeamApplicantDto;
-import com.coniv.mait.domain.team.service.dto.TeamDto;
 import com.coniv.mait.domain.team.service.dto.TeamInvitationDto;
 import com.coniv.mait.domain.team.service.dto.TeamInvitationLinkDto;
 import com.coniv.mait.domain.team.service.dto.TeamInvitationResultDto;
@@ -252,13 +251,12 @@ public class TeamService {
 	}
 
 	@Transactional(readOnly = true)
-	public List<TeamDto> getJoinedTeams(final UserEntity userPrincipal) {
+	public List<TeamUserDto> getJoinedTeams(final UserEntity userPrincipal) {
 		UserEntity user = userEntityRepository.findById(userPrincipal.getId())
 			.orElseThrow(() -> new EntityNotFoundException("User not found with id: " + userPrincipal.getId()));
 
 		return teamUserEntityRepository.findAllByUserFetchJoinTeam(user).stream()
-			.map(TeamUserEntity::getTeam)
-			.map(TeamDto::from)
+			.map(TeamUserDto::from)
 			.toList();
 	}
 
@@ -268,7 +266,7 @@ public class TeamService {
 
 		return teamUsers.stream()
 			.map(TeamUserDto::from)
-			.sorted(Comparator.comparing(TeamUserDto::getName))
+			.sorted(Comparator.comparing(TeamUserDto::getUserName))
 			.toList();
 	}
 

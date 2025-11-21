@@ -16,7 +16,11 @@ public class TeamUserDto {
 
 	private Long id;
 
-	private String name;
+	private Long teamId;
+
+	private String teamName;
+
+	private String userName;
 
 	private String nickname;
 
@@ -25,7 +29,9 @@ public class TeamUserDto {
 	public static TeamUserDto from(final TeamUserEntity teamUserEntity) {
 		return TeamUserDto.builder()
 			.id(teamUserEntity.getId())
-			.name(teamUserEntity.getUser().getName())
+			.teamId(teamUserEntity.getTeam().getId())
+			.teamName(teamUserEntity.getTeam().getName())
+			.userName(teamUserEntity.getUser().getName())
 			.nickname(teamUserEntity.getUser().getNickname())
 			.role(teamUserEntity.getUserRole())
 			.build();
