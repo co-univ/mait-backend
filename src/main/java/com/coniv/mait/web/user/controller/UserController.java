@@ -4,7 +4,6 @@ import static com.coniv.mait.global.jwt.constant.TokenConstants.*;
 
 import java.util.List;
 
-import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.CookieValue;
@@ -73,7 +72,7 @@ public class UserController {
 
 		return ResponseEntity.ok()
 			.header(ACCESS_TOKEN, token.accessToken())
-			.header(HttpHeaders.COOKIE, cookieUtil.createOauthSignupCookie(token.refreshToken()).toString())
+			.header("Set-Cookie", cookieUtil.createRefreshResponseCookie(token.refreshToken()).toString())
 			.body(ApiResponse.noContent());
 	}
 
