@@ -16,7 +16,6 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.coniv.mait.domain.team.service.TeamService;
 import com.coniv.mait.domain.team.service.dto.TeamApplicantDto;
-import com.coniv.mait.domain.team.service.dto.TeamDto;
 import com.coniv.mait.domain.team.service.dto.TeamInvitationDto;
 import com.coniv.mait.domain.team.service.dto.TeamInvitationLinkDto;
 import com.coniv.mait.domain.team.service.dto.TeamInvitationResultDto;
@@ -125,9 +124,9 @@ public class TeamController {
 	@GetMapping("/joined")
 	public ResponseEntity<ApiResponse<List<TeamApiResponse>>> getJoinedTeams(
 		@AuthenticationPrincipal UserEntity userPrincipal) {
-		List<TeamDto> joinedTeams = teamService.getJoinedTeams(userPrincipal);
+		List<TeamUserDto> joinedTeams = teamService.getJoinedTeams(userPrincipal);
 		List<TeamApiResponse> response = joinedTeams.stream()
-			.map(TeamApiResponse::of)
+			.map(TeamApiResponse::from)
 			.toList();
 		return ResponseEntity.ok(ApiResponse.ok(response));
 	}
