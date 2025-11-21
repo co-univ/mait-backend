@@ -13,8 +13,10 @@ import com.coniv.mait.domain.user.repository.UserEntityRepository;
 import com.coniv.mait.domain.user.service.dto.UserDto;
 import com.coniv.mait.domain.user.util.RandomNicknameUtil;
 import com.coniv.mait.global.jwt.JwtTokenProvider;
+import com.coniv.mait.global.jwt.RefreshToken;
 import com.coniv.mait.global.jwt.Token;
 import com.coniv.mait.global.jwt.cache.OauthPendingRedisRepository;
+import com.coniv.mait.global.jwt.repository.RefreshTokenRepository;
 import com.coniv.mait.web.user.dto.PolicyCheckRequest;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
@@ -31,6 +33,7 @@ public class UserService {
 	private final OauthPendingRedisRepository oauthPendingRedisRepository;
 	private final ObjectMapper objectMapper;
 	private final JwtTokenProvider jwtTokenProvider;
+	private final RefreshTokenRepository refreshTokenRepository;
 
 	public UserDto getUserInfo(final UserEntity user) {
 		return UserDto.from(user);
@@ -77,7 +80,10 @@ public class UserService {
 
 		oauthPendingRedisRepository.deleteByKey(signupToken);
 
-		return jwtTokenProvider.createToken(saved.getId());
+		Token token = jwtTokenProvider.createToken(saved.getId());
+		RefreshToken refreshToken = new RefreshToken(saved.getId(), token.refreshToken());
+		refreshTokenRepository.save(refreshToken);
+		return token;
 	}
 
 	@Transactional(readOnly = true)

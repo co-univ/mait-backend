@@ -19,7 +19,6 @@ public final class AuthConstant {
 	}
 
 	public String getOauthSignupUrl() {
-		// return maitProperty.getBaseUrl() + "/oauth/signup"; //TODO 배포 후 수정
-		return "http://localhost:3000/oauth/signup";
+		return maitProperty.getBaseUrl() + "/oauth/signup";
 	}
 }
