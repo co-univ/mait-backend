@@ -1,7 +1,10 @@
 package com.coniv.mait.web.user.controller;
 
+import static com.coniv.mait.global.jwt.constant.TokenConstants.*;
+
 import java.util.List;
 
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.CookieValue;
@@ -16,7 +19,9 @@ import org.springframework.web.bind.annotation.RestController;
 import com.coniv.mait.domain.user.entity.UserEntity;
 import com.coniv.mait.domain.user.service.UserService;
 import com.coniv.mait.domain.user.service.dto.UserDto;
+import com.coniv.mait.global.jwt.Token;
 import com.coniv.mait.global.response.ApiResponse;
+import com.coniv.mait.global.util.CookieUtil;
 import com.coniv.mait.web.user.dto.RandomNicknameResponse;
 import com.coniv.mait.web.user.dto.SignUpApiRequest;
 import com.coniv.mait.web.user.dto.UpdateNicknameRequest;
@@ -34,6 +39,7 @@ import lombok.RequiredArgsConstructor;
 public class UserController {
 
 	private final UserService userService;
+	private final CookieUtil cookieUtil;
 
 	@Operation(summary = "사용자 정보 반환")
 	@GetMapping("/me")
@@ -60,11 +66,15 @@ public class UserController {
 
 	@Operation(summary = "회원 가입")
 	@PostMapping("/sign-up")
-	public ResponseEntity<ApiResponse<UserInfoApiResponse>> signup(
+	public ResponseEntity<ApiResponse<Void>> signup(
 		@Parameter(hidden = true) @CookieValue(name = "OAUTH_SIGNUP_KEY") String signupToken,
 		@Valid @RequestBody SignUpApiRequest request) {
-		UserDto dto = userService.signup(signupToken, request.nickname().trim(), request.policyChecks());
-		return ResponseEntity.ok(ApiResponse.ok(UserInfoApiResponse.from(dto)));
+		Token token = userService.signup(signupToken, request.nickname().trim(), request.policyChecks());
+
+		return ResponseEntity.ok()
+			.header(ACCESS_TOKEN, token.accessToken())
+			.header(HttpHeaders.COOKIE, cookieUtil.createOauthSignupCookie(token.refreshToken()).toString())
+			.body(ApiResponse.noContent());
 	}
 
 	@Operation(summary = "이메일로 유저 찾기")
