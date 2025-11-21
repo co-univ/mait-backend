@@ -21,7 +21,7 @@ public record JoinedTeamUserApiResponse(
 	public static JoinedTeamUserApiResponse from(TeamUserDto teamUserDto) {
 		return new JoinedTeamUserApiResponse(
 			teamUserDto.getId(),
-			teamUserDto.getName(),
+			teamUserDto.getUserName(),
 			teamUserDto.getNickname(),
 			teamUserDto.getRole()
 		);
