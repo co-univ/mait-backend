@@ -100,3 +100,21 @@ jobs:
             docker image prune -f
             
             echo "Development Application is running on port 8040 (Project: mait-dev)"
+
+  Dispatch:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Repository Dispatch
+        uses: peter-evans/repository-dispatch@v4
+        with:
+          token: ${{ secrets.FRONTEND_PAT }}
+          repository: co-univ/mait-frontend
+          event-type: backend-develop-push
+          client-payload: |
+            {
+              "repository": "${{ github.repository }}",
+              "sha": "${{ github.sha }}",
+              "commit_message": ${{ toJSON(github.event.head_commit.message) }}
+            }
