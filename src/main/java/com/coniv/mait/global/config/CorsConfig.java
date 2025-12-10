@@ -6,21 +6,19 @@ import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
-import com.coniv.mait.global.config.property.MaitProperty;
-
-import lombok.RequiredArgsConstructor;
-
 @Configuration
-@RequiredArgsConstructor
 public class CorsConfig {
-
-	private final MaitProperty maitProperty;
 
 	@Bean
 	public CorsConfigurationSource corsConfigurationSource() {
 		CorsConfiguration configuration = new CorsConfiguration();
 
-		configuration.addAllowedOrigin(maitProperty.getBaseUrl());
+		configuration.addAllowedOrigin("https://dev.mait.kr");
+		configuration.addAllowedOrigin("https://alpha.mait.kr");
+		configuration.addAllowedOrigin("https://mait.kr");
+		configuration.addAllowedOrigin("https://www.mait.kr");
+
+		configuration.addAllowedOrigin("http://localhost:3000"); // todo 삭제 예정
 
 		configuration.addAllowedOriginPattern("*");
 		configuration.addAllowedMethod("*");
