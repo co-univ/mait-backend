@@ -9,10 +9,13 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.coniv.mait.domain.question.entity.QuestionEntity;
-import com.coniv.mait.domain.question.repository.QuestionEntityRepository;
+import com.coniv.mait.domain.question.entity.QuestionSetEntity;
+import com.coniv.mait.domain.question.service.component.QuestionReader;
 import com.coniv.mait.domain.solve.entity.AnswerSubmitRecordEntity;
+import com.coniv.mait.domain.solve.exception.QuestionSolvingException;
 import com.coniv.mait.domain.solve.repository.AnswerSubmitRecordEntityRepository;
 import com.coniv.mait.domain.solve.service.component.AnswerGrader;
+import com.coniv.mait.domain.solve.service.component.QuestionSetParticipantManager;
 import com.coniv.mait.domain.solve.service.component.ScorerGenerator;
 import com.coniv.mait.domain.solve.service.component.ScorerProcessor;
 import com.coniv.mait.domain.solve.service.component.SubmitOrderGenerator;
@@ -21,7 +24,7 @@ import com.coniv.mait.domain.solve.service.dto.AnswerSubmitRecordDto;
 import com.coniv.mait.domain.solve.service.dto.SubmitAnswerDto;
 import com.coniv.mait.domain.user.entity.UserEntity;
 import com.coniv.mait.domain.user.repository.UserEntityRepository;
-import com.coniv.mait.global.exception.custom.ResourceNotBelongException;
+import com.coniv.mait.domain.user.service.component.TeamRoleValidator;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
@@ -34,7 +37,7 @@ public class QuestionAnswerSubmitService {
 
 	private final UserEntityRepository userEntityRepository;
 
-	private final QuestionEntityRepository questionEntityRepository;
+	private final QuestionReader questionReader;
 
 	private final AnswerSubmitRecordEntityRepository answerSubmitRecordEntityRepository;
 
@@ -46,6 +49,10 @@ public class QuestionAnswerSubmitService {
 
 	private final ScorerGenerator scorerGenerator;
 
+	private final TeamRoleValidator teamRoleValidator;
+
+	private final QuestionSetParticipantManager questionSetParticipantManager;
+
 	private final ObjectMapper objectMapper;
 
 	@Transactional
@@ -55,18 +62,23 @@ public class QuestionAnswerSubmitService {
 		final UserEntity user = userEntityRepository.findById(userId)
 			.orElseThrow(() -> new EntityNotFoundException("사용자를 찾을 수 없습니다."));
 
-		final QuestionEntity question = questionEntityRepository.findById(questionId)
-			.orElseThrow(() -> new EntityNotFoundException("문제를 찾을 수 없습니다."));
+		final QuestionEntity question = questionReader.getQuestion(questionId, questionSetId);
 
-		// Todo: 문제 상태 검증 로직 추가
-		// Todo: 유저가 해당 QuestionSet에 접근할 권한이 있는지 확인
+		if (!question.canSolve()) {
+			throw new QuestionSolvingException("해당 문제는 현재 풀이가 불가능함.");
+		}
 
-		if (!question.getQuestionSet().getId().equals(questionSetId)) {
-			throw new ResourceNotBelongException("문제 세트와 문제 ID가 일치하지 않습니다.");
+		final QuestionSetEntity questionSet = question.getQuestionSet();
+		final Long teamId = questionSet.getTeamId();
+
+		teamRoleValidator.checkHasSolveQuestionAuthorityInTeam(teamId, userId);
+
+		if (!questionSetParticipantManager.isParticipating(user, questionSet)) {
+			throw new QuestionSolvingException("현재 참여 중이지 않은 유저의 풀이");
 		}
 
 		if (answerSubmitRecordEntityRepository.existsByUserIdAndQuestionIdAndIsCorrectTrue(user.getId(), questionId)) {
-			throw new IllegalArgumentException("이미 해당 문제에 대해 정답을 제출한 기록이 있습니다.");
+			throw new QuestionSolvingException("이미 해당 문제에 대해 정답을 제출한 기록이 있습니다.");
 		}
 
 		final boolean isCorrect = answerGrader.gradeAnswer(question, submitAnswer);
@@ -89,11 +101,7 @@ public class QuestionAnswerSubmitService {
 	}
 
 	public List<AnswerSubmitRecordDto> getSubmitRecords(final Long questionSetId, final Long questionId) {
-		final QuestionEntity question = questionEntityRepository.findById(questionId)
-			.orElseThrow(() -> new EntityNotFoundException("문제를 찾을 수 없습니다."));
-		if (!question.getQuestionSet().getId().equals(questionSetId)) {
-			throw new ResourceNotBelongException("문제 세트와 문제 ID가 일치하지 않습니다.");
-		}
+		final QuestionEntity question = questionReader.getQuestion(questionId, questionSetId);
 
 		List<AnswerSubmitRecordEntity> records = answerSubmitRecordEntityRepository.findAllByQuestionId(questionId);
 		List<Long> userIds = records.stream().map(AnswerSubmitRecordEntity::getUserId).toList();

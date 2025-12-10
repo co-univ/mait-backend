@@ -121,4 +121,8 @@ public abstract class QuestionEntity extends BaseTimeEntity {
 	public void updateLexoRank(String lexoRank) {
 		this.lexoRank = lexoRank;
 	}
+
+	public boolean canSolve() {
+		return this.questionStatus == QuestionStatusType.SOLVE_PERMISSION;
+	}
 }
