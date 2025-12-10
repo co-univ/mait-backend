@@ -8,6 +8,7 @@ import org.springframework.data.repository.query.Param;
 
 import com.coniv.mait.domain.question.entity.QuestionSetEntity;
 import com.coniv.mait.domain.question.entity.QuestionSetParticipantEntity;
+import com.coniv.mait.domain.question.enums.ParticipantStatus;
 
 public interface QuestionSetParticipantRepository extends JpaRepository<QuestionSetParticipantEntity, Long> {
 	void deleteAllByQuestionSet(QuestionSetEntity questionSet);
@@ -17,6 +18,8 @@ public interface QuestionSetParticipantRepository extends JpaRepository<Question
 		@Param("questionSet") QuestionSetEntity questionSet);
 
 	List<QuestionSetParticipantEntity> findAllByQuestionSetId(Long questionSetId);
+
+	boolean existsByQuestionSetIdAndUserIdAndStatus(Long questionSetId, Long userId, ParticipantStatus status);
 }
 
 
