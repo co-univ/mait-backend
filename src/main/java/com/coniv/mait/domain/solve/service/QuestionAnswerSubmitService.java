@@ -12,6 +12,7 @@ import com.coniv.mait.domain.question.entity.QuestionEntity;
 import com.coniv.mait.domain.question.entity.QuestionSetEntity;
 import com.coniv.mait.domain.question.service.component.QuestionReader;
 import com.coniv.mait.domain.solve.entity.AnswerSubmitRecordEntity;
+import com.coniv.mait.domain.solve.exception.QuestionSolveExceptionCode;
 import com.coniv.mait.domain.solve.exception.QuestionSolvingException;
 import com.coniv.mait.domain.solve.repository.AnswerSubmitRecordEntityRepository;
 import com.coniv.mait.domain.solve.service.component.AnswerGrader;
@@ -65,7 +66,7 @@ public class QuestionAnswerSubmitService {
 		final QuestionEntity question = questionReader.getQuestion(questionId, questionSetId);
 
 		if (!question.canSolve()) {
-			throw new QuestionSolvingException("해당 문제는 현재 풀이가 불가능함.");
+			throw new QuestionSolvingException(QuestionSolveExceptionCode.CANNOT_SOLVE);
 		}
 
 		final QuestionSetEntity questionSet = question.getQuestionSet();
@@ -74,11 +75,11 @@ public class QuestionAnswerSubmitService {
 		teamRoleValidator.checkHasSolveQuestionAuthorityInTeam(teamId, userId);
 
 		if (!questionSetParticipantManager.isParticipating(user, questionSet)) {
-			throw new QuestionSolvingException("현재 참여 중이지 않은 유저의 풀이");
+			throw new QuestionSolvingException(QuestionSolveExceptionCode.NOT_PARTICIPATED);
 		}
 
 		if (answerSubmitRecordEntityRepository.existsByUserIdAndQuestionIdAndIsCorrectTrue(user.getId(), questionId)) {
-			throw new QuestionSolvingException("이미 해당 문제에 대해 정답을 제출한 기록이 있습니다.");
+			throw new QuestionSolvingException(QuestionSolveExceptionCode.ALREADY);
 		}
 
 		final boolean isCorrect = answerGrader.gradeAnswer(question, submitAnswer);
