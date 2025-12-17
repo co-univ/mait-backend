@@ -57,38 +57,28 @@ public class TeamController {
 	@Operation(summary = "팀 초대 링크 생성 API")
 	@PostMapping("/{teamId}/invitation")
 	public ResponseEntity<ApiResponse<CreateTeamInviteApiResponse>> createTeamInviteCode(
-		@PathVariable("teamId") Long teamId,
-		@RequestBody @Valid CreateTeamInviteApiRequest request,
+		@PathVariable("teamId") Long teamId, @RequestBody @Valid CreateTeamInviteApiRequest request,
 		@AuthenticationPrincipal UserEntity ownerUser,
-		@RequestParam(defaultValue = "false") boolean requiresApproval) {
+		@RequestParam(value = "requiresApproval", defaultValue = "false") boolean requiresApproval) {
 		String inviteCode = teamService.createTeamInviteCode(teamId, ownerUser, request.duration(), request.role(),
 			requiresApproval);
-		return ResponseEntity.ok()
-			.body(ApiResponse.ok(
-				CreateTeamInviteApiResponse.from(inviteCode)
-			));
+		return ResponseEntity.ok().body(ApiResponse.ok(CreateTeamInviteApiResponse.from(inviteCode)));
 	}
 
 	@Operation(summary = "초대 링크 팀 참가 API")
 	@PostMapping("/{teamId}/applicant")
 	public ResponseEntity<ApiResponse<TeamInvitationApplyApiResponse>> applyTeamInvitation(
-		@PathVariable("teamId") Long teamId,
-		@RequestParam("code") String code,
+		@PathVariable("teamId") Long teamId, @RequestParam("code") String code,
 		@AuthenticationPrincipal UserEntity userPrincipal) {
 		TeamInvitationResultDto result = teamService.applyTeamInvitation(teamId, code, userPrincipal);
-		return ResponseEntity.ok(ApiResponse.ok(
-			TeamInvitationApplyApiResponse.of(teamId, result)
-		));
+		return ResponseEntity.ok(ApiResponse.ok(TeamInvitationApplyApiResponse.of(teamId, result)));
 	}
 
 	@Operation(summary = "초대 링크 신청 허용 API")
 	@PostMapping("/{teamId}/applicant/{applicationId}")
-	public ResponseEntity<ApiResponse<Void>> approveTeamApplication(
-		@PathVariable("teamId") Long teamId,
-		@PathVariable("applicationId") Long applicationId,
-		@Valid @RequestBody ApproveTeamApplicationApiRequest request,
-		@AuthenticationPrincipal UserEntity userPrincipal
-	) {
+	public ResponseEntity<ApiResponse<Void>> approveTeamApplication(@PathVariable("teamId") Long teamId,
+		@PathVariable("applicationId") Long applicationId, @Valid @RequestBody ApproveTeamApplicationApiRequest request,
+		@AuthenticationPrincipal UserEntity userPrincipal) {
 		teamService.approveTeamApplication(teamId, applicationId, request.status(), userPrincipal);
 		return ResponseEntity.ok(ApiResponse.noContent());
 	}
@@ -114,8 +104,7 @@ public class TeamController {
 
 	@Operation(summary = "초대 링크 삭제 API")
 	@DeleteMapping("/invitations/{invitationId}")
-	public ResponseEntity<ApiResponse<Void>> deleteTeamInvitation(
-		@PathVariable("invitationId") Long invitationId) {
+	public ResponseEntity<ApiResponse<Void>> deleteTeamInvitation(@PathVariable("invitationId") Long invitationId) {
 		teamService.deleteTeamInvitation(invitationId);
 		return ResponseEntity.ok(ApiResponse.noContent());
 	}
@@ -125,9 +114,7 @@ public class TeamController {
 	public ResponseEntity<ApiResponse<List<TeamApiResponse>>> getJoinedTeams(
 		@AuthenticationPrincipal UserEntity userPrincipal) {
 		List<TeamUserDto> joinedTeams = teamService.getJoinedTeams(userPrincipal);
-		List<TeamApiResponse> response = joinedTeams.stream()
-			.map(TeamApiResponse::from)
-			.toList();
+		List<TeamApiResponse> response = joinedTeams.stream().map(TeamApiResponse::from).toList();
 		return ResponseEntity.ok(ApiResponse.ok(response));
 	}
 
@@ -136,11 +123,7 @@ public class TeamController {
 	public ResponseEntity<ApiResponse<List<JoinedTeamUserApiResponse>>> getTeamUsers(
 		@PathVariable("teamId") Long teamId) {
 		List<TeamUserDto> teamUsers = teamService.getTeamUsers(teamId);
-		return ResponseEntity.ok(ApiResponse.ok(
-			teamUsers.stream()
-				.map(JoinedTeamUserApiResponse::from)
-				.toList()
-		));
+		return ResponseEntity.ok(ApiResponse.ok(teamUsers.stream().map(JoinedTeamUserApiResponse::from).toList()));
 	}
 
 	@Operation(summary = "팀 가입 승인 대기 회원 목록 반환 API")
@@ -148,11 +131,7 @@ public class TeamController {
 	public ResponseEntity<ApiResponse<List<ApplyTeamUserApiResponse>>> getTeamApplicants(
 		@PathVariable("teamId") Long teamId) {
 		List<TeamApplicantDto> applicants = teamService.getApplicants(teamId);
-		return ResponseEntity.ok(ApiResponse.ok(
-			applicants.stream()
-				.map(ApplyTeamUserApiResponse::from)
-				.toList()
-		));
+		return ResponseEntity.ok(ApiResponse.ok(applicants.stream().map(ApplyTeamUserApiResponse::from).toList()));
 	}
 
 	@Operation(summary = "팀 유저 삭제 API")
@@ -164,8 +143,7 @@ public class TeamController {
 
 	@Operation(summary = "팀 유저 역할 변경 API")
 	@PatchMapping("/team-users/{teamUserId}/role")
-	public ResponseEntity<ApiResponse<Void>> updateTeamUserRole(
-		@PathVariable("teamUserId") Long teamUserId,
+	public ResponseEntity<ApiResponse<Void>> updateTeamUserRole(@PathVariable("teamUserId") Long teamUserId,
 		@Valid @RequestBody UpdateTeamUserRoleApiRequest request) {
 		teamService.updateTeamUserRole(teamUserId, request.role());
 		return ResponseEntity.ok(ApiResponse.noContent());
@@ -173,8 +151,7 @@ public class TeamController {
 
 	@Operation(summary = "팀에 유저 추가 API")
 	@PostMapping("/{teamId}/team-users")
-	public ResponseEntity<ApiResponse<Void>> addUserInTeam(
-		@PathVariable("teamId") Long teamId,
+	public ResponseEntity<ApiResponse<Void>> addUserInTeam(@PathVariable("teamId") Long teamId,
 		@Valid @RequestBody AddTeamUserApiRequest request) {
 		teamService.addUserInTeam(teamId, request.userId(), request.role());
 		return ResponseEntity.ok(ApiResponse.noContent());

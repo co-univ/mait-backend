@@ -15,17 +15,25 @@ import org.springframework.test.web.servlet.MockMvc;
 import com.coniv.mait.domain.question.entity.MultipleChoiceEntity;
 import com.coniv.mait.domain.question.entity.MultipleQuestionEntity;
 import com.coniv.mait.domain.question.entity.QuestionSetEntity;
+import com.coniv.mait.domain.question.entity.QuestionSetParticipantEntity;
+import com.coniv.mait.domain.question.enums.ParticipantStatus;
+import com.coniv.mait.domain.question.enums.QuestionStatusType;
 import com.coniv.mait.domain.question.repository.FillBlankAnswerEntityRepository;
 import com.coniv.mait.domain.question.repository.MultipleChoiceEntityRepository;
 import com.coniv.mait.domain.question.repository.OrderingOptionEntityRepository;
 import com.coniv.mait.domain.question.repository.QuestionEntityRepository;
 import com.coniv.mait.domain.question.repository.QuestionSetEntityRepository;
+import com.coniv.mait.domain.question.repository.QuestionSetParticipantRepository;
 import com.coniv.mait.domain.question.repository.ShortAnswerEntityRepository;
 import com.coniv.mait.domain.solve.entity.AnswerSubmitRecordEntity;
 import com.coniv.mait.domain.solve.entity.QuestionScorerEntity;
 import com.coniv.mait.domain.solve.repository.AnswerSubmitRecordEntityRepository;
 import com.coniv.mait.domain.solve.repository.QuestionScorerEntityRepository;
 import com.coniv.mait.domain.solve.service.dto.MultipleQuestionSubmitAnswer;
+import com.coniv.mait.domain.team.entity.TeamEntity;
+import com.coniv.mait.domain.team.entity.TeamUserEntity;
+import com.coniv.mait.domain.team.repository.TeamEntityRepository;
+import com.coniv.mait.domain.team.repository.TeamUserEntityRepository;
 import com.coniv.mait.domain.user.entity.UserEntity;
 import com.coniv.mait.domain.user.repository.UserEntityRepository;
 import com.coniv.mait.web.integration.BaseIntegrationTest;
@@ -43,6 +51,15 @@ public class QuestionAnswerSubmitApiIntegrationTest extends BaseIntegrationTest 
 
 	@Autowired
 	private UserEntityRepository userEntityRepository;
+
+	@Autowired
+	private TeamUserEntityRepository teamUserEntityRepository;
+
+	@Autowired
+	private TeamEntityRepository teamEntityRepository;
+
+	@Autowired
+	private QuestionSetParticipantRepository questionSetParticipantRepository;
 
 	@Autowired
 	private QuestionSetEntityRepository questionSetEntityRepository;
@@ -84,9 +101,11 @@ public class QuestionAnswerSubmitApiIntegrationTest extends BaseIntegrationTest 
 	@DisplayName("객관식 문제 정답 제출 성공 API 테스트")
 	void submitMultipleChoiceQuestionAnswer_Success() throws Exception {
 		// Given
-		final Long teamId = 1L;
 		UserEntity user = userEntityRepository.save(
 			UserEntity.localLoginUser("email", "testUser", "youth", "singsing"));
+		TeamEntity team = teamEntityRepository.save(TeamEntity.builder().name("coniv").creatorId(user.getId()).build());
+		final Long teamId = team.getId();
+		TeamUserEntity teamUser = teamUserEntityRepository.save(TeamUserEntity.createPlayerUser(user, team));
 
 		QuestionSetEntity questionSet = questionSetEntityRepository.save(
 			QuestionSetEntity.builder()
@@ -94,10 +113,19 @@ public class QuestionAnswerSubmitApiIntegrationTest extends BaseIntegrationTest 
 				.build()
 		);
 
+		QuestionSetParticipantEntity questionSetParticipant = questionSetParticipantRepository.save(
+			QuestionSetParticipantEntity.builder()
+				.status(ParticipantStatus.ACTIVE)
+				.questionSet(questionSet)
+				.user(user)
+				.winner(false)
+				.build());
+
 		MultipleQuestionEntity multipleQuestion = questionEntityRepository.save(
 			MultipleQuestionEntity.builder()
 				.number(1L)
 				.questionSet(questionSet)
+				.questionStatus(QuestionStatusType.SOLVE_PERMISSION)
 				.lexoRank("m")
 				.build()
 		);
