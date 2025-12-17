@@ -14,6 +14,8 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 
+import com.coniv.mait.domain.solve.exception.QuestionSolveExceptionCode;
+import com.coniv.mait.domain.solve.exception.QuestionSolvingException;
 import com.coniv.mait.domain.user.exception.UserRoleException;
 import com.coniv.mait.global.exception.code.S3ExceptionCode;
 import com.coniv.mait.global.exception.custom.ResourceNotBelongException;
@@ -130,5 +132,21 @@ class CustomExceptionHandlerTest {
 		assertThat(errorResponse.getStatusCode()).isEqualTo(HttpStatus.FORBIDDEN);
 		assertThat(errorResponse.getBody().getCode()).isEqualTo("C-008");
 		assertThat(errorResponse.getBody().getMessage()).isEqualTo("사용자 권한이 부족합니다.");
+	}
+
+	@Test
+	@DisplayName("QuestionSolveException 처리 테스트")
+	void handleQuestionSolveException() {
+		// given
+		QuestionSolvingException exception = new QuestionSolvingException(QuestionSolveExceptionCode.CANNOT_SOLVE);
+
+		// when
+		ResponseEntity<ErrorResponse> errorResponse = customExceptionHandler.handleQuestionSolveException(
+			exception, httpServletRequest);
+
+		// then
+		assertNotNull(errorResponse);
+		assertThat(errorResponse.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
+		assertThat(errorResponse.getBody().getCode()).isEqualTo("QS-001");
 	}
 }
