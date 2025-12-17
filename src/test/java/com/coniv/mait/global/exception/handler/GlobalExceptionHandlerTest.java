@@ -21,7 +21,7 @@ import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.context.request.ServletWebRequest;
 
-import com.coniv.mait.global.exception.ExceptionCode;
+import com.coniv.mait.global.exception.CommonExceptionCode;
 import com.coniv.mait.global.response.ErrorResponse;
 
 import jakarta.persistence.EntityNotFoundException;
@@ -74,7 +74,7 @@ class GlobalExceptionHandlerTest {
 		ErrorResponse errorResponse = response.getBody();
 		assertThat(errorResponse.getIsSuccess()).isFalse();
 		assertThat(errorResponse.getStatus()).isEqualTo(HttpStatus.NOT_FOUND);
-		assertThat(errorResponse.getMessage()).isEqualTo(ExceptionCode.ENTITY_NOT_FOUND.getMessage());
+		assertThat(errorResponse.getMessage()).isEqualTo(CommonExceptionCode.ENTITY_NOT_FOUND.getMessage());
 		assertNotNull(errorResponse.getReasons());
 		assertThat(errorResponse.getReasons().get(0)).isEqualTo(errorMessage);
 
@@ -225,7 +225,7 @@ class GlobalExceptionHandlerTest {
 		ErrorResponse errorResponse = response.getBody();
 		assertThat(errorResponse.getIsSuccess()).isFalse();
 		assertThat(errorResponse.getStatus()).isEqualTo(HttpStatus.INTERNAL_SERVER_ERROR);
-		assertThat(errorResponse.getMessage()).isEqualTo(ExceptionCode.DATABASE_ERROR.getMessage());
+		assertThat(errorResponse.getMessage()).isEqualTo(CommonExceptionCode.DATABASE_ERROR.getMessage());
 		assertNotNull(errorResponse.getReasons());
 		assertThat(errorResponse.getReasons().get(0)).isEqualTo(sqlErrorMessage);
 

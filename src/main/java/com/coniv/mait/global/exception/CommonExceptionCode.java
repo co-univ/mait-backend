@@ -7,7 +7,7 @@ import lombok.Getter;
 
 @Getter
 @AllArgsConstructor
-public enum ExceptionCode {
+public enum CommonExceptionCode {
 	USER_INPUT_EXCEPTION(HttpStatus.BAD_REQUEST, "C-001", "사용자 입력 오류입니다."),
 	ENTITY_NOT_FOUND(HttpStatus.NOT_FOUND, "C-002", "특정 엔티티를 조회할 수 없습니다."),
 	USER_PARAMETER_EXCEPTION(HttpStatus.BAD_REQUEST, "C-003", "사용자 파라미터 오류입니다."),
