@@ -45,7 +45,7 @@ public class TeamRoleValidator {
 		UserEntity user = userEntityRepository.findById(userId)
 			.orElseThrow(() -> new EntityNotFoundException("존재하지 않는 사용자입니다."));
 
-		if (teamUserEntityRepository.existsByTeamAndUser(team, user)) {
+		if (!teamUserEntityRepository.existsByTeamAndUser(team, user)) {
 			throw new UserRoleException("해당 문제를 풀 수 있는 권한이 없습니다.");
 		}
 	}

@@ -17,8 +17,16 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
 import com.coniv.mait.domain.question.entity.MultipleQuestionEntity;
 import com.coniv.mait.domain.question.entity.QuestionSetEntity;
+import com.coniv.mait.domain.question.entity.QuestionSetParticipantEntity;
+import com.coniv.mait.domain.question.enums.ParticipantStatus;
+import com.coniv.mait.domain.question.enums.QuestionStatusType;
 import com.coniv.mait.domain.question.repository.QuestionEntityRepository;
 import com.coniv.mait.domain.question.repository.QuestionSetEntityRepository;
+import com.coniv.mait.domain.question.repository.QuestionSetParticipantRepository;
+import com.coniv.mait.domain.team.entity.TeamEntity;
+import com.coniv.mait.domain.team.entity.TeamUserEntity;
+import com.coniv.mait.domain.team.repository.TeamEntityRepository;
+import com.coniv.mait.domain.team.repository.TeamUserEntityRepository;
 import com.coniv.mait.domain.user.entity.UserEntity;
 import com.coniv.mait.domain.user.repository.UserEntityRepository;
 import com.coniv.mait.web.integration.BaseIntegrationTest;
@@ -31,6 +39,15 @@ public class IdempotencyIntegrationTest extends BaseIntegrationTest {
 
 	@Autowired
 	private UserEntityRepository userEntityRepository;
+
+	@Autowired
+	private TeamEntityRepository teamEntityRepository;
+
+	@Autowired
+	private TeamUserEntityRepository teamUserEntityRepository;
+
+	@Autowired
+	private QuestionSetParticipantRepository questionSetParticipantRepository;
 
 	@Autowired
 	private QuestionSetEntityRepository questionSetEntityRepository;
@@ -52,9 +69,11 @@ public class IdempotencyIntegrationTest extends BaseIntegrationTest {
 		final String idempotencyKey = "abc123";
 		given(redisRepository.getStatus(idempotencyKey)).willReturn(null);
 
-		final Long teamId = 1L;
 		UserEntity user = userEntityRepository.save(
 			UserEntity.localLoginUser("email", "testUser", "youth", "singsing"));
+		TeamEntity team = teamEntityRepository.save(TeamEntity.builder().name("coniv").creatorId(user.getId()).build());
+		final Long teamId = team.getId();
+		TeamUserEntity teamUser = teamUserEntityRepository.save(TeamUserEntity.createPlayerUser(user, team));
 
 		QuestionSetEntity questionSet = questionSetEntityRepository.save(
 			QuestionSetEntity.builder()
@@ -62,11 +81,20 @@ public class IdempotencyIntegrationTest extends BaseIntegrationTest {
 				.build()
 		);
 
+		QuestionSetParticipantEntity questionSetParticipant = questionSetParticipantRepository.save(
+			QuestionSetParticipantEntity.builder()
+				.status(ParticipantStatus.ACTIVE)
+				.questionSet(questionSet)
+				.user(user)
+				.winner(false)
+				.build());
+
 		MultipleQuestionEntity multipleQuestion = questionEntityRepository.save(
 			MultipleQuestionEntity.builder()
 				.number(1L)
 				.questionSet(questionSet)
 				.lexoRank("1234")
+				.questionStatus(QuestionStatusType.SOLVE_PERMISSION)
 				.build()
 		);
 
