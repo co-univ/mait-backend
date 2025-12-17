@@ -5,10 +5,13 @@ import java.util.List;
 import org.springframework.http.HttpStatusCode;
 
 import com.coniv.mait.global.exception.CommonExceptionCode;
+import com.coniv.mait.global.exception.code.ExceptionCode;
 import com.fasterxml.jackson.annotation.JsonInclude;
 
+import lombok.Builder;
 import lombok.Getter;
 
+@Builder
 @Getter
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class ErrorResponse extends BaseResponse {
@@ -42,5 +45,13 @@ public class ErrorResponse extends BaseResponse {
 			commonExceptionCode.getMessage(),
 			reasons
 		);
+	}
+
+	public static ErrorResponse from(ExceptionCode exceptionCode) {
+		return ErrorResponse.builder()
+			.status(exceptionCode.getStatus())
+			.message(exceptionCode.getMessage())
+			.code(exceptionCode.getCode())
+			.build();
 	}
 }
