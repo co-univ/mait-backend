@@ -101,10 +101,10 @@ public class CustomExceptionHandler {
 	}
 
 	@ExceptionHandler(QuestionSolvingException.class)
-	public ResponseEntity<ErrorResponse> handleQuestionSolveException(QuestionSolvingException e,
+	public ResponseEntity<ErrorResponse> handleQuestionSolveException(QuestionSolvingException exception,
 		HttpServletRequest request) {
-		log.info("[QuestionSolveException code: {}]", e.getExceptionCode());
-		return ResponseEntity.status(e.getExceptionCode().getStatus())
-			.body(ErrorResponse.from(e.getExceptionCode()));
+		log.info("[QuestionSolveException code: {}]", exception.getExceptionCode());
+		return ResponseEntity.status(exception.getExceptionCode().getStatus())
+			.body(ErrorResponse.from(exception.getExceptionCode()));
 	}
 }

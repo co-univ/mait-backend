@@ -52,7 +52,8 @@ public class IdempotencyInterceptor implements HandlerInterceptor {
 		if (status == IdempotencyStatus.PROCESSING) {
 			response.setStatus(HttpStatus.CONFLICT.value());
 			response.setContentType("application/json; charset=UTF-8");
-			response.getWriter().write(objectMapper.writeValueAsString(ErrorResponse.from(CommonExceptionCode.PROCESSING)));
+			response.getWriter()
+				.write(objectMapper.writeValueAsString(ErrorResponse.from(CommonExceptionCode.PROCESSING)));
 			log.info("[요청은 왔지만 아직 처리 중]");
 			return false;
 		}
