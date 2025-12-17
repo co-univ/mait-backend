@@ -8,7 +8,7 @@ import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.web.AuthenticationEntryPoint;
 import org.springframework.stereotype.Component;
 
-import com.coniv.mait.global.exception.ExceptionCode;
+import com.coniv.mait.global.exception.CommonExceptionCode;
 import com.coniv.mait.global.response.ErrorResponse;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
@@ -29,9 +29,9 @@ public class JwtAuthenticationEntryPoint implements AuthenticationEntryPoint {
 		AuthenticationException authException) throws IOException {
 
 		log.info("Unauthorized error: {}", authException.getMessage());
-		response.setStatus(ExceptionCode.JWT_AUTH_EXCEPTION.getStatus().value());
+		response.setStatus(CommonExceptionCode.JWT_AUTH_EXCEPTION.getStatus().value());
 		response.setContentType(MediaType.APPLICATION_JSON_VALUE);
-		ErrorResponse errorResponse = ErrorResponse.of(ExceptionCode.JWT_AUTH_EXCEPTION,
+		ErrorResponse errorResponse = ErrorResponse.of(CommonExceptionCode.JWT_AUTH_EXCEPTION,
 			List.of(authException.getMessage()));
 
 		response.getWriter().write(objectMapper.writeValueAsString(errorResponse));

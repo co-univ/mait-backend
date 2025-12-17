@@ -9,7 +9,7 @@ import org.springframework.web.servlet.HandlerInterceptor;
 import org.springframework.web.servlet.ModelAndView;
 import org.springframework.web.util.ContentCachingResponseWrapper;
 
-import com.coniv.mait.global.exception.ExceptionCode;
+import com.coniv.mait.global.exception.CommonExceptionCode;
 import com.coniv.mait.global.response.ErrorResponse;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
@@ -52,7 +52,8 @@ public class IdempotencyInterceptor implements HandlerInterceptor {
 		if (status == IdempotencyStatus.PROCESSING) {
 			response.setStatus(HttpStatus.CONFLICT.value());
 			response.setContentType("application/json; charset=UTF-8");
-			response.getWriter().write(objectMapper.writeValueAsString(ErrorResponse.from(ExceptionCode.PROCESSING)));
+			response.getWriter()
+				.write(objectMapper.writeValueAsString(ErrorResponse.from(CommonExceptionCode.PROCESSING)));
 			log.info("[요청은 왔지만 아직 처리 중]");
 			return false;
 		}

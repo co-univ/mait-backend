@@ -4,11 +4,14 @@ import java.util.List;
 
 import org.springframework.http.HttpStatusCode;
 
-import com.coniv.mait.global.exception.ExceptionCode;
+import com.coniv.mait.global.exception.CommonExceptionCode;
+import com.coniv.mait.global.exception.code.ExceptionCode;
 import com.fasterxml.jackson.annotation.JsonInclude;
 
+import lombok.Builder;
 import lombok.Getter;
 
+@Builder
 @Getter
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class ErrorResponse extends BaseResponse {
@@ -26,21 +29,29 @@ public class ErrorResponse extends BaseResponse {
 		this.reasons = reasons;
 	}
 
-	public static ErrorResponse from(ExceptionCode exceptionCode) {
+	public static ErrorResponse from(CommonExceptionCode commonExceptionCode) {
 		return new ErrorResponse(
-			exceptionCode.getStatus(),
-			exceptionCode.getCode(),
-			exceptionCode.getMessage(),
+			commonExceptionCode.getStatus(),
+			commonExceptionCode.getCode(),
+			commonExceptionCode.getMessage(),
 			null
 		);
 	}
 
-	public static ErrorResponse of(ExceptionCode exceptionCode, List<String> reasons) {
+	public static ErrorResponse of(CommonExceptionCode commonExceptionCode, List<String> reasons) {
 		return new ErrorResponse(
-			exceptionCode.getStatus(),
-			exceptionCode.getCode(),
-			exceptionCode.getMessage(),
+			commonExceptionCode.getStatus(),
+			commonExceptionCode.getCode(),
+			commonExceptionCode.getMessage(),
 			reasons
 		);
+	}
+
+	public static ErrorResponse from(ExceptionCode exceptionCode) {
+		return ErrorResponse.builder()
+			.status(exceptionCode.getStatus())
+			.message(exceptionCode.getMessage())
+			.code(exceptionCode.getCode())
+			.build();
 	}
 }
