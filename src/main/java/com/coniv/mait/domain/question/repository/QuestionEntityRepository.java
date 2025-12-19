@@ -22,4 +22,6 @@ public interface QuestionEntityRepository extends JpaRepository<QuestionEntity, 
 	);
 
 	Optional<QuestionEntity> findTopByQuestionSetIdOrderByLexoRankDesc(Long questionSetId);
+
+	Optional<QuestionEntity> findFirstByQuestionSetOrderByNumberAsc(QuestionSetEntity questionSet);
 }
