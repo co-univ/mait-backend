@@ -49,7 +49,6 @@ class QuestionReviewApiIntegrationTest extends BaseIntegrationTest {
 		when(user.getId()).thenReturn(USER_ID);
 		authentication = new UsernamePasswordAuthenticationToken(user, null, List.of());
 
-		// addFilters=false 환경에서 @AuthenticationPrincipal을 안전하게 주입하기 위해 SecurityContext를 직접 세팅
 		SecurityContext context = SecurityContextHolder.createEmptyContext();
 		context.setAuthentication(authentication);
 		SecurityContextHolder.setContext(context);
