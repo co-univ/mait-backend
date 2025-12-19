@@ -16,6 +16,7 @@ import com.coniv.mait.web.question.dto.LastViewedQuestionApiRequest;
 import com.coniv.mait.web.question.dto.QuestionApiResponse;
 
 import io.swagger.v3.oas.annotations.Operation;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 
 @RestController
@@ -39,7 +40,7 @@ public class QuestionReviewController {
 	@PutMapping("/questions/last-viewed")
 	public ResponseEntity<ApiResponse<Void>> updateLastViewedQuestion(
 		@PathVariable("questionSetId") Long questionSetId,
-		@RequestBody LastViewedQuestionApiRequest request,
+		@RequestBody @Valid LastViewedQuestionApiRequest request,
 		@AuthenticationPrincipal UserEntity user) {
 		questionReviewService.updateLastViewedQuestion(questionSetId, request.questionId(), user.getId());
 		return ResponseEntity.ok(ApiResponse.noContent());
