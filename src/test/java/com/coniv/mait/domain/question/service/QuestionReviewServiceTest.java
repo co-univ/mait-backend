@@ -66,12 +66,12 @@ class QuestionReviewServiceTest {
 		when(fillBlankQuestionFactory.getQuestionType()).thenReturn(QuestionType.FILL_BLANK);
 
 		questionReviewService = new QuestionReviewService(
-				questionSetEntityRepository,
-				teamRoleValidator,
-				lastViewedQuestionRedisRepository,
-				questionReader,
-				List.of(shortQuestionFactory, multipleQuestionFactory, orderingQuestionFactory,
-						fillBlankQuestionFactory));
+			questionSetEntityRepository,
+			teamRoleValidator,
+			lastViewedQuestionRedisRepository,
+			questionReader,
+			List.of(shortQuestionFactory, multipleQuestionFactory, orderingQuestionFactory,
+				fillBlankQuestionFactory));
 	}
 
 	@Test
@@ -95,7 +95,7 @@ class QuestionReviewServiceTest {
 
 		when(questionSetEntityRepository.findById(questionSetId)).thenReturn(Optional.of(questionSet));
 		when(lastViewedQuestionRedisRepository.getLastViewedQuestion(questionSet, userId)).thenReturn(
-				lastViewedQuestion);
+			lastViewedQuestion);
 		when(multipleQuestionFactory.getQuestion(lastViewedQuestion, answerVisible)).thenReturn(expected);
 
 		// when
@@ -132,6 +132,6 @@ class QuestionReviewServiceTest {
 		assertThat(questionSetStatusException.getExceptionCode()).isEqualTo(QuestionSetStatusExceptionCode.ONLY_AFTER);
 		verify(teamRoleValidator, never()).checkHasSolveQuestionAuthorityInTeam(anyLong(), anyLong());
 		verify(lastViewedQuestionRedisRepository, never()).getLastViewedQuestion(any(QuestionSetEntity.class),
-				anyLong());
+			anyLong());
 	}
 }
