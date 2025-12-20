@@ -66,8 +66,7 @@ public class QuestionService {
 		MultipleChoiceEntityRepository multipleChoiceEntityRepository,
 		QuestionImageService questionImageService,
 		AiCreateApiService aiCreateApiService,
-		AiRequestStatusManager aiRequestStatusManager
-	) {
+		AiRequestStatusManager aiRequestStatusManager) {
 		questionFactories = factories.stream()
 			.collect(Collectors.toUnmodifiableMap(QuestionFactory::getQuestionType, Function.identity()));
 		this.questionEntityRepository = questionEntityRepository;

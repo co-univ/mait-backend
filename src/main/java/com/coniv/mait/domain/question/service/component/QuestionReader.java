@@ -32,4 +32,14 @@ public class QuestionReader {
 	public List<QuestionEntity> getQuestionsByQuestionSet(QuestionSetEntity questionSet) {
 		return questionEntityRepository.findAllByQuestionSetId(questionSet.getId());
 	}
+
+	public QuestionEntity getQuestion(final Long questionId) {
+		return questionEntityRepository.findById(questionId)
+			.orElseThrow(() -> new EntityNotFoundException("문제를 찾을 수 없습니다."));
+	}
+
+	public QuestionEntity getFirstQuestion(QuestionSetEntity questionSet) {
+		return questionEntityRepository.findFirstByQuestionSetOrderByNumberAsc(questionSet)
+			.orElseThrow(() -> new EntityNotFoundException("문제를 찾을 수 없습니다."));
+	}
 }
