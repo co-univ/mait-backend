@@ -21,7 +21,7 @@ import com.coniv.mait.domain.team.service.dto.TeamInvitationLinkDto;
 import com.coniv.mait.domain.team.service.dto.TeamInvitationResultDto;
 import com.coniv.mait.domain.team.service.dto.TeamUserDto;
 import com.coniv.mait.domain.user.entity.UserEntity;
-import com.coniv.mait.global.authorization.RequireTeamManager;
+import com.coniv.mait.global.authorization.RequireTeamRole;
 import com.coniv.mait.global.response.ApiResponse;
 import com.coniv.mait.web.team.dto.AddTeamUserApiRequest;
 import com.coniv.mait.web.team.dto.ApplyTeamUserApiResponse;
@@ -57,7 +57,7 @@ public class TeamController {
 		return ResponseEntity.ok(ApiResponse.noContent());
 	}
 
-	@RequireTeamManager
+	@RequireTeamRole.MEMBER
 	@Operation(summary = "팀 초대 링크 생성 API")
 	@PostMapping("/{teamId}/invitation")
 	public ResponseEntity<ApiResponse<CreateTeamInviteApiResponse>> createTeamInviteCode(
