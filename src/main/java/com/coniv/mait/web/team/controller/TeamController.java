@@ -57,7 +57,7 @@ public class TeamController {
 		return ResponseEntity.ok(ApiResponse.noContent());
 	}
 
-	@RequireTeamRole.MEMBER
+	@RequireTeamRole.Member
 	@Operation(summary = "팀 초대 링크 생성 API")
 	@PostMapping("/{teamId}/invitation")
 	public ResponseEntity<ApiResponse<CreateTeamInviteApiResponse>> createTeamInviteCode(

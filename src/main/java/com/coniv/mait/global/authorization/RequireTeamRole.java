@@ -14,13 +14,13 @@ public class RequireTeamRole {
 	@Retention(RetentionPolicy.RUNTIME)
 	@Documented
 	@PreAuthorize("@teamAuth.isManager(#teamId, authentication.principal)")
-	public @interface MANAGER {
+	public @interface Manager {
 	}
 
 	@Target(ElementType.METHOD)
 	@Retention(RetentionPolicy.RUNTIME)
 	@Documented
 	@PreAuthorize("@teamAuth.isMember(#teamId, authentication.principal)")
-	public @interface MEMBER {
+	public @interface Member {
 	}
 }
