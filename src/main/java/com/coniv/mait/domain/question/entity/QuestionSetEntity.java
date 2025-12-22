@@ -114,4 +114,8 @@ public class QuestionSetEntity extends BaseTimeEntity {
 	public void updateTitle(String title) {
 		this.title = title;
 	}
+
+	public void updateMode(DeliveryMode deliveryMode) {
+		this.deliveryMode = deliveryMode;
+	}
 }
