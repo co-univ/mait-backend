@@ -154,7 +154,7 @@ public class QuestionSetService {
 	}
 
 	@Transactional
-	public void updateToReviewMode(final Long questionSetId) {
+	public void updateQuestionSetToReviewMode(final Long questionSetId) {
 		QuestionSetEntity questionSet = questionSetEntityRepository.findById(questionSetId)
 			.orElseThrow(() -> new EntityNotFoundException("해당 문제 셋을 찾을 수 없습니다."));
 

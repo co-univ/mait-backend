@@ -7,7 +7,6 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
-import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -419,7 +418,7 @@ class QuestionSetServiceTest {
 		when(questionSetEntity.getDeliveryMode()).thenReturn(DeliveryMode.REVIEW);
 
 		// when
-		questionSetService.updateToReviewMode(questionSetId);
+		questionSetService.updateQuestionSetToReviewMode(questionSetId);
 
 		// then
 		verify(questionSetEntity).updateMode(DeliveryMode.REVIEW);
@@ -436,7 +435,7 @@ class QuestionSetServiceTest {
 		when(questionSetEntity.getOngoingStatus()).thenReturn(QuestionSetOngoingStatus.BEFORE);
 
 		// when, then
-		assertThatThrownBy(() -> questionSetService.updateToReviewMode(questionSetId))
+		assertThatThrownBy(() -> questionSetService.updateQuestionSetToReviewMode(questionSetId))
 			.isInstanceOf(QuestionSetStatusException.class);
 	}
 }
