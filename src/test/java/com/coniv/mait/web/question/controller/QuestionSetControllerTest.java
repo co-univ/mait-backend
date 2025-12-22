@@ -476,4 +476,17 @@ class QuestionSetControllerTest {
 
 		verify(questionSetMaterialService).uploadQuestionSetMaterial(any());
 	}
+
+	@Test
+	@DisplayName("종료된 문제를 복습 모드로 전환 - 성공")
+	void updateQuestionSetToReviewMode() throws Exception {
+		// given
+		final Long questionSetId = 1L;
+
+		// when & then
+		mockMvc.perform(patch("/api/v1/question-sets/{questionSetId}/review", questionSetId))
+			.andExpect(status().isOk());
+
+		verify(questionSetService).updateQuestionSetToReviewMode(questionSetId);
+	}
 }

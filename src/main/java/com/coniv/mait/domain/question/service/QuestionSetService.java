@@ -12,7 +12,10 @@ import com.coniv.mait.domain.question.entity.QuestionSetEntity;
 import com.coniv.mait.domain.question.enums.AiRequestStatus;
 import com.coniv.mait.domain.question.enums.DeliveryMode;
 import com.coniv.mait.domain.question.enums.QuestionSetCreationType;
+import com.coniv.mait.domain.question.enums.QuestionSetOngoingStatus;
 import com.coniv.mait.domain.question.enums.QuestionSetVisibility;
+import com.coniv.mait.domain.question.exception.QuestionSetStatusException;
+import com.coniv.mait.domain.question.exception.code.QuestionSetStatusExceptionCode;
 import com.coniv.mait.domain.question.repository.AiRequestStatusManager;
 import com.coniv.mait.domain.question.repository.QuestionEntityRepository;
 import com.coniv.mait.domain.question.repository.QuestionSetEntityRepository;
@@ -148,5 +151,17 @@ public class QuestionSetService {
 
 	public AiRequestStatus getAiRequestStatus(Long questionSetId) {
 		return aiRequestStatusManager.getStatus(questionSetId);
+	}
+
+	@Transactional
+	public void updateQuestionSetToReviewMode(final Long questionSetId) {
+		QuestionSetEntity questionSet = questionSetEntityRepository.findById(questionSetId)
+			.orElseThrow(() -> new EntityNotFoundException("해당 문제 셋을 찾을 수 없습니다."));
+
+		if (questionSet.getOngoingStatus() != QuestionSetOngoingStatus.AFTER) {
+			throw new QuestionSetStatusException(QuestionSetStatusExceptionCode.ONLY_AFTER);
+		}
+
+		questionSet.updateMode(DeliveryMode.REVIEW);
 	}
 }

@@ -127,4 +127,12 @@ public class QuestionSetController {
 		AiRequestStatus status = questionSetService.getAiRequestStatus(questionSetId);
 		return ResponseEntity.ok(ApiResponse.ok(AiRequestStatusApiResponse.of(questionSetId, status)));
 	}
+
+	@Operation(summary = "종료된 문제를 복습 상태로 전환", description = "종료된 학습/실시간 모드의 문제를 복습 상태로 전환한다.")
+	@PatchMapping("/{questionSetId}/review")
+	public ResponseEntity<ApiResponse<Void>> updateToReviewMode(@PathVariable("questionSetId") Long questionSetId) {
+		questionSetService.updateQuestionSetToReviewMode(questionSetId);
+		return ResponseEntity.ok(ApiResponse.noContent());
+	}
+
 }
