@@ -7,6 +7,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
+import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -20,6 +21,7 @@ import com.coniv.mait.domain.question.enums.DeliveryMode;
 import com.coniv.mait.domain.question.enums.QuestionSetOngoingStatus;
 import com.coniv.mait.domain.question.enums.QuestionSetVisibility;
 import com.coniv.mait.domain.question.enums.QuestionValidationResult;
+import com.coniv.mait.domain.question.exception.QuestionSetStatusException;
 import com.coniv.mait.domain.question.repository.AiRequestStatusManager;
 import com.coniv.mait.domain.question.repository.QuestionEntityRepository;
 import com.coniv.mait.domain.question.repository.QuestionSetEntityRepository;
@@ -404,5 +406,37 @@ class QuestionSetServiceTest {
 		verify(questionChecker).validateQuestion(question1);
 		verify(questionChecker).validateQuestion(question2);
 		verify(questionChecker).validateQuestion(question3);
+	}
+
+	@Test
+	@DisplayName("종료된 문제 셋을 복습 모드로 전환")
+	void updateQuestionModeToReview() {
+		// given
+		final Long questionSetId = 1L;
+		QuestionSetEntity questionSetEntity = mock(QuestionSetEntity.class);
+		when(questionSetEntityRepository.findById(questionSetId)).thenReturn(Optional.of(questionSetEntity));
+		when(questionSetEntity.getOngoingStatus()).thenReturn(QuestionSetOngoingStatus.AFTER);
+		when(questionSetEntity.getDeliveryMode()).thenReturn(DeliveryMode.REVIEW);
+
+		// when
+		questionSetService.updateToReviewMode(questionSetId);
+
+		// then
+		verify(questionSetEntity).updateMode(DeliveryMode.REVIEW);
+		assertThat(questionSetEntity.getDeliveryMode()).isEqualTo(DeliveryMode.REVIEW);
+	}
+
+	@Test
+	@DisplayName("종료되지 않은 문제 셋을 복습모드로 전환 시 예외")
+	void validateQuestionOngoingStatus() {
+		// given
+		final Long questionSetId = 1L;
+		QuestionSetEntity questionSetEntity = mock(QuestionSetEntity.class);
+		when(questionSetEntityRepository.findById(questionSetId)).thenReturn(Optional.of(questionSetEntity));
+		when(questionSetEntity.getOngoingStatus()).thenReturn(QuestionSetOngoingStatus.BEFORE);
+
+		// when, then
+		assertThatThrownBy(() -> questionSetService.updateToReviewMode(questionSetId))
+			.isInstanceOf(QuestionSetStatusException.class);
 	}
 }
