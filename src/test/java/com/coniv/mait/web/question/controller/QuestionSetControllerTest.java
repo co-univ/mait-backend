@@ -510,6 +510,6 @@ class QuestionSetControllerTest {
 			.andExpectAll(status().isBadRequest(),
 				jsonPath("$.isSuccess").value(false),
 				jsonPath("$.code").value("C-001")
-				);
+			);
 	}
 }
