@@ -118,4 +118,8 @@ public class QuestionSetEntity extends BaseTimeEntity {
 	public void updateMode(DeliveryMode deliveryMode) {
 		this.deliveryMode = deliveryMode;
 	}
+
+	public void updateVisibility(QuestionSetVisibility visibility) {
+		this.visibility = visibility;
+	}
 }
