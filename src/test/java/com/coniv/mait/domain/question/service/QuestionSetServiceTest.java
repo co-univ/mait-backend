@@ -412,17 +412,21 @@ class QuestionSetServiceTest {
 	void updateQuestionModeToReview() {
 		// given
 		final Long questionSetId = 1L;
+		final QuestionSetVisibility visibility = QuestionSetVisibility.GROUP;
 		QuestionSetEntity questionSetEntity = mock(QuestionSetEntity.class);
 		when(questionSetEntityRepository.findById(questionSetId)).thenReturn(Optional.of(questionSetEntity));
 		when(questionSetEntity.getOngoingStatus()).thenReturn(QuestionSetOngoingStatus.AFTER);
 		when(questionSetEntity.getDeliveryMode()).thenReturn(DeliveryMode.REVIEW);
+		when(questionSetEntity.getVisibility()).thenReturn(visibility);
 
 		// when
-		questionSetService.updateQuestionSetToReviewMode(questionSetId);
+		questionSetService.updateQuestionSetToReviewMode(questionSetId, visibility);
 
 		// then
 		verify(questionSetEntity).updateMode(DeliveryMode.REVIEW);
+		verify(questionSetEntity).updateVisibility(visibility);
 		assertThat(questionSetEntity.getDeliveryMode()).isEqualTo(DeliveryMode.REVIEW);
+		assertThat(questionSetEntity.getVisibility()).isEqualTo(visibility);
 	}
 
 	@Test
@@ -430,12 +434,13 @@ class QuestionSetServiceTest {
 	void validateQuestionOngoingStatus() {
 		// given
 		final Long questionSetId = 1L;
+		final QuestionSetVisibility visibility = QuestionSetVisibility.GROUP;
 		QuestionSetEntity questionSetEntity = mock(QuestionSetEntity.class);
 		when(questionSetEntityRepository.findById(questionSetId)).thenReturn(Optional.of(questionSetEntity));
 		when(questionSetEntity.getOngoingStatus()).thenReturn(QuestionSetOngoingStatus.BEFORE);
 
 		// when, then
-		assertThatThrownBy(() -> questionSetService.updateQuestionSetToReviewMode(questionSetId))
+		assertThatThrownBy(() -> questionSetService.updateQuestionSetToReviewMode(questionSetId, visibility))
 			.isInstanceOf(QuestionSetStatusException.class);
 	}
 }

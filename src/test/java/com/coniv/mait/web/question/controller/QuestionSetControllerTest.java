@@ -37,6 +37,7 @@ import com.coniv.mait.web.question.dto.QuestionSetGroup;
 import com.coniv.mait.web.question.dto.QuestionSetList;
 import com.coniv.mait.web.question.dto.UpdateQuestionSetApiRequest;
 import com.coniv.mait.web.question.dto.UpdateQuestionSetFieldApiRequest;
+import com.coniv.mait.web.question.dto.UpdateQuestionSetReviewApiRequest;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 @WebMvcTest(controllers = QuestionSetController.class)
@@ -482,11 +483,33 @@ class QuestionSetControllerTest {
 	void updateQuestionSetToReviewMode() throws Exception {
 		// given
 		final Long questionSetId = 1L;
+		final QuestionSetVisibility visibility = QuestionSetVisibility.GROUP;
+		UpdateQuestionSetReviewApiRequest request = new UpdateQuestionSetReviewApiRequest(
+			visibility);
 
 		// when & then
-		mockMvc.perform(patch("/api/v1/question-sets/{questionSetId}/review", questionSetId))
+		mockMvc.perform(patch("/api/v1/question-sets/{questionSetId}/review", questionSetId)
+				.contentType(MediaType.APPLICATION_JSON)
+				.content(objectMapper.writeValueAsString(request)))
 			.andExpect(status().isOk());
 
-		verify(questionSetService).updateQuestionSetToReviewMode(questionSetId);
+		verify(questionSetService).updateQuestionSetToReviewMode(questionSetId, visibility);
+	}
+
+	@Test
+	@DisplayName("종료된 문제를 복습 모드로 전환 - 공개 범위를 입력하지 않은 경우")
+	void validateQuestionSetVisibility() throws Exception {
+		// given
+		final Long questionSetId = 1L;
+		UpdateQuestionSetReviewApiRequest request = new UpdateQuestionSetReviewApiRequest(null);
+
+		// when & then
+		mockMvc.perform(patch("/api/v1/question-sets/{questionSetId}/review", questionSetId)
+				.contentType(MediaType.APPLICATION_JSON)
+				.content(objectMapper.writeValueAsString(request)))
+			.andExpectAll(status().isBadRequest(),
+				jsonPath("$.isSuccess").value(false),
+				jsonPath("$.code").value("C-001")
+			);
 	}
 }
