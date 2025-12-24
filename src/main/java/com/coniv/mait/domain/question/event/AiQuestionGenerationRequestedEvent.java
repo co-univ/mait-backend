@@ -10,8 +10,5 @@ public record AiQuestionGenerationRequestedEvent(
 	List<QuestionCount> counts,
 	List<MaterialDto> materials,
 	String instruction,
-	String difficulty
-) {
+	String difficulty) {
 }
-
-
