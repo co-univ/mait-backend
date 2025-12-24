@@ -40,9 +40,7 @@ import com.coniv.mait.web.team.dto.UpdateTeamUserRoleApiRequest;
 import io.swagger.v3.oas.annotations.Operation;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 
-@Slf4j
 @RestController
 @RequestMapping("/api/v1/teams")
 @RequiredArgsConstructor
