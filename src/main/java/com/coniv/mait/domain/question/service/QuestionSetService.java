@@ -3,9 +3,11 @@ package com.coniv.mait.domain.question.service;
 import java.util.Comparator;
 import java.util.List;
 
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.coniv.mait.domain.question.event.AiQuestionGenerationRequestedEvent;
 import com.coniv.mait.domain.question.dto.MaterialDto;
 import com.coniv.mait.domain.question.entity.QuestionEntity;
 import com.coniv.mait.domain.question.entity.QuestionSetEntity;
@@ -39,6 +41,8 @@ public class QuestionSetService {
 
 	private final QuestionService questionService;
 
+	private final ApplicationEventPublisher eventPublisher;
+
 	private final QuestionSetEntityRepository questionSetEntityRepository;
 
 	private final QuestionEntityRepository questionEntityRepository;
@@ -64,17 +68,21 @@ public class QuestionSetService {
 			.creatorId(userId)
 			.build();
 		questionSetEntityRepository.save(questionSetEntity);
+		questionSetMaterialService.updateUsed(materials);
 
 		if (questionSetDto.getCreationType() == QuestionSetCreationType.MANUAL) {
 			questionService.createDefaultQuestions(questionSetEntity, counts);
 		}
 
 		if (questionSetDto.getCreationType() == QuestionSetCreationType.AI_GENERATED) {
-			questionService.createAiGeneratedQuestions(questionSetEntity.getId(), counts, materials, instruction,
-				difficulty);
+			eventPublisher.publishEvent(new AiQuestionGenerationRequestedEvent(
+				questionSetEntity.getId(),
+				counts,
+				materials,
+				instruction,
+				difficulty
+			));
 		}
-
-		questionSetMaterialService.updateUsed(materials);
 
 		return QuestionSetDto.from(questionSetEntity);
 	}

@@ -273,7 +273,6 @@ public class QuestionService {
 
 	/**
 	 * AI 문제 생성 (비동기)
-	 *
 	 * Redis에 상태 저장:
 	 * - PROCESSING: 시작 시
 	 * - COMPLETED: 성공 시 (문제 수 포함)
@@ -291,7 +290,6 @@ public class QuestionService {
 		aiRequestStatusManager.updateStatus(questionSetId, AiRequestStatus.PENDING);
 		log.info("[AI 문제 생성 시작] - QuestionSetId: {}, Status: PROCESSING", questionSetId);
 
-		// 비동기 트랜잭션 내에서 엔티티 다시 조회
 		QuestionSetEntity questionSetEntity = questionSetEntityRepository.findById(questionSetId)
 			.orElseThrow(() -> new EntityNotFoundException("QuestionSet not found with id: " + questionSetId));
 
@@ -330,9 +328,7 @@ public class QuestionService {
 
 		} catch (Exception e) {
 			log.error("[AI 문제 생성 실패] - QuestionSetId: {}", questionSetId, e);
-			// Redis 상태는 트랜잭션 외부에서 관리되므로 실패 상태 저장
 			aiRequestStatusManager.updateStatus(questionSetId, AiRequestStatus.FAILED);
-			// 트랜잭션 롤백을 위해 예외를 다시 던짐
 			throw new RuntimeException("AI 문제 생성 중 오류 발생", e);
 		}
 	}
