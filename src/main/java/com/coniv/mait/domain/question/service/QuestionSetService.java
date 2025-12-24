@@ -57,16 +57,16 @@ public class QuestionSetService {
 
 	@Transactional
 	public QuestionSetDto createQuestionSet(final QuestionSetDto questionSetDto, final List<QuestionCount> counts,
-			final List<MaterialDto> materials, final String instruction, final String difficulty, final Long userId) {
+		final List<MaterialDto> materials, final String instruction, final String difficulty, final Long userId) {
 		teamRoleValidator.checkHasCreateQuestionSetAuthority(questionSetDto.getTeamId(), userId);
 
 		QuestionSetEntity questionSetEntity = QuestionSetEntity.builder()
-				.subject(questionSetDto.getSubject())
-				.creationType(questionSetDto.getCreationType())
-				.teamId(questionSetDto.getTeamId())
-				.difficulty(difficulty)
-				.creatorId(userId)
-				.build();
+			.subject(questionSetDto.getSubject())
+			.creationType(questionSetDto.getCreationType())
+			.teamId(questionSetDto.getTeamId())
+			.difficulty(difficulty)
+			.creatorId(userId)
+			.build();
 		questionSetEntityRepository.save(questionSetEntity);
 		questionSetMaterialService.updateUsed(materials);
 
@@ -76,11 +76,11 @@ public class QuestionSetService {
 
 		if (questionSetDto.getCreationType() == QuestionSetCreationType.AI_GENERATED) {
 			eventPublisher.publishEvent(new AiQuestionGenerationRequestedEvent(
-					questionSetEntity.getId(),
-					counts,
-					materials,
-					instruction,
-					difficulty));
+				questionSetEntity.getId(),
+				counts,
+				materials,
+				instruction,
+				difficulty));
 		}
 
 		return QuestionSetDto.from(questionSetEntity);
@@ -89,12 +89,12 @@ public class QuestionSetService {
 	public QuestionSetContainer getQuestionSets(final Long teamId, final DeliveryMode mode) {
 		// Todo: 조회하려는 유저와 팀이 일치하는지 확인
 		List<QuestionSetDto> questionSets = questionSetEntityRepository.findAllByTeamIdAndDeliveryMode(teamId, mode)
-				.stream()
-				.sorted(Comparator.comparing(
-						QuestionSetEntity::getModifiedAt,
-						Comparator.nullsLast(Comparator.naturalOrder())).reversed())
-				.map(QuestionSetDto::from)
-				.toList();
+			.stream()
+			.sorted(Comparator.comparing(
+				QuestionSetEntity::getModifiedAt,
+				Comparator.nullsLast(Comparator.naturalOrder())).reversed())
+			.map(QuestionSetDto::from)
+			.toList();
 
 		if (mode == DeliveryMode.MAKING || mode == DeliveryMode.REVIEW) {
 			return QuestionSetList.of(questionSets);
@@ -105,7 +105,7 @@ public class QuestionSetService {
 
 	public QuestionSetDto getQuestionSet(final Long questionSetId) {
 		final QuestionSetEntity questionSetEntity = questionSetEntityRepository.findById(questionSetId)
-				.orElseThrow(() -> new IllegalArgumentException("Question set not found"));
+			.orElseThrow(() -> new IllegalArgumentException("Question set not found"));
 
 		long questionCount = questionEntityRepository.countByQuestionSetId(questionSetEntity.getId());
 
@@ -114,20 +114,20 @@ public class QuestionSetService {
 
 	@Transactional
 	public QuestionSetDto completeQuestionSet(
-			final Long questionSetId,
-			final String title,
-			final String subject,
-			final DeliveryMode mode,
-			final String difficulty,
-			final QuestionSetVisibility visibility) {
+		final Long questionSetId,
+		final String title,
+		final String subject,
+		final DeliveryMode mode,
+		final String difficulty,
+		final QuestionSetVisibility visibility) {
 		QuestionSetEntity questionSet = questionSetEntityRepository.findById(questionSetId)
-				.orElseThrow(() -> new EntityNotFoundException("Question set not found"));
+			.orElseThrow(() -> new EntityNotFoundException("Question set not found"));
 
 		// Todo: 현재 생성 단계가 아니면 예외
 		int number = 1;
 
 		List<QuestionEntity> questions = questionEntityRepository.findAllByQuestionSetIdOrderByLexoRankAsc(
-				questionSetId);
+			questionSetId);
 		for (QuestionEntity question : questions) {
 			question.updateNumber(number++);
 		}
@@ -139,21 +139,21 @@ public class QuestionSetService {
 	@Transactional
 	public void updateQuestionSetField(final Long questionSetId, final String title) {
 		QuestionSetEntity questionSet = questionSetEntityRepository.findById(questionSetId)
-				.orElseThrow(() -> new EntityNotFoundException("Question set not found"));
+			.orElseThrow(() -> new EntityNotFoundException("Question set not found"));
 
 		questionSet.updateTitle(title);
 	}
 
 	public List<QuestionValidateDto> validateQuestionSet(final Long questionSetId) {
 		QuestionSetEntity questionSet = questionSetEntityRepository.findById(questionSetId)
-				.orElseThrow(() -> new EntityNotFoundException("Question set not found"));
+			.orElseThrow(() -> new EntityNotFoundException("Question set not found"));
 
 		List<QuestionEntity> questions = questionEntityRepository.findAllByQuestionSetId(questionSet.getId());
 
 		return questions.stream()
-				.map(questionChecker::validateQuestion)
-				.filter(dto -> !dto.isValid())
-				.toList();
+			.map(questionChecker::validateQuestion)
+			.filter(dto -> !dto.isValid())
+			.toList();
 	}
 
 	public AiRequestStatus getAiRequestStatus(Long questionSetId) {
@@ -163,7 +163,7 @@ public class QuestionSetService {
 	@Transactional
 	public void updateQuestionSetToReviewMode(final Long questionSetId, final QuestionSetVisibility visibility) {
 		QuestionSetEntity questionSet = questionSetEntityRepository.findById(questionSetId)
-				.orElseThrow(() -> new EntityNotFoundException("해당 문제 셋을 찾을 수 없습니다."));
+			.orElseThrow(() -> new EntityNotFoundException("해당 문제 셋을 찾을 수 없습니다."));
 
 		if (questionSet.getOngoingStatus() != QuestionSetOngoingStatus.AFTER) {
 			throw new QuestionSetStatusException(QuestionSetStatusExceptionCode.ONLY_AFTER);

@@ -12,15 +12,15 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class AiQuestionGenerationRequestedEventListener {
 
-    private final QuestionService questionService;
+	private final QuestionService questionService;
 
-    @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT, fallbackExecution = true)
-    public void handle(final AiQuestionGenerationRequestedEvent event) {
-        questionService.createAiGeneratedQuestions(
-                event.questionSetId(),
-                event.counts(),
-                event.materials(),
-                event.instruction(),
-                event.difficulty());
-    }
+	@TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT, fallbackExecution = true)
+	public void handle(final AiQuestionGenerationRequestedEvent event) {
+		questionService.createAiGeneratedQuestions(
+			event.questionSetId(),
+			event.counts(),
+			event.materials(),
+			event.instruction(),
+			event.difficulty());
+	}
 }
