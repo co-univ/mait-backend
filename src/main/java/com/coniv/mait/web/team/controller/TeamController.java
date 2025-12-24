@@ -14,6 +14,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.coniv.mait.domain.team.enums.TeamUserRole;
 import com.coniv.mait.domain.team.service.TeamService;
 import com.coniv.mait.domain.team.service.dto.TeamApplicantDto;
 import com.coniv.mait.domain.team.service.dto.TeamInvitationDto;
@@ -22,7 +23,6 @@ import com.coniv.mait.domain.team.service.dto.TeamInvitationResultDto;
 import com.coniv.mait.domain.team.service.dto.TeamUserDto;
 import com.coniv.mait.domain.user.entity.UserEntity;
 import com.coniv.mait.global.authorization.RequireTeamRole;
-import com.coniv.mait.global.authorization.TeamRoleLevel;
 import com.coniv.mait.global.response.ApiResponse;
 import com.coniv.mait.web.team.dto.AddTeamUserApiRequest;
 import com.coniv.mait.web.team.dto.ApplyTeamUserApiResponse;
@@ -58,7 +58,7 @@ public class TeamController {
 		return ResponseEntity.ok(ApiResponse.noContent());
 	}
 
-	@RequireTeamRole(TeamRoleLevel.MANAGER)
+	@RequireTeamRole(TeamUserRole.OWNER)
 	@Operation(summary = "팀 초대 링크 생성 API")
 	@PostMapping("/{teamId}/invitation")
 	public ResponseEntity<ApiResponse<CreateTeamInviteApiResponse>> createTeamInviteCode(

@@ -6,10 +6,12 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
+import com.coniv.mait.domain.team.enums.TeamUserRole;
+
 @Target(ElementType.METHOD)
 @Retention(RetentionPolicy.RUNTIME)
 @Documented
 public @interface RequireTeamRole {
 
-	TeamRoleLevel value();
+	TeamUserRole value();
 }

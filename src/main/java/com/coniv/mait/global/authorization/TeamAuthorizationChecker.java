@@ -22,21 +22,24 @@ public class TeamAuthorizationChecker {
 	public boolean hasRole(
 		Long teamId,
 		UserEntity loginUser,
-		TeamRoleLevel roleLevel
+		TeamUserRole roleLevel
 	) {
 		if (loginUser == null) {
 			throw new TeamManagerException("User is not authenticated.");
 		}
 
 		List<TeamUserRole> allowedRoles = switch (roleLevel) {
-			case MANAGER -> List.of(
+			case MAKER -> List.of(
 				TeamUserRole.OWNER,
 				TeamUserRole.MAKER
 			);
-			case MEMBER -> List.of(
+			case PLAYER -> List.of(
 				TeamUserRole.OWNER,
 				TeamUserRole.MAKER,
 				TeamUserRole.PLAYER
+			);
+			case OWNER -> List.of(
+				TeamUserRole.OWNER
 			);
 		};
 
