@@ -155,8 +155,7 @@ class QuestionReviewServiceTest {
 		when(questionReader.getQuestion(questionId)).thenReturn(question);
 
 		QuestionSetEntity questionSet = mock(QuestionSetEntity.class);
-		when(questionSetEntityRepository.findById(questionSetId)).thenReturn(
-			Optional.of(mock(QuestionSetEntity.class)));
+		when(questionSetEntityRepository.findById(questionSetId)).thenReturn(Optional.of(questionSet));
 
 		when(questionSet.canReview()).thenReturn(true);
 		when(answerGrader.gradeAnswer(question, multipleQuestionSubmitAnswer)).thenReturn(true);
