@@ -28,6 +28,9 @@ import com.coniv.mait.domain.question.service.component.QuestionFactory;
 import com.coniv.mait.domain.question.service.component.QuestionReader;
 import com.coniv.mait.domain.question.service.dto.QuestionDto;
 import com.coniv.mait.domain.solve.service.component.AnswerGrader;
+import com.coniv.mait.domain.solve.service.dto.AnswerSubmitDto;
+import com.coniv.mait.domain.solve.service.dto.MultipleQuestionSubmitAnswer;
+import com.coniv.mait.domain.solve.service.dto.SubmitAnswerDto;
 import com.coniv.mait.domain.user.service.component.TeamRoleValidator;
 
 @ExtendWith(MockitoExtension.class)
@@ -138,5 +141,55 @@ class QuestionReviewServiceTest {
 		verify(teamRoleValidator, never()).checkHasSolveQuestionAuthorityInTeam(anyLong(), anyLong());
 		verify(lastViewedQuestionRedisRepository, never()).getLastViewedQuestion(any(QuestionSetEntity.class),
 			anyLong());
+	}
+
+	@Test
+	@DisplayName("복습 문제 풀이 - 성공")
+	void checkAnswer() {
+		// given
+		final Long questionId = 1L;
+		final Long userId = 2L;
+		final Long questionSetId = 3L;
+		MultipleQuestionSubmitAnswer multipleQuestionSubmitAnswer = new MultipleQuestionSubmitAnswer(List.of(1L));
+		QuestionEntity question = mock(QuestionEntity.class);
+		when(questionReader.getQuestion(questionId, questionSetId)).thenReturn(question);
+
+		QuestionSetEntity questionSet = mock(QuestionSetEntity.class);
+		when(question.getQuestionSet()).thenReturn(questionSet);
+
+		when(questionSet.canReview()).thenReturn(true);
+		when(answerGrader.gradeAnswer(question, multipleQuestionSubmitAnswer)).thenReturn(true);
+
+		// when
+		AnswerSubmitDto answerSubmitDto = questionReviewService.checkAnswer(questionId, questionSetId, userId,
+			multipleQuestionSubmitAnswer);
+
+		// then
+		assertThat(answerSubmitDto.getQuestionId()).isEqualTo(questionId);
+		assertThat(answerSubmitDto.isCorrect()).isEqualTo(true);
+	}
+
+	@Test
+	@DisplayName("복습 문제 풀이 - 문제 셋이 리뷰상태가 아니면 실패")
+	void checkAnswer_cannotReview() {
+		// given
+		final Long questionId = 1L;
+		final Long userId = 2L;
+		final Long questionSetId = 3L;
+		MultipleQuestionSubmitAnswer multipleQuestionSubmitAnswer = new MultipleQuestionSubmitAnswer(List.of(1L));
+		QuestionEntity question = mock(QuestionEntity.class);
+		when(questionReader.getQuestion(questionId, questionSetId)).thenReturn(question);
+
+		QuestionSetEntity questionSet = mock(QuestionSetEntity.class);
+		when(question.getQuestionSet()).thenReturn(questionSet);
+
+		when(questionSet.canReview()).thenReturn(false);
+
+		// when
+		QuestionSetStatusException questionSetStatusException = assertThrows(QuestionSetStatusException.class,
+			() -> questionReviewService.checkAnswer(questionId, questionSetId, userId, multipleQuestionSubmitAnswer));
+
+		// then
+		assertThat(questionSetStatusException.getExceptionCode()).isEqualTo(QuestionSetStatusExceptionCode.ONLY_REVIEW);
 	}
 }
