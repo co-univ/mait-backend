@@ -20,6 +20,9 @@ import com.coniv.mait.domain.question.service.component.LastViewedQuestionRedisR
 import com.coniv.mait.domain.question.service.component.QuestionFactory;
 import com.coniv.mait.domain.question.service.component.QuestionReader;
 import com.coniv.mait.domain.question.service.dto.QuestionDto;
+import com.coniv.mait.domain.solve.service.component.AnswerGrader;
+import com.coniv.mait.domain.solve.service.dto.AnswerSubmitDto;
+import com.coniv.mait.domain.solve.service.dto.SubmitAnswerDto;
 import com.coniv.mait.domain.user.service.component.TeamRoleValidator;
 
 import jakarta.persistence.EntityNotFoundException;
@@ -27,13 +30,12 @@ import jakarta.persistence.EntityNotFoundException;
 @Service
 public class QuestionReviewService {
 
-	private final QuestionSetEntityRepository questionSetEntityRepository;
-
 	private final TeamRoleValidator teamRoleValidator;
-
 	private final QuestionReader questionReader;
+	private final AnswerGrader answerGrader;
 
 	private final LastViewedQuestionRedisRepository lastViewedQuestionRedisRepository;
+	private final QuestionSetEntityRepository questionSetEntityRepository;
 
 	private final Map<QuestionType, QuestionFactory<?>> questionFactories;
 
@@ -41,12 +43,14 @@ public class QuestionReviewService {
 	public QuestionReviewService(QuestionSetEntityRepository questionSetEntityRepository,
 		TeamRoleValidator teamRoleValidator,
 		LastViewedQuestionRedisRepository lastViewedQuestionRedisRepository,
+		AnswerGrader answerGrader,
 		QuestionReader questionReader,
 		List<QuestionFactory<?>> factories
 	) {
 		this.questionSetEntityRepository = questionSetEntityRepository;
 		this.teamRoleValidator = teamRoleValidator;
 		this.lastViewedQuestionRedisRepository = lastViewedQuestionRedisRepository;
+		this.answerGrader = answerGrader;
 		this.questionReader = questionReader;
 		questionFactories = factories.stream()
 			.collect(Collectors.toUnmodifiableMap(QuestionFactory::getQuestionType, Function.identity()));
@@ -73,5 +77,21 @@ public class QuestionReviewService {
 		QuestionEntity question = questionReader.getQuestion(questionId, questionSetId);
 
 		lastViewedQuestionRedisRepository.updateLastViewedQuestion(question.getQuestionSet(), question, userId);
+	}
+
+	public AnswerSubmitDto checkAnswer(final Long questionId, final Long questionSetId,
+		final Long userId, final SubmitAnswerDto<?> submitAnswers) {
+		final QuestionEntity question = questionReader.getQuestion(questionId, questionSetId);
+
+		QuestionSetEntity questionSet = question.getQuestionSet();
+		if (!questionSet.canReview()) {
+			throw new QuestionSetStatusException(QuestionSetStatusExceptionCode.ONLY_REVIEW);
+		}
+
+		return AnswerSubmitDto.builder()
+			.questionId(questionId)
+			.isCorrect(answerGrader.gradeAnswer(question, submitAnswers))
+			.userId(userId)
+			.build();
 	}
 }

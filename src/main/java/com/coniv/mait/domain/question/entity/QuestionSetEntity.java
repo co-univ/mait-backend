@@ -122,4 +122,8 @@ public class QuestionSetEntity extends BaseTimeEntity {
 	public void updateVisibility(QuestionSetVisibility visibility) {
 		this.visibility = visibility;
 	}
+
+	public boolean canReview() {
+		return ongoingStatus == QuestionSetOngoingStatus.AFTER && deliveryMode == DeliveryMode.REVIEW;
+	}
 }

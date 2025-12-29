@@ -4,16 +4,20 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.coniv.mait.domain.question.service.QuestionReviewService;
+import com.coniv.mait.domain.solve.service.dto.AnswerSubmitDto;
 import com.coniv.mait.domain.user.entity.UserEntity;
 import com.coniv.mait.global.response.ApiResponse;
 import com.coniv.mait.web.question.dto.LastViewedQuestionApiRequest;
 import com.coniv.mait.web.question.dto.QuestionApiResponse;
+import com.coniv.mait.web.solve.dto.QuestionAnswerSubmitApiRequest;
+import com.coniv.mait.web.solve.dto.QuestionAnswerSubmitApiResponse;
 
 import io.swagger.v3.oas.annotations.Operation;
 import jakarta.validation.Valid;
@@ -44,5 +48,16 @@ public class QuestionReviewController {
 		@AuthenticationPrincipal UserEntity user) {
 		questionReviewService.updateLastViewedQuestion(questionSetId, request.questionId(), user.getId());
 		return ResponseEntity.ok(ApiResponse.noContent());
+	}
+
+	@Operation(summary = "복습 문제 정답 제출 API", description = "복습 시 푼 문제 정답을 제출하고 정오답 여부를 응답 받는 API")
+	@PostMapping("/questions/{questionId}/submit/review")
+	public ResponseEntity<ApiResponse<QuestionAnswerSubmitApiResponse>> submitReviewAnswer(
+		@PathVariable("questionId") Long questionId,
+		@PathVariable("questionSetId") Long questionSetId,
+		@RequestBody @Valid QuestionAnswerSubmitApiRequest request) {
+		AnswerSubmitDto answerSubmitDto = questionReviewService.checkAnswer(questionId, questionSetId,
+			request.getUserId(), request.getSubmitAnswers());
+		return ResponseEntity.ok(ApiResponse.ok(QuestionAnswerSubmitApiResponse.from(answerSubmitDto)));
 	}
 }
