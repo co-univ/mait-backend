@@ -2,7 +2,6 @@ package com.coniv.mait.global.exception.handler;
 
 import java.util.List;
 
-import org.apache.poi.hssf.usermodel.HSSFRangeCopier;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
@@ -112,7 +111,7 @@ public class CustomExceptionHandler {
 
 	@ExceptionHandler(QuestionSetStatusException.class)
 	public ResponseEntity<ErrorResponse> handleQuestionSetStatusException(QuestionSetStatusException exception,
-		HSSFRangeCopier request) {
+		HttpServletRequest request) {
 		return ResponseEntity.status(exception.getExceptionCode().getStatus())
 			.body(ErrorResponse.from(exception.getExceptionCode()));
 	}
