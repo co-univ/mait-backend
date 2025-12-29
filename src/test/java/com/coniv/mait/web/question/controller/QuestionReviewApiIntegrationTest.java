@@ -12,6 +12,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.http.MediaType;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
@@ -28,6 +29,7 @@ import com.coniv.mait.web.integration.BaseIntegrationTest;
 import com.coniv.mait.web.question.dto.LastViewedQuestionApiRequest;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+@AutoConfigureMockMvc(addFilters = false)
 class QuestionReviewApiIntegrationTest extends BaseIntegrationTest {
 
 	private static final Long USER_ID = 2L;
@@ -72,8 +74,7 @@ class QuestionReviewApiIntegrationTest extends BaseIntegrationTest {
 			.number(1L)
 			.choices(List.of(
 				MultipleChoiceDto.builder().id(100L).number(1).content("선택지1").isCorrect(true).build(),
-				MultipleChoiceDto.builder().id(101L).number(2).content("선택지2").isCorrect(false).build()
-			))
+				MultipleChoiceDto.builder().id(101L).number(2).content("선택지2").isCorrect(false).build()))
 			.build();
 
 		when(questionReviewService.getLastViewedQuestionInReview(questionSetId, USER_ID)).thenReturn(questionDto);
@@ -87,8 +88,7 @@ class QuestionReviewApiIntegrationTest extends BaseIntegrationTest {
 				jsonPath("$.data").exists(),
 				jsonPath("$.data.id").value(10L),
 				jsonPath("$.data.type").value("MULTIPLE"),
-				jsonPath("$.data.content").value("객관식 문제 내용")
-			);
+				jsonPath("$.data.content").value("객관식 문제 내용"));
 
 		verify(questionReviewService).getLastViewedQuestionInReview(questionSetId, USER_ID);
 	}
@@ -110,11 +110,8 @@ class QuestionReviewApiIntegrationTest extends BaseIntegrationTest {
 			.andExpectAll(
 				status().isOk(),
 				jsonPath("$.isSuccess").value(true),
-				jsonPath("$.data").doesNotExist()
-			);
+				jsonPath("$.data").doesNotExist());
 
 		verify(questionReviewService).updateLastViewedQuestion(questionSetId, questionId, USER_ID);
 	}
 }
-
-
