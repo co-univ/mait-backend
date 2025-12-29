@@ -152,10 +152,10 @@ class QuestionReviewServiceTest {
 		final Long questionSetId = 3L;
 		MultipleQuestionSubmitAnswer multipleQuestionSubmitAnswer = new MultipleQuestionSubmitAnswer(List.of(1L));
 		QuestionEntity question = mock(QuestionEntity.class);
-		when(questionReader.getQuestion(questionId, questionSetId)).thenReturn(question);
+		when(questionReader.getQuestion(questionId)).thenReturn(question);
 
 		QuestionSetEntity questionSet = mock(QuestionSetEntity.class);
-		when(question.getQuestionSet()).thenReturn(questionSet);
+		when(questionSetEntityRepository.findById(questionSetId)).thenReturn(Optional.of(questionSet));
 
 		when(questionSet.canReview()).thenReturn(true);
 		when(answerGrader.gradeAnswer(question, multipleQuestionSubmitAnswer)).thenReturn(true);
@@ -178,10 +178,10 @@ class QuestionReviewServiceTest {
 		final Long questionSetId = 3L;
 		MultipleQuestionSubmitAnswer multipleQuestionSubmitAnswer = new MultipleQuestionSubmitAnswer(List.of(1L));
 		QuestionEntity question = mock(QuestionEntity.class);
-		when(questionReader.getQuestion(questionId, questionSetId)).thenReturn(question);
+		when(questionReader.getQuestion(questionId)).thenReturn(question);
 
 		QuestionSetEntity questionSet = mock(QuestionSetEntity.class);
-		when(question.getQuestionSet()).thenReturn(questionSet);
+		when(questionSetEntityRepository.findById(questionSetId)).thenReturn(Optional.of(questionSet));
 
 		when(questionSet.canReview()).thenReturn(false);
 

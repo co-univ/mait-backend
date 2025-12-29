@@ -20,9 +20,11 @@ import com.coniv.mait.web.solve.dto.QuestionAnswerSubmitApiRequest;
 import com.coniv.mait.web.solve.dto.QuestionAnswerSubmitApiResponse;
 
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 
+@Tag(name = "복습 문제 풀이 관련 API", description = "복습 모드 관련 API")
 @RestController
 @RequestMapping("/api/v1/question-sets/{questionSetId}")
 @RequiredArgsConstructor
