@@ -11,6 +11,8 @@ import com.coniv.mait.domain.question.entity.QuestionEntity;
 import com.coniv.mait.domain.question.entity.ShortAnswerEntity;
 import com.coniv.mait.domain.question.enums.QuestionType;
 import com.coniv.mait.domain.question.repository.ShortAnswerEntityRepository;
+import com.coniv.mait.domain.solve.exception.QuestionSolveExceptionCode;
+import com.coniv.mait.domain.solve.exception.QuestionSolvingException;
 import com.coniv.mait.domain.solve.service.dto.SubmitAnswerDto;
 import com.coniv.mait.domain.solve.util.AnswerProcessUtil;
 
@@ -39,8 +41,8 @@ public class ShortQuestionAnswerChecker implements AnswerChecker<String> {
 				)
 			));
 
-		if (answers.getSubmitAnswers().size() != shortAnswersByNumber.keySet().size()) {
-			throw new IllegalArgumentException("제출된 답변의 개수와 문제의 답변 개수가 일치하지 않습니다.");
+		if (answers.getSubmitAnswers().size() != shortAnswersByNumber.size()) {
+			throw new QuestionSolvingException(QuestionSolveExceptionCode.ANSWER_COUNT);
 		}
 
 		Map<Long, Boolean> shortAnswersByNumberChecked = shortAnswersByNumber.keySet().stream()
