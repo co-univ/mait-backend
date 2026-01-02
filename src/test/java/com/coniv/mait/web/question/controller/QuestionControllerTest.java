@@ -224,7 +224,7 @@ class QuestionControllerTest {
 				.build(),
 			ShortAnswerDto.builder()
 				.answer("정답2")
-				.main(false)
+				.main(true)
 				.number(2L)
 				.build()
 		);
@@ -641,6 +641,7 @@ class QuestionControllerTest {
 			.explanation("주관식 문제 해설")
 			.number(2L)
 			.answers(List.of(shortAnswerDto))
+			.answerCount(1)
 			.build();
 
 		List<com.coniv.mait.domain.question.service.dto.QuestionDto> mockQuestions =
@@ -681,7 +682,7 @@ class QuestionControllerTest {
 				.build(),
 			ShortAnswerDto.builder()
 				.answer("수정된 정답2")
-				.main(false)
+				.main(true)
 				.number(2L)
 				.build()
 		);
@@ -702,6 +703,7 @@ class QuestionControllerTest {
 				.explanation(request.getExplanation())
 				.number(request.getNumber())
 				.answers(request.getShortAnswers())
+				.answerCount(2)
 				.build();
 
 		when(questionService.updateQuestion(eq(questionSetId), eq(questionId), any())).thenReturn(mockResponse);
@@ -943,7 +945,7 @@ class QuestionControllerTest {
 				.build(),
 			ShortAnswerDto.builder()
 				.answer("변경된 정답2")
-				.main(false)
+				.main(true)
 				.number(2L)
 				.build()
 		);
@@ -965,6 +967,7 @@ class QuestionControllerTest {
 				.explanation("변경된 해설")
 				.number(1L)
 				.answers(shortAnswers)
+				.answerCount(2)
 				.build();
 
 		when(questionService.updateQuestion(eq(questionSetId), eq(questionId), any())).thenReturn(mockResponse);

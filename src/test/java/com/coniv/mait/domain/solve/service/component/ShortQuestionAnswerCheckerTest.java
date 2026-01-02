@@ -16,6 +16,7 @@ import com.coniv.mait.domain.question.entity.QuestionEntity;
 import com.coniv.mait.domain.question.entity.ShortAnswerEntity;
 import com.coniv.mait.domain.question.enums.QuestionType;
 import com.coniv.mait.domain.question.repository.ShortAnswerEntityRepository;
+import com.coniv.mait.domain.solve.exception.QuestionSolvingException;
 import com.coniv.mait.domain.solve.service.dto.SubmitAnswerDto;
 
 @ExtendWith(MockitoExtension.class)
@@ -221,7 +222,7 @@ class ShortQuestionAnswerCheckerTest {
 
 		// when & then
 		assertThatThrownBy(() -> checker.checkAnswer(question, submit))
-			.isInstanceOf(IllegalArgumentException.class)
+			.isInstanceOf(QuestionSolvingException.class)
 			.hasMessageContaining("개수");
 	}
 }

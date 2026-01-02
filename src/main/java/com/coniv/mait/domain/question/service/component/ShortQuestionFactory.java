@@ -1,6 +1,7 @@
 package com.coniv.mait.domain.question.service.component;
 
 import java.util.List;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Component;
@@ -127,6 +128,11 @@ public class ShortQuestionFactory implements QuestionFactory<ShortQuestionDto> {
 		if (answers == null) {
 			return 0;
 		}
-		return (int)answers.stream().filter(ShortAnswerDto::isMain).count();
+
+		return (int)answers.stream()
+			.map(ShortAnswerDto::getNumber)
+			.filter(Objects::nonNull)
+			.distinct()
+			.count();
 	}
 }

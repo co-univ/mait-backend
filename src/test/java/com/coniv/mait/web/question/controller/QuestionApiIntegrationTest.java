@@ -141,6 +141,7 @@ public class QuestionApiIntegrationTest extends BaseIntegrationTest {
 			.number(1L)
 			.lexoRank("m")
 			.questionSet(savedQuestionSet)
+			.answerCount(1) // 정답 그룹(number) 개수 (= main 정답 개수)
 			.build();
 		ShortQuestionEntity savedQuestion = questionEntityRepository.save(question);
 
@@ -173,7 +174,7 @@ public class QuestionApiIntegrationTest extends BaseIntegrationTest {
 				jsonPath("$.data.content").value("주관식 문제 내용"),
 				jsonPath("$.data.explanation").value("주관식 문제 해설"),
 				jsonPath("$.data.number").value(1),
-				jsonPath("$.data.answerCount").value(2),
+				jsonPath("$.data.answerCount").value(1),
 				jsonPath("$.data.answers").isArray(),
 				jsonPath("$.data.answers.length()").value(2),
 				jsonPath("$.data.answers[0].answer").value("정답1"),
