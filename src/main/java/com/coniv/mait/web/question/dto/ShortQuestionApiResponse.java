@@ -18,8 +18,8 @@ public class ShortQuestionApiResponse extends QuestionApiResponse {
 	@Schema(description = "주관식 문제의 정답 목록", requiredMode = Schema.RequiredMode.NOT_REQUIRED)
 	private final List<ShortAnswerApiResponse> answers;
 
-	@Schema(description = "주관식 문제의 정답 개수", requiredMode = Schema.RequiredMode.REQUIRED)
-	private final Integer answerCount;
+	@Schema(description = "주관식 문제의 정답 그룹(number) 개수 (= main 정답 개수)", requiredMode = Schema.RequiredMode.REQUIRED)
+	private final int answerCount;
 
 	public static ShortQuestionApiResponse from(ShortQuestionDto dto) {
 		List<ShortAnswerApiResponse> answers = dto.getAnswers() != null
