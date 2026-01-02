@@ -3,6 +3,7 @@ package com.coniv.mait.domain.question.service;
 import java.util.Comparator;
 import java.util.List;
 
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -14,6 +15,7 @@ import com.coniv.mait.domain.question.enums.DeliveryMode;
 import com.coniv.mait.domain.question.enums.QuestionSetCreationType;
 import com.coniv.mait.domain.question.enums.QuestionSetOngoingStatus;
 import com.coniv.mait.domain.question.enums.QuestionSetVisibility;
+import com.coniv.mait.domain.question.event.AiQuestionGenerationRequestedEvent;
 import com.coniv.mait.domain.question.exception.QuestionSetStatusException;
 import com.coniv.mait.domain.question.exception.code.QuestionSetStatusExceptionCode;
 import com.coniv.mait.domain.question.repository.AiRequestStatusManager;
@@ -38,6 +40,8 @@ import lombok.extern.slf4j.Slf4j;
 public class QuestionSetService {
 
 	private final QuestionService questionService;
+
+	private final ApplicationEventPublisher eventPublisher;
 
 	private final QuestionSetEntityRepository questionSetEntityRepository;
 
@@ -64,17 +68,20 @@ public class QuestionSetService {
 			.creatorId(userId)
 			.build();
 		questionSetEntityRepository.save(questionSetEntity);
+		questionSetMaterialService.updateUsed(materials);
 
 		if (questionSetDto.getCreationType() == QuestionSetCreationType.MANUAL) {
 			questionService.createDefaultQuestions(questionSetEntity, counts);
 		}
 
 		if (questionSetDto.getCreationType() == QuestionSetCreationType.AI_GENERATED) {
-			questionService.createAiGeneratedQuestions(questionSetEntity.getId(), counts, materials, instruction,
-				difficulty);
+			eventPublisher.publishEvent(new AiQuestionGenerationRequestedEvent(
+				questionSetEntity.getId(),
+				counts,
+				materials,
+				instruction,
+				difficulty));
 		}
-
-		questionSetMaterialService.updateUsed(materials);
 
 		return QuestionSetDto.from(questionSetEntity);
 	}
