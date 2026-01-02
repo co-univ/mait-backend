@@ -52,7 +52,7 @@ public class ShortQuestionDto extends QuestionDto {
 			.imageId(shortQuestion.getImageId())
 			.answers(shortAnswerDtos)
 			.questionStatus(shortQuestion.getQuestionStatus())
-			.answerCount(shortAnswers.size())
+			.answerCount(shortQuestion.getAnswerCount())
 			.build();
 	}
 }

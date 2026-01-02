@@ -65,7 +65,7 @@ public class ShortQuestionFactory implements QuestionFactory<ShortQuestionDto> {
 		shortAnswerEntityRepository.saveAll(shortAnswers);
 
 		ShortQuestionEntity shortQuestionEntity = (ShortQuestionEntity)question;
-		shortQuestionEntity.updateAnswerCount(shortAnswers.size());
+		shortQuestionEntity.updateAnswerCount(calculateAnswerCount(questionDto.getAnswers()));
 	}
 
 	@Override
@@ -76,7 +76,7 @@ public class ShortQuestionFactory implements QuestionFactory<ShortQuestionDto> {
 			.content(dto.getContent())
 			.explanation(dto.getExplanation())
 			.displayDelayMilliseconds(RandomUtil.getRandomNumber(QuestionConstant.MAX_DISPLAY_DELAY_MILLISECONDS))
-			.answerCount(dto.getAnswers().size())
+			.answerCount(calculateAnswerCount(dto.getAnswers()))
 			.build();
 	}
 
@@ -121,5 +121,12 @@ public class ShortQuestionFactory implements QuestionFactory<ShortQuestionDto> {
 					"Each short answer number must have exactly one main answer. Number %d has %d main answers.",
 					number, mainCount));
 		}
+	}
+
+	private int calculateAnswerCount(List<ShortAnswerDto> answers) {
+		if (answers == null) {
+			return 0;
+		}
+		return (int)answers.stream().filter(ShortAnswerDto::isMain).count();
 	}
 }
