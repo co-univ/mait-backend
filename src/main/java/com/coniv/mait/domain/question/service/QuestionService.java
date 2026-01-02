@@ -273,7 +273,6 @@ public class QuestionService {
 
 	/**
 	 * AI 문제 생성 (비동기)
-	 *
 	 * Redis에 상태 저장:
 	 * - PROCESSING: 시작 시
 	 * - COMPLETED: 성공 시 (문제 수 포함)
