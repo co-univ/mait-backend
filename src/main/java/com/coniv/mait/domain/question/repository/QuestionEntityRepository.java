@@ -28,6 +28,7 @@ public interface QuestionEntityRepository extends JpaRepository<QuestionEntity, 
 
 	Optional<QuestionEntity> findFirstByQuestionSetOrderByNumberAsc(QuestionSetEntity questionSet);
 
-	@Query(value = "SELECT * FROM questions WHERE question_type = :#{#questionType.name().toLowerCase()}", nativeQuery = true)
+	@Query(value = "SELECT * FROM questions WHERE question_type = :#{#questionType.name().toLowerCase()}",
+		nativeQuery = true)
 	List<QuestionEntity> findAllByQuestionType(@Param("questionType") QuestionType questionType);
 }
