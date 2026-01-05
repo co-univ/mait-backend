@@ -17,10 +17,10 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
-@Profile({"dev", "local", "prod"})
+@Profile({ "dev", "local", "prod" })
 @Component
 @RequiredArgsConstructor
-public class QuestionAnswerCountMigrationJob implements MigrationJob {
+public class ShortQuestionAnswerCountMigrationJob implements MigrationJob {
 
 	private final QuestionEntityRepository questionEntityRepository;
 
@@ -29,14 +29,14 @@ public class QuestionAnswerCountMigrationJob implements MigrationJob {
 	@Transactional
 	@Override
 	public void migrate() {
-		List<QuestionEntity> shortQuestions = questionEntityRepository.findAllByType(QuestionType.SHORT);
+		List<QuestionEntity> shortQuestions = questionEntityRepository.findAllByQuestionType(QuestionType.SHORT);
 
-		for (QuestionEntity shortQuestion : shortQuestions) {
-			ShortQuestionEntity shortQuestionEntity = (ShortQuestionEntity)shortQuestion;
+		for (QuestionEntity question : shortQuestions) {
+			ShortQuestionEntity shortQuestionEntity = (ShortQuestionEntity) question;
 			int mainAnswerCount = shortAnswerEntityRepository
-				.countByShortQuestionIdAndIsMainTrue(shortQuestion.getId());
+					.countByShortQuestionIdAndIsMainTrue(shortQuestionEntity.getId());
 			shortQuestionEntity.updateAnswerCount(mainAnswerCount);
-			log.info("[{}] id={}의 answerCount {} 업데이트", getName(), shortQuestion.getId(), mainAnswerCount);
+			log.info("[{}] id={}의 answerCount {} 업데이트", getName(), shortQuestionEntity.getId(), mainAnswerCount);
 		}
 
 		log.info("[{}]. 총 {}개의 주관식 문제가 처리 완료.", getName(), shortQuestions.size());
