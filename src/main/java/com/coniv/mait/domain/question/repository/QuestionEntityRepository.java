@@ -8,6 +8,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import com.coniv.mait.domain.question.entity.QuestionEntity;
 import com.coniv.mait.domain.question.entity.QuestionSetEntity;
 import com.coniv.mait.domain.question.enums.QuestionStatusType;
+import com.coniv.mait.domain.question.enums.QuestionType;
 
 public interface QuestionEntityRepository extends JpaRepository<QuestionEntity, Long> {
 	List<QuestionEntity> findAllByQuestionSetId(final Long questionSetId);
@@ -24,4 +25,6 @@ public interface QuestionEntityRepository extends JpaRepository<QuestionEntity, 
 	Optional<QuestionEntity> findTopByQuestionSetIdOrderByLexoRankDesc(Long questionSetId);
 
 	Optional<QuestionEntity> findFirstByQuestionSetOrderByNumberAsc(QuestionSetEntity questionSet);
+
+	List<QuestionEntity> findAllByType(QuestionType type);
 }
