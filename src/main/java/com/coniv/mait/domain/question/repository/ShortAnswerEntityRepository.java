@@ -10,4 +10,6 @@ public interface ShortAnswerEntityRepository extends JpaRepository<ShortAnswerEn
 	List<ShortAnswerEntity> findAllByShortQuestionId(Long shortQuestionId);
 
 	void deleteAllByShortQuestionId(Long questionId);
+
+	int countByShortQuestionIdAndIsMainTrue(Long shortQuestionId);
 }
