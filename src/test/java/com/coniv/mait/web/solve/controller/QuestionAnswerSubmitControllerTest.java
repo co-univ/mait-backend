@@ -67,34 +67,35 @@ class QuestionAnswerSubmitControllerTest {
 		Long userId = 1L;
 
 		String requestJson = """
-				{
-					"type": "MULTIPLE",
-					"userId": %d,
-					"submitAnswers": [1, 2]
-				}
-				""".formatted(userId);
+			{
+				"type": "MULTIPLE",
+				"userId": %d,
+				"submitAnswers": [1, 2]
+			}
+			""".formatted(userId);
 
 		AnswerSubmitDto mockResponse = AnswerSubmitDto.builder()
-				.id(1L)
-				.userId(userId)
-				.questionId(questionId)
-				.isCorrect(true)
-				.build();
+			.id(1L)
+			.userId(userId)
+			.questionId(questionId)
+			.isCorrect(true)
+			.build();
 
 		// When & Then
 		when(questionAnswerSubmitService.submitAnswer(eq(questionSetId), eq(questionId), eq(userId), any()))
-				.thenReturn(mockResponse);
+			.thenReturn(mockResponse);
 
 		mockMvc.perform(
 				post("/api/v1/question-sets/{questionSetId}/questions/{questionId}/submit", questionSetId, questionId)
-						.contentType(MediaType.APPLICATION_JSON)
-						.content(requestJson))
-				.andExpect(status().isOk())
-				.andExpect(jsonPath("$.isSuccess").value(true))
-				.andExpect(jsonPath("$.data.id").value(1))
-				.andExpect(jsonPath("$.data.userId").value(userId))
-				.andExpect(jsonPath("$.data.questionId").value(questionId))
-				.andExpect(jsonPath("$.data.isCorrect").value(true));
+					.contentType(MediaType.APPLICATION_JSON)
+					.content(requestJson))
+			.andExpectAll(
+				status().isOk(),
+				jsonPath("$.isSuccess").value(true),
+				jsonPath("$.data.id").value(1),
+				jsonPath("$.data.userId").value(userId),
+				jsonPath("$.data.questionId").value(questionId),
+				jsonPath("$.data.isCorrect").value(true));
 	}
 
 	@Test
@@ -106,98 +107,99 @@ class QuestionAnswerSubmitControllerTest {
 		Long userId = 1L;
 
 		String requestJson = """
-				{
-					"type": "SHORT",
-					"userId": %d,
-					"submitAnswers": ["정답입니다"]
-				}
-				""".formatted(userId);
+			{
+				"type": "SHORT",
+				"userId": %d,
+				"submitAnswers": ["정답입니다"]
+			}
+			""".formatted(userId);
 
 		AnswerSubmitDto mockResponse = AnswerSubmitDto.builder()
-				.id(2L)
-				.userId(userId)
-				.questionId(questionId)
-				.isCorrect(false)
-				.build();
+			.id(2L)
+			.userId(userId)
+			.questionId(questionId)
+			.isCorrect(false)
+			.build();
 
 		// When & Then
 		when(questionAnswerSubmitService.submitAnswer(eq(questionSetId), eq(questionId), eq(userId), any()))
-				.thenReturn(mockResponse);
+			.thenReturn(mockResponse);
 
 		mockMvc.perform(
 				post("/api/v1/question-sets/{questionSetId}/questions/{questionId}/submit", questionSetId, questionId)
-						.contentType(MediaType.APPLICATION_JSON)
-						.content(requestJson))
-				.andExpect(status().isOk())
-				.andExpect(jsonPath("$.isSuccess").value(true))
-				.andExpect(jsonPath("$.data.id").value(2))
-				.andExpect(jsonPath("$.data.userId").value(userId))
-				.andExpect(jsonPath("$.data.questionId").value(questionId))
-				.andExpect(jsonPath("$.data.isCorrect").value(false));
+					.contentType(MediaType.APPLICATION_JSON)
+					.content(requestJson))
+			.andExpectAll(
+				status().isOk(),
+				jsonPath("$.isSuccess").value(true),
+				jsonPath("$.data.id").value(2),
+				jsonPath("$.data.userId").value(userId),
+				jsonPath("$.data.questionId").value(questionId),
+				jsonPath("$.data.isCorrect").value(false));
 	}
 
 	static Stream<Arguments> validationFailureCases() {
 		return Stream.of(
-				Arguments.of(
-						"userId가 null인 경우",
-						"""
-								{
-									"type": "MULTIPLE",
-									"userId": null,
-									"submitAnswers": [1]
-								}
-								""",
-						"유저 ID를 입력해주세요."),
-				Arguments.of(
-						"객관식 문제에서 submitAnswers가 null인 경우",
-						"""
-								{
-									"type": "MULTIPLE",
-									"userId": 1,
-									"submitAnswers": null
-								}
-								""",
-						"객관식 문제의 선택지는 필수입니다."),
-				Arguments.of(
-						"객관식 문제에서 submitAnswers가 빈 리스트인 경우",
-						"""
-								{
-									"type": "MULTIPLE",
-									"userId": 1,
-									"submitAnswers": []
-								}
-								""",
-						"객관식 문제는 최소 1개의 선택지를 선택해야 합니다."),
-				Arguments.of(
-						"주관식 문제에서 submitAnswers가 null인 경우",
-						"""
-								{
-									"type": "SHORT",
-									"userId": 1,
-									"submitAnswers": null
-								}
-								""",
-						"주관식 문제의 답변은 필수입니다."),
-				Arguments.of(
-						"주관식 문제에서 submitAnswers가 빈 리스트인 경우",
-						"""
-								{
-									"type": "SHORT",
-									"userId": 1,
-									"submitAnswers": []
-								}
-								""",
-						"주관식 문제는 최소 1개 이상의 답변이 필요합니다."),
-				Arguments.of(
-						"주관식 문제에서 submitAnswers에 빈 문자열이 포함된 경우",
-						"""
-								{
-									"type": "SHORT",
-									"userId": 1,
-									"submitAnswers": [""]
-								}
-								""",
-						"답변은 빈 문자열일 수 없습니다."));
+			Arguments.of(
+				"userId가 null인 경우",
+				"""
+					{
+						"type": "MULTIPLE",
+						"userId": null,
+						"submitAnswers": [1]
+					}
+					""",
+				"유저 ID를 입력해주세요."),
+			Arguments.of(
+				"객관식 문제에서 submitAnswers가 null인 경우",
+				"""
+					{
+						"type": "MULTIPLE",
+						"userId": 1,
+						"submitAnswers": null
+					}
+					""",
+				"객관식 문제의 선택지는 필수입니다."),
+			Arguments.of(
+				"객관식 문제에서 submitAnswers가 빈 리스트인 경우",
+				"""
+					{
+						"type": "MULTIPLE",
+						"userId": 1,
+						"submitAnswers": []
+					}
+					""",
+				"객관식 문제는 최소 1개의 선택지를 선택해야 합니다."),
+			Arguments.of(
+				"주관식 문제에서 submitAnswers가 null인 경우",
+				"""
+					{
+						"type": "SHORT",
+						"userId": 1,
+						"submitAnswers": null
+					}
+					""",
+				"주관식 문제의 답변은 필수입니다."),
+			Arguments.of(
+				"주관식 문제에서 submitAnswers가 빈 리스트인 경우",
+				"""
+					{
+						"type": "SHORT",
+						"userId": 1,
+						"submitAnswers": []
+					}
+					""",
+				"주관식 문제는 최소 1개 이상의 답변이 필요합니다."),
+			Arguments.of(
+				"주관식 문제에서 submitAnswers에 빈 문자열이 포함된 경우",
+				"""
+					{
+						"type": "SHORT",
+						"userId": 1,
+						"submitAnswers": [""]
+					}
+					""",
+				"답변은 빈 문자열일 수 없습니다."));
 	}
 
 	@ParameterizedTest(name = "{0}")
@@ -211,11 +213,12 @@ class QuestionAnswerSubmitControllerTest {
 		// When & Then
 		mockMvc.perform(
 				post("/api/v1/question-sets/{questionSetId}/questions/{questionId}/submit", questionSetId, questionId)
-						.contentType(MediaType.APPLICATION_JSON)
-						.content(requestJson))
-				.andExpect(status().isBadRequest())
-				.andExpect(jsonPath("$.isSuccess").value(false))
-				.andExpect(jsonPath("$.reasons[0]").value(expectedMessage));
+					.contentType(MediaType.APPLICATION_JSON)
+					.content(requestJson))
+			.andExpectAll(
+				status().isBadRequest(),
+				jsonPath("$.isSuccess").value(false),
+				jsonPath("$.reasons[0]").value(expectedMessage));
 	}
 
 	@Test
@@ -230,9 +233,9 @@ class QuestionAnswerSubmitControllerTest {
 		// When & Then
 		mockMvc.perform(
 				post("/api/v1/question-sets/{questionSetId}/questions/{questionId}/submit", questionSetId, questionId)
-						.contentType(MediaType.APPLICATION_JSON)
-						.content(invalidJson))
-				.andExpect(status().isBadRequest());
+					.contentType(MediaType.APPLICATION_JSON)
+					.content(invalidJson))
+			.andExpect(status().isBadRequest());
 	}
 
 	@Test
@@ -244,26 +247,27 @@ class QuestionAnswerSubmitControllerTest {
 		Long userId = 1L;
 
 		QuestionScorerDto mockResponse = QuestionScorerDto.builder()
-				.id(1L)
-				.questionId(questionId)
-				.userId(userId)
-				.userName("테스트사용자")
-				.submitOrder(1L)
-				.build();
+			.id(1L)
+			.questionId(questionId)
+			.userId(userId)
+			.userName("테스트사용자")
+			.submitOrder(1L)
+			.build();
 
 		// When & Then
 		when(questionScorerService.getScorer(questionSetId, questionId))
-				.thenReturn(mockResponse);
+			.thenReturn(mockResponse);
 
 		mockMvc.perform(
 				get("/api/v1/question-sets/{questionSetId}/questions/{questionId}/scorers", questionSetId, questionId))
-				.andExpect(status().isOk())
-				.andExpect(jsonPath("$.isSuccess").value(true))
-				.andExpect(jsonPath("$.data.id").value(1))
-				.andExpect(jsonPath("$.data.questionId").value(questionId))
-				.andExpect(jsonPath("$.data.userId").value(userId))
-				.andExpect(jsonPath("$.data.userName").value("테스트사용자"))
-				.andExpect(jsonPath("$.data.submitOrder").value(1));
+			.andExpectAll(
+				status().isOk(),
+				jsonPath("$.isSuccess").value(true),
+				jsonPath("$.data.id").value(1),
+				jsonPath("$.data.questionId").value(questionId),
+				jsonPath("$.data.userId").value(userId),
+				jsonPath("$.data.userName").value("테스트사용자"),
+				jsonPath("$.data.submitOrder").value(1));
 
 		verify(questionScorerService).getScorer(questionSetId, questionId);
 	}
@@ -278,45 +282,46 @@ class QuestionAnswerSubmitControllerTest {
 		Long userId2 = 2L;
 
 		List<AnswerSubmitRecordDto> mockRecords = List.of(
-				AnswerSubmitRecordDto.builder()
-						.id(1L)
-						.userId(userId1)
-						.userName("사용자1")
-						.questionId(questionId)
-						.isCorrect(true)
-						.submitOrder(1L)
-						.build(),
-				AnswerSubmitRecordDto.builder()
-						.id(2L)
-						.userId(userId2)
-						.userName("사용자2")
-						.questionId(questionId)
-						.isCorrect(false)
-						.submitOrder(2L)
-						.build());
+			AnswerSubmitRecordDto.builder()
+				.id(1L)
+				.userId(userId1)
+				.userName("사용자1")
+				.questionId(questionId)
+				.isCorrect(true)
+				.submitOrder(1L)
+				.build(),
+			AnswerSubmitRecordDto.builder()
+				.id(2L)
+				.userId(userId2)
+				.userName("사용자2")
+				.questionId(questionId)
+				.isCorrect(false)
+				.submitOrder(2L)
+				.build());
 
 		// When & Then
 		when(questionAnswerSubmitService.getSubmitRecords(questionSetId, questionId))
-				.thenReturn(mockRecords);
+			.thenReturn(mockRecords);
 
 		mockMvc.perform(
 				get("/api/v1/question-sets/{questionSetId}/questions/{questionId}/submit-records",
-						questionSetId, questionId))
-				.andExpect(status().isOk())
-				.andExpect(jsonPath("$.isSuccess").value(true))
-				.andExpect(jsonPath("$.data.totalCounts").value(2))
-				.andExpect(jsonPath("$.data.submitRecords[0].id").value(1))
-				.andExpect(jsonPath("$.data.submitRecords[0].userId").value(userId1))
-				.andExpect(jsonPath("$.data.submitRecords[0].userName").value("사용자1"))
-				.andExpect(jsonPath("$.data.submitRecords[0].questionId").value(questionId))
-				.andExpect(jsonPath("$.data.submitRecords[0].isCorrect").value(true))
-				.andExpect(jsonPath("$.data.submitRecords[0].submitOrder").value(1))
-				.andExpect(jsonPath("$.data.submitRecords[1].id").value(2))
-				.andExpect(jsonPath("$.data.submitRecords[1].userId").value(userId2))
-				.andExpect(jsonPath("$.data.submitRecords[1].userName").value("사용자2"))
-				.andExpect(jsonPath("$.data.submitRecords[1].questionId").value(questionId))
-				.andExpect(jsonPath("$.data.submitRecords[1].isCorrect").value(false))
-				.andExpect(jsonPath("$.data.submitRecords[1].submitOrder").value(2));
+					questionSetId, questionId))
+			.andExpectAll(
+				status().isOk(),
+				jsonPath("$.isSuccess").value(true),
+				jsonPath("$.data.totalCounts").value(2),
+				jsonPath("$.data.submitRecords[0].id").value(1),
+				jsonPath("$.data.submitRecords[0].userId").value(userId1),
+				jsonPath("$.data.submitRecords[0].userName").value("사용자1"),
+				jsonPath("$.data.submitRecords[0].questionId").value(questionId),
+				jsonPath("$.data.submitRecords[0].isCorrect").value(true),
+				jsonPath("$.data.submitRecords[0].submitOrder").value(1),
+				jsonPath("$.data.submitRecords[1].id").value(2),
+				jsonPath("$.data.submitRecords[1].userId").value(userId2),
+				jsonPath("$.data.submitRecords[1].userName").value("사용자2"),
+				jsonPath("$.data.submitRecords[1].questionId").value(questionId),
+				jsonPath("$.data.submitRecords[1].isCorrect").value(false),
+				jsonPath("$.data.submitRecords[1].submitOrder").value(2));
 
 		verify(questionAnswerSubmitService).getSubmitRecords(questionSetId, questionId);
 	}
