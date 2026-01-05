@@ -17,7 +17,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
-@Profile({ "dev", "local", "prod" })
+@Profile({"dev", "local", "prod"})
 @Component
 @RequiredArgsConstructor
 public class ShortQuestionAnswerCountMigrationJob implements MigrationJob {
@@ -32,9 +32,9 @@ public class ShortQuestionAnswerCountMigrationJob implements MigrationJob {
 		List<QuestionEntity> shortQuestions = questionEntityRepository.findAllByQuestionType(QuestionType.SHORT);
 
 		for (QuestionEntity question : shortQuestions) {
-			ShortQuestionEntity shortQuestionEntity = (ShortQuestionEntity) question;
+			ShortQuestionEntity shortQuestionEntity = (ShortQuestionEntity)question;
 			int mainAnswerCount = shortAnswerEntityRepository
-					.countByShortQuestionIdAndIsMainTrue(shortQuestionEntity.getId());
+				.countByShortQuestionIdAndIsMainTrue(shortQuestionEntity.getId());
 			shortQuestionEntity.updateAnswerCount(mainAnswerCount);
 			log.info("[{}] id={}의 answerCount {} 업데이트", getName(), shortQuestionEntity.getId(), mainAnswerCount);
 		}
