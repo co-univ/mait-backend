@@ -258,7 +258,33 @@ class QuestionAnswerSubmitControllerTest {
 					.content(requestJson))
 			.andExpect(status().isBadRequest())
 			.andExpect(jsonPath("$.isSuccess").value(false))
-			.andExpect(jsonPath("$.reasons[0]").value("주관식 문제는 최소 1글자 이상의 답변이 필요합니다."));
+			.andExpect(jsonPath("$.reasons[0]").value("주관식 문제는 최소 1개 이상의 답변이 필요합니다."));
+	}
+
+	@Test
+	@DisplayName("주관식 문제에서 submitAnswers에 빈 문자열이 포함된 경우 validation 실패")
+	void submitShortQuestionAnswer_ValidationFailed_SubmitAnswersContainsEmptyString() throws Exception {
+		// Given
+		Long questionSetId = 1L;
+		Long questionId = 2L;
+		Long userId = 1L;
+
+		String requestJson = """
+			{
+				"type": "SHORT",
+				"userId": %d,
+				"submitAnswers": [""]
+			}
+			""".formatted(userId);
+
+		// When & Then
+		mockMvc.perform(
+				post("/api/v1/question-sets/{questionSetId}/questions/{questionId}/submit", questionSetId, questionId)
+					.contentType(MediaType.APPLICATION_JSON)
+					.content(requestJson))
+			.andExpect(status().isBadRequest())
+			.andExpect(jsonPath("$.isSuccess").value(false))
+			.andExpect(jsonPath("$.reasons[0]").value("답변은 빈 문자열일 수 없습니다."));
 	}
 
 	@Test
@@ -336,8 +362,7 @@ class QuestionAnswerSubmitControllerTest {
 				.questionId(questionId)
 				.isCorrect(false)
 				.submitOrder(2L)
-				.build()
-		);
+				.build());
 
 		// When & Then
 		when(questionAnswerSubmitService.getSubmitRecords(questionSetId, questionId))
