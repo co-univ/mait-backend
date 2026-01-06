@@ -112,7 +112,8 @@ public class QuestionService {
 
 	// @Async todo 재사용성이 없으면 부모스레드와 다르게 비동기로 태워도 될 것 같기도
 	public void createDefaultQuestions(final QuestionSetEntity questionSetEntity, final List<QuestionCount> counts) {
-		String currentRank = questionEntityRepository.findTopByQuestionSetIdOrderByLexoRankDesc(questionSetEntity.getId())
+		String currentRank = questionEntityRepository
+			.findTopByQuestionSetIdOrderByLexoRankDesc(questionSetEntity.getId())
 			.map(QuestionEntity::getLexoRank)
 			.map(LexoRank::nextAfter)
 			.orElseGet(LexoRank::middle);
