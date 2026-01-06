@@ -53,7 +53,7 @@ public class AuthController {
 		return ResponseEntity.ok(ApiResponse.noContent());
 	}
 
-	@Operation(summary = "로그아웃 API", description = "accessToken/refreshToken을 블랙리스트에 등록하고 refreshToken 쿠키를 만료")
+	@Operation(summary = "로그아웃 API", description = "사용자 로그아웃 API")
 	@PostMapping("/logout")
 	public ResponseEntity<ApiResponse<Void>> logout(
 		@RequestHeader(value = AUTH_HEADER, required = false) String authorizationHeader,
