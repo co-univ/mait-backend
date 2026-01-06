@@ -17,6 +17,9 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import com.coniv.mait.domain.question.entity.MultipleQuestionEntity;
 import com.coniv.mait.domain.question.entity.QuestionSetEntity;
+import com.coniv.mait.domain.question.enums.QuestionSetVisibility;
+import com.coniv.mait.domain.question.exception.QuestionSetStatusException;
+import com.coniv.mait.domain.question.exception.code.QuestionSetStatusExceptionCode;
 import com.coniv.mait.domain.question.service.component.QuestionReader;
 import com.coniv.mait.domain.solve.entity.AnswerSubmitRecordEntity;
 import com.coniv.mait.domain.solve.exception.QuestionSolveExceptionCode;
@@ -135,15 +138,22 @@ class QuestionAnswerSubmitServiceTest {
 			Long questionSetId = 1L;
 			Long questionId = 1L;
 			Long userId = 1L;
+			Long teamId = 1L;
 			Long submitOrder = 1L;
 			MultipleQuestionSubmitAnswer submitAnswer = new MultipleQuestionSubmitAnswer(List.of(1L));
 
 			UserEntity mockUser = mock(UserEntity.class);
+			QuestionSetEntity mockQuestionSet = mock(QuestionSetEntity.class);
 			MultipleQuestionEntity mockQuestion = mock(MultipleQuestionEntity.class);
 
+			when(mockQuestionSet.getTeamId()).thenReturn(teamId);
+			when(mockQuestionSet.getVisibility()).thenReturn(QuestionSetVisibility.GROUP);
+			when(mockQuestion.getQuestionSet()).thenReturn(mockQuestionSet);
 			when(submitOrderGenerator.generateSubmitOrder(questionId)).thenReturn(submitOrder);
 			when(userEntityRepository.findById(userId)).thenReturn(Optional.of(mockUser));
 			when(questionReader.getQuestion(questionId, questionSetId)).thenReturn(mockQuestion);
+			doNothing().when(teamRoleValidator).checkHasSolveQuestionAuthorityInTeam(teamId, userId);
+			when(questionSetParticipantManager.isParticipating(mockUser, mockQuestionSet)).thenReturn(true);
 			when(mockQuestion.canSolve()).thenReturn(false);
 
 			// when & then
@@ -173,7 +183,6 @@ class QuestionAnswerSubmitServiceTest {
 
 			when(mockQuestionSet.getTeamId()).thenReturn(teamId);
 			when(mockQuestion.getQuestionSet()).thenReturn(mockQuestionSet);
-			when(mockQuestion.canSolve()).thenReturn(true);
 
 			when(submitOrderGenerator.generateSubmitOrder(questionId)).thenReturn(submitOrder);
 			when(userEntityRepository.findById(userId)).thenReturn(Optional.of(mockUser));
@@ -206,8 +215,8 @@ class QuestionAnswerSubmitServiceTest {
 			MultipleQuestionEntity mockQuestion = mock(MultipleQuestionEntity.class);
 
 			when(mockQuestionSet.getTeamId()).thenReturn(teamId);
+			when(mockQuestionSet.getVisibility()).thenReturn(QuestionSetVisibility.GROUP);
 			when(mockQuestion.getQuestionSet()).thenReturn(mockQuestionSet);
-			when(mockQuestion.canSolve()).thenReturn(true);
 
 			when(submitOrderGenerator.generateSubmitOrder(questionId)).thenReturn(submitOrder);
 			when(userEntityRepository.findById(userId)).thenReturn(Optional.of(mockUser));
@@ -221,6 +230,42 @@ class QuestionAnswerSubmitServiceTest {
 				.isInstanceOf(QuestionSolvingException.class)
 				.hasMessage(QuestionSolveExceptionCode.NOT_PARTICIPATED.getMessage());
 
+			verify(answerGrader, never()).gradeAnswer(any(), any());
+			verify(answerSubmitRecordEntityRepository, never()).save(any());
+		}
+
+		@Test
+		@DisplayName("문제 셋이 PRIVATE인 경우 NEED_OPEN 예외 발생")
+		void submitAnswer_QuestionSetPrivate_ThrowsException() {
+			// given
+			Long questionSetId = 1L;
+			Long questionId = 1L;
+			Long userId = 1L;
+			Long teamId = 1L;
+			Long submitOrder = 1L;
+			MultipleQuestionSubmitAnswer submitAnswer = new MultipleQuestionSubmitAnswer(List.of(1L));
+
+			UserEntity mockUser = mock(UserEntity.class);
+			QuestionSetEntity mockQuestionSet = mock(QuestionSetEntity.class);
+			MultipleQuestionEntity mockQuestion = mock(MultipleQuestionEntity.class);
+
+			when(mockQuestionSet.getTeamId()).thenReturn(teamId);
+			when(mockQuestionSet.getVisibility()).thenReturn(QuestionSetVisibility.PRIVATE);
+			when(mockQuestion.getQuestionSet()).thenReturn(mockQuestionSet);
+
+			when(submitOrderGenerator.generateSubmitOrder(questionId)).thenReturn(submitOrder);
+			when(userEntityRepository.findById(userId)).thenReturn(Optional.of(mockUser));
+			when(questionReader.getQuestion(questionId, questionSetId)).thenReturn(mockQuestion);
+			doNothing().when(teamRoleValidator).checkHasSolveQuestionAuthorityInTeam(teamId, userId);
+
+			// when & then
+			assertThatThrownBy(() -> questionAnswerSubmitService.submitAnswer(
+				questionSetId, questionId, userId, submitAnswer))
+				.isInstanceOf(QuestionSetStatusException.class)
+				.extracting(ex -> ((QuestionSetStatusException)ex).getExceptionCode())
+				.isEqualTo(QuestionSetStatusExceptionCode.NEED_OPEN);
+
+			verify(questionSetParticipantManager, never()).isParticipating(any(), any());
 			verify(answerGrader, never()).gradeAnswer(any(), any());
 			verify(answerSubmitRecordEntityRepository, never()).save(any());
 		}
@@ -242,6 +287,7 @@ class QuestionAnswerSubmitServiceTest {
 
 			when(mockUser.getId()).thenReturn(userId);
 			when(mockQuestionSet.getTeamId()).thenReturn(teamId);
+			when(mockQuestionSet.getVisibility()).thenReturn(QuestionSetVisibility.GROUP);
 			when(mockQuestion.getQuestionSet()).thenReturn(mockQuestionSet);
 			when(mockQuestion.canSolve()).thenReturn(true);
 
