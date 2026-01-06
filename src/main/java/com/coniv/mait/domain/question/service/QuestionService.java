@@ -112,12 +112,16 @@ public class QuestionService {
 
 	// @Async todo 재사용성이 없으면 부모스레드와 다르게 비동기로 태워도 될 것 같기도
 	public void createDefaultQuestions(final QuestionSetEntity questionSetEntity, final List<QuestionCount> counts) {
-		String currentRank = LexoRank.middle();
+		String currentRank = questionEntityRepository.findTopByQuestionSetIdOrderByLexoRankDesc(questionSetEntity.getId())
+			.map(QuestionEntity::getLexoRank)
+			.map(LexoRank::nextAfter)
+			.orElseGet(LexoRank::middle);
 
 		for (QuestionCount count : counts) {
 			QuestionFactory<QuestionDto> questionFactory = getQuestionFactory(count.type());
 			for (int i = 0; i < count.count(); i++) {
-				questionFactory.createDefaultQuestion(LexoRank.nextAfter(currentRank), questionSetEntity);
+				questionFactory.createDefaultQuestion(currentRank, questionSetEntity);
+				currentRank = LexoRank.nextAfter(currentRank);
 			}
 		}
 	}
@@ -311,7 +315,11 @@ public class QuestionService {
 			log.info("response: {}", createdQuestions.getContent());
 			aiRequestStatusManager.updateStatus(questionSetId, AiRequestStatus.PROCESSING);
 			List<QuestionDto> questions = createdQuestions.getContent();
-			String currentRank = LexoRank.middle();
+
+			String currentRank = questionEntityRepository.findTopByQuestionSetIdOrderByLexoRankDesc(questionSetId)
+				.map(QuestionEntity::getLexoRank)
+				.map(LexoRank::nextAfter)
+				.orElseGet(LexoRank::middle);
 
 			for (QuestionDto questionDto : questions) {
 				QuestionFactory<QuestionDto> questionFactory = getQuestionFactory(questionDto.getType());
