@@ -27,6 +27,17 @@ public final class CookieUtil {
 			.build();
 	}
 
+	public ResponseCookie createExpiredRefreshResponseCookie() {
+		return ResponseCookie.from(REFRESH_TOKEN, "")
+			.domain(cookieProperty.getDomain())
+			.path(cookieProperty.getPath())
+			.maxAge(0)
+			.httpOnly(cookieProperty.isHttpOnly())
+			.secure(cookieProperty.isSecure())
+			.sameSite(cookieProperty.getSameSite())
+			.build();
+	}
+
 	private static final int COOKIE_MAX_AGE = 60 * 60 * 24 * 3; // 3 days
 	private static final int OAUTH_SIGNUP_COOKIE_MAX_AGE = 10 * 60; // 10 minutes
 
@@ -49,5 +60,15 @@ public final class CookieUtil {
 			.secure(cookieProperty.isSecure())
 			.sameSite(cookieProperty.getSameSite())
 			.build();
+	}
+
+	public Cookie createEmptyRefreshCookie() {
+		Cookie cookie = new Cookie(REFRESH_TOKEN, "");
+		cookie.setPath(cookieProperty.getPath());
+		cookie.setMaxAge(0);
+		cookie.setHttpOnly(cookieProperty.isHttpOnly());
+		cookie.setSecure(cookieProperty.isSecure());
+		// javax Cookie는 SameSite/Domain을 직접 지원하지 않아, 필요 시 ResponseCookie를 사용하세요.
+		return cookie;
 	}
 }

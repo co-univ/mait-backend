@@ -1,14 +1,19 @@
 package com.coniv.mait.web.auth.controller;
 
+import static com.coniv.mait.global.jwt.constant.TokenConstants.*;
+
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.CookieValue;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.coniv.mait.domain.auth.service.AuthService;
+import com.coniv.mait.global.jwt.JwtTokenProvider;
 import com.coniv.mait.global.jwt.Token;
 import com.coniv.mait.global.response.ApiResponse;
 import com.coniv.mait.global.util.CookieUtil;
@@ -32,6 +37,8 @@ public class AuthController {
 	private static final String BEARER_TOKEN = "Bearer ";
 
 	private final AuthService authService;
+	private final CookieUtil cookieUtil;
+	private final JwtTokenProvider jwtTokenProvider;
 
 	@Operation(summary = "로그인 API", description = "사용자 로그인 API")
 	@PostMapping("/login")
@@ -44,6 +51,20 @@ public class AuthController {
 		httpServletResponse.addCookie(refreshTokenCookie);
 
 		return ResponseEntity.ok(ApiResponse.noContent());
+	}
+
+	@Operation(summary = "로그아웃 API", description = "accessToken/refreshToken을 블랙리스트에 등록하고 refreshToken 쿠키를 만료")
+	@PostMapping("/logout")
+	public ResponseEntity<ApiResponse<Void>> logout(
+		@RequestHeader(value = AUTH_HEADER, required = false) String authorizationHeader,
+		@CookieValue(name = REFRESH_TOKEN, required = false) String refreshToken) {
+
+		String accessToken = authorizationHeader.substring(BEARER_TOKEN.length()).trim();
+		authService.logout(accessToken, refreshToken);
+
+		return ResponseEntity.noContent()
+			.header("Set-Cookie", cookieUtil.createExpiredRefreshResponseCookie().toString())
+			.build();
 	}
 
 	@Operation(summary = "Access token 반환 API", description = "Oauth 로그인 후 access token을 반환하는 API")

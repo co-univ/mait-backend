@@ -6,9 +6,12 @@ import org.springframework.stereotype.Service;
 import com.coniv.mait.domain.user.entity.UserEntity;
 import com.coniv.mait.domain.user.repository.UserEntityRepository;
 import com.coniv.mait.global.exception.custom.LoginFailException;
+import com.coniv.mait.global.jwt.BlackList;
 import com.coniv.mait.global.jwt.JwtTokenProvider;
 import com.coniv.mait.global.jwt.Token;
 import com.coniv.mait.global.jwt.cache.OauthAccessCodeRedisRepository;
+import com.coniv.mait.global.jwt.repository.BlackListRepository;
+import com.coniv.mait.global.jwt.repository.RefreshTokenRepository;
 
 import lombok.RequiredArgsConstructor;
 
@@ -23,6 +26,9 @@ public class AuthService {
 	private final JwtTokenProvider jwtTokenProvider;
 
 	private final OauthAccessCodeRedisRepository oauthAccessCodeRedisRepository;
+
+	private final BlackListRepository blackListRepository;
+	private final RefreshTokenRepository refreshTokenRepository;
 
 	public Token login(final String email, final String password) {
 		UserEntity user = userEntityRepository.findByEmail(email)
@@ -40,5 +46,14 @@ public class AuthService {
 			throw new LoginFailException("유효하지 않은 코드입니다.");
 		}
 		return mayBeAccessToken;
+	}
+
+	public void logout(final String accessToken, final String refreshToken) {
+		blackListRepository.save(BlackList.builder().id(accessToken).build());
+
+		Long userId = jwtTokenProvider.getUserId(accessToken);
+		refreshTokenRepository.deleteById(userId);
+
+		blackListRepository.save(BlackList.builder().id(refreshToken).build());
 	}
 }
