@@ -90,7 +90,7 @@ public class QuestionController {
 	public ResponseEntity<ApiResponse<QuestionApiResponse>> updateQuestion(
 		@PathVariable("questionSetId") final Long questionSetId,
 		@PathVariable("questionId") final Long questionId,
-		@Valid @RequestBody UpdateQuestionApiRequest request) {
+		@RequestBody UpdateQuestionApiRequest request) {
 		return ResponseEntity.ok(ApiResponse.ok(QuestionApiResponse.from(
 			questionService.updateQuestion(questionSetId, questionId, request.toQuestionDto()))));
 	}
