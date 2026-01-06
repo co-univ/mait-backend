@@ -53,11 +53,10 @@ public class QuestionLexoRankDedupMigration implements MigrationJob {
 			int updatedForSet = reassignRanksInPlace(questions);
 			totalUpdated += updatedForSet;
 
-			log.info("[Migration][QuestionLexoRankDedupMigration] questionSetId={} updated={}", questionSetId,
-				updatedForSet);
+			log.info("[마이그레이션][LexoRank 중복 정리] questionSetId={} 수정건수={}", questionSetId, updatedForSet);
 		}
 
-		log.info("[Migration][QuestionLexoRankDedupMigration] totalUpdated={}", totalUpdated);
+		log.info("[마이그레이션][LexoRank 중복 정리] 전체 수정건수={}", totalUpdated);
 	}
 
 	private boolean needsFix(List<QuestionEntity> sortedQuestions) {
@@ -122,8 +121,7 @@ public class QuestionLexoRankDedupMigration implements MigrationJob {
 				String newRank = LexoRank.between(lastAssigned, upperBound);
 				if (Objects.equals(newRank, lastAssigned) || Objects.equals(newRank, upperBound)) {
 					throw new IllegalStateException(
-						"Failed to generate unique LexoRank between bounds. last=" + lastAssigned + ", upper="
-							+ upperBound);
+						"LexoRank 유니크 값 생성 실패 (last=" + lastAssigned + ", upper=" + upperBound + ")");
 				}
 				dup.updateRank(newRank);
 				lastAssigned = newRank;
