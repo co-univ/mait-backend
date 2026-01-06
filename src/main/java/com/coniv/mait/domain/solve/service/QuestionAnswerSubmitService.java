@@ -67,18 +67,21 @@ public class QuestionAnswerSubmitService {
 			.orElseThrow(() -> new EntityNotFoundException("사용자를 찾을 수 없습니다."));
 
 		final QuestionEntity question = questionReader.getQuestion(questionId, questionSetId);
-
-		if (!question.canSolve()) {
-			throw new QuestionSolvingException(QuestionSolveExceptionCode.CANNOT_SOLVE);
-		}
-
 		final QuestionSetEntity questionSet = question.getQuestionSet();
-		final Long teamId = questionSet.getTeamId();
 
+		final Long teamId = questionSet.getTeamId();
 		teamRoleValidator.checkHasSolveQuestionAuthorityInTeam(teamId, userId);
 
 		if (questionSet.getVisibility() == QuestionSetVisibility.PRIVATE) {
 			throw new QuestionSetStatusException(QuestionSetStatusExceptionCode.NEED_OPEN);
+		}
+
+		if (!questionSetParticipantManager.isParticipating(user, questionSet)) {
+			throw new QuestionSolvingException(QuestionSolveExceptionCode.NOT_PARTICIPATED);
+		}
+
+		if (!question.canSolve()) {
+			throw new QuestionSolvingException(QuestionSolveExceptionCode.CANNOT_SOLVE);
 		}
 
 		if (answerSubmitRecordEntityRepository.existsByUserIdAndQuestionIdAndIsCorrectTrue(user.getId(), questionId)) {
