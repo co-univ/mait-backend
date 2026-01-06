@@ -83,7 +83,8 @@ public class QuestionReviewService {
 	public AnswerSubmitDto checkAnswer(final Long questionId, final Long questionSetId,
 		final Long userId, final SubmitAnswerDto<?> submitAnswers) {
 		final QuestionEntity question = questionReader.getQuestion(questionId, questionSetId);
-		final QuestionSetEntity questionSet = question.getQuestionSet();
+		final QuestionSetEntity questionSet = questionSetEntityRepository.findById(questionSetId)
+			.orElseThrow(() -> new EntityNotFoundException("해당 문제 셋을 찾을 수 없습니다."));
 
 		if (questionSet.getVisibility() == QuestionSetVisibility.PRIVATE) {
 			throw new QuestionSetStatusException(QuestionSetStatusExceptionCode.NEED_OPEN);
