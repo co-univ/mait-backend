@@ -2,6 +2,7 @@ package com.coniv.mait.web.auth.controller;
 
 import static com.coniv.mait.global.jwt.constant.TokenConstants.*;
 
+import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.CookieValue;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -13,7 +14,6 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.coniv.mait.domain.auth.service.AuthService;
-import com.coniv.mait.global.jwt.JwtTokenProvider;
 import com.coniv.mait.global.jwt.Token;
 import com.coniv.mait.global.response.ApiResponse;
 import com.coniv.mait.global.util.CookieUtil;
@@ -38,7 +38,6 @@ public class AuthController {
 
 	private final AuthService authService;
 	private final CookieUtil cookieUtil;
-	private final JwtTokenProvider jwtTokenProvider;
 
 	@Operation(summary = "로그인 API", description = "사용자 로그인 API")
 	@PostMapping("/login")
@@ -65,6 +64,20 @@ public class AuthController {
 		return ResponseEntity.noContent()
 			.header("Set-Cookie", cookieUtil.createExpiredRefreshResponseCookie().toString())
 			.build();
+	}
+
+	@Operation(summary = "토큰 재발급 API", description = "토큰 재발급 API")
+	@PostMapping("/reissue")
+	public ResponseEntity<ApiResponse<Void>> reissue(
+		@CookieValue(name = REFRESH_TOKEN) String refreshToken, HttpServletResponse httpServletResponse) {
+
+		Token newToken = authService.reissue(refreshToken);
+
+		httpServletResponse.addHeader(AUTH_HEADER, BEARER_TOKEN + newToken.accessToken());
+		ResponseCookie newRefreshToken = cookieUtil.createRefreshResponseCookie(newToken.refreshToken());
+		httpServletResponse.addHeader("Set-Cookie", newRefreshToken.toString());
+
+		return ResponseEntity.ok(ApiResponse.noContent());
 	}
 
 	@Operation(summary = "Access token 반환 API", description = "Oauth 로그인 후 access token을 반환하는 API")
