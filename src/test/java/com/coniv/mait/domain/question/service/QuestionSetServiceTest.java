@@ -21,6 +21,7 @@ import com.coniv.mait.domain.question.enums.QuestionSetOngoingStatus;
 import com.coniv.mait.domain.question.enums.QuestionSetVisibility;
 import com.coniv.mait.domain.question.enums.QuestionValidationResult;
 import com.coniv.mait.domain.question.exception.QuestionSetStatusException;
+import com.coniv.mait.domain.question.exception.code.QuestionSetStatusExceptionCode;
 import com.coniv.mait.domain.question.repository.AiRequestStatusManager;
 import com.coniv.mait.domain.question.repository.QuestionEntityRepository;
 import com.coniv.mait.domain.question.repository.QuestionSetEntityRepository;
@@ -442,5 +443,45 @@ class QuestionSetServiceTest {
 		// when, then
 		assertThatThrownBy(() -> questionSetService.updateQuestionSetToReviewMode(questionSetId, visibility))
 			.isInstanceOf(QuestionSetStatusException.class);
+	}
+
+	@Test
+	@DisplayName("종료된 문제 셋을 재시작 - 성공")
+	void restartQuestionSet() {
+		// given
+		final Long questionSetId = 1L;
+		QuestionSetEntity questionSetEntity = QuestionSetEntity.builder()
+			.id(questionSetId)
+			.ongoingStatus(QuestionSetOngoingStatus.AFTER)
+			.deliveryMode(DeliveryMode.LIVE_TIME)
+			.build();
+		when(questionSetEntityRepository.findById(questionSetId)).thenReturn(Optional.of(questionSetEntity));
+
+		// when
+		questionSetService.restartQuestionSet(questionSetId);
+
+		// then
+		assertThat(questionSetEntity.getOngoingStatus()).isEqualTo(QuestionSetOngoingStatus.ONGOING);
+	}
+
+	@Test
+	@DisplayName("종료된 문제 셋 재시작 - 종료된 상태가 아닐때")
+	void restartQuestionSet_statusIsNotAfter() {
+		// given
+		final Long questionSetId = 1L;
+		QuestionSetEntity questionSetEntity = QuestionSetEntity.builder()
+			.id(questionSetId)
+			.ongoingStatus(QuestionSetOngoingStatus.ONGOING)
+			.deliveryMode(DeliveryMode.LIVE_TIME)
+			.build();
+		when(questionSetEntityRepository.findById(questionSetId)).thenReturn(Optional.of(questionSetEntity));
+
+		// when, then
+		assertThatThrownBy(() -> questionSetService.restartQuestionSet(questionSetId))
+			.isInstanceOfSatisfying(QuestionSetStatusException.class, ex -> {
+				assertThat(ex.getExceptionCode()).isEqualTo(QuestionSetStatusExceptionCode.ONLY_AFTER);
+				assertThat(ex.getExceptionCode().getCode()).isEqualTo(QuestionSetStatusExceptionCode.ONLY_AFTER.getCode());
+				assertThat(ex.getMessage()).isEqualTo(QuestionSetStatusExceptionCode.ONLY_AFTER.getMessage());
+			});
 	}
 }
