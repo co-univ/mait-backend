@@ -480,7 +480,8 @@ class QuestionSetServiceTest {
 		assertThatThrownBy(() -> questionSetService.restartQuestionSet(questionSetId))
 			.isInstanceOfSatisfying(QuestionSetStatusException.class, ex -> {
 				assertThat(ex.getExceptionCode()).isEqualTo(QuestionSetStatusExceptionCode.ONLY_AFTER);
-				assertThat(ex.getExceptionCode().getCode()).isEqualTo(QuestionSetStatusExceptionCode.ONLY_AFTER.getCode());
+				assertThat(ex.getExceptionCode().getCode()).isEqualTo(
+					QuestionSetStatusExceptionCode.ONLY_AFTER.getCode());
 				assertThat(ex.getMessage()).isEqualTo(QuestionSetStatusExceptionCode.ONLY_AFTER.getMessage());
 			});
 	}
