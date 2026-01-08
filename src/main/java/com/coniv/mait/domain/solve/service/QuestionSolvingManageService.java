@@ -17,6 +17,8 @@ import com.coniv.mait.domain.question.exception.QuestionStatusException;
 import com.coniv.mait.domain.question.exception.code.QuestionSetStatusExceptionCode;
 import com.coniv.mait.domain.question.service.component.QuestionReader;
 import com.coniv.mait.domain.solve.component.QuestionAnswerUpdater;
+import com.coniv.mait.domain.solve.event.QuestionUpdateEvent;
+import com.coniv.mait.global.event.MaitEventPublisher;
 import com.coniv.mait.web.solve.dto.UpdateAnswerPayload;
 
 @Service
@@ -25,10 +27,14 @@ public class QuestionSolvingManageService {
 
 	private final Map<QuestionType, QuestionAnswerUpdater> questionAnswerUpdaters;
 
-	public QuestionSolvingManageService(List<QuestionAnswerUpdater> updaters, QuestionReader questionReader) {
+	private final MaitEventPublisher maitEventPublisher;
+
+	public QuestionSolvingManageService(List<QuestionAnswerUpdater> updaters, QuestionReader questionReader,
+		MaitEventPublisher maitEventPublisher) {
 		this.questionAnswerUpdaters = updaters.stream()
 			.collect(Collectors.toUnmodifiableMap(QuestionAnswerUpdater::getQuestionType, Function.identity()));
 		this.questionReader = questionReader;
+		this.maitEventPublisher = maitEventPublisher;
 	}
 
 	@Transactional
@@ -49,6 +55,8 @@ public class QuestionSolvingManageService {
 
 		QuestionAnswerUpdater questionAnswerUpdater = getQuestionAnswerUpdater(type);
 		questionAnswerUpdater.updateAnswer(question, request);
+
+		maitEventPublisher.publishEvent(QuestionUpdateEvent.builder().questionId(questionId).build());
 	}
 
 	public QuestionAnswerUpdater getQuestionAnswerUpdater(QuestionType type) {
