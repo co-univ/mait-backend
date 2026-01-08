@@ -172,4 +172,20 @@ public class QuestionSetService {
 		questionSet.updateMode(DeliveryMode.REVIEW);
 		questionSet.updateVisibility(visibility);
 	}
+
+	@Transactional
+	public void restartQuestionSet(final Long questionSetId) {
+		QuestionSetEntity questionSet = questionSetEntityRepository.findById(questionSetId)
+			.orElseThrow(() -> new EntityNotFoundException("해당 문제 셋을 찾을 수 없습니다."));
+
+		if (questionSet.getOngoingStatus() != QuestionSetOngoingStatus.AFTER) {
+			throw new QuestionSetStatusException(QuestionSetStatusExceptionCode.ONLY_AFTER);
+		}
+
+		if (questionSet.getDeliveryMode() != DeliveryMode.LIVE_TIME) {
+			throw new QuestionSetStatusException(QuestionSetStatusExceptionCode.ONLY_LIVE_TIME);
+		}
+
+		questionSet.updateOngoingStatus(QuestionSetOngoingStatus.ONGOING);
+	}
 }

@@ -126,4 +126,8 @@ public class QuestionSetEntity extends BaseTimeEntity {
 	public boolean canReview() {
 		return ongoingStatus == QuestionSetOngoingStatus.AFTER && deliveryMode == DeliveryMode.REVIEW;
 	}
+
+	public void updateOngoingStatus(QuestionSetOngoingStatus status) {
+		this.ongoingStatus = status;
+	}
 }

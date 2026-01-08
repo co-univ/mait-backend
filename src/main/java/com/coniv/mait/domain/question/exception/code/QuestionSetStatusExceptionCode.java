@@ -13,7 +13,8 @@ public enum QuestionSetStatusExceptionCode implements ExceptionCode {
 
 	ONLY_AFTER(HttpStatus.BAD_REQUEST, "0001", "종료된 문제 셋만 접근 가능합니다."),
 	ONLY_REVIEW(HttpStatus.BAD_REQUEST, "0002", "리뷰 상태의 문제 셋만 처리가 가능합니다."),
-	NEED_OPEN(HttpStatus.FORBIDDEN, "1001", "");
+	NEED_OPEN(HttpStatus.FORBIDDEN, "1001", "공개된 문제 셋만 풀이 가능"),
+	ONLY_LIVE_TIME(HttpStatus.BAD_REQUEST, "2001" ,"실시간 상태의 문제 셋만 재시작 가능합니다." );
 
 	private final HttpStatus status;
 	private final String code;
