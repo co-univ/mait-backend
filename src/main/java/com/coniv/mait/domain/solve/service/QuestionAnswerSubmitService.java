@@ -11,7 +11,10 @@ import org.springframework.transaction.annotation.Transactional;
 import com.coniv.mait.domain.question.entity.QuestionEntity;
 import com.coniv.mait.domain.question.entity.QuestionSetEntity;
 import com.coniv.mait.domain.question.enums.QuestionSetVisibility;
+import com.coniv.mait.domain.question.enums.QuestionType;
+import com.coniv.mait.domain.question.exception.QuestionExceptionCode;
 import com.coniv.mait.domain.question.exception.QuestionSetStatusException;
+import com.coniv.mait.domain.question.exception.QuestionStatusException;
 import com.coniv.mait.domain.question.exception.code.QuestionSetStatusExceptionCode;
 import com.coniv.mait.domain.question.service.component.QuestionReader;
 import com.coniv.mait.domain.solve.entity.AnswerSubmitRecordEntity;
@@ -34,7 +37,9 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class QuestionAnswerSubmitService {
@@ -120,5 +125,23 @@ public class QuestionAnswerSubmitService {
 			.sorted(Comparator.comparing(AnswerSubmitRecordEntity::getSubmitOrder))
 			.map(record -> AnswerSubmitRecordDto.of(record, userById.get(record.getUserId())))
 			.toList();
+	}
+
+	@Transactional
+	public void regradeSubmitRecords(final Long questionId) {
+		QuestionEntity question = questionReader.getQuestion(questionId);
+		if (question.getType() != QuestionType.SHORT && question.getType() != QuestionType.FILL_BLANK) {
+			log.warn("[재채점 실패] 예상치 못한 타입의 재채점 시도 type={}", question.getType());
+			throw new QuestionStatusException(QuestionExceptionCode.UNAVAILABLE_TYPE);
+		}
+
+		List<AnswerSubmitRecordEntity> submitRecords = answerSubmitRecordEntityRepository.findAllByQuestionId(
+			question.getId());
+
+		for (AnswerSubmitRecordEntity submitRecord : submitRecords) {
+			SubmitAnswerDto<?> submitAnswer = SubmitAnswerDto.fromJson(submitRecord.getSubmittedAnswer());
+			boolean regradedResult = answerGrader.gradeAnswer(question, submitAnswer);
+			submitRecord.updateCorrect(regradedResult);
+		}
 	}
 }
