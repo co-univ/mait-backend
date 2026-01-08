@@ -136,4 +136,11 @@ public class QuestionSetController {
 		questionSetService.updateQuestionSetToReviewMode(questionSetId, request.visibility());
 		return ResponseEntity.ok(ApiResponse.noContent());
 	}
+
+	@Operation(summary = "종료된 문제 셋을 실시간 풀이 진행중으로 변경", description = "종료된 문제 셋을 다시 실시간 상태로 되돌린다.")
+	@PatchMapping("/{questionSetId}/restart")
+	public ResponseEntity<ApiResponse<Void>> restartQuestionSet(@PathVariable("questionSetId") Long questionSetId) {
+		questionSetService.restartQuestionSet(questionSetId);
+		return ResponseEntity.ok(ApiResponse.noContent());
+	}
 }
