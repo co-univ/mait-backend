@@ -1,5 +1,6 @@
 package com.coniv.mait.web.solve.dto;
 
+import com.coniv.mait.domain.question.enums.QuestionType;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 
@@ -25,5 +26,5 @@ public sealed interface UpdateAnswerPayload
 	permits MultipleChoiceUpdateAnswerPayload, OrderingUpdateAnswerPayload, FillBlankUpdateAnswerPayload,
 	ShortUpdateAnswerPayload {
 
-	com.coniv.mait.domain.question.enums.QuestionType getType();
+	QuestionType getType();
 }
