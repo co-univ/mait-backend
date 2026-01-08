@@ -175,6 +175,7 @@ public class QuestionSetService {
 
 	@Transactional
 	public void restartQuestionSet(final Long questionSetId) {
+		// todo 유저 권한 확인
 		QuestionSetEntity questionSet = questionSetEntityRepository.findById(questionSetId)
 			.orElseThrow(() -> new EntityNotFoundException("해당 문제 셋을 찾을 수 없습니다."));
 
