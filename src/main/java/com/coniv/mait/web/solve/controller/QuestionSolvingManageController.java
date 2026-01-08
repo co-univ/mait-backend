@@ -13,6 +13,7 @@ import com.coniv.mait.web.solve.dto.UpdateQuestionAnswerApiRequest;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 
 @Tag(name = "문제 풀이 관리 API", description = "어드민에서 사용하는 풀이 관리 API")
@@ -28,7 +29,7 @@ public class QuestionSolvingManageController {
 	public ResponseEntity<ApiResponse<Void>> regradeQuestionSubmitRecords(
 		@PathVariable("questionSetId") Long questionSetId,
 		@PathVariable("questionId") Long questionId,
-		@RequestBody UpdateQuestionAnswerApiRequest request) {
+		@RequestBody @Valid UpdateQuestionAnswerApiRequest request) {
 
 		questionSolvingManageService.updateQuestionAnswers(questionSetId, questionId, request.payload());
 		return ResponseEntity.ok(ApiResponse.noContent());
