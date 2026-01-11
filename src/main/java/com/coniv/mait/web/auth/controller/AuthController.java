@@ -2,7 +2,6 @@ package com.coniv.mait.web.auth.controller;
 
 import static com.coniv.mait.global.jwt.constant.TokenConstants.*;
 
-import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.CookieValue;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -68,15 +67,13 @@ public class AuthController {
 	@Operation(summary = "토큰 재발급 API", description = "토큰 재발급 API")
 	@PostMapping("/reissue")
 	public ResponseEntity<ApiResponse<Void>> reissue(
-		@CookieValue(name = REFRESH_TOKEN) String refreshToken, HttpServletResponse httpServletResponse) {
+		@CookieValue(name = REFRESH_TOKEN) String refreshToken) {
 
 		Token newToken = authService.reissue(refreshToken);
 
-		httpServletResponse.addHeader(AUTH_HEADER, BEARER_TOKEN + newToken.accessToken());
-		ResponseCookie newRefreshToken = cookieUtil.createRefreshResponseCookie(newToken.refreshToken());
-		httpServletResponse.addHeader("Set-Cookie", newRefreshToken.toString());
-
-		return ResponseEntity.ok(ApiResponse.noContent());
+		return ResponseEntity.ok()
+			.header("Set-Cookie", cookieUtil.createRefreshResponseCookie(newToken.refreshToken()).toString())
+			.body(ApiResponse.noContent());
 	}
 
 	@Operation(summary = "Access token 반환 API", description = "Oauth 로그인 후 access token을 반환하는 API")
