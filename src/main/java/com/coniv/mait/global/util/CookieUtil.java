@@ -7,7 +7,6 @@ import org.springframework.stereotype.Component;
 
 import com.coniv.mait.global.config.property.CookieProperty;
 
-import jakarta.servlet.http.Cookie;
 import lombok.RequiredArgsConstructor;
 
 @Component
@@ -38,37 +37,14 @@ public final class CookieUtil {
 			.build();
 	}
 
-	private static final int COOKIE_MAX_AGE = 60 * 60 * 24 * 3; // 3 days
-	private static final int OAUTH_SIGNUP_COOKIE_MAX_AGE = 10 * 60; // 10 minutes
-
-	public static Cookie createRefreshCookie(final String refreshToken) {
-		Cookie cookie = new Cookie(REFRESH_TOKEN, refreshToken);
-		cookie.setPath("/");
-		cookie.setMaxAge(COOKIE_MAX_AGE);
-		cookie.setHttpOnly(true);
-		cookie.setSecure(true);
-
-		return cookie;
-	}
-
 	public ResponseCookie createOauthSignupCookie(final String signupKey) {
 		return ResponseCookie.from(OAUTH_SIGNUP_KEY, signupKey)
 			.domain(cookieProperty.getDomain())
 			.path(cookieProperty.getPath())
-			.maxAge(OAUTH_SIGNUP_COOKIE_MAX_AGE)
+			.maxAge(10 * 60)
 			.httpOnly(cookieProperty.isHttpOnly())
 			.secure(cookieProperty.isSecure())
 			.sameSite(cookieProperty.getSameSite())
 			.build();
-	}
-
-	public Cookie createEmptyRefreshCookie() {
-		Cookie cookie = new Cookie(REFRESH_TOKEN, "");
-		cookie.setPath(cookieProperty.getPath());
-		cookie.setMaxAge(0);
-		cookie.setHttpOnly(cookieProperty.isHttpOnly());
-		cookie.setSecure(cookieProperty.isSecure());
-		// javax Cookie는 SameSite/Domain을 직접 지원하지 않아, 필요 시 ResponseCookie를 사용하세요.
-		return cookie;
 	}
 }

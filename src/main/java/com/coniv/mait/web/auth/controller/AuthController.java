@@ -21,7 +21,6 @@ import com.coniv.mait.web.auth.dto.LoginApiRequest;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -46,8 +45,8 @@ public class AuthController {
 		Token token = authService.login(request.email(), request.password());
 
 		httpServletResponse.addHeader(AUTH_HEADER, BEARER_TOKEN + token.accessToken());
-		Cookie refreshTokenCookie = CookieUtil.createRefreshCookie(token.refreshToken());
-		httpServletResponse.addCookie(refreshTokenCookie);
+		httpServletResponse.addHeader("Set-Cookie",
+			cookieUtil.createRefreshResponseCookie(token.refreshToken()).toString());
 
 		return ResponseEntity.ok(ApiResponse.noContent());
 	}
