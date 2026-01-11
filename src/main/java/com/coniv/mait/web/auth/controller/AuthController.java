@@ -56,8 +56,8 @@ public class AuthController {
 	@PostMapping("/logout")
 	public ResponseEntity<ApiResponse<Void>> logout(
 		@AuthenticationPrincipal UserEntity user,
-		@RequestHeader(value = AUTH_HEADER, required = false) String authorizationHeader,
-		@CookieValue(name = REFRESH_TOKEN, required = false) String refreshToken) {
+		@RequestHeader(value = AUTH_HEADER) String authorizationHeader,
+		@CookieValue(name = REFRESH_TOKEN) String refreshToken) {
 
 		String accessToken = authorizationHeader.substring(BEARER_TOKEN.length()).trim();
 		authService.logout(user, accessToken, refreshToken);
