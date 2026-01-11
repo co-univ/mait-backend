@@ -49,12 +49,17 @@ public class AuthService {
 		return mayBeAccessToken;
 	}
 
-	public void logout(final String accessToken, final String refreshToken) {
-		blackListRepository.save(BlackList.builder().id(accessToken).build());
+	public void logout(final UserEntity user, final String accessToken, final String refreshToken) {
+		Long tokenUserId = jwtTokenProvider.getUserId(accessToken);
+		if (!user.getId().equals(tokenUserId)) {
+			throw new LoginFailException("토큰의 사용자 정보가 인증된 사용자와 일치하지 않습니다.");
+		}
 
-		Long userId = jwtTokenProvider.getUserId(accessToken);
-		refreshTokenRepository.deleteById(userId);
-
+		blackListRepository.save(BlackList.builder()
+			.id(accessToken)
+			.build());
+		
+		refreshTokenRepository.deleteById(tokenUserId);
 		blackListRepository.save(BlackList.builder().id(refreshToken).build());
 	}
 

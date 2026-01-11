@@ -3,6 +3,7 @@ package com.coniv.mait.web.auth.controller;
 import static com.coniv.mait.global.jwt.constant.TokenConstants.*;
 
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.CookieValue;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -13,6 +14,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.coniv.mait.domain.auth.service.AuthService;
+import com.coniv.mait.domain.user.entity.UserEntity;
 import com.coniv.mait.global.jwt.Token;
 import com.coniv.mait.global.response.ApiResponse;
 import com.coniv.mait.global.util.CookieUtil;
@@ -53,11 +55,12 @@ public class AuthController {
 	@Operation(summary = "로그아웃 API", description = "사용자 로그아웃 API")
 	@PostMapping("/logout")
 	public ResponseEntity<ApiResponse<Void>> logout(
+		@AuthenticationPrincipal UserEntity user,
 		@RequestHeader(value = AUTH_HEADER, required = false) String authorizationHeader,
 		@CookieValue(name = REFRESH_TOKEN, required = false) String refreshToken) {
 
 		String accessToken = authorizationHeader.substring(BEARER_TOKEN.length()).trim();
-		authService.logout(accessToken, refreshToken);
+		authService.logout(user, accessToken, refreshToken);
 
 		return ResponseEntity.noContent()
 			.header("Set-Cookie", cookieUtil.createExpiredRefreshResponseCookie().toString())
