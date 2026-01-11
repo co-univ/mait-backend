@@ -58,7 +58,7 @@ public class AuthService {
 		blackListRepository.save(BlackList.builder()
 			.id(accessToken)
 			.build());
-		
+
 		refreshTokenRepository.deleteById(tokenUserId);
 		blackListRepository.save(BlackList.builder().id(refreshToken).build());
 	}
