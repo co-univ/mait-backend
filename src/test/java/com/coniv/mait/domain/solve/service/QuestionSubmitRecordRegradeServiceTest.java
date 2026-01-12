@@ -3,9 +3,7 @@ package com.coniv.mait.domain.solve.service;
 import static org.assertj.core.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.doReturn;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.*;
 
 import java.util.List;
 
@@ -47,13 +45,13 @@ class QuestionSubmitRecordRegradeServiceTest {
 		// given
 		Long questionId = 10L;
 
-		QuestionEntity question = org.mockito.Mockito.mock(QuestionEntity.class);
+		QuestionEntity question = mock(QuestionEntity.class);
 		doReturn(questionId).when(question).getId();
 		doReturn(QuestionType.SHORT).when(question).getType();
 		doReturn(question).when(questionReader).getQuestion(questionId);
 
-		AnswerSubmitRecordEntity record1 = org.mockito.Mockito.mock(AnswerSubmitRecordEntity.class);
-		AnswerSubmitRecordEntity record2 = org.mockito.Mockito.mock(AnswerSubmitRecordEntity.class);
+		AnswerSubmitRecordEntity record1 = mock(AnswerSubmitRecordEntity.class);
+		AnswerSubmitRecordEntity record2 = mock(AnswerSubmitRecordEntity.class);
 
 		doReturn("{\"type\":\"SHORT\",\"submitAnswers\":[\"A\"]}").when(record1).getSubmittedAnswer();
 		doReturn("{\"type\":\"SHORT\",\"submitAnswers\":[\"B\"]}").when(record2).getSubmittedAnswer();
@@ -80,7 +78,7 @@ class QuestionSubmitRecordRegradeServiceTest {
 	void regradeSubmitRecords_unavailableQuestionType_throws() {
 		// given
 		Long questionId = 10L;
-		QuestionEntity question = org.mockito.Mockito.mock(QuestionEntity.class);
+		QuestionEntity question = mock(QuestionEntity.class);
 		doReturn(QuestionType.MULTIPLE).when(question).getType();
 		doReturn(question).when(questionReader).getQuestion(questionId);
 
