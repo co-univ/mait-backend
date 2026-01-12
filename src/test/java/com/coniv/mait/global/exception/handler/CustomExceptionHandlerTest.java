@@ -14,6 +14,8 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 
+import com.coniv.mait.domain.question.exception.QuestionExceptionCode;
+import com.coniv.mait.domain.question.exception.QuestionStatusException;
 import com.coniv.mait.domain.solve.exception.QuestionSolveExceptionCode;
 import com.coniv.mait.domain.solve.exception.QuestionSolvingException;
 import com.coniv.mait.domain.user.exception.UserRoleException;
@@ -148,5 +150,23 @@ class CustomExceptionHandlerTest {
 		assertNotNull(errorResponse);
 		assertThat(errorResponse.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
 		assertThat(errorResponse.getBody().getCode()).isEqualTo("QS-001");
+	}
+
+	@Test
+	@DisplayName("QuestionStatusException 처리 테스트 - 처리 불가능한 문제 타입")
+	void handleQuestionStatusException() {
+		// given
+		QuestionExceptionCode exceptionCode = QuestionExceptionCode.UNAVAILABLE_TYPE;
+		QuestionStatusException exception = new QuestionStatusException(exceptionCode);
+
+		// when
+		ResponseEntity<ErrorResponse> errorResponse = customExceptionHandler.handleQuestionStatusException(
+			exception, httpServletRequest);
+
+		// then
+		assertNotNull(errorResponse);
+		assertThat(errorResponse.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
+		assertThat(errorResponse.getBody().getCode()).isEqualTo("T-001");
+		assertThat(errorResponse.getBody().getMessage()).isEqualTo("해당 타입의 문제는 처리가 불가능합니다.");
 	}
 }
