@@ -108,7 +108,7 @@ public class QuestionAnswerSubmitService {
 	}
 
 	public List<AnswerSubmitRecordDto> getSubmitRecords(final Long questionSetId, final Long questionId) {
-		final QuestionEntity question = questionReader.getQuestion(questionId, questionSetId);
+		questionReader.getQuestion(questionId, questionSetId);
 
 		List<AnswerSubmitRecordEntity> records = answerSubmitRecordEntityRepository.findAllByQuestionId(questionId);
 		List<Long> userIds = records.stream().map(AnswerSubmitRecordEntity::getUserId).toList();

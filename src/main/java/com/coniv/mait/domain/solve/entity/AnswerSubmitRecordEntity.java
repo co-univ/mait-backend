@@ -42,4 +42,8 @@ public class AnswerSubmitRecordEntity extends BaseTimeEntity {
 
 	@Column(columnDefinition = "json")
 	private String submittedAnswer;
+
+	public void updateCorrect(boolean isCorrect) {
+		this.isCorrect = isCorrect;
+	}
 }

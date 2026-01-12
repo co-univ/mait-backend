@@ -8,6 +8,7 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
@@ -48,6 +49,18 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
 			exception.getMessage());
 		return ResponseEntity.status(HttpStatus.BAD_REQUEST)
 			.body(ErrorResponse.of(CommonExceptionCode.USER_INPUT_EXCEPTION, messages));
+	}
+
+	@Override
+	protected ResponseEntity<Object> handleHttpMessageNotReadable(HttpMessageNotReadableException exception,
+		HttpHeaders headers, HttpStatusCode status, WebRequest request) {
+		ServletWebRequest servletWebRequest = (ServletWebRequest)request;
+		HttpServletRequest httpServletRequest = servletWebRequest.getRequest();
+
+		log.info("HttpMessageNotReadableException 발생: requestURI={}, error={}", httpServletRequest.getRequestURI(),
+			exception.getMessage());
+		return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+			.body(ErrorResponse.of(CommonExceptionCode.USER_INPUT_EXCEPTION, List.of("요청 본문 형식이 올바르지 않습니다.")));
 	}
 
 	@ExceptionHandler(Exception.class)
