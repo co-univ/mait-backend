@@ -4,7 +4,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.transaction.event.TransactionPhase;
 import org.springframework.transaction.event.TransactionalEventListener;
 
-import com.coniv.mait.domain.solve.service.QuestionAnswerSubmitService;
+import com.coniv.mait.domain.solve.service.QuestionSubmitRecordRegradeService;
 
 import lombok.RequiredArgsConstructor;
 
@@ -12,10 +12,10 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class QuestionUpdateEventListener {
 
-	private final QuestionAnswerSubmitService questionAnswerSubmitService;
+	private final QuestionSubmitRecordRegradeService questionSubmitRecordRegradeService;
 
 	@TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
 	public void handleQuestionUpdateEvent(final QuestionUpdateEvent event) {
-		questionAnswerSubmitService.regradeSubmitRecords(event.questionId());
+		questionSubmitRecordRegradeService.regradeSubmitRecords(event.questionId());
 	}
 }
