@@ -39,7 +39,7 @@ public class MultipleReviewAnswerChecker implements ReviewAnswerChecker<Long> {
 			.collect(Collectors.toSet());
 
 		MultipleQuestionSubmitAnswer multiple = (MultipleQuestionSubmitAnswer)submitAnswers;
-		List<GradedAnswerMultipleResult> items = multiple.getSubmitAnswers().stream()
+		List<GradedAnswerMultipleResult> gradedResults = multiple.getSubmitAnswers().stream()
 			.map(submittedNumber -> new GradedAnswerMultipleResult(submittedNumber,
 				correctNumbers.contains(submittedNumber)))
 			.toList();
@@ -52,7 +52,7 @@ public class MultipleReviewAnswerChecker implements ReviewAnswerChecker<Long> {
 			.questionId(questionId)
 			.isCorrect(isCorrect)
 			.type(QuestionType.MULTIPLE)
-			.items(items)
+			.gradedResults(gradedResults)
 			.build();
 	}
 }

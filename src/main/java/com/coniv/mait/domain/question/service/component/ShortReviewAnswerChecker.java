@@ -54,7 +54,7 @@ public class ShortReviewAnswerChecker implements ReviewAnswerChecker<String> {
 		Map<Long, Boolean> shortAnswersByNumberChecked = shortAnswersByNumber.keySet().stream()
 			.collect(Collectors.toMap(Function.identity(), value -> false));
 
-		List<GradedAnswerShortResult> items = submittedAnswers.stream()
+		List<GradedAnswerShortResult> gradedResults = submittedAnswers.stream()
 			.map(submitted -> {
 				String processed = AnswerProcessUtil.processAnswer(submitted);
 				boolean matchedAny = false;
@@ -75,13 +75,13 @@ public class ShortReviewAnswerChecker implements ReviewAnswerChecker<String> {
 			})
 			.toList();
 
-		boolean isCorrect = items.stream().allMatch(GradedAnswerShortResult::isCorrect);
+		boolean isCorrect = gradedResults.stream().allMatch(GradedAnswerShortResult::isCorrect);
 
 		return ReviewAnswerCheckResult.builder()
 			.questionId(questionId)
 			.isCorrect(isCorrect)
 			.type(QuestionType.SHORT)
-			.items(items)
+			.gradedResults(gradedResults)
 			.build();
 	}
 }

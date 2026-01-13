@@ -24,12 +24,11 @@ public class OrderingReviewAnswerChecker implements ReviewAnswerChecker<Long> {
 	@Override
 	public ReviewAnswerCheckResult check(Long questionId, QuestionEntity question,
 		SubmitAnswerDto<Long> submitAnswers) {
-		// 순서유형은 "실시간과 동일" 정책이라 오답이어도 추가 피드백을 내리지 않는다.
 		return ReviewAnswerCheckResult.builder()
 			.questionId(questionId)
 			.isCorrect(answerGrader.gradeAnswer(question, submitAnswers))
 			.type(QuestionType.ORDERING)
-			.items(null)
+			.gradedResults(null)
 			.build();
 	}
 }

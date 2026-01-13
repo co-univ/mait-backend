@@ -52,7 +52,7 @@ public class FillBlankReviewAnswerChecker implements ReviewAnswerChecker<FillBla
 				)
 			));
 
-		List<GradedAnswerFillBlankResult> items = blanks.stream()
+		List<GradedAnswerFillBlankResult> gradedResults = blanks.stream()
 			.map(blank -> {
 				Set<String> correctAnswers = answersByNumber.get(blank.number());
 				if (correctAnswers == null || correctAnswers.isEmpty()) {
@@ -65,13 +65,13 @@ public class FillBlankReviewAnswerChecker implements ReviewAnswerChecker<FillBla
 			})
 			.toList();
 
-		boolean isCorrect = items.stream().allMatch(GradedAnswerFillBlankResult::isCorrect);
+		boolean isCorrect = gradedResults.stream().allMatch(GradedAnswerFillBlankResult::isCorrect);
 
 		return ReviewAnswerCheckResult.builder()
 			.questionId(questionId)
 			.isCorrect(isCorrect)
 			.type(QuestionType.FILL_BLANK)
-			.items(items)
+			.gradedResults(gradedResults)
 			.build();
 	}
 }
