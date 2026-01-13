@@ -16,7 +16,9 @@ public enum QuestionSolveExceptionCode implements ExceptionCode {
 	NOT_PARTICIPATED(HttpStatus.FORBIDDEN, "QS-002", "풀이에 참여중이지 않은 유저입니다."),
 	ALREADY(HttpStatus.CONFLICT, "QS-003", "이미 정답 처리 기록이 존재합니다."),
 
-	ANSWER_COUNT(HttpStatus.BAD_REQUEST, "S-001", "제출된 답변의 개수와 문제의 답변 개수가 일치하지 않습니다.");
+	ANSWER_COUNT(HttpStatus.BAD_REQUEST, "S-001", "제출된 답변의 개수와 문제의 답변 개수가 일치하지 않습니다."),
+
+	DUPLICATE_ANSWER_NUMBER(HttpStatus.BAD_REQUEST, "S-002", "제출된 답변의 번호가 중복됩니다.");
 
 	private final HttpStatus status;
 	private final String code;
