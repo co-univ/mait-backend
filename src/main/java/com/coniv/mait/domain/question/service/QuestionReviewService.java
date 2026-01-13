@@ -7,6 +7,7 @@ import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.coniv.mait.domain.question.entity.QuestionEntity;
 import com.coniv.mait.domain.question.entity.QuestionSetEntity;
@@ -20,9 +21,9 @@ import com.coniv.mait.domain.question.repository.QuestionSetEntityRepository;
 import com.coniv.mait.domain.question.service.component.LastViewedQuestionRedisRepository;
 import com.coniv.mait.domain.question.service.component.QuestionFactory;
 import com.coniv.mait.domain.question.service.component.QuestionReader;
+import com.coniv.mait.domain.question.service.component.ReviewAnswerGrader;
 import com.coniv.mait.domain.question.service.dto.QuestionDto;
-import com.coniv.mait.domain.solve.service.component.AnswerGrader;
-import com.coniv.mait.domain.solve.service.dto.AnswerSubmitDto;
+import com.coniv.mait.domain.question.service.dto.ReviewAnswerCheckResult;
 import com.coniv.mait.domain.solve.service.dto.SubmitAnswerDto;
 import com.coniv.mait.domain.user.service.component.TeamRoleValidator;
 
@@ -33,7 +34,8 @@ public class QuestionReviewService {
 
 	private final TeamRoleValidator teamRoleValidator;
 	private final QuestionReader questionReader;
-	private final AnswerGrader answerGrader;
+
+	private final ReviewAnswerGrader reviewAnswerGrader;
 
 	private final LastViewedQuestionRedisRepository lastViewedQuestionRedisRepository;
 	private final QuestionSetEntityRepository questionSetEntityRepository;
@@ -44,14 +46,14 @@ public class QuestionReviewService {
 	public QuestionReviewService(QuestionSetEntityRepository questionSetEntityRepository,
 		TeamRoleValidator teamRoleValidator,
 		LastViewedQuestionRedisRepository lastViewedQuestionRedisRepository,
-		AnswerGrader answerGrader,
+		ReviewAnswerGrader reviewAnswerGrader,
 		QuestionReader questionReader,
 		List<QuestionFactory<?>> factories
 	) {
 		this.questionSetEntityRepository = questionSetEntityRepository;
 		this.teamRoleValidator = teamRoleValidator;
 		this.lastViewedQuestionRedisRepository = lastViewedQuestionRedisRepository;
-		this.answerGrader = answerGrader;
+		this.reviewAnswerGrader = reviewAnswerGrader;
 		this.questionReader = questionReader;
 		questionFactories = factories.stream()
 			.collect(Collectors.toUnmodifiableMap(QuestionFactory::getQuestionType, Function.identity()));
@@ -80,7 +82,8 @@ public class QuestionReviewService {
 		lastViewedQuestionRedisRepository.updateLastViewedQuestion(question.getQuestionSet(), question, userId);
 	}
 
-	public AnswerSubmitDto checkAnswer(final Long questionId, final Long questionSetId,
+	@Transactional(readOnly = true)
+	public ReviewAnswerCheckResult checkReviewAnswer(final Long questionId, final Long questionSetId,
 		final Long userId, final SubmitAnswerDto<?> submitAnswers) {
 		final QuestionEntity question = questionReader.getQuestion(questionId, questionSetId);
 		final QuestionSetEntity questionSet = questionSetEntityRepository.findById(questionSetId)
@@ -98,10 +101,6 @@ public class QuestionReviewService {
 			throw new QuestionSetStatusException(QuestionSetStatusExceptionCode.ONLY_REVIEW);
 		}
 
-		return AnswerSubmitDto.builder()
-			.questionId(questionId)
-			.isCorrect(answerGrader.gradeAnswer(question, submitAnswers))
-			.userId(userId)
-			.build();
+		return reviewAnswerGrader.gradeAnswer(questionId, question, submitAnswers);
 	}
 }

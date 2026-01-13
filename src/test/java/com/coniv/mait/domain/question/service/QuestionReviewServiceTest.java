@@ -27,9 +27,9 @@ import com.coniv.mait.domain.question.repository.QuestionSetEntityRepository;
 import com.coniv.mait.domain.question.service.component.LastViewedQuestionRedisRepository;
 import com.coniv.mait.domain.question.service.component.QuestionFactory;
 import com.coniv.mait.domain.question.service.component.QuestionReader;
+import com.coniv.mait.domain.question.service.component.ReviewAnswerGrader;
 import com.coniv.mait.domain.question.service.dto.QuestionDto;
-import com.coniv.mait.domain.solve.service.component.AnswerGrader;
-import com.coniv.mait.domain.solve.service.dto.AnswerSubmitDto;
+import com.coniv.mait.domain.question.service.dto.ReviewAnswerCheckResult;
 import com.coniv.mait.domain.solve.service.dto.MultipleQuestionSubmitAnswer;
 import com.coniv.mait.domain.user.service.component.TeamRoleValidator;
 import com.coniv.mait.global.exception.custom.ResourceNotBelongException;
@@ -47,7 +47,7 @@ class QuestionReviewServiceTest {
 	private QuestionReader questionReader;
 
 	@Mock
-	private AnswerGrader answerGrader;
+	private ReviewAnswerGrader reviewAnswerGrader;
 
 	@Mock
 	private LastViewedQuestionRedisRepository lastViewedQuestionRedisRepository;
@@ -77,7 +77,7 @@ class QuestionReviewServiceTest {
 			questionSetEntityRepository,
 			teamRoleValidator,
 			lastViewedQuestionRedisRepository,
-			answerGrader,
+			reviewAnswerGrader,
 			questionReader,
 			List.of(shortQuestionFactory, multipleQuestionFactory, orderingQuestionFactory,
 				fillBlankQuestionFactory));
@@ -146,42 +146,49 @@ class QuestionReviewServiceTest {
 
 	@Test
 	@DisplayName("복습 문제 풀이 - 성공")
-	void checkAnswer() {
+	void checkReviewAnswer_success() {
 		// given
 		final Long questionId = 1L;
 		final Long userId = 2L;
 		final Long questionSetId = 3L;
-		MultipleQuestionSubmitAnswer multipleQuestionSubmitAnswer = new MultipleQuestionSubmitAnswer(List.of(1L));
+		MultipleQuestionSubmitAnswer submitAnswer = new MultipleQuestionSubmitAnswer(List.of(1L));
 
 		QuestionEntity question = mock(QuestionEntity.class);
 		QuestionSetEntity questionSet = mock(QuestionSetEntity.class);
+
+		ReviewAnswerCheckResult expectedResult = ReviewAnswerCheckResult.builder()
+			.questionId(questionId)
+			.isCorrect(true)
+			.type(QuestionType.MULTIPLE)
+			.gradedResults(List.of())
+			.build();
 
 		when(questionReader.getQuestion(questionId, questionSetId)).thenReturn(question);
 		when(questionSetEntityRepository.findById(questionSetId)).thenReturn(Optional.of(questionSet));
 		when(questionSet.getVisibility()).thenReturn(QuestionSetVisibility.PUBLIC);
 		when(questionSet.canReview()).thenReturn(true);
-
-		when(answerGrader.gradeAnswer(question, multipleQuestionSubmitAnswer)).thenReturn(true);
+		when(reviewAnswerGrader.gradeAnswer(questionId, question, submitAnswer)).thenReturn(expectedResult);
 
 		// when
-		AnswerSubmitDto answerSubmitDto = questionReviewService.checkAnswer(questionId, questionSetId, userId,
-			multipleQuestionSubmitAnswer);
+		ReviewAnswerCheckResult result = questionReviewService.checkReviewAnswer(questionId, questionSetId, userId,
+			submitAnswer);
 
 		// then
-		assertThat(answerSubmitDto.getQuestionId()).isEqualTo(questionId);
-		assertThat(answerSubmitDto.isCorrect()).isEqualTo(true);
+		assertThat(result.questionId()).isEqualTo(questionId);
+		assertThat(result.isCorrect()).isTrue();
 		verify(teamRoleValidator, never()).checkHasSolveQuestionAuthorityInTeam(anyLong(), anyLong());
 		verify(questionSetEntityRepository).findById(questionSetId);
+		verify(reviewAnswerGrader).gradeAnswer(questionId, question, submitAnswer);
 	}
 
 	@Test
 	@DisplayName("복습 문제 풀이 - 문제 셋이 리뷰상태가 아니면 실패")
-	void checkAnswer_cannotReview() {
+	void checkReviewAnswer_cannotReview() {
 		// given
 		final Long questionId = 1L;
 		final Long userId = 2L;
 		final Long questionSetId = 3L;
-		MultipleQuestionSubmitAnswer multipleQuestionSubmitAnswer = new MultipleQuestionSubmitAnswer(List.of(1L));
+		MultipleQuestionSubmitAnswer submitAnswer = new MultipleQuestionSubmitAnswer(List.of(1L));
 
 		QuestionEntity question = mock(QuestionEntity.class);
 		QuestionSetEntity questionSet = mock(QuestionSetEntity.class);
@@ -192,40 +199,40 @@ class QuestionReviewServiceTest {
 		when(questionSet.canReview()).thenReturn(false);
 
 		// when
-		QuestionSetStatusException questionSetStatusException = assertThrows(QuestionSetStatusException.class,
-			() -> questionReviewService.checkAnswer(questionId, questionSetId, userId, multipleQuestionSubmitAnswer));
+		QuestionSetStatusException exception = assertThrows(QuestionSetStatusException.class,
+			() -> questionReviewService.checkReviewAnswer(questionId, questionSetId, userId, submitAnswer));
 
 		// then
-		assertThat(questionSetStatusException.getExceptionCode()).isEqualTo(QuestionSetStatusExceptionCode.ONLY_REVIEW);
+		assertThat(exception.getExceptionCode()).isEqualTo(QuestionSetStatusExceptionCode.ONLY_REVIEW);
 		verify(questionSetEntityRepository).findById(questionSetId);
-		verify(answerGrader, never()).gradeAnswer(any(), any());
+		verify(reviewAnswerGrader, never()).gradeAnswer(anyLong(), any(), any());
 	}
 
 	@Test
 	@DisplayName("복습 문제 풀이 - 해당 문제가 문제 셋에 속하지 않으면 실패")
-	void checkAnswer_questionNotBelongToQuestionSet() {
+	void checkReviewAnswer_questionNotBelongToQuestionSet() {
 		// given
 		final Long questionId = 1L;
 		final Long userId = 2L;
 		final Long questionSetId = 3L;
-		MultipleQuestionSubmitAnswer multipleQuestionSubmitAnswer = new MultipleQuestionSubmitAnswer(List.of(1L));
+		MultipleQuestionSubmitAnswer submitAnswer = new MultipleQuestionSubmitAnswer(List.of(1L));
 
 		when(questionReader.getQuestion(questionId, questionSetId))
 			.thenThrow(new ResourceNotBelongException("문제가 해당 문제 세트에 속하지 않습니다."));
 
 		// when, then
-		assertThatThrownBy(() -> questionReviewService.checkAnswer(questionId, questionSetId, userId,
-			multipleQuestionSubmitAnswer))
+		assertThatThrownBy(() -> questionReviewService.checkReviewAnswer(questionId, questionSetId, userId,
+			submitAnswer))
 			.isInstanceOf(ResourceNotBelongException.class);
 
 		verify(questionSetEntityRepository, never()).findById(anyLong());
 		verify(teamRoleValidator, never()).checkHasSolveQuestionAuthorityInTeam(anyLong(), anyLong());
-		verify(answerGrader, never()).gradeAnswer(any(), any());
+		verify(reviewAnswerGrader, never()).gradeAnswer(anyLong(), any(), any());
 	}
 
 	@Test
 	@DisplayName("복습 문제 풀이 - 문제 셋이 PRIVATE면 NEED_OPEN 예외")
-	void checkAnswer_private_needOpen() {
+	void checkReviewAnswer_private_needOpen() {
 		// given
 		final Long questionId = 1L;
 		final Long userId = 2L;
@@ -241,17 +248,17 @@ class QuestionReviewServiceTest {
 
 		// when, then
 		QuestionSetStatusException exception = assertThrows(QuestionSetStatusException.class,
-			() -> questionReviewService.checkAnswer(questionId, questionSetId, userId, submitAnswer));
+			() -> questionReviewService.checkReviewAnswer(questionId, questionSetId, userId, submitAnswer));
 
 		assertThat(exception.getExceptionCode()).isEqualTo(QuestionSetStatusExceptionCode.NEED_OPEN);
 		verify(teamRoleValidator, never()).checkHasSolveQuestionAuthorityInTeam(anyLong(), anyLong());
-		verify(answerGrader, never()).gradeAnswer(any(), any());
+		verify(reviewAnswerGrader, never()).gradeAnswer(anyLong(), any(), any());
 		verify(questionSetEntityRepository).findById(questionSetId);
 	}
 
 	@Test
 	@DisplayName("복습 문제 풀이 - 문제 셋이 GROUP이면 팀 권한 검증 수행")
-	void checkAnswer_group_checkAuthority() {
+	void checkReviewAnswer_group_checkAuthority() {
 		// given
 		final Long questionId = 1L;
 		final Long userId = 2L;
@@ -262,21 +269,30 @@ class QuestionReviewServiceTest {
 		QuestionEntity question = mock(QuestionEntity.class);
 		QuestionSetEntity questionSet = mock(QuestionSetEntity.class);
 
+		ReviewAnswerCheckResult expectedResult = ReviewAnswerCheckResult.builder()
+			.questionId(questionId)
+			.isCorrect(true)
+			.type(QuestionType.MULTIPLE)
+			.gradedResults(List.of())
+			.build();
+
 		when(questionReader.getQuestion(questionId, questionSetId)).thenReturn(question);
 		when(questionSetEntityRepository.findById(questionSetId)).thenReturn(Optional.of(questionSet));
 		when(questionSet.getVisibility()).thenReturn(QuestionSetVisibility.GROUP);
 		when(questionSet.getTeamId()).thenReturn(teamId);
 		doNothing().when(teamRoleValidator).checkHasSolveQuestionAuthorityInTeam(teamId, userId);
 		when(questionSet.canReview()).thenReturn(true);
-		when(answerGrader.gradeAnswer(question, submitAnswer)).thenReturn(true);
+		when(reviewAnswerGrader.gradeAnswer(questionId, question, submitAnswer)).thenReturn(expectedResult);
 
 		// when
-		AnswerSubmitDto dto = questionReviewService.checkAnswer(questionId, questionSetId, userId, submitAnswer);
+		ReviewAnswerCheckResult result = questionReviewService.checkReviewAnswer(questionId, questionSetId, userId,
+			submitAnswer);
 
 		// then
-		assertThat(dto.getQuestionId()).isEqualTo(questionId);
-		assertThat(dto.isCorrect()).isTrue();
+		assertThat(result.questionId()).isEqualTo(questionId);
+		assertThat(result.isCorrect()).isTrue();
 		verify(teamRoleValidator).checkHasSolveQuestionAuthorityInTeam(teamId, userId);
 		verify(questionSetEntityRepository).findById(questionSetId);
+		verify(reviewAnswerGrader).gradeAnswer(questionId, question, submitAnswer);
 	}
 }
