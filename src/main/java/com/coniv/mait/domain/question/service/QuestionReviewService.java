@@ -22,8 +22,8 @@ import com.coniv.mait.domain.question.service.component.LastViewedQuestionRedisR
 import com.coniv.mait.domain.question.service.component.QuestionFactory;
 import com.coniv.mait.domain.question.service.component.QuestionReader;
 import com.coniv.mait.domain.question.service.component.ReviewAnswerGrader;
-import com.coniv.mait.domain.question.service.dto.ReviewAnswerCheckResult;
 import com.coniv.mait.domain.question.service.dto.QuestionDto;
+import com.coniv.mait.domain.question.service.dto.ReviewAnswerCheckResult;
 import com.coniv.mait.domain.solve.service.dto.SubmitAnswerDto;
 import com.coniv.mait.domain.user.service.component.TeamRoleValidator;
 

@@ -11,8 +11,8 @@ import com.coniv.mait.domain.question.entity.MultipleChoiceEntity;
 import com.coniv.mait.domain.question.entity.QuestionEntity;
 import com.coniv.mait.domain.question.enums.QuestionType;
 import com.coniv.mait.domain.question.repository.MultipleChoiceEntityRepository;
-import com.coniv.mait.domain.question.service.dto.ReviewAnswerCheckResult;
 import com.coniv.mait.domain.question.service.dto.GradedAnswerMultipleResult;
+import com.coniv.mait.domain.question.service.dto.ReviewAnswerCheckResult;
 import com.coniv.mait.domain.solve.service.dto.MultipleQuestionSubmitAnswer;
 import com.coniv.mait.domain.solve.service.dto.SubmitAnswerDto;
 
