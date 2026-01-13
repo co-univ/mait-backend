@@ -45,7 +45,7 @@ class OrderingReviewAnswerCheckerTest {
 		assertThat(result.questionId()).isEqualTo(questionId);
 		assertThat(result.isCorrect()).isTrue();
 		assertThat(result.type()).isEqualTo(QuestionType.ORDERING);
-		assertThat(result.gradedResults()).isNull(); // 순서유형은 피드백 없음
+		assertThat(result.gradedResults()).isEmpty(); // 순서유형은 피드백 없음
 	}
 
 	@Test
@@ -66,7 +66,7 @@ class OrderingReviewAnswerCheckerTest {
 		assertThat(result.questionId()).isEqualTo(questionId);
 		assertThat(result.isCorrect()).isFalse();
 		assertThat(result.type()).isEqualTo(QuestionType.ORDERING);
-		assertThat(result.gradedResults()).isNull(); // 순서유형은 오답이어도 피드백 없음
+		assertThat(result.gradedResults()).isEmpty(); // 순서유형은 오답이어도 피드백 없음
 	}
 
 	@Test

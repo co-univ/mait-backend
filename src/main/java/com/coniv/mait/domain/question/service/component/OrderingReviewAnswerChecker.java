@@ -1,5 +1,7 @@
 package com.coniv.mait.domain.question.service.component;
 
+import java.util.List;
+
 import org.springframework.stereotype.Component;
 
 import com.coniv.mait.domain.question.entity.QuestionEntity;
@@ -28,7 +30,7 @@ public class OrderingReviewAnswerChecker implements ReviewAnswerChecker<Long> {
 			.questionId(questionId)
 			.isCorrect(answerGrader.gradeAnswer(question, submitAnswers))
 			.type(QuestionType.ORDERING)
-			.gradedResults(null)
+			.gradedResults(List.of())
 			.build();
 	}
 }
