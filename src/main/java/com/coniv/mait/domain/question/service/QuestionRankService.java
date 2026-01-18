@@ -25,7 +25,6 @@ import com.coniv.mait.domain.solve.entity.AnswerSubmitRecordEntity;
 import com.coniv.mait.domain.solve.entity.QuestionScorerEntity;
 import com.coniv.mait.domain.solve.repository.AnswerSubmitRecordEntityRepository;
 import com.coniv.mait.domain.solve.repository.QuestionScorerEntityRepository;
-import com.coniv.mait.domain.team.entity.TeamEntity;
 import com.coniv.mait.domain.team.service.component.TeamReader;
 import com.coniv.mait.domain.user.service.component.UserReader;
 import com.coniv.mait.domain.user.service.dto.UserDto;
@@ -121,9 +120,9 @@ public class QuestionRankService {
 				questionIds, true).stream()
 			.collect(Collectors.groupingBy(AnswerSubmitRecordEntity::getUserId, Collectors.counting()));
 
-		TeamEntity team = teamReader.getTeam(questionSet.getTeamId());
-
-		Map<Long, List<UserDto>> usersByCorrectCount = userReader.getUsersByTeam(team).stream()
+		Map<Long, List<UserDto>> usersByCorrectCount = questionSetParticipantRepository.findAllByQuestionSetWithFetchJoinUser(
+				questionSet).stream()
+			.map(QuestionSetParticipantEntity::getUser)
 			.map(UserDto::from)
 			.collect(Collectors.groupingBy(
 				user -> answerCountByUserId.getOrDefault(user.getId(), 0L)
@@ -148,8 +147,9 @@ public class QuestionRankService {
 		Map<Long, Long> scoreCountByUserId = questionScorerEntityRepository.findAllByQuestionIdIn(questionIds).stream()
 			.collect(Collectors.groupingBy(QuestionScorerEntity::getUserId, Collectors.counting()));
 
-		TeamEntity team = teamReader.getTeam(questionSet.getTeamId());
-		Map<Long, List<UserDto>> usersByScoreCount = userReader.getUsersByTeam(team).stream()
+		Map<Long, List<UserDto>> usersByScoreCount = questionSetParticipantRepository.findAllByQuestionSetWithFetchJoinUser(
+				questionSet).stream()
+			.map(QuestionSetParticipantEntity::getUser)
 			.map(UserDto::from)
 			.collect(Collectors.groupingBy(
 				user -> scoreCountByUserId.getOrDefault(user.getId(), 0L)
