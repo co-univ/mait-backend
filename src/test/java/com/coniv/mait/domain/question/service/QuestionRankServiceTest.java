@@ -25,8 +25,8 @@ import com.coniv.mait.domain.question.repository.QuestionSetParticipantRepositor
 import com.coniv.mait.domain.question.service.component.QuestionReader;
 import com.coniv.mait.domain.question.service.dto.ParticipantCorrectAnswerRankDto;
 import com.coniv.mait.domain.solve.entity.AnswerSubmitRecordEntity;
-import com.coniv.mait.domain.solve.repository.AnswerSubmitRecordEntityRepository;
 import com.coniv.mait.domain.solve.entity.QuestionScorerEntity;
+import com.coniv.mait.domain.solve.repository.AnswerSubmitRecordEntityRepository;
 import com.coniv.mait.domain.solve.repository.QuestionScorerEntityRepository;
 import com.coniv.mait.domain.team.service.component.TeamReader;
 import com.coniv.mait.domain.user.entity.UserEntity;

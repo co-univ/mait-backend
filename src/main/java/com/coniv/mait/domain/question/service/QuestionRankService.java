@@ -120,13 +120,13 @@ public class QuestionRankService {
 				questionIds, true).stream()
 			.collect(Collectors.groupingBy(AnswerSubmitRecordEntity::getUserId, Collectors.counting()));
 
-		Map<Long, List<UserDto>> usersByCorrectCount = questionSetParticipantRepository.findAllByQuestionSetWithFetchJoinUser(
-				questionSet).stream()
-			.map(QuestionSetParticipantEntity::getUser)
-			.map(UserDto::from)
-			.collect(Collectors.groupingBy(
-				user -> answerCountByUserId.getOrDefault(user.getId(), 0L)
-			));
+		Map<Long, List<UserDto>> usersByCorrectCount =
+			questionSetParticipantRepository.findAllByQuestionSetWithFetchJoinUser(questionSet).stream()
+				.map(QuestionSetParticipantEntity::getUser)
+				.map(UserDto::from)
+				.collect(Collectors.groupingBy(
+					user -> answerCountByUserId.getOrDefault(user.getId(), 0L)
+				));
 
 		return usersByCorrectCount.entrySet().stream()
 			.map(entry -> AnswerRankDto.builder()
@@ -147,13 +147,13 @@ public class QuestionRankService {
 		Map<Long, Long> scoreCountByUserId = questionScorerEntityRepository.findAllByQuestionIdIn(questionIds).stream()
 			.collect(Collectors.groupingBy(QuestionScorerEntity::getUserId, Collectors.counting()));
 
-		Map<Long, List<UserDto>> usersByScoreCount = questionSetParticipantRepository.findAllByQuestionSetWithFetchJoinUser(
-				questionSet).stream()
-			.map(QuestionSetParticipantEntity::getUser)
-			.map(UserDto::from)
-			.collect(Collectors.groupingBy(
-				user -> scoreCountByUserId.getOrDefault(user.getId(), 0L)
-			));
+		Map<Long, List<UserDto>> usersByScoreCount =
+			questionSetParticipantRepository.findAllByQuestionSetWithFetchJoinUser(questionSet).stream()
+				.map(QuestionSetParticipantEntity::getUser)
+				.map(UserDto::from)
+				.collect(Collectors.groupingBy(
+					user -> scoreCountByUserId.getOrDefault(user.getId(), 0L)
+				));
 
 		return usersByScoreCount.entrySet().stream()
 			.map(entry -> AnswerRankDto.builder()
