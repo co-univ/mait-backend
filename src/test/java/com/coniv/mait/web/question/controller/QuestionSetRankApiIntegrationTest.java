@@ -14,8 +14,10 @@ import org.springframework.http.MediaType;
 import com.coniv.mait.config.TestRedisConfig;
 import com.coniv.mait.domain.question.entity.MultipleQuestionEntity;
 import com.coniv.mait.domain.question.entity.QuestionSetEntity;
+import com.coniv.mait.domain.question.entity.QuestionSetParticipantEntity;
 import com.coniv.mait.domain.question.repository.QuestionEntityRepository;
 import com.coniv.mait.domain.question.repository.QuestionSetEntityRepository;
+import com.coniv.mait.domain.question.repository.QuestionSetParticipantRepository;
 import com.coniv.mait.domain.solve.entity.AnswerSubmitRecordEntity;
 import com.coniv.mait.domain.solve.repository.AnswerSubmitRecordEntityRepository;
 import com.coniv.mait.domain.team.entity.TeamEntity;
@@ -31,6 +33,9 @@ public class QuestionSetRankApiIntegrationTest extends BaseIntegrationTest {
 
 	@Autowired
 	private QuestionSetEntityRepository questionSetEntityRepository;
+
+	@Autowired
+	private QuestionSetParticipantRepository questionSetParticipantRepository;
 
 	@Autowired
 	private QuestionEntityRepository questionEntityRepository;
@@ -50,6 +55,7 @@ public class QuestionSetRankApiIntegrationTest extends BaseIntegrationTest {
 	@BeforeEach
 	void setUp() {
 		answerSubmitRecordEntityRepository.deleteAll();
+		questionSetParticipantRepository.deleteAll();
 		teamUserEntityRepository.deleteAll();
 		questionEntityRepository.deleteAll();
 		questionSetEntityRepository.deleteAll();
@@ -80,6 +86,13 @@ public class QuestionSetRankApiIntegrationTest extends BaseIntegrationTest {
 				.subject("테스트 문제집")
 				.teamId(team.getId())
 				.build());
+
+		questionSetParticipantRepository.save(
+			QuestionSetParticipantEntity.createActiveParticipant(questionSet, user1));
+		questionSetParticipantRepository.save(
+			QuestionSetParticipantEntity.createActiveParticipant(questionSet, user2));
+		questionSetParticipantRepository.save(
+			QuestionSetParticipantEntity.createActiveParticipant(questionSet, user3));
 
 		MultipleQuestionEntity question1 = questionEntityRepository.save(
 			MultipleQuestionEntity.builder()
