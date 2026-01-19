@@ -26,7 +26,6 @@ import com.coniv.mait.domain.question.service.component.QuestionReader;
 import com.coniv.mait.domain.question.service.dto.ParticipantCorrectAnswerRankDto;
 import com.coniv.mait.domain.solve.entity.AnswerSubmitRecordEntity;
 import com.coniv.mait.domain.solve.repository.AnswerSubmitRecordEntityRepository;
-import com.coniv.mait.domain.team.entity.TeamEntity;
 import com.coniv.mait.domain.team.service.component.TeamReader;
 import com.coniv.mait.domain.user.entity.UserEntity;
 import com.coniv.mait.domain.user.service.component.UserReader;
@@ -356,9 +355,7 @@ class QuestionRankServiceTest {
 	void getCorrectorsByQuestionSetId_Success() {
 		// given
 		final Long questionSetId = 1L;
-		final Long teamId = 10L;
 		QuestionSetEntity questionSet = mock(QuestionSetEntity.class);
-		TeamEntity team = mock(TeamEntity.class);
 		QuestionEntity question1 = mock(QuestionEntity.class);
 		QuestionEntity question2 = mock(QuestionEntity.class);
 		QuestionEntity question3 = mock(QuestionEntity.class);
@@ -367,7 +364,6 @@ class QuestionRankServiceTest {
 		UserEntity user2 = mock(UserEntity.class);
 		UserEntity user3 = mock(UserEntity.class);
 
-		when(questionSet.getTeamId()).thenReturn(teamId);
 		when(question1.getId()).thenReturn(1L);
 		when(question2.getId()).thenReturn(2L);
 		when(question3.getId()).thenReturn(3L);
@@ -393,6 +389,14 @@ class QuestionRankServiceTest {
 		when(user3.getNicknameCode()).thenReturn("003");
 		when(user3.getFullNickname()).thenReturn("닉네임3#003");
 
+		QuestionSetParticipantEntity participant1 = mock(QuestionSetParticipantEntity.class);
+		QuestionSetParticipantEntity participant2 = mock(QuestionSetParticipantEntity.class);
+		QuestionSetParticipantEntity participant3 = mock(QuestionSetParticipantEntity.class);
+
+		when(participant1.getUser()).thenReturn(user1);
+		when(participant2.getUser()).thenReturn(user2);
+		when(participant3.getUser()).thenReturn(user3);
+
 		// user1: 3개 정답, user2: 1개 정답, user3: 2개 정답
 		AnswerSubmitRecordEntity answer1 = mock(AnswerSubmitRecordEntity.class);
 		AnswerSubmitRecordEntity answer2 = mock(AnswerSubmitRecordEntity.class);
@@ -414,8 +418,9 @@ class QuestionRankServiceTest {
 		when(answerSubmitRecordEntityRepository.findAllByQuestionIdInAndIsCorrect(
 			List.of(1L, 2L, 3L), true))
 			.thenReturn(List.of(answer1, answer2, answer3, answer4, answer5, answer6));
-		when(teamReader.getTeam(teamId)).thenReturn(team);
-		when(userReader.getUsersByTeam(team)).thenReturn(List.of(user1, user2, user3));
+
+		when(questionSetParticipantRepository.findAllByQuestionSetWithFetchJoinUser(questionSet))
+			.thenReturn(List.of(participant1, participant2, participant3));
 
 		// when
 		List<AnswerRankDto> result = questionRankService.getCorrectorsByQuestionSetId(questionSetId);
@@ -440,8 +445,7 @@ class QuestionRankServiceTest {
 		verify(questionSetEntityRepository).findById(questionSetId);
 		verify(questionReader).getQuestionsByQuestionSet(questionSet);
 		verify(answerSubmitRecordEntityRepository).findAllByQuestionIdInAndIsCorrect(List.of(1L, 2L, 3L), true);
-		verify(teamReader).getTeam(teamId);
-		verify(userReader).getUsersByTeam(team);
+		verify(questionSetParticipantRepository).findAllByQuestionSetWithFetchJoinUser(questionSet);
 	}
 
 	@Test
@@ -449,15 +453,12 @@ class QuestionRankServiceTest {
 	void getCorrectorsByQuestionSetId_WithNoCorrectAnswers() {
 		// given
 		final Long questionSetId = 1L;
-		final Long teamId = 10L;
 		QuestionSetEntity questionSet = mock(QuestionSetEntity.class);
-		TeamEntity team = mock(TeamEntity.class);
 		QuestionEntity question1 = mock(QuestionEntity.class);
 
 		UserEntity user1 = mock(UserEntity.class);
 		UserEntity user2 = mock(UserEntity.class);
 
-		when(questionSet.getTeamId()).thenReturn(teamId);
 		when(question1.getId()).thenReturn(1L);
 
 		when(user1.getId()).thenReturn(1L);
@@ -474,6 +475,12 @@ class QuestionRankServiceTest {
 		when(user2.getNicknameCode()).thenReturn("002");
 		when(user2.getFullNickname()).thenReturn("닉네임2#002");
 
+		QuestionSetParticipantEntity participant1 = mock(QuestionSetParticipantEntity.class);
+		QuestionSetParticipantEntity participant2 = mock(QuestionSetParticipantEntity.class);
+
+		when(participant1.getUser()).thenReturn(user1);
+		when(participant2.getUser()).thenReturn(user2);
+
 		// user1: 1개 정답, user2: 정답 없음
 		AnswerSubmitRecordEntity answer1 = mock(AnswerSubmitRecordEntity.class);
 		when(answer1.getUserId()).thenReturn(1L);
@@ -484,8 +491,9 @@ class QuestionRankServiceTest {
 		when(answerSubmitRecordEntityRepository.findAllByQuestionIdInAndIsCorrect(
 			List.of(1L), true))
 			.thenReturn(List.of(answer1));
-		when(teamReader.getTeam(teamId)).thenReturn(team);
-		when(userReader.getUsersByTeam(team)).thenReturn(List.of(user1, user2));
+
+		when(questionSetParticipantRepository.findAllByQuestionSetWithFetchJoinUser(questionSet))
+			.thenReturn(List.of(participant1, participant2));
 
 		// when
 		List<AnswerRankDto> result = questionRankService.getCorrectorsByQuestionSetId(questionSetId);
@@ -506,8 +514,7 @@ class QuestionRankServiceTest {
 		verify(questionSetEntityRepository).findById(questionSetId);
 		verify(questionReader).getQuestionsByQuestionSet(questionSet);
 		verify(answerSubmitRecordEntityRepository).findAllByQuestionIdInAndIsCorrect(List.of(1L), true);
-		verify(teamReader).getTeam(teamId);
-		verify(userReader).getUsersByTeam(team);
+		verify(questionSetParticipantRepository).findAllByQuestionSetWithFetchJoinUser(questionSet);
 	}
 
 	@Test
@@ -515,9 +522,7 @@ class QuestionRankServiceTest {
 	void getCorrectorsByQuestionSetId_SameAnswerCount() {
 		// given
 		final Long questionSetId = 1L;
-		final Long teamId = 10L;
 		QuestionSetEntity questionSet = mock(QuestionSetEntity.class);
-		TeamEntity team = mock(TeamEntity.class);
 		QuestionEntity question1 = mock(QuestionEntity.class);
 		QuestionEntity question2 = mock(QuestionEntity.class);
 
@@ -525,7 +530,6 @@ class QuestionRankServiceTest {
 		UserEntity user2 = mock(UserEntity.class);
 		UserEntity user3 = mock(UserEntity.class);
 
-		when(questionSet.getTeamId()).thenReturn(teamId);
 		when(question1.getId()).thenReturn(1L);
 		when(question2.getId()).thenReturn(2L);
 
@@ -550,6 +554,14 @@ class QuestionRankServiceTest {
 		when(user3.getNicknameCode()).thenReturn("003");
 		when(user3.getFullNickname()).thenReturn("닉네임3#003");
 
+		QuestionSetParticipantEntity participant1 = mock(QuestionSetParticipantEntity.class);
+		QuestionSetParticipantEntity participant2 = mock(QuestionSetParticipantEntity.class);
+		QuestionSetParticipantEntity participant3 = mock(QuestionSetParticipantEntity.class);
+
+		when(participant1.getUser()).thenReturn(user1);
+		when(participant2.getUser()).thenReturn(user2);
+		when(participant3.getUser()).thenReturn(user3);
+
 		// user1, user2: 각각 1개 정답, user3: 정답 없음
 		AnswerSubmitRecordEntity answer1 = mock(AnswerSubmitRecordEntity.class);
 		AnswerSubmitRecordEntity answer2 = mock(AnswerSubmitRecordEntity.class);
@@ -563,8 +575,9 @@ class QuestionRankServiceTest {
 		when(answerSubmitRecordEntityRepository.findAllByQuestionIdInAndIsCorrect(
 			List.of(1L, 2L), true))
 			.thenReturn(List.of(answer1, answer2));
-		when(teamReader.getTeam(teamId)).thenReturn(team);
-		when(userReader.getUsersByTeam(team)).thenReturn(List.of(user1, user2, user3));
+
+		when(questionSetParticipantRepository.findAllByQuestionSetWithFetchJoinUser(questionSet))
+			.thenReturn(List.of(participant1, participant2, participant3));
 
 		// when
 		List<AnswerRankDto> result = questionRankService.getCorrectorsByQuestionSetId(questionSetId);
@@ -586,8 +599,7 @@ class QuestionRankServiceTest {
 		verify(questionSetEntityRepository).findById(questionSetId);
 		verify(questionReader).getQuestionsByQuestionSet(questionSet);
 		verify(answerSubmitRecordEntityRepository).findAllByQuestionIdInAndIsCorrect(List.of(1L, 2L), true);
-		verify(teamReader).getTeam(teamId);
-		verify(userReader).getUsersByTeam(team);
+		verify(questionSetParticipantRepository).findAllByQuestionSetWithFetchJoinUser(questionSet);
 	}
 
 	@Test
@@ -606,8 +618,7 @@ class QuestionRankServiceTest {
 		verify(questionSetEntityRepository).findById(questionSetId);
 		verifyNoInteractions(questionReader);
 		verifyNoInteractions(answerSubmitRecordEntityRepository);
-		verifyNoInteractions(teamReader);
-		verifyNoInteractions(userReader);
+		verifyNoInteractions(questionSetParticipantRepository);
 	}
 
 	@Test
@@ -615,12 +626,9 @@ class QuestionRankServiceTest {
 	void getCorrectorsByQuestionSetId_NoUsers() {
 		// given
 		final Long questionSetId = 1L;
-		final Long teamId = 10L;
 		QuestionSetEntity questionSet = mock(QuestionSetEntity.class);
-		TeamEntity team = mock(TeamEntity.class);
 		QuestionEntity question1 = mock(QuestionEntity.class);
 
-		when(questionSet.getTeamId()).thenReturn(teamId);
 		when(question1.getId()).thenReturn(1L);
 
 		when(questionSetEntityRepository.findById(questionSetId)).thenReturn(Optional.of(questionSet));
@@ -629,8 +637,9 @@ class QuestionRankServiceTest {
 		when(answerSubmitRecordEntityRepository.findAllByQuestionIdInAndIsCorrect(
 			List.of(1L), true))
 			.thenReturn(List.of());
-		when(teamReader.getTeam(teamId)).thenReturn(team);
-		when(userReader.getUsersByTeam(team)).thenReturn(List.of());
+
+		when(questionSetParticipantRepository.findAllByQuestionSetWithFetchJoinUser(questionSet))
+			.thenReturn(List.of());
 
 		// when
 		List<AnswerRankDto> result = questionRankService.getCorrectorsByQuestionSetId(questionSetId);
@@ -642,7 +651,6 @@ class QuestionRankServiceTest {
 		verify(questionSetEntityRepository).findById(questionSetId);
 		verify(questionReader).getQuestionsByQuestionSet(questionSet);
 		verify(answerSubmitRecordEntityRepository).findAllByQuestionIdInAndIsCorrect(List.of(1L), true);
-		verify(teamReader).getTeam(teamId);
-		verify(userReader).getUsersByTeam(team);
+		verify(questionSetParticipantRepository).findAllByQuestionSetWithFetchJoinUser(questionSet);
 	}
 }
