@@ -26,6 +26,8 @@ import com.coniv.mait.domain.question.service.component.QuestionReader;
 import com.coniv.mait.domain.question.service.dto.ParticipantCorrectAnswerRankDto;
 import com.coniv.mait.domain.solve.entity.AnswerSubmitRecordEntity;
 import com.coniv.mait.domain.solve.repository.AnswerSubmitRecordEntityRepository;
+import com.coniv.mait.domain.solve.entity.QuestionScorerEntity;
+import com.coniv.mait.domain.solve.repository.QuestionScorerEntityRepository;
 import com.coniv.mait.domain.team.service.component.TeamReader;
 import com.coniv.mait.domain.user.entity.UserEntity;
 import com.coniv.mait.domain.user.service.component.UserReader;
@@ -50,6 +52,9 @@ class QuestionRankServiceTest {
 
 	@Mock
 	private AnswerSubmitRecordEntityRepository answerSubmitRecordEntityRepository;
+
+	@Mock
+	private QuestionScorerEntityRepository questionScorerEntityRepository;
 
 	@Mock
 	private UserReader userReader;
@@ -651,6 +656,307 @@ class QuestionRankServiceTest {
 		verify(questionSetEntityRepository).findById(questionSetId);
 		verify(questionReader).getQuestionsByQuestionSet(questionSet);
 		verify(answerSubmitRecordEntityRepository).findAllByQuestionIdInAndIsCorrect(List.of(1L), true);
+		verify(questionSetParticipantRepository).findAllByQuestionSetWithFetchJoinUser(questionSet);
+	}
+
+	@Test
+	@DisplayName("채점자 랭킹 조회 성공 - 채점 점수별 그룹화 및 내림차순 정렬")
+	void getScorersByQuestionSetId_Success() {
+		// given
+		final Long questionSetId = 1L;
+		QuestionSetEntity questionSet = mock(QuestionSetEntity.class);
+		QuestionEntity question1 = mock(QuestionEntity.class);
+		QuestionEntity question2 = mock(QuestionEntity.class);
+		QuestionEntity question3 = mock(QuestionEntity.class);
+
+		UserEntity user1 = mock(UserEntity.class);
+		UserEntity user2 = mock(UserEntity.class);
+		UserEntity user3 = mock(UserEntity.class);
+
+		when(question1.getId()).thenReturn(1L);
+		when(question2.getId()).thenReturn(2L);
+		when(question3.getId()).thenReturn(3L);
+
+		when(user1.getId()).thenReturn(1L);
+		when(user1.getEmail()).thenReturn("user1@test.com");
+		when(user1.getName()).thenReturn("사용자1");
+		when(user1.getNickname()).thenReturn("닉네임1");
+		when(user1.getNicknameCode()).thenReturn("001");
+		when(user1.getFullNickname()).thenReturn("닉네임1#001");
+
+		when(user2.getId()).thenReturn(2L);
+		when(user2.getEmail()).thenReturn("user2@test.com");
+		when(user2.getName()).thenReturn("사용자2");
+		when(user2.getNickname()).thenReturn("닉네임2");
+		when(user2.getNicknameCode()).thenReturn("002");
+		when(user2.getFullNickname()).thenReturn("닉네임2#002");
+
+		when(user3.getId()).thenReturn(3L);
+		when(user3.getEmail()).thenReturn("user3@test.com");
+		when(user3.getName()).thenReturn("사용자3");
+		when(user3.getNickname()).thenReturn("닉네임3");
+		when(user3.getNicknameCode()).thenReturn("003");
+		when(user3.getFullNickname()).thenReturn("닉네임3#003");
+
+		QuestionSetParticipantEntity participant1 = mock(QuestionSetParticipantEntity.class);
+		QuestionSetParticipantEntity participant2 = mock(QuestionSetParticipantEntity.class);
+		QuestionSetParticipantEntity participant3 = mock(QuestionSetParticipantEntity.class);
+
+		when(participant1.getUser()).thenReturn(user1);
+		when(participant2.getUser()).thenReturn(user2);
+		when(participant3.getUser()).thenReturn(user3);
+
+		// user1: 3점, user2: 1점, user3: 2점 (여기서는 횟수로 간주)
+		// QuestionScorerEntity는 userId만 있으면 됨 (groupingBy + counting)
+		QuestionScorerEntity score1 = mock(QuestionScorerEntity.class);
+		QuestionScorerEntity score2 = mock(QuestionScorerEntity.class);
+		QuestionScorerEntity score3 = mock(QuestionScorerEntity.class);
+		QuestionScorerEntity score4 = mock(QuestionScorerEntity.class);
+		QuestionScorerEntity score5 = mock(QuestionScorerEntity.class);
+		QuestionScorerEntity score6 = mock(QuestionScorerEntity.class);
+
+		when(score1.getUserId()).thenReturn(1L);
+		when(score2.getUserId()).thenReturn(1L);
+		when(score3.getUserId()).thenReturn(1L);
+		when(score4.getUserId()).thenReturn(2L);
+		when(score5.getUserId()).thenReturn(3L);
+		when(score6.getUserId()).thenReturn(3L);
+
+		when(questionSetEntityRepository.findById(questionSetId)).thenReturn(Optional.of(questionSet));
+		when(questionReader.getQuestionsByQuestionSet(questionSet))
+			.thenReturn(List.of(question1, question2, question3));
+		when(questionScorerEntityRepository.findAllByQuestionIdIn(List.of(1L, 2L, 3L)))
+			.thenReturn(List.of(score1, score2, score3, score4, score5, score6));
+
+		when(questionSetParticipantRepository.findAllByQuestionSetWithFetchJoinUser(questionSet))
+			.thenReturn(List.of(participant1, participant2, participant3));
+
+		// when
+		List<AnswerRankDto> result = questionRankService.getScorersByQuestionSetId(questionSetId);
+
+		// then
+		assertNotNull(result);
+		assertThat(result).hasSize(3);
+
+		// 점수(개수) 기준 내림차순 정렬 확인 (3개, 2개, 1개)
+		assertThat(result.get(0).getCount()).isEqualTo(3L);
+		assertThat(result.get(0).getUsers()).hasSize(1);
+		assertThat(result.get(0).getUsers().get(0).getId()).isEqualTo(1L);
+
+		assertThat(result.get(1).getCount()).isEqualTo(2L);
+		assertThat(result.get(1).getUsers()).hasSize(1);
+		assertThat(result.get(1).getUsers().get(0).getId()).isEqualTo(3L);
+
+		assertThat(result.get(2).getCount()).isEqualTo(1L);
+		assertThat(result.get(2).getUsers()).hasSize(1);
+		assertThat(result.get(2).getUsers().get(0).getId()).isEqualTo(2L);
+
+		verify(questionSetEntityRepository).findById(questionSetId);
+		verify(questionReader).getQuestionsByQuestionSet(questionSet);
+		verify(questionScorerEntityRepository).findAllByQuestionIdIn(List.of(1L, 2L, 3L));
+		verify(questionSetParticipantRepository).findAllByQuestionSetWithFetchJoinUser(questionSet);
+	}
+
+	@Test
+	@DisplayName("채점자 랭킹 조회 성공 - 채점 기록이 없는 사용자 포함")
+	void getScorersByQuestionSetId_WithNoScorers() {
+		// given
+		final Long questionSetId = 1L;
+		QuestionSetEntity questionSet = mock(QuestionSetEntity.class);
+		QuestionEntity question1 = mock(QuestionEntity.class);
+
+		UserEntity user1 = mock(UserEntity.class);
+		UserEntity user2 = mock(UserEntity.class);
+
+		when(question1.getId()).thenReturn(1L);
+
+		when(user1.getId()).thenReturn(1L);
+		when(user1.getEmail()).thenReturn("user1@test.com");
+		when(user1.getName()).thenReturn("사용자1");
+		when(user1.getNickname()).thenReturn("닉네임1");
+		when(user1.getNicknameCode()).thenReturn("001");
+		when(user1.getFullNickname()).thenReturn("닉네임1#001");
+
+		when(user2.getId()).thenReturn(2L);
+		when(user2.getEmail()).thenReturn("user2@test.com");
+		when(user2.getName()).thenReturn("사용자2");
+		when(user2.getNickname()).thenReturn("닉네임2");
+		when(user2.getNicknameCode()).thenReturn("002");
+		when(user2.getFullNickname()).thenReturn("닉네임2#002");
+
+		QuestionSetParticipantEntity participant1 = mock(QuestionSetParticipantEntity.class);
+		QuestionSetParticipantEntity participant2 = mock(QuestionSetParticipantEntity.class);
+
+		when(participant1.getUser()).thenReturn(user1);
+		when(participant2.getUser()).thenReturn(user2);
+
+		// user1: 1점, user2: 채점 없음
+		QuestionScorerEntity score1 = mock(QuestionScorerEntity.class);
+		when(score1.getUserId()).thenReturn(1L);
+
+		when(questionSetEntityRepository.findById(questionSetId)).thenReturn(Optional.of(questionSet));
+		when(questionReader.getQuestionsByQuestionSet(questionSet))
+			.thenReturn(List.of(question1));
+		when(questionScorerEntityRepository.findAllByQuestionIdIn(List.of(1L)))
+			.thenReturn(List.of(score1));
+
+		when(questionSetParticipantRepository.findAllByQuestionSetWithFetchJoinUser(questionSet))
+			.thenReturn(List.of(participant1, participant2));
+
+		// when
+		List<AnswerRankDto> result = questionRankService.getScorersByQuestionSetId(questionSetId);
+
+		// then
+		assertNotNull(result);
+		assertThat(result).hasSize(2);
+
+		// 점수 기준 내림차순 정렬 확인 (1개, 0개)
+		assertThat(result.get(0).getCount()).isEqualTo(1L);
+		assertThat(result.get(0).getUsers()).hasSize(1);
+		assertThat(result.get(0).getUsers().get(0).getId()).isEqualTo(1L);
+
+		assertThat(result.get(1).getCount()).isEqualTo(0L);
+		assertThat(result.get(1).getUsers()).hasSize(1);
+		assertThat(result.get(1).getUsers().get(0).getId()).isEqualTo(2L);
+
+		verify(questionSetEntityRepository).findById(questionSetId);
+		verify(questionReader).getQuestionsByQuestionSet(questionSet);
+		verify(questionScorerEntityRepository).findAllByQuestionIdIn(List.of(1L));
+		verify(questionSetParticipantRepository).findAllByQuestionSetWithFetchJoinUser(questionSet);
+	}
+
+	@Test
+	@DisplayName("채점자 랭킹 조회 성공 - 동일한 채점 수를 가진 사용자들 그룹화")
+	void getScorersByQuestionSetId_SameScoreCount() {
+		// given
+		final Long questionSetId = 1L;
+		QuestionSetEntity questionSet = mock(QuestionSetEntity.class);
+		QuestionEntity question1 = mock(QuestionEntity.class);
+		QuestionEntity question2 = mock(QuestionEntity.class);
+
+		UserEntity user1 = mock(UserEntity.class);
+		UserEntity user2 = mock(UserEntity.class);
+		UserEntity user3 = mock(UserEntity.class);
+
+		when(question1.getId()).thenReturn(1L);
+		when(question2.getId()).thenReturn(2L);
+
+		when(user1.getId()).thenReturn(1L);
+		when(user1.getEmail()).thenReturn("user1@test.com");
+		when(user1.getName()).thenReturn("사용자1");
+		when(user1.getNickname()).thenReturn("닉네임1");
+		when(user1.getNicknameCode()).thenReturn("001");
+		when(user1.getFullNickname()).thenReturn("닉네임1#001");
+
+		when(user2.getId()).thenReturn(2L);
+		when(user2.getEmail()).thenReturn("user2@test.com");
+		when(user2.getName()).thenReturn("사용자2");
+		when(user2.getNickname()).thenReturn("닉네임2");
+		when(user2.getNicknameCode()).thenReturn("002");
+		when(user2.getFullNickname()).thenReturn("닉네임2#002");
+
+		when(user3.getId()).thenReturn(3L);
+		when(user3.getEmail()).thenReturn("user3@test.com");
+		when(user3.getName()).thenReturn("사용자3");
+		when(user3.getNickname()).thenReturn("닉네임3");
+		when(user3.getNicknameCode()).thenReturn("003");
+		when(user3.getFullNickname()).thenReturn("닉네임3#003");
+
+		QuestionSetParticipantEntity participant1 = mock(QuestionSetParticipantEntity.class);
+		QuestionSetParticipantEntity participant2 = mock(QuestionSetParticipantEntity.class);
+		QuestionSetParticipantEntity participant3 = mock(QuestionSetParticipantEntity.class);
+
+		when(participant1.getUser()).thenReturn(user1);
+		when(participant2.getUser()).thenReturn(user2);
+		when(participant3.getUser()).thenReturn(user3);
+
+		// user1, user2: 각각 1점, user3: 채점 없음
+		QuestionScorerEntity score1 = mock(QuestionScorerEntity.class);
+		QuestionScorerEntity score2 = mock(QuestionScorerEntity.class);
+
+		when(score1.getUserId()).thenReturn(1L);
+		when(score2.getUserId()).thenReturn(2L);
+
+		when(questionSetEntityRepository.findById(questionSetId)).thenReturn(Optional.of(questionSet));
+		when(questionReader.getQuestionsByQuestionSet(questionSet))
+			.thenReturn(List.of(question1, question2));
+		when(questionScorerEntityRepository.findAllByQuestionIdIn(List.of(1L, 2L)))
+			.thenReturn(List.of(score1, score2));
+
+		when(questionSetParticipantRepository.findAllByQuestionSetWithFetchJoinUser(questionSet))
+			.thenReturn(List.of(participant1, participant2, participant3));
+
+		// when
+		List<AnswerRankDto> result = questionRankService.getScorersByQuestionSetId(questionSetId);
+
+		// then
+		assertNotNull(result);
+		assertThat(result).hasSize(2);
+
+		// 점수 기준 내림차순 정렬 확인 (1개, 0개)
+		assertThat(result.get(0).getCount()).isEqualTo(1L);
+		// 동일한 점수(1점)를 가진 사용자들이 같은 그룹에 포함되는지 확인
+		assertThat(result.get(0).getUsers()).hasSize(2);
+		assertThat(result.get(0).getUsers()).extracting(UserDto::getId).containsExactlyInAnyOrder(1L, 2L);
+
+		assertThat(result.get(1).getCount()).isEqualTo(0L);
+		assertThat(result.get(1).getUsers()).hasSize(1);
+		assertThat(result.get(1).getUsers().get(0).getId()).isEqualTo(3L);
+
+		verify(questionSetEntityRepository).findById(questionSetId);
+		verify(questionReader).getQuestionsByQuestionSet(questionSet);
+		verify(questionScorerEntityRepository).findAllByQuestionIdIn(List.of(1L, 2L));
+		verify(questionSetParticipantRepository).findAllByQuestionSetWithFetchJoinUser(questionSet);
+	}
+
+	@Test
+	@DisplayName("채점자 랭킹 조회 실패 - 존재하지 않는 문제 세트")
+	void getScorersByQuestionSetId_QuestionSetNotFound() {
+		// given
+		final Long questionSetId = 999L;
+
+		when(questionSetEntityRepository.findById(questionSetId)).thenReturn(Optional.empty());
+
+		// when & then
+		assertThatThrownBy(() -> questionRankService.getScorersByQuestionSetId(questionSetId))
+			.isInstanceOf(EntityNotFoundException.class)
+			.hasMessageContaining("해당 문제 세트가 존재하지 않습니다.");
+
+		verify(questionSetEntityRepository).findById(questionSetId);
+		verifyNoInteractions(questionReader);
+		verifyNoInteractions(questionScorerEntityRepository);
+		verifyNoInteractions(questionSetParticipantRepository);
+	}
+
+	@Test
+	@DisplayName("채점자 랭킹 조회 성공 - 사용자가 없는 경우")
+	void getScorersByQuestionSetId_NoUsers() {
+		// given
+		final Long questionSetId = 1L;
+		QuestionSetEntity questionSet = mock(QuestionSetEntity.class);
+		QuestionEntity question1 = mock(QuestionEntity.class);
+
+		when(question1.getId()).thenReturn(1L);
+
+		when(questionSetEntityRepository.findById(questionSetId)).thenReturn(Optional.of(questionSet));
+		when(questionReader.getQuestionsByQuestionSet(questionSet))
+			.thenReturn(List.of(question1));
+		when(questionScorerEntityRepository.findAllByQuestionIdIn(List.of(1L)))
+			.thenReturn(List.of());
+
+		when(questionSetParticipantRepository.findAllByQuestionSetWithFetchJoinUser(questionSet))
+			.thenReturn(List.of());
+
+		// when
+		List<AnswerRankDto> result = questionRankService.getScorersByQuestionSetId(questionSetId);
+
+		// then
+		assertNotNull(result);
+		assertThat(result).isEmpty();
+
+		verify(questionSetEntityRepository).findById(questionSetId);
+		verify(questionReader).getQuestionsByQuestionSet(questionSet);
+		verify(questionScorerEntityRepository).findAllByQuestionIdIn(List.of(1L));
 		verify(questionSetParticipantRepository).findAllByQuestionSetWithFetchJoinUser(questionSet);
 	}
 }
