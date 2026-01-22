@@ -90,11 +90,11 @@ jobs:
             # Pull the latest image
             docker compose -p mait-dev pull
             
-            # Stop existing development containers (if any)
-            docker compose -p mait-dev down || true
+            # Stop existing development containers (if any) is skipped to keep Redis alive
+            # docker compose -p mait-dev down || true
             
             # Start development containers
-            docker compose -p mait-dev up -d
+            docker compose -p mait-dev up -d --no-deps --force-recreate app
             
             # Cleanup unused images
             docker image prune -f

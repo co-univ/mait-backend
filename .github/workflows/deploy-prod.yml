@@ -95,11 +95,11 @@ jobs:
             # We need to make sure env vars are available for the command
             docker compose -p mait-prod pull
             
-            # Stop existing production containers (if any)
-            docker compose -p mait-prod down || true
+            # Stop existing production containers (if any) is skipped to keep Redis alive
+            # docker compose -p mait-prod down || true
             
             # Start production containers
-            docker compose -p mait-prod up -d
+            docker compose -p mait-prod up -d --no-deps --force-recreate app
             
             # Cleanup unused images
             docker image prune -f
