@@ -70,7 +70,6 @@ public class JwtTokenProvider {
 		if (blackListRepository.existsById(refreshToken)) {
 			throw new BadCredentialsException("Refresh token is blacklisted");
 		}
-		getUserId(refreshToken);
 	}
 
 	public Long getUserId(String token) {
