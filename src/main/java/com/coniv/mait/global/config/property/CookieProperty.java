@@ -14,7 +14,7 @@ public class CookieProperty {
 
 	private String domain;
 	private String path = "/";
-	private long maxAge = 60 * 60 * 24 * 3; // 3 days
+	private long maxAge = 60 * 60 * 24 * 7; // 7 days
 	private boolean httpOnly = true;
 	private boolean secure = true;
 	private String sameSite = "Lax";

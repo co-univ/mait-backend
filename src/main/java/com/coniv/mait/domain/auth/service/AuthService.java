@@ -6,9 +6,13 @@ import org.springframework.stereotype.Service;
 import com.coniv.mait.domain.user.entity.UserEntity;
 import com.coniv.mait.domain.user.repository.UserEntityRepository;
 import com.coniv.mait.global.exception.custom.LoginFailException;
+import com.coniv.mait.global.jwt.BlackList;
 import com.coniv.mait.global.jwt.JwtTokenProvider;
+import com.coniv.mait.global.jwt.RefreshToken;
 import com.coniv.mait.global.jwt.Token;
 import com.coniv.mait.global.jwt.cache.OauthAccessCodeRedisRepository;
+import com.coniv.mait.global.jwt.repository.BlackListRepository;
+import com.coniv.mait.global.jwt.repository.RefreshTokenRepository;
 
 import lombok.RequiredArgsConstructor;
 
@@ -23,6 +27,9 @@ public class AuthService {
 	private final JwtTokenProvider jwtTokenProvider;
 
 	private final OauthAccessCodeRedisRepository oauthAccessCodeRedisRepository;
+
+	private final BlackListRepository blackListRepository;
+	private final RefreshTokenRepository refreshTokenRepository;
 
 	public Token login(final String email, final String password) {
 		UserEntity user = userEntityRepository.findByEmail(email)
@@ -40,5 +47,40 @@ public class AuthService {
 			throw new LoginFailException("유효하지 않은 코드입니다.");
 		}
 		return mayBeAccessToken;
+	}
+
+	public void logout(final UserEntity user, final String accessToken, final String refreshToken) {
+		Long tokenUserId = jwtTokenProvider.getUserId(accessToken);
+		if (!user.getId().equals(tokenUserId)) {
+			throw new LoginFailException("토큰의 사용자 정보가 인증된 사용자와 일치하지 않습니다.");
+		}
+
+		blackListRepository.save(BlackList.builder()
+			.id(accessToken)
+			.build());
+
+		refreshTokenRepository.deleteById(tokenUserId);
+		blackListRepository.save(BlackList.builder().id(refreshToken).build());
+	}
+
+	public Token reissue(final String refreshToken) {
+		jwtTokenProvider.validateRefreshToken(refreshToken);
+
+		Long userId = jwtTokenProvider.getUserId(refreshToken);
+
+		RefreshToken storedRefreshToken = refreshTokenRepository.findById(userId)
+			.orElseThrow(() -> new LoginFailException("저장된 Refresh Token이 없습니다."));
+
+		if (!storedRefreshToken.getRefreshToken().equals(refreshToken)) {
+			throw new LoginFailException("Refresh Token이 일치하지 않습니다.");
+		}
+
+		blackListRepository.save(BlackList.builder().id(refreshToken).build());
+
+		Token newToken = jwtTokenProvider.createToken(userId);
+
+		refreshTokenRepository.save(new RefreshToken(userId, newToken.refreshToken()));
+
+		return newToken;
 	}
 }

@@ -63,6 +63,16 @@ public class JwtTokenProvider {
 		}
 	}
 
+	public void validateRefreshToken(final String refreshToken) {
+		if (refreshToken == null) {
+			throw new BadCredentialsException("Refresh token is null");
+		}
+		if (blackListRepository.existsById(refreshToken)) {
+			throw new BadCredentialsException("Refresh token is blacklisted");
+		}
+		getUserId(refreshToken);
+	}
+
 	public Long getUserId(String token) {
 		Claims claims = Jwts.parserBuilder()
 			.setSigningKey(Keys.hmacShaKeyFor(secretKey.getBytes(StandardCharsets.UTF_8)))
@@ -73,4 +83,3 @@ public class JwtTokenProvider {
 		return claims.get("id", Long.class);
 	}
 }
-
