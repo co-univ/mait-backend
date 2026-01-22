@@ -3,6 +3,8 @@ services:
     image: ${DOCKER_USERNAME}/${APP_IMAGE_NAME:-mait-dev-app}:latest
     ports:
       - "${PORT:-8040}:8080"
+    env_file:
+      - .env
     environment:
       - SPRING_PROFILES_ACTIVE=${SPRING_PROFILES_ACTIVE}
       - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
