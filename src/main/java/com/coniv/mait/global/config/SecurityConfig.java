@@ -8,7 +8,7 @@ import org.springframework.security.config.annotation.web.configurers.AbstractHt
 import org.springframework.security.web.SecurityFilterChain;
 
 import com.coniv.mait.domain.auth.service.Oauth2UserService;
-import com.coniv.mait.global.jwt.JwtAuthenticationEntryPoint;
+import com.coniv.mait.global.auth.jwt.JwtAuthenticationEntryPoint;
 import com.coniv.mait.global.oauth.OAuth2SuccessHandler;
 
 import lombok.RequiredArgsConstructor;

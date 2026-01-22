@@ -16,8 +16,8 @@ import org.springframework.web.util.pattern.PathPatternParser;
 
 import com.coniv.mait.domain.user.entity.UserEntity;
 import com.coniv.mait.domain.user.repository.UserEntityRepository;
-import com.coniv.mait.global.jwt.JwtAuthenticationEntryPoint;
-import com.coniv.mait.global.jwt.JwtTokenProvider;
+import com.coniv.mait.global.auth.jwt.JwtAuthenticationEntryPoint;
+import com.coniv.mait.global.auth.jwt.JwtTokenProvider;
 
 import io.jsonwebtoken.JwtException;
 import jakarta.servlet.FilterChain;

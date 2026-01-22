@@ -1,6 +1,6 @@
 package com.coniv.mait.global.oauth;
 
-import static com.coniv.mait.global.jwt.constant.TokenConstants.*;
+import static com.coniv.mait.global.auth.jwt.constant.TokenConstants.*;
 
 import java.io.IOException;
 import java.util.UUID;
@@ -13,15 +13,15 @@ import com.coniv.mait.domain.auth.dto.OauthPendingPayload;
 import com.coniv.mait.domain.auth.enums.PendingSignupKey;
 import com.coniv.mait.domain.auth.oauth.Oauth2UserDetails;
 import com.coniv.mait.domain.user.entity.UserEntity;
-import com.coniv.mait.global.jwt.JwtTokenProvider;
-import com.coniv.mait.global.jwt.RefreshToken;
-import com.coniv.mait.global.jwt.Token;
-import com.coniv.mait.global.jwt.cache.OauthAccessCodeRedisRepository;
-import com.coniv.mait.global.jwt.cache.OauthPendingRedisRepository;
-import com.coniv.mait.global.jwt.repository.RefreshTokenRepository;
+import com.coniv.mait.global.auth.cookie.CookieFactory;
+import com.coniv.mait.global.auth.jwt.JwtTokenProvider;
+import com.coniv.mait.global.auth.jwt.RefreshToken;
+import com.coniv.mait.global.auth.jwt.Token;
+import com.coniv.mait.global.auth.jwt.cache.OauthAccessCodeRedisRepository;
+import com.coniv.mait.global.auth.jwt.cache.OauthPendingRedisRepository;
+import com.coniv.mait.global.auth.jwt.repository.RefreshTokenRepository;
 import com.coniv.mait.global.oauth.constant.AuthConstant;
 import com.coniv.mait.global.util.Base62Convertor;
-import com.coniv.mait.global.util.CookieUtil;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import jakarta.servlet.http.HttpServletRequest;
@@ -35,7 +35,7 @@ public class OAuth2SuccessHandler implements AuthenticationSuccessHandler {
 	private final JwtTokenProvider jwtTokenProvider;
 	private final RefreshTokenRepository refreshTokenRepository;
 	private final AuthConstant authConstant;
-	private final CookieUtil cookieUtil;
+	private final CookieFactory cookieFactory;
 	private final OauthAccessCodeRedisRepository oauthAccessCodeRedisRepository;
 	private final OauthPendingRedisRepository oauthPendingRedisRepository;
 
@@ -60,7 +60,7 @@ public class OAuth2SuccessHandler implements AuthenticationSuccessHandler {
 			String signupKey = Base62Convertor.uuidToBase62(UUID.randomUUID());
 			oauthPendingRedisRepository.save(signupKey, json);
 
-			response.addHeader("Set-Cookie", cookieUtil.createOauthSignupCookie(signupKey).toString());
+			response.addHeader("Set-Cookie", cookieFactory.createOauthSignupCookie(signupKey).toString());
 			response.sendRedirect(authConstant.getOauthSignupUrl());
 			return;
 		}
@@ -77,7 +77,8 @@ public class OAuth2SuccessHandler implements AuthenticationSuccessHandler {
 			RefreshToken refreshToken = new RefreshToken(user.getId(), token.refreshToken());
 			refreshTokenRepository.save(refreshToken);
 
-			response.addHeader("Set-Cookie", cookieUtil.createRefreshResponseCookie(token.refreshToken()).toString());
+			response.addHeader("Set-Cookie",
+				cookieFactory.createRefreshResponseCookie(token.refreshToken()).toString());
 
 			response.sendRedirect(authConstant.getOAuthSuccessRedirectUrl() + "?code=" + code);
 			return;

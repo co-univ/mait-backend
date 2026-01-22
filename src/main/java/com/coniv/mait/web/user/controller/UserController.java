@@ -1,6 +1,6 @@
 package com.coniv.mait.web.user.controller;
 
-import static com.coniv.mait.global.jwt.constant.TokenConstants.*;
+import static com.coniv.mait.global.auth.jwt.constant.TokenConstants.*;
 
 import java.util.List;
 
@@ -18,9 +18,9 @@ import org.springframework.web.bind.annotation.RestController;
 import com.coniv.mait.domain.user.entity.UserEntity;
 import com.coniv.mait.domain.user.service.UserService;
 import com.coniv.mait.domain.user.service.dto.UserDto;
-import com.coniv.mait.global.jwt.Token;
+import com.coniv.mait.global.auth.cookie.CookieFactory;
+import com.coniv.mait.global.auth.jwt.Token;
 import com.coniv.mait.global.response.ApiResponse;
-import com.coniv.mait.global.util.CookieUtil;
 import com.coniv.mait.web.user.dto.RandomNicknameResponse;
 import com.coniv.mait.web.user.dto.SignUpApiRequest;
 import com.coniv.mait.web.user.dto.UpdateNicknameRequest;
@@ -38,7 +38,7 @@ import lombok.RequiredArgsConstructor;
 public class UserController {
 
 	private final UserService userService;
-	private final CookieUtil cookieUtil;
+	private final CookieFactory cookieFactory;
 
 	@Operation(summary = "사용자 정보 반환")
 	@GetMapping("/me")
@@ -72,7 +72,7 @@ public class UserController {
 
 		return ResponseEntity.ok()
 			.header(ACCESS_TOKEN, token.accessToken())
-			.header("Set-Cookie", cookieUtil.createRefreshResponseCookie(token.refreshToken()).toString())
+			.header("Set-Cookie", cookieFactory.createRefreshResponseCookie(token.refreshToken()).toString())
 			.body(ApiResponse.noContent());
 	}
 

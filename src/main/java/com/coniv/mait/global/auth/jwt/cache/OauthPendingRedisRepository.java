@@ -1,4 +1,4 @@
-package com.coniv.mait.global.jwt.cache;
+package com.coniv.mait.global.auth.jwt.cache;
 
 import java.util.concurrent.TimeUnit;
 

@@ -1,4 +1,4 @@
-package com.coniv.mait.global.jwt.constant;
+package com.coniv.mait.global.auth.jwt.constant;
 
 public class TokenConstants {
 	public static final String ACCESS_TOKEN = "ACCESS_TOKEN";

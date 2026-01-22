@@ -12,11 +12,11 @@ import com.coniv.mait.domain.user.enums.LoginProvider;
 import com.coniv.mait.domain.user.repository.UserEntityRepository;
 import com.coniv.mait.domain.user.service.dto.UserDto;
 import com.coniv.mait.domain.user.util.RandomNicknameUtil;
-import com.coniv.mait.global.jwt.JwtTokenProvider;
-import com.coniv.mait.global.jwt.RefreshToken;
-import com.coniv.mait.global.jwt.Token;
-import com.coniv.mait.global.jwt.cache.OauthPendingRedisRepository;
-import com.coniv.mait.global.jwt.repository.RefreshTokenRepository;
+import com.coniv.mait.global.auth.jwt.JwtTokenProvider;
+import com.coniv.mait.global.auth.jwt.RefreshToken;
+import com.coniv.mait.global.auth.jwt.Token;
+import com.coniv.mait.global.auth.jwt.cache.OauthPendingRedisRepository;
+import com.coniv.mait.global.auth.jwt.repository.RefreshTokenRepository;
 import com.coniv.mait.web.user.dto.PolicyCheckRequest;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
