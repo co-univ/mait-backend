@@ -16,8 +16,8 @@ import org.springframework.web.util.pattern.PathPatternParser;
 
 import com.coniv.mait.domain.user.entity.UserEntity;
 import com.coniv.mait.domain.user.repository.UserEntityRepository;
-import com.coniv.mait.global.jwt.JwtAuthenticationEntryPoint;
-import com.coniv.mait.global.jwt.JwtTokenProvider;
+import com.coniv.mait.global.auth.jwt.JwtAuthenticationEntryPoint;
+import com.coniv.mait.global.auth.jwt.JwtTokenProvider;
 
 import io.jsonwebtoken.JwtException;
 import jakarta.servlet.FilterChain;
@@ -43,6 +43,7 @@ public class JwtAuthorizationFilter extends OncePerRequestFilter {
 	private final UserEntityRepository userEntityRepository;
 
 	private final List<RequestMatcher> authRequiredMatchers = List.of(
+		PathPatternRequestMatcher.withPathPatternParser(PARSER).matcher(HttpMethod.POST, "/api/v1/auth/logout"),
 		PathPatternRequestMatcher.withPathPatternParser(PARSER).matcher(HttpMethod.GET, "/api/v1/users/me"),
 		PathPatternRequestMatcher.withPathPatternParser(PARSER).matcher(HttpMethod.PATCH, "/api/v1/users/nickname"),
 		PathPatternRequestMatcher.withPathPatternParser(PARSER).matcher(HttpMethod.POST, "/api/v1/teams"),

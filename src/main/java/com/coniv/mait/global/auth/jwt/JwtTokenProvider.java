@@ -1,4 +1,4 @@
-package com.coniv.mait.global.jwt;
+package com.coniv.mait.global.auth.jwt;
 
 import java.nio.charset.StandardCharsets;
 import java.util.Date;
@@ -9,7 +9,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.stereotype.Component;
 
-import com.coniv.mait.global.jwt.repository.BlackListRepository;
+import com.coniv.mait.global.auth.jwt.repository.BlackListRepository;
 
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
@@ -70,7 +70,6 @@ public class JwtTokenProvider {
 		if (blackListRepository.existsById(refreshToken)) {
 			throw new BadCredentialsException("Refresh token is blacklisted");
 		}
-		getUserId(refreshToken);
 	}
 
 	public Long getUserId(String token) {

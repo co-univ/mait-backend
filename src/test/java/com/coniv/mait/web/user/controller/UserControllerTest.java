@@ -17,9 +17,9 @@ import org.springframework.test.web.servlet.MockMvc;
 import com.coniv.mait.domain.user.entity.UserEntity;
 import com.coniv.mait.domain.user.service.UserService;
 import com.coniv.mait.domain.user.service.dto.UserDto;
+import com.coniv.mait.global.auth.cookie.CookieFactory;
 import com.coniv.mait.global.filter.JwtAuthorizationFilter;
 import com.coniv.mait.global.interceptor.idempotency.IdempotencyInterceptor;
-import com.coniv.mait.global.util.CookieUtil;
 import com.coniv.mait.web.user.dto.UpdateNicknameRequest;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
@@ -43,7 +43,7 @@ class UserControllerTest {
 	private JwtAuthorizationFilter jwtAuthorizationFilter;
 
 	@MockitoBean
-	private CookieUtil cookieUtil;
+	private CookieFactory cookieFactory;
 
 	@Test
 	@DisplayName("사용자 정보 반환 API 테스트")

@@ -1,6 +1,6 @@
-package com.coniv.mait.global.util;
+package com.coniv.mait.global.auth.cookie;
 
-import static com.coniv.mait.global.jwt.constant.TokenConstants.*;
+import static com.coniv.mait.global.auth.jwt.constant.TokenConstants.*;
 
 import org.springframework.http.ResponseCookie;
 import org.springframework.stereotype.Component;
@@ -11,7 +11,7 @@ import lombok.RequiredArgsConstructor;
 
 @Component
 @RequiredArgsConstructor
-public final class CookieUtil {
+public final class CookieFactory {
 
 	private final CookieProperty cookieProperty;
 

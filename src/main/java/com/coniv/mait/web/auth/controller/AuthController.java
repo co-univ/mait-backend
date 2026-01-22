@@ -1,6 +1,6 @@
 package com.coniv.mait.web.auth.controller;
 
-import static com.coniv.mait.global.jwt.constant.TokenConstants.*;
+import static com.coniv.mait.global.auth.jwt.constant.TokenConstants.*;
 
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -15,9 +15,9 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.coniv.mait.domain.auth.service.AuthService;
 import com.coniv.mait.domain.user.entity.UserEntity;
-import com.coniv.mait.global.jwt.Token;
+import com.coniv.mait.global.auth.cookie.CookieFactory;
+import com.coniv.mait.global.auth.jwt.Token;
 import com.coniv.mait.global.response.ApiResponse;
-import com.coniv.mait.global.util.CookieUtil;
 import com.coniv.mait.web.auth.dto.LoginApiRequest;
 
 import io.swagger.v3.oas.annotations.Operation;
@@ -37,7 +37,7 @@ public class AuthController {
 	private static final String BEARER_TOKEN = "Bearer ";
 
 	private final AuthService authService;
-	private final CookieUtil cookieUtil;
+	private final CookieFactory cookieFactory;
 
 	@Operation(summary = "로그인 API", description = "사용자 로그인 API")
 	@PostMapping("/login")
@@ -47,7 +47,7 @@ public class AuthController {
 
 		httpServletResponse.addHeader(AUTH_HEADER, BEARER_TOKEN + token.accessToken());
 		httpServletResponse.addHeader("Set-Cookie",
-			cookieUtil.createRefreshResponseCookie(token.refreshToken()).toString());
+			cookieFactory.createRefreshResponseCookie(token.refreshToken()).toString());
 
 		return ResponseEntity.ok(ApiResponse.noContent());
 	}
@@ -63,7 +63,7 @@ public class AuthController {
 		authService.logout(user, accessToken, refreshToken);
 
 		return ResponseEntity.noContent()
-			.header("Set-Cookie", cookieUtil.createExpiredRefreshResponseCookie().toString())
+			.header("Set-Cookie", cookieFactory.createExpiredRefreshResponseCookie().toString())
 			.build();
 	}
 
@@ -75,7 +75,7 @@ public class AuthController {
 		Token newToken = authService.reissue(refreshToken);
 
 		return ResponseEntity.ok()
-			.header("Set-Cookie", cookieUtil.createRefreshResponseCookie(newToken.refreshToken()).toString())
+			.header("Set-Cookie", cookieFactory.createRefreshResponseCookie(newToken.refreshToken()).toString())
 			.body(ApiResponse.noContent());
 	}
 
