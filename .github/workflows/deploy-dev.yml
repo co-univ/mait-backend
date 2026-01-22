@@ -46,7 +46,7 @@ jobs:
           key: ${{ secrets.DEV_SERVER_PRIVATE_KEY }}
           port: ${{ secrets.DEV_SERVER_PORT}}
           source: "docker-compose.yml"
-          target: "~/"
+          target: "~/mait-dev/"
 
       # Step 6: Deploy to EC2
       - name: Deploy to EC2
@@ -62,6 +62,7 @@ jobs:
             export PORT=8040
             
             # Create .env file for docker-compose
+            cd ~/mait-dev
             cat > ~/.env << EOL
             DOCKER_USERNAME=${{ secrets.DOCKER_USERNAME }}
             SPRING_PROFILES_ACTIVE=dev
@@ -85,13 +86,10 @@ jobs:
             PORT=8040
             EOL
             
-            cd ~
+            cd ~/mait-dev
             
             # Pull the latest image
             docker compose -p mait-dev pull
-            
-            # Stop existing development containers (if any) is skipped to keep Redis alive
-            # docker compose -p mait-dev down || true
             
             # Start development containers
             docker compose -p mait-dev up -d --no-deps --force-recreate app
