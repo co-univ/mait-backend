@@ -43,6 +43,7 @@ public class JwtAuthorizationFilter extends OncePerRequestFilter {
 	private final UserEntityRepository userEntityRepository;
 
 	private final List<RequestMatcher> authRequiredMatchers = List.of(
+		PathPatternRequestMatcher.withPathPatternParser(PARSER).matcher(HttpMethod.POST, "/api/v1/auth/logout"),
 		PathPatternRequestMatcher.withPathPatternParser(PARSER).matcher(HttpMethod.GET, "/api/v1/users/me"),
 		PathPatternRequestMatcher.withPathPatternParser(PARSER).matcher(HttpMethod.PATCH, "/api/v1/users/nickname"),
 		PathPatternRequestMatcher.withPathPatternParser(PARSER).matcher(HttpMethod.POST, "/api/v1/teams"),
