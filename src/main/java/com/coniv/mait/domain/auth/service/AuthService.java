@@ -5,14 +5,14 @@ import org.springframework.stereotype.Service;
 
 import com.coniv.mait.domain.user.entity.UserEntity;
 import com.coniv.mait.domain.user.repository.UserEntityRepository;
+import com.coniv.mait.global.auth.jwt.BlackList;
+import com.coniv.mait.global.auth.jwt.JwtTokenProvider;
+import com.coniv.mait.global.auth.jwt.RefreshToken;
+import com.coniv.mait.global.auth.jwt.Token;
+import com.coniv.mait.global.auth.jwt.cache.OauthAccessCodeRedisRepository;
+import com.coniv.mait.global.auth.jwt.repository.BlackListRepository;
+import com.coniv.mait.global.auth.jwt.repository.RefreshTokenRepository;
 import com.coniv.mait.global.exception.custom.LoginFailException;
-import com.coniv.mait.global.jwt.BlackList;
-import com.coniv.mait.global.jwt.JwtTokenProvider;
-import com.coniv.mait.global.jwt.RefreshToken;
-import com.coniv.mait.global.jwt.Token;
-import com.coniv.mait.global.jwt.cache.OauthAccessCodeRedisRepository;
-import com.coniv.mait.global.jwt.repository.BlackListRepository;
-import com.coniv.mait.global.jwt.repository.RefreshTokenRepository;
 
 import lombok.RequiredArgsConstructor;
 

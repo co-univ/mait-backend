@@ -1,4 +1,4 @@
-package com.coniv.mait.global.jwt;
+package com.coniv.mait.global.auth.jwt;
 
 import java.util.concurrent.TimeUnit;
 
