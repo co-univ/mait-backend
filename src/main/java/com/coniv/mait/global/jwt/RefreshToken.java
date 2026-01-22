@@ -10,7 +10,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 @Getter
-@RedisHash(value = "jwtToken", timeToLive = 60 * 60 * 24 * 3)
+@RedisHash(value = "jwtToken", timeToLive = 60 * 60 * 24 * 7)
 public class RefreshToken {
 
 	@Id

@@ -6,7 +6,7 @@ mait:
   cookie:
     domain: ".mait.kr"
     path: "/"
-    max-age: 604800000  # 7 days
+    max-age: 604800  # 7 days
     http-only: true
     secure: true
     same-site: "None"
