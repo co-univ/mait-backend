@@ -62,8 +62,7 @@ jobs:
             export PORT=8040
             
             # Create .env file for docker-compose
-            cd ~/mait-dev
-            cat > ~/.env << EOL
+            cat > ~/mait-dev/.env << EOL
             DOCKER_USERNAME=${{ secrets.DOCKER_USERNAME }}
             SPRING_PROFILES_ACTIVE=dev
             AWS_REGION=${{ secrets.AWS_REGION }}
