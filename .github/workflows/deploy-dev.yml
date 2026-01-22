@@ -41,28 +41,28 @@ jobs:
       - name: Copy docker-compose file
         uses: appleboy/scp-action@v0.1.4
         with:
-          host: ${{ secrets.EC2_HOST }}
-          username: ${{ secrets.EC2_USER }}
-          key: ${{ secrets.EC2_PRIVATE_KEY }}
-          port: 22
+          host: ${{ secrets.DEV_SERVER_HOST }}
+          username: ${{ secrets.DEV_SERVER_USER }}
+          key: ${{ secrets.DEV_SERVER_PRIVATE_KEY }}
+          port: ${{ secrets.DEV_SERVER_PORT}}
           source: "docker-compose.yml"
-          target: "~/"
+          target: "~/mait-dev/"
 
       # Step 6: Deploy to EC2
       - name: Deploy to EC2
         uses: appleboy/ssh-action@v1.0.0
         with:
-          host: ${{ secrets.EC2_HOST }}
-          username: ${{ secrets.EC2_USER }}
-          key: ${{ secrets.EC2_PRIVATE_KEY }}
-          port: 22
+          host: ${{ secrets.DEV_SERVER_HOST }}
+          username: ${{ secrets.DEV_SERVER_USER }}
+          key: ${{ secrets.DEV_SERVER_PRIVATE_KEY }}
+          port: ${{ secrets.DEV_SERVER_PORT}}
           script: |
             # Define Variables for Development
             export APP_IMAGE_NAME=mait-dev-app
             export PORT=8040
             
             # Create .env file for docker-compose
-            cat > ~/.env << EOL
+            cat > ~/mait-dev/.env << EOL
             DOCKER_USERNAME=${{ secrets.DOCKER_USERNAME }}
             SPRING_PROFILES_ACTIVE=dev
             AWS_REGION=${{ secrets.AWS_REGION }}
@@ -85,13 +85,10 @@ jobs:
             PORT=8040
             EOL
             
-            cd ~
+            cd ~/mait-dev
             
             # Pull the latest image
             docker compose -p mait-dev pull
-            
-            # Stop existing development containers (if any) is skipped to keep Redis alive
-            # docker compose -p mait-dev down || true
             
             # Start development containers
             docker compose -p mait-dev up -d --no-deps --force-recreate app
