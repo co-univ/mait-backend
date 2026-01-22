@@ -41,10 +41,10 @@ jobs:
       - name: Copy docker-compose file
         uses: appleboy/scp-action@v0.1.4
         with:
-          host: ${{ secrets.EC2_HOST }}
-          username: ${{ secrets.EC2_USER }}
-          key: ${{ secrets.EC2_PRIVATE_KEY }}
-          port: 22
+          host: ${{ secrets.DEV_SERVER_HOST }}
+          username: ${{ secrets.DEV_SERVER_USER }}
+          key: ${{ secrets.DEV_SERVER_PRIVATE_KEY }}
+          port: ${{ secrets.DEV_SERVER_PORT}}
           source: "docker-compose.yml"
           target: "~/"
 
@@ -52,10 +52,10 @@ jobs:
       - name: Deploy to EC2
         uses: appleboy/ssh-action@v1.0.0
         with:
-          host: ${{ secrets.EC2_HOST }}
-          username: ${{ secrets.EC2_USER }}
-          key: ${{ secrets.EC2_PRIVATE_KEY }}
-          port: 22
+          host: ${{ secrets.DEV_SERVER_HOST }}
+          username: ${{ secrets.DEV_SERVER_USER }}
+          key: ${{ secrets.DEV_SERVER_PRIVATE_KEY }}
+          port: ${{ secrets.DEV_SERVER_PORT}}
           script: |
             # Define Variables for Development
             export APP_IMAGE_NAME=mait-dev-app
