@@ -36,93 +36,99 @@ public class TeamQuestionRankService {
 
 	@Transactional(readOnly = true)
 	public TeamQuestionRankCombinedDto getTeamQuestionRankCombined(Long teamId) {
-		// 1. teamId에서 진행한 QuestionSetOngoingStatus가 AFTER인 QuestionSet 가져오기
-		List<QuestionSetEntity> completedQuestionSets = questionSetEntityRepository.findAllByTeamId(teamId)
-			.stream()
-			.filter(qs -> qs.getOngoingStatus() == QuestionSetOngoingStatus.AFTER)
-			.toList();
+		List<Long> questionIds = getCompletedQuestionIds(teamId);
 
-		if (completedQuestionSets.isEmpty()) {
+		if (questionIds.isEmpty()) {
 			return TeamQuestionRankCombinedDto.of(List.of(), List.of());
 		}
 
-		// 2. 해당 questionSet에 포함된 Question 가져오기
-		List<Long> questionSetIds = completedQuestionSets.stream()
-			.map(QuestionSetEntity::getId)
-			.toList();
-
-		List<QuestionEntity> questions = questionSetIds.stream()
-			.flatMap(qsId -> questionEntityRepository.findAllByQuestionSetId(qsId).stream())
-			.toList();
-
-		List<Long> questionIds = questions.stream()
-			.map(QuestionEntity::getId)
-			.toList();
-
-		// 3. Scorer와 정답 레코드 모두 조회
+		// Scorer와 정답 레코드 모두 조회
 		List<QuestionScorerEntity> scorers = questionScorerEntityRepository.findAllByQuestionIdIn(questionIds);
 		List<AnswerSubmitRecordEntity> correctAnswers =
 			answerSubmitRecordEntityRepository.findAllByQuestionIdInAndIsCorrect(questionIds, true);
 
-		// 4-1. Scorer 랭킹 계산
+		// 랭킹 계산
 		Map<Long, Long> scorerCountByUserId = scorers.stream()
 			.collect(Collectors.groupingBy(
 				QuestionScorerEntity::getUserId,
 				Collectors.counting()
 			));
 
-		List<Long> topScorerUserIds = scorerCountByUserId.entrySet().stream()
-			.sorted(Map.Entry.<Long, Long>comparingByValue().reversed())
-			.limit(3)
-			.map(Map.Entry::getKey)
-			.toList();
-
-		// 4-2. 정답자 랭킹 계산
 		Map<Long, Long> correctCountByUserId = correctAnswers.stream()
 			.collect(Collectors.groupingBy(
 				AnswerSubmitRecordEntity::getUserId,
-				Collectors.mapping(
-					AnswerSubmitRecordEntity::getQuestionId,
-					Collectors.collectingAndThen(
+				Collectors.mapping(AnswerSubmitRecordEntity::getQuestionId, Collectors.collectingAndThen(
 						Collectors.toSet(),
 						set -> (long)set.size()
 					)
 				)
 			));
 
-		List<Long> topCorrectUserIds = correctCountByUserId.entrySet().stream()
+		List<Long> topScorerUserIds = getTopUserIds(scorerCountByUserId);
+		List<Long> topCorrectUserIds = getTopUserIds(correctCountByUserId);
+
+		// 사용자 정보 조회
+		Map<Long, UserEntity> userMap = getUserMap(topScorerUserIds, topCorrectUserIds);
+
+		// DTO 생성
+		List<TeamQuestionRankDto> scorerRank = createRankDtos(topScorerUserIds, userMap, scorerCountByUserId);
+		List<TeamQuestionRankDto> correctAnswerRank = createRankDtos(topCorrectUserIds, userMap, correctCountByUserId);
+
+		return TeamQuestionRankCombinedDto.of(scorerRank, correctAnswerRank);
+	}
+
+	private List<Long> getCompletedQuestionIds(Long teamId) {
+		List<QuestionSetEntity> completedQuestionSets = questionSetEntityRepository.findAllByTeamId(teamId)
+			.stream()
+			.filter(qs -> qs.getOngoingStatus() == QuestionSetOngoingStatus.AFTER)
+			.toList();
+
+		if (completedQuestionSets.isEmpty()) {
+			return List.of();
+		}
+
+		List<Long> questionSetIds = completedQuestionSets.stream()
+			.map(QuestionSetEntity::getId)
+			.toList();
+
+		return questionSetIds.stream()
+			.flatMap(qsId -> questionEntityRepository.findAllByQuestionSetId(qsId).stream())
+			.map(QuestionEntity::getId)
+			.toList();
+	}
+
+	private List<Long> getTopUserIds(Map<Long, Long> countByUserId) {
+		return countByUserId.entrySet().stream()
 			.sorted(Map.Entry.<Long, Long>comparingByValue().reversed())
 			.limit(3)
 			.map(Map.Entry::getKey)
 			.toList();
+	}
 
-		// 5. 모든 관련 사용자 정보 한 번에 조회
+	private Map<Long, UserEntity> getUserMap(List<Long> topScorerUserIds, List<Long> topCorrectUserIds) {
 		List<Long> allUserIds = new ArrayList<>(topScorerUserIds);
 		allUserIds.addAll(topCorrectUserIds);
 		List<Long> distinctUserIds = allUserIds.stream().distinct().toList();
 
-		List<UserEntity> users = distinctUserIds.isEmpty() ? List.of() :
-			userEntityRepository.findAllById(distinctUserIds);
-		Map<Long, UserEntity> userMap = users.stream()
+		if (distinctUserIds.isEmpty()) {
+			return Map.of();
+		}
+
+		return userEntityRepository.findAllById(distinctUserIds).stream()
 			.collect(Collectors.toMap(UserEntity::getId, user -> user));
+	}
 
-		// 6. DTO 생성
-		List<TeamQuestionRankDto> scorerRank = topScorerUserIds.stream()
+	private List<TeamQuestionRankDto> createRankDtos(
+		List<Long> userIds,
+		Map<Long, UserEntity> userMap,
+		Map<Long, Long> countByUserId
+	) {
+		return userIds.stream()
 			.map(userId -> {
 				UserEntity user = userMap.get(userId);
-				Long count = scorerCountByUserId.get(userId);
+				Long count = countByUserId.get(userId);
 				return TeamQuestionRankDto.of(user.getId(), user.getName(), user.getNickname(), count);
 			})
 			.toList();
-
-		List<TeamQuestionRankDto> correctAnswerRank = topCorrectUserIds.stream()
-			.map(userId -> {
-				UserEntity user = userMap.get(userId);
-				Long count = correctCountByUserId.get(userId);
-				return TeamQuestionRankDto.of(user.getId(), user.getName(), user.getNickname(), count);
-			})
-			.toList();
-
-		return TeamQuestionRankCombinedDto.of(scorerRank, correctAnswerRank);
 	}
 }
