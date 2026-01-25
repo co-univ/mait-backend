@@ -20,7 +20,7 @@ import lombok.extern.slf4j.Slf4j;
 @RequiredArgsConstructor
 public class WebSocketSubscriptionHandler {
 	// /topic/question/{questionSetId} 패턴을 매칭하는 정규식
-	private static final Pattern QUESTION_TOPIC_PATTERN = Pattern.compile("^/topic/question/(\\d+)$");
+	private static final Pattern QUESTION_TOPIC_PATTERN = Pattern.compile("^/topic/question-sets/(\\d+)/participate$");
 
 	private final QuestionSetParticipantService questionSetParticipantService;
 
