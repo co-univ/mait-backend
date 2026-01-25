@@ -1,7 +1,5 @@
 package com.coniv.mait.global.interceptor;
 
-import java.security.Principal;
-
 import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageChannel;
 import org.springframework.messaging.simp.stomp.StompCommand;
