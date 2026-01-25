@@ -10,7 +10,7 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.stereotype.Component;
 
 import com.coniv.mait.domain.user.repository.UserEntityRepository;
-import com.coniv.mait.global.jwt.JwtTokenProvider;
+import com.coniv.mait.global.auth.jwt.JwtTokenProvider;
 
 import io.jsonwebtoken.JwtException;
 import lombok.RequiredArgsConstructor;
