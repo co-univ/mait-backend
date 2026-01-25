@@ -20,6 +20,8 @@ public interface QuestionSetParticipantRepository extends JpaRepository<Question
 	List<QuestionSetParticipantEntity> findAllByQuestionSetId(Long questionSetId);
 
 	boolean existsByQuestionSetIdAndUserIdAndStatus(Long questionSetId, Long userId, ParticipantStatus status);
+
+	boolean existsByQuestionSetAndUserId(QuestionSetEntity questionSet, Long userId);
 }
 
 
