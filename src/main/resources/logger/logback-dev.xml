@@ -16,7 +16,7 @@
         <encoder class="net.logstash.logback.encoder.LogstashEncoder">
             <includeContext>true</includeContext>
             <includeMdc>true</includeMdc>
-            <customFields>{"application":"mait","environment":"${spring.profiles.active:-default}"}</customFields>
+            <customFields>{"application":"mait","environment":"dev"}</customFields>
         </encoder>
         <connectionTimeout>5000</connectionTimeout>
         <reconnectionDelay>1000</reconnectionDelay>
