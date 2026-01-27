@@ -65,6 +65,3 @@ springdoc:
     operations-sorter: alpha
     tags-sorter: alpha
     display-request-duration: true
-
-logging:
-  config: classpath:logger/logback-dev.xml
