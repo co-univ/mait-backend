@@ -16,7 +16,7 @@
         <encoder class="net.logstash.logback.encoder.LogstashEncoder">
             <includeContext>true</includeContext>
             <includeMdc>true</includeMdc>
-            <customFields>{"application":"mait","environment":"${spring.profiles.active:-default}"}</customFields>
+            <customFields>{"application":"mait","environment":"prod"}</customFields>
         </encoder>
         <connectionTimeout>5000</connectionTimeout>
         <reconnectionDelay>1000</reconnectionDelay>
@@ -41,7 +41,7 @@
     <!-- Production Logger Settings -->
     <!-- 애플리케이션 로그 레벨 INFO로 상향 -->
     <logger name="com.coniv.mait" level="INFO"/>
-    
+
     <!-- Hibernate SQL 로그 제거 (성능 이슈 방지) -->
     <logger name="org.hibernate.SQL" level="INFO"/>
     <logger name="org.hibernate.type.descriptor.sql.BasicBinder" level="WARN"/>
