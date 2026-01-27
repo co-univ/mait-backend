@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration>
+    <include resource="org/springframework/boot/logging/logback/defaults.xml"/>
+
+    <!-- Console Appender -->
+    <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+            <pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} [requestId: %X{requestId:-}] - %msg%n
+            </pattern>
+        </encoder>
+    </appender>
+
+    <!-- Local 환경에서는 Console 로그만 출력 -->
+    <root level="INFO">
+        <appender-ref ref="CONSOLE"/>
+    </root>
+
+    <!-- Local 개발 편의를 위한 상세 로그 설정 -->
+    <logger name="com.coniv.mait" level="DEBUG"/>
+    <logger name="org.springframework.web" level="INFO"/>
+    
+    <!-- SQL 로그는 application-local.yml 에서 제어하거나 여기서 설정 -->
+    <logger name="org.hibernate.SQL" level="DEBUG"/>
+    <logger name="org.hibernate.type.descriptor.sql.BasicBinder" level="TRACE"/>
+
+    <!-- 불필요한 로그 제한 -->
+    <logger name="org.springframework.security" level="WARN"/>
+    <logger name="org.apache.http" level="WARN"/>
+</configuration>

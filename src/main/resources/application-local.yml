@@ -7,3 +7,5 @@ logging:
     org.hibernate.SQL: debug
     org.hibernate.orm.jdbc.bind: trace
     org.hibernate.orm.jdbc.extract: trace
+
+  config: classpath:logger/logback-local.xml

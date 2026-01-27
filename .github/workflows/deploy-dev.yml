@@ -105,6 +105,8 @@ jobs:
             JWT_REFRESH_TOKEN_EXPIRATION=${{ secrets.JWT_REFRESH_TOKEN_EXPIRATION }}
             GOOGLE_CLIENT_ID=${{ secrets.GOOGLE_CLIENT_ID }}
             GOOGLE_CLIENT_SECRET=${{ secrets.GOOGLE_CLIENT_SECRET }}
+            LOGSTASH_HOST=${{ secrets.DEV_LOGSTASH_HOST }}
+            LOGSTASH_PORT=${{ secrets.DEV_LOGSTASH_PORT }}
             # Compose Variables
             APP_IMAGE_NAME=mait-dev-app
             PORT=8040
