@@ -15,3 +15,6 @@ spring:
         registration:
           google:
             redirect-uri: "https://api.dev.mait.kr/login/oauth2/code/google"
+
+logging:
+  config: classpath:logger/logback-dev.xml

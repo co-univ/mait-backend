@@ -32,19 +32,24 @@
         <includeCallerData>false</includeCallerData>
     </appender>
 
-    <!-- 모든 환경에서 동일한 설정 -->
+    <!-- Production Root Level: INFO -->
     <root level="INFO">
         <appender-ref ref="CONSOLE"/>
         <appender-ref ref="ASYNC_LOGSTASH"/>
     </root>
 
-    <!-- 특정 패키지 로그 레벨 설정 -->
-    <logger name="com.coniv.mait" level="DEBUG"/>
-    <logger name="org.springframework.web" level="INFO"/>
-    <logger name="org.hibernate.SQL" level="DEBUG"/>
-    <logger name="org.hibernate.type.descriptor.sql.BasicBinder" level="TRACE"/>
+    <!-- Production Logger Settings -->
+    <!-- 애플리케이션 로그 레벨 INFO로 상향 -->
+    <logger name="com.coniv.mait" level="INFO"/>
+    
+    <!-- Hibernate SQL 로그 제거 (성능 이슈 방지) -->
+    <logger name="org.hibernate.SQL" level="INFO"/>
+    <logger name="org.hibernate.type.descriptor.sql.BasicBinder" level="WARN"/>
 
-    <!-- 너무 많은 로그를 생성하는 패키지들 제한 -->
+    <!-- 잡음이 많은 패키지들 제한 -->
+    <logger name="org.springframework.web" level="INFO"/>
     <logger name="org.springframework.security" level="WARN"/>
     <logger name="org.apache.http" level="WARN"/>
+    <logger name="org.hibernate" level="WARN"/>
+    <logger name="com.zaxxer.hikari" level="WARN"/>
 </configuration>
