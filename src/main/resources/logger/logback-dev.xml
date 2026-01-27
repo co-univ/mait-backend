@@ -1,7 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <configuration>
     <include resource="org/springframework/boot/logging/logback/defaults.xml"/>
-    <springProperty scope="context" name="activeProfile" source="spring.profiles.active" defaultValue="default"/>
 
     <!-- Console Appender -->
     <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
@@ -17,7 +16,7 @@
         <encoder class="net.logstash.logback.encoder.LogstashEncoder">
             <includeContext>true</includeContext>
             <includeMdc>true</includeMdc>
-            <customFields>{"application":"mait","environment":"${activeProfile}"}</customFields>
+            <customFields>{"application":"mait","environment":"dev"}</customFields>
         </encoder>
         <connectionTimeout>5000</connectionTimeout>
         <reconnectionDelay>1000</reconnectionDelay>
