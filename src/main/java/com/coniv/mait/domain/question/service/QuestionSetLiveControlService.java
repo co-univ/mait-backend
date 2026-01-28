@@ -29,6 +29,7 @@ import com.coniv.mait.domain.question.service.component.QuestionWebSocketSender;
 import com.coniv.mait.domain.team.entity.TeamUserEntity;
 import com.coniv.mait.domain.team.repository.TeamUserEntityRepository;
 import com.coniv.mait.domain.user.entity.UserEntity;
+import com.coniv.mait.global.constant.WebSocketConstants;
 import com.coniv.mait.global.exception.custom.ResourceNotBelongException;
 import com.coniv.mait.web.question.dto.ParticipantSendType;
 
@@ -164,7 +165,7 @@ public class QuestionSetLiveControlService {
 		Optional<QuestionEntity> mayBeOpenQuestion = questionEntityRepository.findFirstByQuestionSetAndQuestionStatusIn(
 			questionSet, List.of(QuestionStatusType.ACCESS_PERMISSION, QuestionStatusType.SOLVE_PERMISSION));
 
-		String destination = "/topic/question/" + questionSetId;
+		String destination = WebSocketConstants.getQuestionSetParticipateTopic(questionSetId);
 
 		QuestionStatusMessage message;
 		if (mayBeOpenQuestion.isPresent()) {
