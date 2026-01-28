@@ -21,7 +21,7 @@ import lombok.extern.slf4j.Slf4j;
 @RequiredArgsConstructor
 public class WebSocketAuthInterceptor implements ChannelInterceptor {
 
-	private static final String BEARER_PREFIX = "Bearer ";
+	private static final String AUTH_HEADER = "Authorization";
 	private final JwtTokenProvider jwtTokenProvider;
 	private final UserEntityRepository userEntityRepository;
 
@@ -29,8 +29,8 @@ public class WebSocketAuthInterceptor implements ChannelInterceptor {
 	public Message<?> preSend(Message<?> message, MessageChannel channel) {
 		StompHeaderAccessor accessor = MessageHeaderAccessor.getAccessor(message, StompHeaderAccessor.class);
 
-		if (accessor != null && StompCommand.CONNECT.equals(accessor.getCommand())) {
-			String token = extractToken(accessor);
+		if (StompCommand.CONNECT.equals(accessor.getCommand())) {
+			String token = accessor.getFirstNativeHeader(AUTH_HEADER);
 
 			if (token != null) {
 				try {
@@ -44,20 +44,6 @@ public class WebSocketAuthInterceptor implements ChannelInterceptor {
 		}
 
 		return message;
-	}
-
-	private String extractToken(StompHeaderAccessor accessor) {
-		String authHeader = accessor.getFirstNativeHeader("Authorization");
-		if (authHeader != null && authHeader.startsWith(BEARER_PREFIX)) {
-			return authHeader.substring(BEARER_PREFIX.length());
-		}
-
-		String tokenParam = accessor.getFirstNativeHeader("token");
-		if (tokenParam != null) {
-			return tokenParam;
-		}
-
-		return null;
 	}
 
 	private void authenticateUser(StompHeaderAccessor accessor, String token) {
