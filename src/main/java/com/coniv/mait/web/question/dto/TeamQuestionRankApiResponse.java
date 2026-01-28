@@ -15,14 +15,18 @@ public record TeamQuestionRankApiResponse(
 	String nickname,
 
 	@Schema(description = "점수", requiredMode = Schema.RequiredMode.REQUIRED)
-	Long scorerCount
+	Long scorerCount,
+
+	@Schema(description = "등수", requiredMode = Schema.RequiredMode.REQUIRED)
+	Integer rank
 ) {
 	public static TeamQuestionRankApiResponse from(TeamQuestionRankDto dto) {
 		return new TeamQuestionRankApiResponse(
 			dto.getUserId(),
 			dto.getName(),
 			dto.getNickname(),
-			dto.getScorerCount()
+			dto.getScorerCount(),
+			dto.getRank()
 		);
 	}
 }

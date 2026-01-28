@@ -49,6 +49,15 @@ public class TeamQuestionRankService {
 
 		// 랭킹 계산
 		Map<Long, Long> scorerCountByUserId = calculateScorerCount(scorers);
+
+		// 전체 사용자를 점수 순으로 정렬 (등수 계산용)
+		List<Map.Entry<Long, Long>> sortedEntries = scorerCountByUserId.entrySet().stream()
+			.sorted(Map.Entry.<Long, Long>comparingByValue().reversed())
+			.toList();
+
+		// 등수 맵 생성
+		Map<Long, Integer> rankByUserId = calculateRanks(sortedEntries);
+
 		List<Long> topUserIds = getTopUserIds(scorerCountByUserId);
 
 		// 사용자 정보 조회
@@ -59,8 +68,8 @@ public class TeamQuestionRankService {
 		Map<Long, UserEntity> userMap = getUserMap(allUserIds);
 
 		// DTO 생성
-		List<TeamQuestionRankDto> teamRank = createRankDto(topUserIds, userMap, scorerCountByUserId);
-		TeamQuestionRankDto myRank = createMyRankDto(currentUserId, userMap, scorerCountByUserId);
+		List<TeamQuestionRankDto> teamRank = createRankDto(topUserIds, userMap, scorerCountByUserId, rankByUserId);
+		TeamQuestionRankDto myRank = createMyRankDto(currentUserId, userMap, scorerCountByUserId, rankByUserId);
 
 		return TeamQuestionRankCombinedDto.of(teamRank, myRank);
 	}
@@ -79,6 +88,15 @@ public class TeamQuestionRankService {
 
 		// 랭킹 계산
 		Map<Long, Long> correctCountByUserId = calculateCorrectAnswerCount(correctAnswers);
+
+		// 전체 사용자를 점수 순으로 정렬 (등수 계산용)
+		List<Map.Entry<Long, Long>> sortedEntries = correctCountByUserId.entrySet().stream()
+			.sorted(Map.Entry.<Long, Long>comparingByValue().reversed())
+			.toList();
+
+		// 등수 맵 생성
+		Map<Long, Integer> rankByUserId = calculateRanks(sortedEntries);
+
 		List<Long> topUserIds = getTopUserIds(correctCountByUserId);
 
 		// 사용자 정보 조회
@@ -89,8 +107,8 @@ public class TeamQuestionRankService {
 		Map<Long, UserEntity> userMap = getUserMap(allUserIds);
 
 		// DTO 생성
-		List<TeamQuestionRankDto> teamRank = createRankDto(topUserIds, userMap, correctCountByUserId);
-		TeamQuestionRankDto myRank = createMyRankDto(currentUserId, userMap, correctCountByUserId);
+		List<TeamQuestionRankDto> teamRank = createRankDto(topUserIds, userMap, correctCountByUserId, rankByUserId);
+		TeamQuestionRankDto myRank = createMyRankDto(currentUserId, userMap, correctCountByUserId, rankByUserId);
 
 		return TeamQuestionRankCombinedDto.of(teamRank, myRank);
 	}
@@ -154,22 +172,50 @@ public class TeamQuestionRankService {
 			.collect(Collectors.toMap(UserEntity::getId, user -> user));
 	}
 
+	private Map<Long, Integer> calculateRanks(List<Map.Entry<Long, Long>> sortedEntries) {
+		Map<Long, Integer> rankByUserId = new java.util.HashMap<>();
+		int rank = 1;
+		Long previousCount = null;
+		int sameRankCount = 0;
+
+		for (Map.Entry<Long, Long> entry : sortedEntries) {
+			Long currentCount = entry.getValue();
+
+			if (previousCount != null && !previousCount.equals(currentCount)) {
+				rank += sameRankCount;
+				sameRankCount = 1;
+			} else {
+				sameRankCount++;
+			}
+
+			rankByUserId.put(entry.getKey(), rank);
+			previousCount = currentCount;
+		}
+
+		return rankByUserId;
+	}
+
 	private List<TeamQuestionRankDto> createRankDto(
 		List<Long> userIds,
 		Map<Long, UserEntity> userMap,
-		Map<Long, Long> countByUserId
+		Map<Long, Long> countByUserId,
+		Map<Long, Integer> rankByUserId
 	) {
 		return userIds.stream()
 			.map(userId -> {
 				UserEntity user = userMap.get(userId);
 				Long count = countByUserId.get(userId);
-				return TeamQuestionRankDto.of(user.getId(), user.getName(), user.getNickname(), count);
+				Integer rank = rankByUserId.get(userId);
+				return TeamQuestionRankDto.of(user.getId(), user.getName(), user.getNickname(), count, rank);
 			})
 			.toList();
 	}
 
-	private TeamQuestionRankDto createMyRankDto(Long userId, Map<Long, UserEntity> userMap,
-		Map<Long, Long> countByUserId
+	private TeamQuestionRankDto createMyRankDto(
+		Long userId,
+		Map<Long, UserEntity> userMap,
+		Map<Long, Long> countByUserId,
+		Map<Long, Integer> rankByUserId
 	) {
 		if (!countByUserId.containsKey(userId)) {
 			return null;
@@ -177,6 +223,7 @@ public class TeamQuestionRankService {
 
 		UserEntity user = userMap.get(userId);
 		Long count = countByUserId.get(userId);
-		return TeamQuestionRankDto.of(user.getId(), user.getName(), user.getNickname(), count);
+		Integer rank = rankByUserId.get(userId);
+		return TeamQuestionRankDto.of(user.getId(), user.getName(), user.getNickname(), count, rank);
 	}
 }
