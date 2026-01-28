@@ -3,7 +3,6 @@ package com.coniv.mait.domain.question.service;
 import java.util.Comparator;
 import java.util.List;
 
-import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -26,6 +25,7 @@ import com.coniv.mait.domain.question.service.dto.QuestionCount;
 import com.coniv.mait.domain.question.service.dto.QuestionSetDto;
 import com.coniv.mait.domain.question.service.dto.QuestionValidateDto;
 import com.coniv.mait.domain.user.service.component.TeamRoleValidator;
+import com.coniv.mait.global.event.MaitEventPublisher;
 import com.coniv.mait.web.question.dto.QuestionSetContainer;
 import com.coniv.mait.web.question.dto.QuestionSetGroup;
 import com.coniv.mait.web.question.dto.QuestionSetList;
@@ -41,7 +41,7 @@ public class QuestionSetService {
 
 	private final QuestionService questionService;
 
-	private final ApplicationEventPublisher eventPublisher;
+	private final MaitEventPublisher maitEventPublisher;
 
 	private final QuestionSetEntityRepository questionSetEntityRepository;
 
@@ -75,12 +75,13 @@ public class QuestionSetService {
 		}
 
 		if (questionSetDto.getCreationType() == QuestionSetCreationType.AI_GENERATED) {
-			eventPublisher.publishEvent(new AiQuestionGenerationRequestedEvent(
-				questionSetEntity.getId(),
-				counts,
-				materials,
-				instruction,
-				difficulty));
+			maitEventPublisher.publishEvent(AiQuestionGenerationRequestedEvent.builder()
+				.questionSetId(questionSetEntity.getId())
+				.counts(counts)
+				.materials(materials)
+				.instruction(instruction)
+				.difficulty(difficulty)
+				.build());
 		}
 
 		return QuestionSetDto.from(questionSetEntity);

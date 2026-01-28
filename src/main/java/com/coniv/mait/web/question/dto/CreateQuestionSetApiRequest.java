@@ -1,5 +1,6 @@
 package com.coniv.mait.web.question.dto;
 
+import java.util.Collections;
 import java.util.List;
 
 import com.coniv.mait.domain.question.dto.MaterialDto;
@@ -28,6 +29,12 @@ public record CreateQuestionSetApiRequest(
 	@Schema(description = "문제 셋에 대한 보충 설명, AI 생성인 경우에만 활용")
 	String instruction
 ) {
+
+	public CreateQuestionSetApiRequest {
+		if (creationType == QuestionSetCreationType.AI_GENERATED && materials == null) {
+			materials = Collections.emptyList();
+		}
+	}
 
 	public QuestionSetDto toQuestionSetDto() {
 		return QuestionSetDto.builder()
