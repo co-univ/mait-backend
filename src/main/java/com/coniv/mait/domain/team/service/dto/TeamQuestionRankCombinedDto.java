@@ -8,16 +8,16 @@ import lombok.Getter;
 @Getter
 @Builder
 public class TeamQuestionRankCombinedDto {
-	private List<TeamQuestionRankDto> scorerRank;
-	private List<TeamQuestionRankDto> correctAnswerRank;
+	private List<TeamQuestionRankDto> teamRank;
+	private TeamQuestionRankDto myRank;
 
 	public static TeamQuestionRankCombinedDto of(
-		List<TeamQuestionRankDto> scorerRank,
-		List<TeamQuestionRankDto> correctAnswerRank
+		List<TeamQuestionRankDto> teamRank,
+		TeamQuestionRankDto myRank
 	) {
 		return TeamQuestionRankCombinedDto.builder()
-			.scorerRank(scorerRank)
-			.correctAnswerRank(correctAnswerRank)
+			.teamRank(teamRank)
+			.myRank(myRank)
 			.build();
 	}
 }

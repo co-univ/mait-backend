@@ -1,4 +1,4 @@
-package com.coniv.mait.web.team.dto;
+package com.coniv.mait.web.question.dto;
 
 import com.coniv.mait.domain.team.service.dto.TeamQuestionRankDto;
 
