@@ -20,7 +20,8 @@ import lombok.extern.slf4j.Slf4j;
 @Component
 @RequiredArgsConstructor
 public class WebSocketSubscriptionHandler {
-	private static final Pattern QUESTION_TOPIC_PATTERN = Pattern.compile(WebSocketConstants.QUESTION_SET_PARTICIPATE_TOPIC_PATTERN);
+	private static final Pattern QUESTION_TOPIC_PATTERN = Pattern.compile(
+		WebSocketConstants.QUESTION_SET_PARTICIPATE_TOPIC_PATTERN);
 
 	private final QuestionSetParticipantService questionSetParticipantService;
 
