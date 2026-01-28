@@ -276,13 +276,6 @@ public class QuestionService {
 		sourceQuestion.updateRank(newRank);
 	}
 
-	/**
-	 * AI 문제 생성 (비동기)
-	 * Redis에 상태 저장:
-	 * - PROCESSING: 시작 시
-	 * - COMPLETED: 성공 시 (문제 수 포함)
-	 * - FAILED: 실패 시 (에러 메시지 포함)
-	 */
 	@Async("aiUploadThreadPoolExecutor")
 	@Transactional(propagation = Propagation.REQUIRES_NEW)
 	public void createAiGeneratedQuestions(
