@@ -26,9 +26,6 @@ import com.coniv.mait.domain.question.repository.QuestionEntityRepository;
 import com.coniv.mait.domain.question.repository.QuestionSetEntityRepository;
 import com.coniv.mait.domain.question.repository.QuestionSetParticipantRepository;
 import com.coniv.mait.domain.question.service.component.QuestionWebSocketSender;
-import com.coniv.mait.domain.team.entity.TeamUserEntity;
-import com.coniv.mait.domain.team.repository.TeamUserEntityRepository;
-import com.coniv.mait.domain.user.entity.UserEntity;
 import com.coniv.mait.global.constant.WebSocketConstants;
 import com.coniv.mait.global.exception.custom.ResourceNotBelongException;
 import com.coniv.mait.web.question.dto.ParticipantSendType;
@@ -44,7 +41,6 @@ public class QuestionSetLiveControlService {
 
 	private final QuestionSetEntityRepository questionSetEntityRepository;
 	private final QuestionWebSocketSender questionWebSocketSender;
-	private final TeamUserEntityRepository teamUserRepository;
 	private final QuestionSetParticipantRepository questionSetParticipantRepository;
 	private final QuestionEntityRepository questionEntityRepository;
 	private final SimpMessagingTemplate messagingTemplate;
@@ -53,14 +49,6 @@ public class QuestionSetLiveControlService {
 	public void startLiveQuestionSet(Long questionSetId) {
 		QuestionSetEntity questionSet = findQuestionSetById(questionSetId);
 		questionSet.startLiveQuestionSet();
-
-		questionSetParticipantRepository.deleteAllByQuestionSet(questionSet);
-		questionSetParticipantRepository.flush();
-
-		List<QuestionSetParticipantEntity> participants = findParticipantUsers(questionSet).stream()
-			.map(user -> QuestionSetParticipantEntity.createActiveParticipant(questionSet, user))
-			.toList();
-		questionSetParticipantRepository.saveAll(participants);
 
 		QuestionSetStatusMessage message = QuestionSetStatusMessage.builder()
 			.questionSetId(questionSetId)
@@ -96,12 +84,6 @@ public class QuestionSetLiveControlService {
 	private QuestionSetEntity findQuestionSetById(Long questionSetId) {
 		return questionSetEntityRepository.findById(questionSetId)
 			.orElseThrow(() -> new EntityNotFoundException("QuestionSet not found with id: " + questionSetId));
-	}
-
-	private List<UserEntity> findParticipantUsers(QuestionSetEntity questionSet) {
-		return teamUserRepository.findAllByTeamId(questionSet.getTeamId()).stream()
-			.map(TeamUserEntity::getUser)
-			.toList();
 	}
 
 	@Transactional(readOnly = true)

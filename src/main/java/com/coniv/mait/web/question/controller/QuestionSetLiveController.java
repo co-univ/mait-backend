@@ -92,7 +92,7 @@ public class QuestionSetLiveController {
 
 	@Operation(summary = "다음 단계 진출자 전송 API", description = "다음 단계 진출 예정인 사용자에게 알림을 소켓으로 전송")
 	@PostMapping("/participants/send")
-	public ResponseEntity<ApiResponse<Void>> sendParticpants(@PathVariable Long questionSetId,
+	public ResponseEntity<ApiResponse<Void>> sendParticipants(@PathVariable Long questionSetId,
 		@RequestParam("type") ParticipantSendType type) {
 		questionSetLiveControlService.sendParticipants(questionSetId, type);
 		return ResponseEntity.ok(ApiResponse.noContent());
@@ -107,6 +107,7 @@ public class QuestionSetLiveController {
 		return ResponseEntity.ok(ApiResponse.noContent());
 	}
 
+	@Deprecated(since = "2026-01-30 이후")
 	@Operation(summary = "우승자 전송")
 	@PostMapping("/winner")
 	public ResponseEntity<ApiResponse<Void>> sendWinner(
