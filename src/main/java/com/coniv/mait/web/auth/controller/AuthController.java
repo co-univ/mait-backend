@@ -22,7 +22,6 @@ import com.coniv.mait.web.auth.dto.LoginApiRequest;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 
@@ -41,15 +40,13 @@ public class AuthController {
 
 	@Operation(summary = "로그인 API", description = "사용자 로그인 API")
 	@PostMapping("/login")
-	public ResponseEntity<ApiResponse<Void>> login(@RequestBody @Valid LoginApiRequest request,
-		HttpServletResponse httpServletResponse) {
+	public ResponseEntity<ApiResponse<Void>> login(@RequestBody @Valid LoginApiRequest request) {
 		Token token = authService.login(request.email(), request.password());
 
-		httpServletResponse.addHeader(AUTH_HEADER, BEARER_TOKEN + token.accessToken());
-		httpServletResponse.addHeader("Set-Cookie",
-			cookieFactory.createRefreshResponseCookie(token.refreshToken()).toString());
-
-		return ResponseEntity.ok(ApiResponse.noContent());
+		return ResponseEntity.ok()
+			.header("Set-Cookie", cookieFactory.createRefreshResponseCookie(token.refreshToken()).toString())
+			.header(AUTH_HEADER, token.accessToken())
+			.body(ApiResponse.noContent());
 	}
 
 	@Operation(summary = "로그아웃 API", description = "사용자 로그아웃 API")
@@ -76,6 +73,7 @@ public class AuthController {
 
 		return ResponseEntity.ok()
 			.header("Set-Cookie", cookieFactory.createRefreshResponseCookie(newToken.refreshToken()).toString())
+			.header(AUTH_HEADER, newToken.accessToken())
 			.body(ApiResponse.noContent());
 	}
 
