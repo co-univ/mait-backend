@@ -23,6 +23,7 @@ public enum CommonExceptionCode implements ExceptionCode {
 
 	LOGIN_FAIL_EXCEPTION(HttpStatus.UNAUTHORIZED, "A-001", "로그인 실패"),
 	JWT_AUTH_EXCEPTION(HttpStatus.UNAUTHORIZED, "A-002", "JWT 인증 오류"),
+	JWT_EXPIRED(HttpStatus.UNAUTHORIZED, "A-003", "JWT 만료"),
 
 	POLICY_EXCEPTION(HttpStatus.BAD_REQUEST, "P-001", "정책 처리 중 오류가 발생했습니다."),
 

@@ -21,6 +21,8 @@ import com.coniv.mait.global.exception.custom.S3FileException;
 import com.coniv.mait.global.exception.custom.UserParameterException;
 import com.coniv.mait.global.response.ErrorResponse;
 
+import io.jsonwebtoken.ExpiredJwtException;
+import io.jsonwebtoken.JwtException;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
 
@@ -75,6 +77,22 @@ public class CustomExceptionHandler {
 		log.info("PolicyException 발생: {}, {}", exception.getMessage(), request.getRequestURI());
 		return ResponseEntity.badRequest()
 			.body(ErrorResponse.of(CommonExceptionCode.POLICY_EXCEPTION, List.of(exception.getMessage())));
+	}
+
+	@ExceptionHandler(ExpiredJwtException.class)
+	public ResponseEntity<ErrorResponse> handleExpiredJwtException(ExpiredJwtException exception,
+		HttpServletRequest request) {
+		log.info("ExpiredJwtException 발생: {}, {}", exception.getMessage(), request.getRequestURI());
+		return ResponseEntity.status(CommonExceptionCode.JWT_EXPIRED.getStatus())
+			.body(ErrorResponse.of(CommonExceptionCode.JWT_EXPIRED, List.of(exception.getMessage())));
+	}
+
+	@ExceptionHandler(JwtException.class)
+	public ResponseEntity<ErrorResponse> handleJwtException(JwtException exception,
+		HttpServletRequest request) {
+		log.info("JwtException 발생: {}, {}", exception.getMessage(), request.getRequestURI());
+		return ResponseEntity.status(CommonExceptionCode.JWT_AUTH_EXCEPTION.getStatus())
+			.body(ErrorResponse.of(CommonExceptionCode.JWT_AUTH_EXCEPTION, List.of(exception.getMessage())));
 	}
 
 	@ExceptionHandler(S3FileException.class)

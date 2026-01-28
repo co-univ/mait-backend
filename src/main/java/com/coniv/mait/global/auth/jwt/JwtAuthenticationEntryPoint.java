@@ -12,6 +12,7 @@ import com.coniv.mait.global.exception.CommonExceptionCode;
 import com.coniv.mait.global.response.ErrorResponse;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import io.jsonwebtoken.ExpiredJwtException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
@@ -29,9 +30,14 @@ public class JwtAuthenticationEntryPoint implements AuthenticationEntryPoint {
 		AuthenticationException authException) throws IOException {
 
 		log.info("Unauthorized error: {}", authException.getMessage());
-		response.setStatus(CommonExceptionCode.JWT_AUTH_EXCEPTION.getStatus().value());
+		CommonExceptionCode exceptionCode = CommonExceptionCode.JWT_AUTH_EXCEPTION;
+		Throwable cause = authException.getCause();
+		if (cause instanceof ExpiredJwtException) {
+			exceptionCode = CommonExceptionCode.JWT_EXPIRED;
+		}
+		response.setStatus(exceptionCode.getStatus().value());
 		response.setContentType(MediaType.APPLICATION_JSON_VALUE);
-		ErrorResponse errorResponse = ErrorResponse.of(CommonExceptionCode.JWT_AUTH_EXCEPTION,
+		ErrorResponse errorResponse = ErrorResponse.of(exceptionCode,
 			List.of(authException.getMessage()));
 
 		response.getWriter().write(objectMapper.writeValueAsString(errorResponse));
