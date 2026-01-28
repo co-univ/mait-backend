@@ -41,8 +41,14 @@
     <!-- 특정 패키지 로그 레벨 설정 -->
     <logger name="com.coniv.mait" level="DEBUG"/>
     <logger name="org.springframework.web" level="INFO"/>
-    <logger name="org.hibernate.SQL" level="DEBUG"/>
-    <logger name="org.hibernate.type.descriptor.sql.BasicBinder" level="TRACE"/>
+    
+    <logger name="org.hibernate.SQL" level="DEBUG" additivity="false">
+        <appender-ref ref="CONSOLE"/>
+    </logger>
+
+    <logger name="org.hibernate.type.descriptor.sql.BasicBinder" level="TRACE" additivity="false">
+        <appender-ref ref="CONSOLE"/>
+    </logger>
 
     <!-- 너무 많은 로그를 생성하는 패키지들 제한 -->
     <logger name="org.springframework.security" level="WARN"/>
