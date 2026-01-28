@@ -22,6 +22,7 @@ import com.coniv.mait.domain.question.enums.ParticipantStatus;
 import com.coniv.mait.domain.question.enums.QuestionSetCommandType;
 import com.coniv.mait.domain.question.enums.QuestionSetOngoingStatus;
 import com.coniv.mait.domain.question.enums.QuestionStatusType;
+import com.coniv.mait.global.constant.WebSocketConstants;
 import com.coniv.mait.domain.question.repository.QuestionEntityRepository;
 import com.coniv.mait.domain.question.repository.QuestionSetEntityRepository;
 import com.coniv.mait.domain.question.repository.QuestionSetParticipantRepository;
@@ -164,7 +165,7 @@ public class QuestionSetLiveControlService {
 		Optional<QuestionEntity> mayBeOpenQuestion = questionEntityRepository.findFirstByQuestionSetAndQuestionStatusIn(
 			questionSet, List.of(QuestionStatusType.ACCESS_PERMISSION, QuestionStatusType.SOLVE_PERMISSION));
 
-		String destination = "/topic/question-sets/" + questionSetId + "/participate";
+		String destination = WebSocketConstants.getQuestionSetParticipateTopic(questionSetId);
 
 		QuestionStatusMessage message;
 		if (mayBeOpenQuestion.isPresent()) {
