@@ -19,9 +19,13 @@ spring:
       ddl-auto: ${JPA_DDL_AUTO:none}
     properties:
       hibernate:
-        show_sql: true
+        show_sql: false
         format_sql: true
         dialect: org.hibernate.dialect.MySQL8Dialect
+        session:
+          events:
+            log:
+              LOG_QUERIES_SLOWER_THAN_MS: 500
 
   security:
     oauth2:
