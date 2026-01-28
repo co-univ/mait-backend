@@ -11,6 +11,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.socket.messaging.SessionSubscribeEvent;
 
 import com.coniv.mait.domain.question.service.QuestionSetParticipantService;
+import com.coniv.mait.global.constant.WebSocketConstants;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -19,7 +20,8 @@ import lombok.extern.slf4j.Slf4j;
 @Component
 @RequiredArgsConstructor
 public class WebSocketSubscriptionHandler {
-	private static final Pattern QUESTION_TOPIC_PATTERN = Pattern.compile("^/topic/question-sets/(\\d+)/participate$");
+	private static final Pattern QUESTION_TOPIC_PATTERN = Pattern.compile(
+		WebSocketConstants.QUESTION_SET_PARTICIPATE_TOPIC_PATTERN);
 
 	private final QuestionSetParticipantService questionSetParticipantService;
 
