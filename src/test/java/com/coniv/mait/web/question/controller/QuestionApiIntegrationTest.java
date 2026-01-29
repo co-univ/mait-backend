@@ -13,7 +13,6 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
 
-import com.coniv.mait.domain.question.constant.QuestionConstant;
 import com.coniv.mait.domain.question.entity.FillBlankAnswerEntity;
 import com.coniv.mait.domain.question.entity.FillBlankQuestionEntity;
 import com.coniv.mait.domain.question.entity.MultipleChoiceEntity;
@@ -824,7 +823,6 @@ public class QuestionApiIntegrationTest extends BaseIntegrationTest {
 			.andExpectAll(status().isOk(),
 				jsonPath("$.isSuccess").value(true),
 				jsonPath("$.data").exists(),
-				jsonPath("$.data.content").value(QuestionConstant.DEFAULT_QUESTION_CONTENT),
 				jsonPath("$.data.type").value(QuestionType.MULTIPLE.name()));
 
 		// then - DB에 문제 저장되었는지 확인
@@ -832,7 +830,6 @@ public class QuestionApiIntegrationTest extends BaseIntegrationTest {
 		assertThat(questions).hasSize(1);
 
 		QuestionEntity savedQuestion = questions.get(0);
-		assertThat(savedQuestion.getContent()).isEqualTo(QuestionConstant.DEFAULT_QUESTION_CONTENT);
 		assertThat(savedQuestion.getQuestionSet().getId()).isEqualTo(questionSet.getId());
 		assertThat(savedQuestion).isInstanceOf(MultipleQuestionEntity.class);
 	}

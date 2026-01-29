@@ -83,7 +83,6 @@ public class OrderingQuestionFactory implements QuestionFactory<OrderingQuestion
 	@Transactional
 	public OrderingQuestionEntity createDefaultQuestion(String lexoRank, QuestionSetEntity questionSetEntity) {
 		OrderingQuestionEntity orderingQuestion = OrderingQuestionEntity.builder()
-			.content(QuestionConstant.DEFAULT_QUESTION_CONTENT)
 			.displayDelayMilliseconds(QuestionConstant.MAX_DISPLAY_DELAY_MILLISECONDS)
 			.lexoRank(lexoRank)
 			.questionSet(questionSetEntity)
