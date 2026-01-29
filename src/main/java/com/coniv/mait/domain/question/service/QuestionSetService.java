@@ -59,7 +59,7 @@ public class QuestionSetService {
 
 	private final AiRequestStatusManager aiRequestStatusManager;
 
-	private final RedisTemplate<String, Long> redisTemplate;
+	private final RedisTemplate<String, String> redisTemplate;
 
 	@Transactional
 	public QuestionSetDto createQuestionSet(final QuestionSetDto questionSetDto, final List<QuestionCount> counts,
