@@ -3,6 +3,7 @@ package com.coniv.mait.domain.question.service;
 import java.util.Comparator;
 import java.util.List;
 
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -39,6 +40,9 @@ import lombok.extern.slf4j.Slf4j;
 @RequiredArgsConstructor
 public class QuestionSetService {
 
+	private static final String DEFAULT_SET_TITLE = "문제 셋 ";
+	private static final String SET_TITLE_PREFIX = "team:question:title:";
+
 	private final QuestionService questionService;
 
 	private final MaitEventPublisher maitEventPublisher;
@@ -55,6 +59,8 @@ public class QuestionSetService {
 
 	private final AiRequestStatusManager aiRequestStatusManager;
 
+	private final RedisTemplate<String, Long> redisTemplate;
+
 	@Transactional
 	public QuestionSetDto createQuestionSet(final QuestionSetDto questionSetDto, final List<QuestionCount> counts,
 		final List<MaterialDto> materials, final String instruction, final String difficulty, final Long userId) {
@@ -65,6 +71,7 @@ public class QuestionSetService {
 			.creationType(questionSetDto.getCreationType())
 			.teamId(questionSetDto.getTeamId())
 			.difficulty(difficulty)
+			.title(DEFAULT_SET_TITLE + redisTemplate.opsForValue().increment(SET_TITLE_PREFIX))
 			.creatorId(userId)
 			.build();
 		questionSetEntityRepository.save(questionSetEntity);
