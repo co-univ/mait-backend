@@ -2,7 +2,7 @@ package com.coniv.mait.web.question.dto;
 
 import java.util.List;
 
-import com.coniv.mait.domain.team.service.dto.TeamQuestionRankCombinedDto;
+import com.coniv.mait.domain.team.service.dto.QuestionRanksDto;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 
@@ -14,7 +14,7 @@ public record TeamQuestionRankCombinedApiResponse(
 	TeamQuestionRankApiResponse myRank
 ) {
 	public static TeamQuestionRankCombinedApiResponse from(
-		TeamQuestionRankCombinedDto combinedDto
+		QuestionRanksDto combinedDto
 	) {
 		List<TeamQuestionRankApiResponse> teamRank = combinedDto.getTeamRank().stream()
 			.map(TeamQuestionRankApiResponse::from)

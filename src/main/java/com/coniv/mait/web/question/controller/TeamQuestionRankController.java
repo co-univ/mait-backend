@@ -8,7 +8,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.coniv.mait.domain.question.service.TeamQuestionRankService;
-import com.coniv.mait.domain.team.service.dto.TeamQuestionRankCombinedDto;
+import com.coniv.mait.domain.team.service.dto.QuestionRanksDto;
 import com.coniv.mait.domain.user.entity.UserEntity;
 import com.coniv.mait.global.response.ApiResponse;
 import com.coniv.mait.web.question.dto.TeamQuestionRankCombinedApiResponse;
@@ -30,7 +30,7 @@ public class TeamQuestionRankController {
 	public ResponseEntity<ApiResponse<TeamQuestionRankCombinedApiResponse>> getTeamQuestionCorrectRank(
 		@PathVariable("teamId") Long teamId,
 		@AuthenticationPrincipal UserEntity user) {
-		TeamQuestionRankCombinedDto combined =
+		QuestionRanksDto combined =
 			teamQuestionRankService.getTeamQuestionCorrectAnswerRank(teamId, user.getId());
 		return ResponseEntity.ok(
 			ApiResponse.ok(TeamQuestionRankCombinedApiResponse.from(combined)));
@@ -41,7 +41,7 @@ public class TeamQuestionRankController {
 	public ResponseEntity<ApiResponse<TeamQuestionRankCombinedApiResponse>> getTeamQuestionScorerRank(
 		@PathVariable("teamId") Long teamId,
 		@AuthenticationPrincipal UserEntity user) {
-		TeamQuestionRankCombinedDto combined =
+		QuestionRanksDto combined =
 			teamQuestionRankService.getTeamQuestionScorerRank(teamId, user.getId());
 		return ResponseEntity.ok(
 			ApiResponse.ok(TeamQuestionRankCombinedApiResponse.from(combined)));

@@ -1,6 +1,6 @@
 package com.coniv.mait.web.question.dto;
 
-import com.coniv.mait.domain.team.service.dto.TeamQuestionRankDto;
+import com.coniv.mait.domain.team.service.dto.UserRankDto;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 
@@ -20,7 +20,7 @@ public record TeamQuestionRankApiResponse(
 	@Schema(description = "등수", requiredMode = Schema.RequiredMode.REQUIRED)
 	Integer rank
 ) {
-	public static TeamQuestionRankApiResponse from(TeamQuestionRankDto dto) {
+	public static TeamQuestionRankApiResponse from(UserRankDto dto) {
 		return new TeamQuestionRankApiResponse(
 			dto.getUserId(),
 			dto.getName(),

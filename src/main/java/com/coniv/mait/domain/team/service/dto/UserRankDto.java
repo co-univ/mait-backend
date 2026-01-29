@@ -5,15 +5,15 @@ import lombok.Getter;
 
 @Getter
 @Builder
-public class TeamQuestionRankDto {
+public class UserRankDto {
 	private Long userId;
 	private String name;
 	private String nickname;
 	private Long scorerCount;
 	private Integer rank;
 
-	public static TeamQuestionRankDto of(Long userId, String name, String nickname, Long scorerCount, Integer rank) {
-		return TeamQuestionRankDto.builder()
+	public static UserRankDto of(Long userId, String name, String nickname, Long scorerCount, Integer rank) {
+		return UserRankDto.builder()
 			.userId(userId)
 			.name(name)
 			.nickname(nickname)
