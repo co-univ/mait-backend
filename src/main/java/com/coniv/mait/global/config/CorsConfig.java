@@ -20,7 +20,6 @@ public class CorsConfig {
 
 		configuration.addAllowedOrigin("http://localhost:3000"); // todo 삭제 예정
 
-		configuration.addAllowedOriginPattern("*");
 		configuration.addAllowedMethod("*");
 		configuration.addAllowedHeader("*");
 		configuration.setAllowCredentials(true);
