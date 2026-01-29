@@ -70,7 +70,6 @@ public abstract class QuestionEntity extends BaseTimeEntity {
 		return MultipleQuestionEntity.builder()
 			.questionSet(questionSet)
 			.lexoRank(rank)
-			.content(QuestionConstant.DEFAULT_QUESTION_CONTENT)
 			.displayDelayMilliseconds(QuestionConstant.MAX_DISPLAY_DELAY_MILLISECONDS)
 			.build();
 	}

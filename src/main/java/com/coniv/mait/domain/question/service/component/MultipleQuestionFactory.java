@@ -84,7 +84,6 @@ public class MultipleQuestionFactory implements QuestionFactory<MultipleQuestion
 	@Transactional
 	public MultipleQuestionEntity createDefaultQuestion(String lexoRank, QuestionSetEntity questionSet) {
 		MultipleQuestionEntity multipleQuestion = MultipleQuestionEntity.builder()
-			.content(DEFAULT_QUESTION_CONTENT)
 			.displayDelayMilliseconds(MAX_DISPLAY_DELAY_MILLISECONDS)
 			.lexoRank(lexoRank)
 			.answerCount(DEFAULT_ANSWER_COUNT)

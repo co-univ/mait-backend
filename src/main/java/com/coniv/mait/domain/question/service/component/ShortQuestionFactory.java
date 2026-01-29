@@ -85,7 +85,6 @@ public class ShortQuestionFactory implements QuestionFactory<ShortQuestionDto> {
 	@Transactional
 	public ShortQuestionEntity createDefaultQuestion(String lexoRank, QuestionSetEntity questionSetEntity) {
 		return questionEntityRepository.save(ShortQuestionEntity.builder()
-			.content(QuestionConstant.DEFAULT_QUESTION_CONTENT)
 			.displayDelayMilliseconds(QuestionConstant.MAX_DISPLAY_DELAY_MILLISECONDS)
 			.lexoRank(lexoRank)
 			.questionSet(questionSetEntity)
