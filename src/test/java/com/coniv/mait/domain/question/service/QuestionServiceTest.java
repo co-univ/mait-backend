@@ -639,7 +639,6 @@ class QuestionServiceTest {
 		// multipleQuestionFactory.getQuestion() mock 설정
 		MultipleQuestionDto expectedQuestionDto = mock(MultipleQuestionDto.class);
 		when(expectedQuestionDto.getType()).thenReturn(QuestionType.MULTIPLE);
-		when(expectedQuestionDto.getContent()).thenReturn(QuestionConstant.DEFAULT_QUESTION_CONTENT);
 
 		when(multipleQuestionFactory.getQuestion(any(QuestionEntity.class), eq(true))).thenReturn(expectedQuestionDto);
 
@@ -649,12 +648,10 @@ class QuestionServiceTest {
 		// then
 		assertNotNull(result);
 		assertEquals(QuestionType.MULTIPLE, result.getType());
-		assertEquals(QuestionConstant.DEFAULT_QUESTION_CONTENT, result.getContent());
 
 		QuestionEntity savedQuestion = questionCaptor.getValue();
 		assertNotNull(savedQuestion);
 		assertNotNull(savedQuestion.getLexoRank());
-		assertEquals(QuestionConstant.DEFAULT_QUESTION_CONTENT, savedQuestion.getContent());
 		assertEquals(questionSetEntity, savedQuestion.getQuestionSet());
 		assertEquals(QuestionConstant.MAX_DISPLAY_DELAY_MILLISECONDS, savedQuestion.getDisplayDelayMilliseconds());
 

@@ -80,7 +80,6 @@ public class FillBlankQuestionFactory implements QuestionFactory<FillBlankQuesti
 	@Transactional
 	public FillBlankQuestionEntity createDefaultQuestion(String lexoRank, QuestionSetEntity questionSetEntity) {
 		return questionEntityRepository.save(FillBlankQuestionEntity.builder()
-			.content(DEFAULT_QUESTION_CONTENT)
 			.lexoRank(lexoRank)
 			.displayDelayMilliseconds(RandomUtil.getRandomNumber(MAX_DISPLAY_DELAY_MILLISECONDS))
 			.questionSet(questionSetEntity)
