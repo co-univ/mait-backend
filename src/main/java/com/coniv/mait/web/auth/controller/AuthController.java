@@ -21,6 +21,7 @@ import com.coniv.mait.global.response.ApiResponse;
 import com.coniv.mait.web.auth.dto.LoginApiRequest;
 
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -53,13 +54,13 @@ public class AuthController {
 	@PostMapping("/logout")
 	public ResponseEntity<ApiResponse<Void>> logout(
 		@AuthenticationPrincipal UserEntity user,
-		@RequestHeader(value = AUTH_HEADER) String authorizationHeader,
-		@CookieValue(name = REFRESH_TOKEN) String refreshToken) {
+		@Parameter(hidden = true) @RequestHeader(value = AUTH_HEADER) String authorizationHeader,
+		@Parameter(hidden = true) @CookieValue(name = REFRESH_TOKEN) String refreshToken) {
 
 		String accessToken = authorizationHeader.substring(BEARER_TOKEN.length()).trim();
 		authService.logout(user, accessToken, refreshToken);
 
-		return ResponseEntity.noContent()
+		return ResponseEntity.ok()
 			.header("Set-Cookie", cookieFactory.createExpiredRefreshResponseCookie().toString())
 			.build();
 	}
@@ -67,7 +68,7 @@ public class AuthController {
 	@Operation(summary = "토큰 재발급 API", description = "토큰 재발급 API")
 	@PostMapping("/reissue")
 	public ResponseEntity<ApiResponse<Void>> reissue(
-		@CookieValue(name = REFRESH_TOKEN) String refreshToken) {
+		@Parameter(hidden = true) @CookieValue(name = REFRESH_TOKEN) String refreshToken) {
 
 		Token newToken = authService.reissue(refreshToken);
 
