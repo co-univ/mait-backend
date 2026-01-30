@@ -60,7 +60,7 @@ public class AuthController {
 		String accessToken = authorizationHeader.substring(BEARER_TOKEN.length()).trim();
 		authService.logout(user, accessToken, refreshToken);
 
-		return ResponseEntity.noContent()
+		return ResponseEntity.ok()
 			.header("Set-Cookie", cookieFactory.createExpiredRefreshResponseCookie().toString())
 			.build();
 	}
