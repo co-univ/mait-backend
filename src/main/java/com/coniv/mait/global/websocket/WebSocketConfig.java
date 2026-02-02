@@ -1,4 +1,4 @@
-package com.coniv.mait.global.config;
+package com.coniv.mait.global.websocket;
 
 import java.util.List;
 
@@ -10,7 +10,7 @@ import org.springframework.web.socket.config.annotation.EnableWebSocketMessageBr
 import org.springframework.web.socket.config.annotation.StompEndpointRegistry;
 import org.springframework.web.socket.config.annotation.WebSocketMessageBrokerConfigurer;
 
-import com.coniv.mait.global.interceptor.HttpHandshakeInterceptor;
+import com.coniv.mait.global.websocket.interceptor.HttpHandshakeInterceptor;
 
 import lombok.RequiredArgsConstructor;
 

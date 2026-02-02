@@ -1,4 +1,4 @@
-package com.coniv.mait.global.interceptor;
+package com.coniv.mait.global.websocket.interceptor;
 
 import java.util.Map;
 import java.util.UUID;
