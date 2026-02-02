@@ -18,15 +18,15 @@ public class HttpHandshakeInterceptor implements HandshakeInterceptor {
 	@Override
 	public boolean beforeHandshake(ServerHttpRequest request, ServerHttpResponse response, WebSocketHandler wsHandler,
 		Map<String, Object> attributes) {
-		
+
 		HttpHeaders headers = request.getHeaders();
-		
+
 		String requestId = headers.getFirst(X_REQUEST_ID_HEADER);
-		
+
 		if (requestId != null && !requestId.isEmpty()) {
 			attributes.put(REQUEST_ID_HEADER, requestId);
 		}
-		
+
 		return true;
 	}
 
