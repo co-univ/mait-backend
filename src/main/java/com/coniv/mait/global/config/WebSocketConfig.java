@@ -1,13 +1,16 @@
 package com.coniv.mait.global.config;
 
+import java.util.List;
+
 import org.springframework.context.annotation.Configuration;
 import org.springframework.messaging.simp.config.ChannelRegistration;
 import org.springframework.messaging.simp.config.MessageBrokerRegistry;
+import org.springframework.messaging.support.ChannelInterceptor;
 import org.springframework.web.socket.config.annotation.EnableWebSocketMessageBroker;
 import org.springframework.web.socket.config.annotation.StompEndpointRegistry;
 import org.springframework.web.socket.config.annotation.WebSocketMessageBrokerConfigurer;
 
-import com.coniv.mait.global.interceptor.WebSocketAuthInterceptor;
+import com.coniv.mait.global.interceptor.HttpHandshakeInterceptor;
 
 import lombok.RequiredArgsConstructor;
 
@@ -16,7 +19,8 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
 
-	private final WebSocketAuthInterceptor webSocketAuthInterceptor;
+	private final List<ChannelInterceptor> channelInterceptors;
+	private final HttpHandshakeInterceptor httpHandshakeInterceptor;
 
 	@Override
 	public void configureMessageBroker(MessageBrokerRegistry config) {
@@ -29,8 +33,7 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
 
 	@Override
 	public void configureClientInboundChannel(ChannelRegistration registration) {
-		// WebSocket 인바운드 메시지 처리 전 JWT 인증 수행
-		registration.interceptors(webSocketAuthInterceptor);
+		registration.interceptors(channelInterceptors.toArray(new ChannelInterceptor[0]));
 	}
 
 	@Override
@@ -38,6 +41,7 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
 		// WebSocket 연결을 위한 엔드포인트 설정
 		registry.addEndpoint("/ws")
 			.setAllowedOriginPatterns("*")  // CORS 설정: 모든 출처에서의 연결 허용
+			.addInterceptors(httpHandshakeInterceptor) // HTTP 핸드셰이크 시 request info(헤더 등)를 가져오기 위한 인터셉터
 			.withSockJS();  // SockJS fallback 옵션
 	}
 }
