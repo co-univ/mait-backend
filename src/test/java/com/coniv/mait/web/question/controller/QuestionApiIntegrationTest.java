@@ -172,16 +172,13 @@ public class QuestionApiIntegrationTest extends BaseIntegrationTest {
 				jsonPath("$.data.id").value(savedQuestion.getId()),
 				jsonPath("$.data.content").value("주관식 문제 내용"),
 				jsonPath("$.data.explanation").value("주관식 문제 해설"),
-				jsonPath("$.data.number").value(1),
 				jsonPath("$.data.answerCount").value(1),
 				jsonPath("$.data.answers").isArray(),
 				jsonPath("$.data.answers.length()").value(2),
 				jsonPath("$.data.answers[0].answer").value("정답1"),
-				jsonPath("$.data.answers[0].isMain").value(true),
-				jsonPath("$.data.answers[0].number").value(1),
+				jsonPath("$.data.answers[0].main").value(true),
 				jsonPath("$.data.answers[1].answer").value("정답2"),
-				jsonPath("$.data.answers[1].isMain").value(false),
-				jsonPath("$.data.answers[1].number").value(1)
+				jsonPath("$.data.answers[1].main").value(false)
 			);
 	}
 
@@ -287,10 +284,9 @@ public class QuestionApiIntegrationTest extends BaseIntegrationTest {
 				jsonPath("$.data.answers").isArray(),
 				jsonPath("$.data.answers.length()").value(2),
 				jsonPath("$.data.answers[0].answer").value("정답1"),
-				jsonPath("$.data.answers[0].isMain").value(true),
-				jsonPath("$.data.answers[0].number").value(1),
+				jsonPath("$.data.answers[0].main").value(true),
 				jsonPath("$.data.answers[1].answer").value("정답2"),
-				jsonPath("$.data.answers[1].isMain").value(false),
+				jsonPath("$.data.answers[1].main").value(false),
 				jsonPath("$.data.answers[1].number").value(1)
 			);
 	}
@@ -458,8 +454,7 @@ public class QuestionApiIntegrationTest extends BaseIntegrationTest {
 		request.setId(savedQuestion.getId());
 		request.setContent("수정된 주관식 문제 내용");
 		request.setExplanation("수정된 문제 해설");
-		request.setNumber(1L);
-		request.setShortAnswers(updatedAnswers);
+		request.setAnswers(updatedAnswers);
 
 		String json = objectMapper.writeValueAsString(request);
 
@@ -544,7 +539,6 @@ public class QuestionApiIntegrationTest extends BaseIntegrationTest {
 		request.setId(savedQuestion.getId());
 		request.setContent("수정된 객관식 문제 내용");
 		request.setExplanation("수정된 문제 해설");
-		request.setNumber(1L);
 		request.setChoices(updatedChoices);
 
 		String json = objectMapper.writeValueAsString(request);
@@ -641,7 +635,6 @@ public class QuestionApiIntegrationTest extends BaseIntegrationTest {
 		request.setId(savedQuestion.getId());
 		request.setContent("수정된 순서맞추기 문제 내용");
 		request.setExplanation("수정된 문제 해설");
-		request.setNumber(1L);
 		request.setOptions(updatedOptions);
 
 		String json = objectMapper.writeValueAsString(request);
@@ -724,8 +717,7 @@ public class QuestionApiIntegrationTest extends BaseIntegrationTest {
 		request.setId(savedQuestion.getId());
 		request.setContent("수정된 빈칸에 들어갈 적절한 단어는 ___와 ___입니다.");
 		request.setExplanation("수정된 문제 해설");
-		request.setNumber(1L);
-		request.setFillBlankAnswers(updatedAnswers);
+		request.setAnswers(updatedAnswers);
 
 		String json = objectMapper.writeValueAsString(request);
 

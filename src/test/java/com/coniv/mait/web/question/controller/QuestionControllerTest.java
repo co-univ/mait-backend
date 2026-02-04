@@ -691,8 +691,7 @@ class QuestionControllerTest {
 		request.setId(questionId);
 		request.setContent("수정된 주관식 문제 내용");
 		request.setExplanation("수정된 문제 해설");
-		request.setNumber(1L);
-		request.setShortAnswers(shortAnswers);
+		request.setAnswers(shortAnswers);
 
 		String json = objectMapper.writeValueAsString(request);
 		// Mock 응답 설정
@@ -701,8 +700,7 @@ class QuestionControllerTest {
 				.id(questionId)
 				.content(request.getContent())
 				.explanation(request.getExplanation())
-				.number(request.getNumber())
-				.answers(request.getShortAnswers())
+				.answers(request.getAnswers())
 				.answerCount(2)
 				.build();
 
@@ -746,7 +744,6 @@ class QuestionControllerTest {
 		request.setId(questionId);
 		request.setContent("수정된 객관식 문제 내용");
 		request.setExplanation("수정된 문제 해설");
-		request.setNumber(1L);
 		request.setChoices(choices);
 
 		String json = objectMapper.writeValueAsString(request);
@@ -756,7 +753,6 @@ class QuestionControllerTest {
 			.id(questionId)
 			.content(request.getContent())
 			.explanation(request.getExplanation())
-			.number(request.getNumber())
 			.choices(request.getChoices())
 			.build();
 
@@ -800,7 +796,6 @@ class QuestionControllerTest {
 		request.setId(questionId);
 		request.setContent("수정된 순서맞추기 문제 내용");
 		request.setExplanation("수정된 문제 해설");
-		request.setNumber(1L);
 		request.setOptions(options);
 
 		String json = objectMapper.writeValueAsString(request);
@@ -811,7 +806,6 @@ class QuestionControllerTest {
 				.id(questionId)
 				.content(request.getContent())
 				.explanation(request.getExplanation())
-				.number(request.getNumber())
 				.options(request.getOptions())
 				.build();
 
@@ -850,8 +844,7 @@ class QuestionControllerTest {
 		request.setId(questionId);
 		request.setContent("수정된 빈칸에 들어갈 적절한 단어는 ___입니다.");
 		request.setExplanation("수정된 문제 해설");
-		request.setNumber(1L);
-		request.setFillBlankAnswers(fillBlankAnswers);
+		request.setAnswers(fillBlankAnswers);
 
 		String json = objectMapper.writeValueAsString(request);
 
@@ -861,8 +854,7 @@ class QuestionControllerTest {
 				.id(questionId)
 				.content(request.getContent())
 				.explanation(request.getExplanation())
-				.number(request.getNumber())
-				.answers(request.getFillBlankAnswers())
+				.answers(request.getAnswers())
 				.build();
 
 		when(questionService.updateQuestion(eq(questionSetId), eq(questionId), any())).thenReturn(mockResponse);
@@ -900,7 +892,6 @@ class QuestionControllerTest {
 		request.setId(questionId);
 		request.setContent("수정된 객관식 문제 내용");
 		request.setExplanation("수정된 문제 해설");
-		request.setNumber(1L);
 		request.setChoices(choices);
 
 		String json = objectMapper.writeValueAsString(request);
@@ -954,8 +945,7 @@ class QuestionControllerTest {
 		request.setId(questionId);
 		request.setContent("객관식에서 주관식으로 변경된 문제");
 		request.setExplanation("변경된 해설");
-		request.setNumber(1L);
-		request.setShortAnswers(shortAnswers);
+		request.setAnswers(shortAnswers);
 
 		String json = objectMapper.writeValueAsString(request);
 

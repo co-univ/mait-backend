@@ -9,7 +9,7 @@ public record FillBlankAnswerApiResponse(
 	Long id,
 	String answer,
 	@Schema(description = "빈칸 문제 답안이 주관식인지 객관식인지 여부", requiredMode = Schema.RequiredMode.REQUIRED)
-	boolean isMain,
+	boolean main,
 	@Schema(description = "빈칸 문제 답안의 순서", requiredMode = Schema.RequiredMode.REQUIRED)
 	Long number
 ) {

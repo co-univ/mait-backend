@@ -29,7 +29,6 @@ public class UpdateMultipleQuestionApiRequest extends UpdateQuestionApiRequest {
 			.imageUrl(getImageUrl())
 			.imageId(getImageId())
 			.explanation(getExplanation())
-			.number(getNumber())
 			.choices(choices)
 			.build();
 	}
