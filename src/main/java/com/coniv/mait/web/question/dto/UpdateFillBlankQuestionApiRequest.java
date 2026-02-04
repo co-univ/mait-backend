@@ -17,7 +17,7 @@ public class UpdateFillBlankQuestionApiRequest extends UpdateQuestionApiRequest 
 
 	@Valid
 	@NotNull(message = "빈칸 문제 정답은 필수입니다.")
-	private List<FillBlankAnswerDto> fillBlankAnswers;
+	private List<FillBlankAnswerDto> answers;
 
 	@Override
 	public QuestionDto toQuestionDto() {
@@ -27,8 +27,7 @@ public class UpdateFillBlankQuestionApiRequest extends UpdateQuestionApiRequest 
 			.explanation(getExplanation())
 			.imageUrl(getImageUrl())
 			.imageId(getImageId())
-			.number(getNumber())
-			.answers(fillBlankAnswers)
+			.answers(answers)
 			.build();
 	}
 }

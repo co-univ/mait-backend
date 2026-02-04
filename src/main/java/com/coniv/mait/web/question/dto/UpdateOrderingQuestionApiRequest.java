@@ -27,7 +27,6 @@ public class UpdateOrderingQuestionApiRequest extends UpdateQuestionApiRequest {
 			.explanation(getExplanation())
 			.imageUrl(getImageUrl())
 			.imageId(getImageId())
-			.number(getNumber())
 			.options(options)
 			.build();
 	}

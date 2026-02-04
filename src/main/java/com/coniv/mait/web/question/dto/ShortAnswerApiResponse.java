@@ -9,7 +9,7 @@ public record ShortAnswerApiResponse(
 	Long id,
 	String answer,
 	@Schema(requiredMode = Schema.RequiredMode.REQUIRED)
-	boolean isMain,
+	boolean main,
 	@Schema(requiredMode = Schema.RequiredMode.REQUIRED)
 	Long number
 ) {

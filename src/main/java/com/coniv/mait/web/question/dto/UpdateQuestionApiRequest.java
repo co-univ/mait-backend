@@ -36,10 +36,5 @@ public abstract class UpdateQuestionApiRequest {
 	@Schema(description = "업로드하려는 이미지의 PK")
 	private Long imageId;
 
-	@Schema(description = "문제 번호, 단 문제 번호는 변경되지 않음")
-	@NotNull(message = "문제 번호는 필수입니다.")
-	@Min(value = 1, message = "문제 번호는 1 이상이어야 합니다.")
-	private Long number;
-
 	public abstract QuestionDto toQuestionDto();
 }
