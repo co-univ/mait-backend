@@ -653,7 +653,6 @@ class QuestionServiceTest {
 		assertNotNull(savedQuestion);
 		assertNotNull(savedQuestion.getLexoRank());
 		assertEquals(questionSetEntity, savedQuestion.getQuestionSet());
-		assertEquals(QuestionConstant.MAX_DISPLAY_DELAY_MILLISECONDS, savedQuestion.getDisplayDelayMilliseconds());
 
 		verify(questionSetEntityRepository).findById(questionSetId);
 		verify(questionEntityRepository).save(any(QuestionEntity.class));

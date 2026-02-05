@@ -100,7 +100,6 @@ public class QuestionSetRankApiIntegrationTest extends BaseIntegrationTest {
 				.content("문제 1")
 				.number(1L)
 				.lexoRank("a")
-				.displayDelayMilliseconds(5000)
 				.build());
 
 		MultipleQuestionEntity question2 = questionEntityRepository.save(
@@ -109,7 +108,6 @@ public class QuestionSetRankApiIntegrationTest extends BaseIntegrationTest {
 				.content("문제 2")
 				.number(2L)
 				.lexoRank("b")
-				.displayDelayMilliseconds(5000)
 				.build());
 
 		MultipleQuestionEntity question3 = questionEntityRepository.save(
@@ -118,7 +116,6 @@ public class QuestionSetRankApiIntegrationTest extends BaseIntegrationTest {
 				.content("문제 3")
 				.number(3L)
 				.lexoRank("c")
-				.displayDelayMilliseconds(5000)
 				.build());
 
 		answerSubmitRecordEntityRepository.save(

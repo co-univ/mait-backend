@@ -54,9 +54,6 @@ public abstract class QuestionEntity extends BaseTimeEntity {
 
 	private Long imageId;
 
-	@Column(nullable = false)
-	private int displayDelayMilliseconds;
-
 	@Enumerated(EnumType.STRING)
 	@Column(nullable = false)
 	@Builder.Default
@@ -70,7 +67,6 @@ public abstract class QuestionEntity extends BaseTimeEntity {
 		return MultipleQuestionEntity.builder()
 			.questionSet(questionSet)
 			.lexoRank(rank)
-			.displayDelayMilliseconds(QuestionConstant.MAX_DISPLAY_DELAY_MILLISECONDS)
 			.build();
 	}
 

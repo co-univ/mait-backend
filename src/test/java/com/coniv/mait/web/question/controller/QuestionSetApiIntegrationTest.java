@@ -245,7 +245,6 @@ public class QuestionSetApiIntegrationTest extends BaseIntegrationTest {
 			.content("객관식 문제 1")
 			.number(1L)
 			.lexoRank("a")
-			.displayDelayMilliseconds(5000)
 			.build();
 		questionEntityRepository.save(question1);
 
@@ -270,7 +269,6 @@ public class QuestionSetApiIntegrationTest extends BaseIntegrationTest {
 			.content("객관식 문제 2")
 			.number(2L)
 			.lexoRank("b")
-			.displayDelayMilliseconds(5000)
 			.build();
 		questionEntityRepository.save(question2);
 
@@ -319,7 +317,6 @@ public class QuestionSetApiIntegrationTest extends BaseIntegrationTest {
 			.content("유효한 객관식 문제")
 			.number(1L)
 			.lexoRank("a")
-			.displayDelayMilliseconds(5000)
 			.build();
 		questionEntityRepository.save(validQuestion);
 
@@ -345,7 +342,6 @@ public class QuestionSetApiIntegrationTest extends BaseIntegrationTest {
 			.content(null)
 			.number(2L)
 			.lexoRank("b")
-			.displayDelayMilliseconds(5000)
 			.build();
 		questionEntityRepository.save(invalidQuestion1);
 
@@ -371,7 +367,6 @@ public class QuestionSetApiIntegrationTest extends BaseIntegrationTest {
 			.content("선택지가 부족한 문제")
 			.number(3L)
 			.lexoRank("c")
-			.displayDelayMilliseconds(5000)
 			.build();
 		questionEntityRepository.save(invalidQuestion2);
 

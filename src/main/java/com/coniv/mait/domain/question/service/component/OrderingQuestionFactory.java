@@ -75,7 +75,6 @@ public class OrderingQuestionFactory implements QuestionFactory<OrderingQuestion
 			.questionSet(questionSetEntity)
 			.content(dto.getContent())
 			.explanation(dto.getExplanation())
-			.displayDelayMilliseconds(RandomUtil.getRandomNumber(QuestionConstant.MAX_DISPLAY_DELAY_MILLISECONDS))
 			.build();
 	}
 
@@ -83,7 +82,6 @@ public class OrderingQuestionFactory implements QuestionFactory<OrderingQuestion
 	@Transactional
 	public OrderingQuestionEntity createDefaultQuestion(String lexoRank, QuestionSetEntity questionSetEntity) {
 		OrderingQuestionEntity orderingQuestion = OrderingQuestionEntity.builder()
-			.displayDelayMilliseconds(QuestionConstant.MAX_DISPLAY_DELAY_MILLISECONDS)
 			.lexoRank(lexoRank)
 			.questionSet(questionSetEntity)
 			.build();

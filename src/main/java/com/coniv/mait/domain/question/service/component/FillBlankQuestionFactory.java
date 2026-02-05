@@ -1,7 +1,5 @@
 package com.coniv.mait.domain.question.service.component;
 
-import static com.coniv.mait.domain.question.constant.QuestionConstant.*;
-
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -19,7 +17,6 @@ import com.coniv.mait.domain.question.service.dto.FillBlankAnswerDto;
 import com.coniv.mait.domain.question.service.dto.FillBlankQuestionDto;
 import com.coniv.mait.domain.question.service.dto.QuestionDto;
 import com.coniv.mait.global.exception.custom.UserParameterException;
-import com.coniv.mait.global.util.RandomUtil;
 
 import lombok.RequiredArgsConstructor;
 
@@ -72,7 +69,6 @@ public class FillBlankQuestionFactory implements QuestionFactory<FillBlankQuesti
 			.questionSet(questionSetEntity)
 			.content(dto.getContent())
 			.explanation(dto.getExplanation())
-			.displayDelayMilliseconds(RandomUtil.getRandomNumber(MAX_DISPLAY_DELAY_MILLISECONDS))
 			.build();
 	}
 
@@ -81,7 +77,6 @@ public class FillBlankQuestionFactory implements QuestionFactory<FillBlankQuesti
 	public FillBlankQuestionEntity createDefaultQuestion(String lexoRank, QuestionSetEntity questionSetEntity) {
 		return questionEntityRepository.save(FillBlankQuestionEntity.builder()
 			.lexoRank(lexoRank)
-			.displayDelayMilliseconds(RandomUtil.getRandomNumber(MAX_DISPLAY_DELAY_MILLISECONDS))
 			.questionSet(questionSetEntity)
 			.build());
 	}
