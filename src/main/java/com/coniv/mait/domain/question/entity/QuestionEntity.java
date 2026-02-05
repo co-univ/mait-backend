@@ -1,6 +1,5 @@
 package com.coniv.mait.domain.question.entity;
 
-import com.coniv.mait.domain.question.constant.QuestionConstant;
 import com.coniv.mait.domain.question.enums.QuestionStatusType;
 import com.coniv.mait.domain.question.enums.QuestionType;
 import com.coniv.mait.global.entity.BaseTimeEntity;
@@ -43,6 +42,7 @@ public abstract class QuestionEntity extends BaseTimeEntity {
 	@Column(columnDefinition = "TEXT")
 	private String content;
 
+	@Column(columnDefinition = "TEXT")
 	private String explanation;
 
 	private Long number;
@@ -53,9 +53,6 @@ public abstract class QuestionEntity extends BaseTimeEntity {
 	private String imageUrl;
 
 	private Long imageId;
-
-	@Column(nullable = false)
-	private int displayDelayMilliseconds;
 
 	@Enumerated(EnumType.STRING)
 	@Column(nullable = false)
@@ -70,7 +67,6 @@ public abstract class QuestionEntity extends BaseTimeEntity {
 		return MultipleQuestionEntity.builder()
 			.questionSet(questionSet)
 			.lexoRank(rank)
-			.displayDelayMilliseconds(QuestionConstant.MAX_DISPLAY_DELAY_MILLISECONDS)
 			.build();
 	}
 

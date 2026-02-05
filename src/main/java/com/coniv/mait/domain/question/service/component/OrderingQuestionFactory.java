@@ -6,7 +6,6 @@ import java.util.List;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.coniv.mait.domain.question.constant.QuestionConstant;
 import com.coniv.mait.domain.question.entity.OrderingOptionEntity;
 import com.coniv.mait.domain.question.entity.OrderingQuestionEntity;
 import com.coniv.mait.domain.question.entity.QuestionEntity;
@@ -18,7 +17,6 @@ import com.coniv.mait.domain.question.service.dto.OrderingQuestionDto;
 import com.coniv.mait.domain.question.service.dto.OrderingQuestionOptionDto;
 import com.coniv.mait.domain.question.service.dto.QuestionDto;
 import com.coniv.mait.global.exception.custom.UserParameterException;
-import com.coniv.mait.global.util.RandomUtil;
 
 import lombok.RequiredArgsConstructor;
 
@@ -75,7 +73,6 @@ public class OrderingQuestionFactory implements QuestionFactory<OrderingQuestion
 			.questionSet(questionSetEntity)
 			.content(dto.getContent())
 			.explanation(dto.getExplanation())
-			.displayDelayMilliseconds(RandomUtil.getRandomNumber(QuestionConstant.MAX_DISPLAY_DELAY_MILLISECONDS))
 			.build();
 	}
 
@@ -83,7 +80,6 @@ public class OrderingQuestionFactory implements QuestionFactory<OrderingQuestion
 	@Transactional
 	public OrderingQuestionEntity createDefaultQuestion(String lexoRank, QuestionSetEntity questionSetEntity) {
 		OrderingQuestionEntity orderingQuestion = OrderingQuestionEntity.builder()
-			.displayDelayMilliseconds(QuestionConstant.MAX_DISPLAY_DELAY_MILLISECONDS)
 			.lexoRank(lexoRank)
 			.questionSet(questionSetEntity)
 			.build();
