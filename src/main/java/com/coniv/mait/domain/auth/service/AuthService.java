@@ -38,7 +38,9 @@ public class AuthService {
 		if (!bCryptPasswordEncoder.matches(password, user.getPassword())) {
 			throw new LoginFailException("비밀번호가 일치하지 않습니다.");
 		}
-		return jwtTokenProvider.createToken(user.getId());
+		Token token = jwtTokenProvider.createToken(user.getId());
+		refreshTokenRepository.save(new RefreshToken(user.getId(), token.refreshToken()));
+		return token;
 	}
 
 	public String getAccessTokenFromCode(String code) {
