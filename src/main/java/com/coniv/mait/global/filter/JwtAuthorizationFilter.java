@@ -77,15 +77,15 @@ public class JwtAuthorizationFilter extends OncePerRequestFilter {
 		}
 
 		final String bearerToken = getBearerToken(authorizationHeader);
-		final Long userId = jwtTokenProvider.getUserId(bearerToken);
 		try {
+			final Long userId = jwtTokenProvider.getUserId(bearerToken);
 			jwtTokenProvider.validateAccessToken(bearerToken);
 			UserEntity user = userEntityRepository.findById(userId).orElseThrow();
 
 			setAuthentication(user);
 			filterChain.doFilter(request, response);
 		} catch (BadCredentialsException | JwtException e) {
-			log.warn("[JWT 토큰 인증 실패] userId={}", userId, e);
+			log.warn("[JWT 토큰 인증 실패]", e);
 			jwtAuthenticationEntryPoint.commence(request, response,
 				new BadCredentialsException("Invalid JWT token", e));
 		}
