@@ -96,7 +96,6 @@ class SubmitAnswerConcurrencyTest {
 			.content("2 + 2 = ?")
 			.explanation("간단한 덧셈 문제입니다.")
 			.number(1L)
-			.displayDelayMilliseconds(0)
 			.questionStatus(QuestionStatusType.SOLVE_PERMISSION)
 			.questionSet(questionSet)
 			.answerCount(4)

@@ -1,8 +1,11 @@
 package com.coniv.mait.domain.question.service;
 
+import java.util.concurrent.ThreadLocalRandom;
+
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.coniv.mait.domain.question.constant.QuestionConstant;
 import com.coniv.mait.domain.question.dto.QuestionStatusMessage;
 import com.coniv.mait.domain.question.entity.QuestionEntity;
 import com.coniv.mait.domain.question.entity.QuestionSetEntity;
@@ -68,8 +71,6 @@ public class QuestionControlService {
 			throw new QuestionSetLiveException("Question must be in ACCESS_PERMISSION status before solving.");
 		}
 
-		ThreadUtil.sleep(question.getDisplayDelayMilliseconds());
-
 		closeAllQuestionStatus(questionSetId);
 
 		question.updateQuestionStatus(QuestionStatusType.SOLVE_PERMISSION);
@@ -114,7 +115,7 @@ public class QuestionControlService {
 				throw new QuestionSetLiveException("Question must be in ACCESS_PERMISSION status before solving.");
 			}
 
-			ThreadUtil.sleep(question.getDisplayDelayMilliseconds());
+			ThreadUtil.sleep(ThreadLocalRandom.current().nextInt(QuestionConstant.MAX_DISPLAY_DELAY_MILLISECONDS));
 		}
 		closeAllQuestionStatus(questionSetId);
 

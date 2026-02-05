@@ -1,7 +1,5 @@
 package com.coniv.mait.domain.question.service.component;
 
-import static com.coniv.mait.domain.question.constant.QuestionConstant.*;
-
 import java.util.ArrayList;
 import java.util.List;
 
@@ -19,7 +17,6 @@ import com.coniv.mait.domain.question.service.dto.MultipleChoiceDto;
 import com.coniv.mait.domain.question.service.dto.MultipleQuestionDto;
 import com.coniv.mait.domain.question.service.dto.QuestionDto;
 import com.coniv.mait.global.exception.custom.UserParameterException;
-import com.coniv.mait.global.util.RandomUtil;
 
 import lombok.RequiredArgsConstructor;
 
@@ -74,7 +71,6 @@ public class MultipleQuestionFactory implements QuestionFactory<MultipleQuestion
 			.content(dto.getContent())
 			.explanation(dto.getExplanation())
 			.number(dto.getNumber())
-			.displayDelayMilliseconds(RandomUtil.getRandomNumber(MAX_DISPLAY_DELAY_MILLISECONDS))
 			.questionSet(questionSet)
 			.answerCount(calculateAnswerCount(dto.getChoices()))
 			.build();
@@ -84,7 +80,6 @@ public class MultipleQuestionFactory implements QuestionFactory<MultipleQuestion
 	@Transactional
 	public MultipleQuestionEntity createDefaultQuestion(String lexoRank, QuestionSetEntity questionSet) {
 		MultipleQuestionEntity multipleQuestion = MultipleQuestionEntity.builder()
-			.displayDelayMilliseconds(MAX_DISPLAY_DELAY_MILLISECONDS)
 			.lexoRank(lexoRank)
 			.answerCount(DEFAULT_ANSWER_COUNT)
 			.questionSet(questionSet)

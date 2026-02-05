@@ -7,7 +7,6 @@ import java.util.stream.Collectors;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.coniv.mait.domain.question.constant.QuestionConstant;
 import com.coniv.mait.domain.question.entity.QuestionEntity;
 import com.coniv.mait.domain.question.entity.QuestionSetEntity;
 import com.coniv.mait.domain.question.entity.ShortAnswerEntity;
@@ -19,7 +18,6 @@ import com.coniv.mait.domain.question.service.dto.QuestionDto;
 import com.coniv.mait.domain.question.service.dto.ShortAnswerDto;
 import com.coniv.mait.domain.question.service.dto.ShortQuestionDto;
 import com.coniv.mait.global.exception.custom.UserParameterException;
-import com.coniv.mait.global.util.RandomUtil;
 
 import lombok.RequiredArgsConstructor;
 
@@ -76,7 +74,6 @@ public class ShortQuestionFactory implements QuestionFactory<ShortQuestionDto> {
 			.questionSet(questionSetEntity)
 			.content(dto.getContent())
 			.explanation(dto.getExplanation())
-			.displayDelayMilliseconds(RandomUtil.getRandomNumber(QuestionConstant.MAX_DISPLAY_DELAY_MILLISECONDS))
 			.answerCount(calculateAnswerCount(dto.getAnswers()))
 			.build();
 	}
@@ -85,7 +82,6 @@ public class ShortQuestionFactory implements QuestionFactory<ShortQuestionDto> {
 	@Transactional
 	public ShortQuestionEntity createDefaultQuestion(String lexoRank, QuestionSetEntity questionSetEntity) {
 		return questionEntityRepository.save(ShortQuestionEntity.builder()
-			.displayDelayMilliseconds(QuestionConstant.MAX_DISPLAY_DELAY_MILLISECONDS)
 			.lexoRank(lexoRank)
 			.questionSet(questionSetEntity)
 			.build());
