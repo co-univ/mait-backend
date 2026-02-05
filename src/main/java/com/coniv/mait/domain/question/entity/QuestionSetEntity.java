@@ -1,5 +1,7 @@
 package com.coniv.mait.domain.question.entity;
 
+import java.time.LocalDateTime;
+
 import com.coniv.mait.domain.question.enums.DeliveryMode;
 import com.coniv.mait.domain.question.enums.QuestionSetCreationType;
 import com.coniv.mait.domain.question.enums.QuestionSetOngoingStatus;
@@ -64,6 +66,10 @@ public class QuestionSetEntity extends BaseTimeEntity {
 
 	private String difficulty;
 
+	private LocalDateTime startTime;
+
+	private LocalDateTime endTime;
+
 	private QuestionSetEntity(String subject, QuestionSetCreationType creationType) {
 		this.subject = subject;
 		this.creationType = creationType;
@@ -86,6 +92,7 @@ public class QuestionSetEntity extends BaseTimeEntity {
 			throw new QuestionSetLiveException("BEFORE_LIVE 상태에서만 실시간 문제를 시작할 수 있습니다. 현재 상태: " + ongoingStatus);
 		}
 		this.ongoingStatus = QuestionSetOngoingStatus.ONGOING;
+		this.startTime = LocalDateTime.now();
 	}
 
 	public void endLiveQuestionSet() {
@@ -94,6 +101,7 @@ public class QuestionSetEntity extends BaseTimeEntity {
 			throw new QuestionSetLiveException("LIVE 상태에서만 실시간 문제를 종료할 수 있습니다. 현재 상태: " + ongoingStatus);
 		}
 		this.ongoingStatus = QuestionSetOngoingStatus.AFTER;
+		this.endTime = LocalDateTime.now();
 	}
 
 	private void checkLiveDeliveryMode() {
