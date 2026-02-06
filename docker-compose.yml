@@ -3,6 +3,7 @@ services:
     image: ${DOCKER_USERNAME}/${APP_IMAGE_NAME:-mait-dev-app}:latest
     ports:
       - "${PORT:-8040}:8080"
+      - "${METRICS_PORT:-9114}:9114"
     env_file:
       - .env
     environment:
