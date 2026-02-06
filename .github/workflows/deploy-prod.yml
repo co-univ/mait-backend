@@ -89,6 +89,7 @@ jobs:
             # Compose Variables
             APP_IMAGE_NAME=mait-prod-app
             PORT=8080
+            METRICS_PORT=9114
             EOL
             
             cd ~
