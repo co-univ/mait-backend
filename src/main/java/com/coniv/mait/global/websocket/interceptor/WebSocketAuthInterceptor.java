@@ -1,5 +1,6 @@
-package com.coniv.mait.global.interceptor;
+package com.coniv.mait.global.websocket.interceptor;
 
+import org.springframework.core.annotation.Order;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageChannel;
 import org.springframework.messaging.simp.stomp.StompCommand;
@@ -16,6 +17,7 @@ import io.jsonwebtoken.JwtException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
+@Order(value = 2)
 @Slf4j
 @Component
 @RequiredArgsConstructor

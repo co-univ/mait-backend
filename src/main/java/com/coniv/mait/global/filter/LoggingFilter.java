@@ -18,6 +18,7 @@ import jakarta.servlet.http.HttpServletResponse;
 @Component
 public class LoggingFilter extends OncePerRequestFilter {
 
+	private static final String REQUEST_ID_HEADER = "X-Request-ID";
 	private static final String REQUEST_ID = "requestId";
 
 	@Override
@@ -25,7 +26,10 @@ public class LoggingFilter extends OncePerRequestFilter {
 		FilterChain filterChain) throws ServletException, IOException {
 
 		// Todo : Request 및 헤더 정보 로깅이 필요하면 현재 위치에 추가
-		String requestId = UUID.randomUUID().toString();
+		String requestId = request.getHeader(REQUEST_ID_HEADER);
+		if (requestId == null || requestId.isEmpty()) {
+			requestId = UUID.randomUUID().toString();
+		}
 
 		MDC.put(REQUEST_ID, requestId);
 
