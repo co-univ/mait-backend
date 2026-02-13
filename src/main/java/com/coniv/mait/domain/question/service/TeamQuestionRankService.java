@@ -5,7 +5,6 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 import com.coniv.mait.domain.question.entity.QuestionEntity;
 import com.coniv.mait.domain.question.service.component.QuestionReader;
@@ -33,7 +32,6 @@ public class TeamQuestionRankService {
 	private final TeamReader teamReader;
 	private final UserReader userReader;
 
-	@Transactional(readOnly = true)
 	public List<RankDto> getTeamQuestionScorerRank(final Long teamId) {
 		TeamEntity team = teamReader.getTeam(teamId);
 
@@ -62,7 +60,6 @@ public class TeamQuestionRankService {
 		return ranks;
 	}
 
-	@Transactional(readOnly = true)
 	public List<RankDto> getTeamQuestionCorrectAnswerRank(final Long teamId) {
 		TeamEntity team = teamReader.getTeam(teamId);
 
@@ -74,9 +71,9 @@ public class TeamQuestionRankService {
 
 		List<Long> questionIds = completedQuestions.stream().map(QuestionEntity::getId).toList();
 
-		Map<Long, List<AnswerSubmitRecordEntity>> correctAnswersByUserId = answerSubmitRecordEntityRepository.findAllByQuestionIdInAndIsCorrect(
-				questionIds, true).stream()
-			.collect(Collectors.groupingBy(AnswerSubmitRecordEntity::getUserId));
+		Map<Long, List<AnswerSubmitRecordEntity>> correctAnswersByUserId =
+			answerSubmitRecordEntityRepository.findAllByQuestionIdInAndIsCorrect(questionIds, true).stream()
+				.collect(Collectors.groupingBy(AnswerSubmitRecordEntity::getUserId));
 
 		Map<Long, UserEntity> userById = userReader.getUserById(correctAnswersByUserId.keySet());
 

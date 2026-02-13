@@ -21,10 +21,10 @@ public class RankDto implements Comparable<RankDto> {
 	private long count;
 
 	@Override
-	public int compareTo(RankDto o) {
-		if (this.count == o.count) {
-			return this.getUser().getName().compareTo(o.getUser().getName());
+	public int compareTo(RankDto other) {
+		if (this.count == other.count) {
+			return this.getUser().getName().compareTo(other.getUser().getName());
 		}
-		return (int)(o.count - this.count);
+		return (int)(other.count - this.count);
 	}
 }

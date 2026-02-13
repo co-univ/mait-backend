@@ -33,7 +33,8 @@ public class TeamQuestionRankController {
 	@GetMapping(params = "type=CORRECT")
 	public ResponseEntity<ApiResponse<TeamRankApiResponse>> getTeamQuestionCorrectRank(
 		@PathVariable("teamId") Long teamId,
-		@Parameter(description = "노출할 랭크 개수") @RequestParam(value = "rankCount", required = false, defaultValue = "5") int rankCount,
+		@Parameter(description = "노출할 랭크 개수")
+		@RequestParam(value = "rankCount", required = false, defaultValue = "5") int rankCount,
 		@AuthenticationPrincipal UserEntity user) {
 		// todo 노출할 rank 조정
 		List<RankDto> ranks = teamQuestionRankService.getTeamQuestionCorrectAnswerRank(teamId);
@@ -46,7 +47,8 @@ public class TeamQuestionRankController {
 	@GetMapping(params = "type=SCORER")
 	public ResponseEntity<ApiResponse<TeamRankApiResponse>> getTeamQuestionScorerRank(
 		@PathVariable("teamId") Long teamId,
-		@Parameter(description = "노출할 랭크 개수") @RequestParam(value = "rankCount", required = false, defaultValue = "5") int rankCount,
+		@Parameter(description = "노출할 랭크 개수")
+		@RequestParam(value = "rankCount", required = false, defaultValue = "5") int rankCount,
 		@AuthenticationPrincipal UserEntity user) {
 		List<RankDto> ranks = teamQuestionRankService.getTeamQuestionScorerRank(teamId);
 		return ResponseEntity.ok(
