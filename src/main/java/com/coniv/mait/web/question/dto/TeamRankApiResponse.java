@@ -17,7 +17,7 @@ public record TeamRankApiResponse(
 	@Schema(description = "전체 랭킹", requiredMode = Schema.RequiredMode.REQUIRED)
 	List<RankDto> teamRankings,
 
-	@Schema(description = "내 랭킹", requiredMode = Schema.RequiredMode.REQUIRED)
+	@Schema(description = "내 랭킹", requiredMode = Schema.RequiredMode.NOT_REQUIRED)
 	RankDto userRank
 ) {
 

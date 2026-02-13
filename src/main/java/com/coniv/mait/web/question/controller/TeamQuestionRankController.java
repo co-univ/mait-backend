@@ -29,7 +29,8 @@ public class TeamQuestionRankController {
 
 	private final TeamQuestionRankService teamQuestionRankService;
 
-	@Operation(summary = "팀 정답 퀴즈 랭킹 조회", description = "완료된 퀴즈에서 정답자 랭킹 반환")
+	@Operation(summary = "팀 정답 퀴즈 랭킹 조회", description = "완료된 퀴즈에서 정답자 랭킹 반환",
+		parameters = @Parameter(name = "type", description = "랭킹 타입", required = true, example = "CORRECT"))
 	@GetMapping(params = "type=CORRECT")
 	public ResponseEntity<ApiResponse<TeamRankApiResponse>> getTeamQuestionCorrectRank(
 		@PathVariable("teamId") Long teamId,
