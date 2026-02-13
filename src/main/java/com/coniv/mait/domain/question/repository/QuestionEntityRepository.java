@@ -31,4 +31,6 @@ public interface QuestionEntityRepository extends JpaRepository<QuestionEntity, 
 	@Query(value = "SELECT * FROM questions WHERE question_type = :#{#questionType.name().toLowerCase()}",
 		nativeQuery = true)
 	List<QuestionEntity> findAllByQuestionType(@Param("questionType") QuestionType questionType);
+
+	List<QuestionEntity> findAllByQuestionSetIdIn(List<Long> questionSetIds);
 }

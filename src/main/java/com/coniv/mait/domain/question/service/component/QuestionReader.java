@@ -6,7 +6,10 @@ import org.springframework.stereotype.Component;
 
 import com.coniv.mait.domain.question.entity.QuestionEntity;
 import com.coniv.mait.domain.question.entity.QuestionSetEntity;
+import com.coniv.mait.domain.question.enums.QuestionSetOngoingStatus;
 import com.coniv.mait.domain.question.repository.QuestionEntityRepository;
+import com.coniv.mait.domain.question.repository.QuestionSetEntityRepository;
+import com.coniv.mait.domain.team.entity.TeamEntity;
 import com.coniv.mait.global.exception.custom.ResourceNotBelongException;
 
 import jakarta.persistence.EntityNotFoundException;
@@ -17,6 +20,7 @@ import lombok.RequiredArgsConstructor;
 public class QuestionReader {
 
 	private final QuestionEntityRepository questionEntityRepository;
+	private final QuestionSetEntityRepository questionSetEntityRepository;
 
 	public QuestionEntity getQuestion(final Long questionId, final Long questionSetId) {
 		QuestionEntity question = questionEntityRepository.findById(questionId)
@@ -41,5 +45,16 @@ public class QuestionReader {
 	public QuestionEntity getFirstQuestion(QuestionSetEntity questionSet) {
 		return questionEntityRepository.findFirstByQuestionSetOrderByNumberAsc(questionSet)
 			.orElseThrow(() -> new EntityNotFoundException("문제를 찾을 수 없습니다."));
+	}
+
+	public List<QuestionEntity> getCompletedQuestionsInTeam(final TeamEntity team) {
+		List<QuestionSetEntity> completedQuestionSets = questionSetEntityRepository.findAllByTeamIdAndOngoingStatus(
+			team.getId(), QuestionSetOngoingStatus.AFTER);
+
+		List<Long> questionSetIds = completedQuestionSets.stream()
+			.map(QuestionSetEntity::getId)
+			.toList();
+
+		return questionEntityRepository.findAllByQuestionSetIdIn(questionSetIds);
 	}
 }

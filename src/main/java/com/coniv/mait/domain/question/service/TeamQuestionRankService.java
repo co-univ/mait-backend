@@ -1,6 +1,5 @@
 package com.coniv.mait.domain.question.service;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -9,18 +8,17 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.coniv.mait.domain.question.entity.QuestionEntity;
-import com.coniv.mait.domain.question.entity.QuestionSetEntity;
-import com.coniv.mait.domain.question.enums.QuestionSetOngoingStatus;
-import com.coniv.mait.domain.question.repository.QuestionEntityRepository;
-import com.coniv.mait.domain.question.repository.QuestionSetEntityRepository;
+import com.coniv.mait.domain.question.service.component.QuestionReader;
 import com.coniv.mait.domain.solve.entity.AnswerSubmitRecordEntity;
 import com.coniv.mait.domain.solve.entity.QuestionScorerEntity;
 import com.coniv.mait.domain.solve.repository.AnswerSubmitRecordEntityRepository;
 import com.coniv.mait.domain.solve.repository.QuestionScorerEntityRepository;
-import com.coniv.mait.domain.team.service.dto.QuestionRanksDto;
-import com.coniv.mait.domain.team.service.dto.UserRankDto;
+import com.coniv.mait.domain.solve.service.dto.RankDto;
+import com.coniv.mait.domain.team.entity.TeamEntity;
+import com.coniv.mait.domain.team.service.component.TeamReader;
 import com.coniv.mait.domain.user.entity.UserEntity;
-import com.coniv.mait.domain.user.repository.UserEntityRepository;
+import com.coniv.mait.domain.user.service.component.UserReader;
+import com.coniv.mait.domain.user.service.dto.UserDto;
 
 import lombok.RequiredArgsConstructor;
 
@@ -28,202 +26,80 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class TeamQuestionRankService {
 
-	private static final int RANK_LIMIT = 5;
-
-	private final UserEntityRepository userEntityRepository;
-	private final QuestionSetEntityRepository questionSetEntityRepository;
-	private final QuestionEntityRepository questionEntityRepository;
 	private final QuestionScorerEntityRepository questionScorerEntityRepository;
 	private final AnswerSubmitRecordEntityRepository answerSubmitRecordEntityRepository;
 
+	private final QuestionReader questionReader;
+	private final TeamReader teamReader;
+	private final UserReader userReader;
+
 	@Transactional(readOnly = true)
-	public QuestionRanksDto getTeamQuestionScorerRank(Long teamId, Long currentUserId) {
-		List<Long> questionIds = getCompletedQuestionIds(teamId);
+	public List<RankDto> getTeamQuestionScorerRank(final Long teamId) {
+		TeamEntity team = teamReader.getTeam(teamId);
 
-		if (questionIds.isEmpty()) {
-			return QuestionRanksDto.of(List.of(), null);
+		List<QuestionEntity> completedQuestions = questionReader.getCompletedQuestionsInTeam(team);
+
+		if (completedQuestions.isEmpty()) {
+			return List.of();
 		}
+		List<Long> questionIds = completedQuestions.stream().map(QuestionEntity::getId).toList();
 
-		// Scorer 조회
-		List<QuestionScorerEntity> scorers = questionScorerEntityRepository.findAllByQuestionIdIn(questionIds);
+		Map<Long, Long> scorerCountByUserId = questionScorerEntityRepository.findAllByQuestionIdIn(questionIds).stream()
+			.collect(Collectors.groupingBy(QuestionScorerEntity::getUserId, Collectors.counting()));
 
-		// 랭킹 계산
-		Map<Long, Long> scorerCountByUserId = calculateScorerCount(scorers);
+		Map<Long, UserEntity> userById = userReader.getUserById(scorerCountByUserId.keySet());
 
-		// 전체 사용자를 점수 순으로 정렬 (등수 계산용)
-		List<Map.Entry<Long, Long>> sortedEntries = scorerCountByUserId.entrySet().stream()
-			.sorted(Map.Entry.<Long, Long>comparingByValue().reversed())
+		List<RankDto> ranks = scorerCountByUserId.entrySet().stream()
+			.map(entry -> RankDto.builder()
+				.user(UserDto.from(userById.get(entry.getKey())))
+				.count(entry.getValue())
+				.build())
+			.sorted()
 			.toList();
 
-		// 등수 맵 생성
-		Map<Long, Integer> rankByUserId = calculateRanks(sortedEntries);
+		calculateRanks(ranks);
 
-		List<Long> topUserIds = getTopUserIds(scorerCountByUserId);
-
-		// 사용자 정보 조회
-		List<Long> allUserIds = new ArrayList<>(topUserIds);
-		if (!allUserIds.contains(currentUserId)) {
-			allUserIds.add(currentUserId);
-		}
-		Map<Long, UserEntity> userMap = getUserMap(allUserIds);
-
-		// DTO 생성
-		List<UserRankDto> teamRank = createRankDto(topUserIds, userMap, scorerCountByUserId, rankByUserId);
-		UserRankDto myRank = createMyRankDto(currentUserId, userMap, scorerCountByUserId, rankByUserId);
-
-		return QuestionRanksDto.of(teamRank, myRank);
+		return ranks;
 	}
 
 	@Transactional(readOnly = true)
-	public QuestionRanksDto getTeamQuestionCorrectAnswerRank(Long teamId, Long currentUserId) {
-		List<Long> questionIds = getCompletedQuestionIds(teamId);
+	public List<RankDto> getTeamQuestionCorrectAnswerRank(final Long teamId) {
+		TeamEntity team = teamReader.getTeam(teamId);
 
-		if (questionIds.isEmpty()) {
-			return QuestionRanksDto.of(List.of(), null);
-		}
+		List<QuestionEntity> completedQuestions = questionReader.getCompletedQuestionsInTeam(team);
 
-		// 정답 레코드 조회
-		List<AnswerSubmitRecordEntity> correctAnswers =
-			answerSubmitRecordEntityRepository.findAllByQuestionIdInAndIsCorrect(questionIds, true);
-
-		// 랭킹 계산
-		Map<Long, Long> correctCountByUserId = calculateCorrectAnswerCount(correctAnswers);
-
-		// 전체 사용자를 점수 순으로 정렬 (등수 계산용)
-		List<Map.Entry<Long, Long>> sortedEntries = correctCountByUserId.entrySet().stream()
-			.sorted(Map.Entry.<Long, Long>comparingByValue().reversed())
-			.toList();
-
-		// 등수 맵 생성
-		Map<Long, Integer> rankByUserId = calculateRanks(sortedEntries);
-
-		List<Long> topUserIds = getTopUserIds(correctCountByUserId);
-
-		// 사용자 정보 조회
-		List<Long> allUserIds = new ArrayList<>(topUserIds);
-		if (!allUserIds.contains(currentUserId)) {
-			allUserIds.add(currentUserId);
-		}
-		Map<Long, UserEntity> userMap = getUserMap(allUserIds);
-
-		// DTO 생성
-		List<UserRankDto> teamRank = createRankDto(topUserIds, userMap, correctCountByUserId, rankByUserId);
-		UserRankDto myRank = createMyRankDto(currentUserId, userMap, correctCountByUserId, rankByUserId);
-
-		return QuestionRanksDto.of(teamRank, myRank);
-	}
-
-	private List<Long> getCompletedQuestionIds(Long teamId) {
-		List<QuestionSetEntity> completedQuestionSets = questionSetEntityRepository.findAllByTeamId(teamId)
-			.stream()
-			.filter(qs -> qs.getOngoingStatus() == QuestionSetOngoingStatus.AFTER)
-			.toList();
-
-		if (completedQuestionSets.isEmpty()) {
+		if (completedQuestions.isEmpty()) {
 			return List.of();
 		}
 
-		List<Long> questionSetIds = completedQuestionSets.stream()
-			.map(QuestionSetEntity::getId)
+		List<Long> questionIds = completedQuestions.stream().map(QuestionEntity::getId).toList();
+
+		Map<Long, List<AnswerSubmitRecordEntity>> correctAnswersByUserId = answerSubmitRecordEntityRepository.findAllByQuestionIdInAndIsCorrect(
+				questionIds, true).stream()
+			.collect(Collectors.groupingBy(AnswerSubmitRecordEntity::getUserId));
+
+		Map<Long, UserEntity> userById = userReader.getUserById(correctAnswersByUserId.keySet());
+
+		List<RankDto> ranks = correctAnswersByUserId.entrySet().stream()
+			.map(entry -> RankDto.builder()
+				.user(UserDto.from(userById.get(entry.getKey())))
+				.count(entry.getValue().size())
+				.build())
+			.sorted()
 			.toList();
 
-		return questionSetIds.stream()
-			.flatMap(qsId -> questionEntityRepository.findAllByQuestionSetId(qsId).stream())
-			.map(QuestionEntity::getId)
-			.toList();
+		calculateRanks(ranks);
+
+		return ranks;
 	}
 
-	private Map<Long, Long> calculateScorerCount(List<QuestionScorerEntity> scorers) {
-		return scorers.stream()
-			.collect(Collectors.groupingBy(
-				QuestionScorerEntity::getUserId,
-				Collectors.counting()
-			));
-	}
-
-	private Map<Long, Long> calculateCorrectAnswerCount(List<AnswerSubmitRecordEntity> correctAnswers) {
-		return correctAnswers.stream()
-			.collect(Collectors.groupingBy(
-				AnswerSubmitRecordEntity::getUserId,
-				Collectors.mapping(
-					AnswerSubmitRecordEntity::getQuestionId,
-					Collectors.collectingAndThen(
-						Collectors.toSet(),
-						set -> (long)set.size()
-					)
-				)
-			));
-	}
-
-	private List<Long> getTopUserIds(Map<Long, Long> countByUserId) {
-		return countByUserId.entrySet().stream()
-			.sorted(Map.Entry.<Long, Long>comparingByValue().reversed())
-			.limit(RANK_LIMIT)
-			.map(Map.Entry::getKey)
-			.toList();
-	}
-
-	private Map<Long, UserEntity> getUserMap(List<Long> userIds) {
-		if (userIds.isEmpty()) {
-			return Map.of();
-		}
-
-		return userEntityRepository.findAllById(userIds).stream()
-			.collect(Collectors.toMap(UserEntity::getId, user -> user));
-	}
-
-	private Map<Long, Integer> calculateRanks(List<Map.Entry<Long, Long>> sortedEntries) {
-		Map<Long, Integer> rankByUserId = new java.util.HashMap<>();
+	private void calculateRanks(List<RankDto> sortedRanks) {
 		int rank = 1;
-		Long previousCount = null;
-		int sameRankCount = 0;
-
-		for (Map.Entry<Long, Long> entry : sortedEntries) {
-			Long currentCount = entry.getValue();
-
-			if (previousCount != null && !previousCount.equals(currentCount)) {
-				rank += sameRankCount;
-				sameRankCount = 1;
-			} else {
-				sameRankCount++;
+		for (int i = 0; i < sortedRanks.size(); i++) {
+			if (i > 0 && sortedRanks.get(i).getCount() != sortedRanks.get(i - 1).getCount()) {
+				rank = i + 1;
 			}
-
-			rankByUserId.put(entry.getKey(), rank);
-			previousCount = currentCount;
+			sortedRanks.get(i).setRank(rank);
 		}
-
-		return rankByUserId;
-	}
-
-	private List<UserRankDto> createRankDto(
-		List<Long> userIds,
-		Map<Long, UserEntity> userMap,
-		Map<Long, Long> countByUserId,
-		Map<Long, Integer> rankByUserId
-	) {
-		return userIds.stream()
-			.map(userId -> {
-				UserEntity user = userMap.get(userId);
-				Long count = countByUserId.get(userId);
-				Integer rank = rankByUserId.get(userId);
-				return UserRankDto.of(user.getId(), user.getName(), user.getNickname(), count, rank);
-			})
-			.toList();
-	}
-
-	private UserRankDto createMyRankDto(
-		Long userId,
-		Map<Long, UserEntity> userMap,
-		Map<Long, Long> countByUserId,
-		Map<Long, Integer> rankByUserId
-	) {
-		if (!countByUserId.containsKey(userId)) {
-			return null;
-		}
-
-		UserEntity user = userMap.get(userId);
-		Long count = countByUserId.get(userId);
-		Integer rank = rankByUserId.get(userId);
-		return UserRankDto.of(user.getId(), user.getName(), user.getNickname(), count, rank);
 	}
 }
