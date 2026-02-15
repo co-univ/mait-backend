@@ -6,6 +6,8 @@ import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
+import com.coniv.mait.global.auth.jwt.constant.TokenConstants;
+
 @Configuration
 public class CorsConfig {
 
@@ -24,6 +26,7 @@ public class CorsConfig {
 		configuration.addAllowedHeader("*");
 		configuration.setAllowCredentials(true);
 		configuration.addExposedHeader("Authorization");
+		configuration.addExposedHeader(TokenConstants.ACCESS_TOKEN);
 
 		UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
 		source.registerCorsConfiguration("/**", configuration);
