@@ -251,7 +251,7 @@ class QuestionSetControllerTest {
 		final Long questionSetId = 1L;
 		final String subject = "Updated Subject";
 		final String title = "Updated Title";
-		final DeliveryMode mode = DeliveryMode.REVIEW;
+		final DeliveryMode mode = DeliveryMode.LIVE_TIME;
 		final String difficulty = "Intermediate";
 		final QuestionSetVisibility visibility = QuestionSetVisibility.PRIVATE;
 
@@ -320,7 +320,7 @@ class QuestionSetControllerTest {
 				List.of("제목을 입력해주세요", "주제를 입력해주세요")),
 			Arguments.of(
 				"제목만 빈 문자열",
-				new UpdateQuestionSetApiRequest("", "유효한 주제", DeliveryMode.REVIEW, "설명",
+				new UpdateQuestionSetApiRequest("", "유효한 주제", DeliveryMode.LIVE_TIME, "설명",
 					QuestionSetVisibility.PRIVATE),
 				List.of("제목을 입력해주세요")),
 			Arguments.of(
@@ -330,7 +330,7 @@ class QuestionSetControllerTest {
 				List.of("주제를 입력해주세요")),
 			Arguments.of(
 				"제목과 주제가 null",
-				new UpdateQuestionSetApiRequest(null, null, DeliveryMode.REVIEW, "설명",
+				new UpdateQuestionSetApiRequest(null, null, DeliveryMode.LIVE_TIME, "설명",
 					QuestionSetVisibility.GROUP),
 				List.of("제목을 입력해주세요", "주제를 입력해주세요")),
 			Arguments.of(
@@ -340,9 +340,19 @@ class QuestionSetControllerTest {
 				List.of("제목을 입력해주세요")),
 			Arguments.of(
 				"주제가 공백만 포함",
-				new UpdateQuestionSetApiRequest("유효한 제목", "   ", DeliveryMode.REVIEW, "설명",
+				new UpdateQuestionSetApiRequest("유효한 제목", "   ", DeliveryMode.LIVE_TIME, "설명",
 					QuestionSetVisibility.GROUP),
-				List.of("주제를 입력해주세요")));
+				List.of("주제를 입력해주세요")),
+			Arguments.of(
+				"허용되지 않은 문제 풀이 방식",
+				new UpdateQuestionSetApiRequest("유효한 제목", "유효한 주제", DeliveryMode.REVIEW, "설명",
+					QuestionSetVisibility.GROUP),
+				List.of("문제 풀이 방식은 STUDY 또는 LIVE_TIME만 가능합니다")),
+			Arguments.of(
+				"문제 풀이 방식이 null",
+				new UpdateQuestionSetApiRequest("유효한 제목", "유효한 주제", null, "설명",
+					QuestionSetVisibility.GROUP),
+				List.of("문제 풀이 방식을 입력해주세요", "문제 풀이 방식은 STUDY 또는 LIVE_TIME만 가능합니다")));
 	}
 
 	@Test
