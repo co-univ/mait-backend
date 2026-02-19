@@ -18,6 +18,7 @@ public enum DeliveryMode {
 		}
 	},
 	LIVE_TIME("실시간"),
+	STUDY("학습"),
 	REVIEW("복습");
 
 	private static final Comparator<QuestionEntity> LEXO_RANK_COMPARATOR = Comparator
