@@ -7,9 +7,11 @@ import org.springframework.security.config.annotation.web.configuration.EnableWe
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
 import com.coniv.mait.domain.auth.service.Oauth2UserService;
 import com.coniv.mait.global.auth.jwt.JwtAuthenticationEntryPoint;
+import com.coniv.mait.global.filter.JwtAuthorizationFilter;
 import com.coniv.mait.global.oauth.OAuth2SuccessHandler;
 
 import lombok.RequiredArgsConstructor;
@@ -20,6 +22,7 @@ import lombok.RequiredArgsConstructor;
 public class SecurityConfig {
 
 	private final JwtAuthenticationEntryPoint jwtAuthenticationEntryPoint;
+	private final JwtAuthorizationFilter jwtAuthorizationFilter;
 	private final Oauth2UserService oauth2UserService;
 	private final OAuth2SuccessHandler oauth2SuccessHandler;
 
@@ -64,6 +67,7 @@ public class SecurityConfig {
 				.anyRequest().authenticated()
 			)
 			.exceptionHandling(exception -> exception.authenticationEntryPoint(jwtAuthenticationEntryPoint))
+			.addFilterBefore(jwtAuthorizationFilter, UsernamePasswordAuthenticationFilter.class)
 			.oauth2Login((oauth2) -> oauth2
 				.userInfoEndpoint(userInfoEndpoint -> userInfoEndpoint
 					.userService(oauth2UserService)
