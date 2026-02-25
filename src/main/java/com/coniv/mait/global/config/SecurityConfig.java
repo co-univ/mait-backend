@@ -5,6 +5,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
+import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.web.SecurityFilterChain;
 
 import com.coniv.mait.domain.auth.service.Oauth2UserService;
@@ -29,12 +30,15 @@ public class SecurityConfig {
 			})
 			.formLogin(AbstractHttpConfigurer::disable)
 			.httpBasic(AbstractHttpConfigurer::disable)
-			.exceptionHandling(exception -> exception.authenticationEntryPoint(jwtAuthenticationEntryPoint))
+			.requestCache(AbstractHttpConfigurer::disable)
+			.sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
 			.authorizeHttpRequests(auth -> auth
 				.requestMatchers(
 					"/api/v1/auth/login",
 					"/api/v1/auth/reissue",
-					"/api/v1/auth/access-token"
+					"/api/v1/auth/access-token",
+					"/oauth2/**",
+					"/login/oauth2/**"
 				).permitAll()
 				.requestMatchers(
 					"/api/v1/users/sign-up",
@@ -47,9 +51,19 @@ public class SecurityConfig {
 					"/swagger-ui/**",
 					"/swagger-ui.html"
 				).permitAll()
+				.requestMatchers(
+					"/actuator/health",
+					"/actuator/health/**",
+					"/actuator/prometheus"
+				).permitAll()
+				.requestMatchers(
+					"/favicon.ico",
+					"/error"
+				).permitAll()
 				.requestMatchers("/ws/**").permitAll()
 				.anyRequest().authenticated()
 			)
+			.exceptionHandling(exception -> exception.authenticationEntryPoint(jwtAuthenticationEntryPoint))
 			.oauth2Login((oauth2) -> oauth2
 				.userInfoEndpoint(userInfoEndpoint -> userInfoEndpoint
 					.userService(oauth2UserService)
