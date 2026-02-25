@@ -14,9 +14,9 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.coniv.mait.domain.user.enums.PolicyTiming;
-import com.coniv.mait.global.auth.model.MaitUser;
 import com.coniv.mait.domain.user.service.PolicyService;
 import com.coniv.mait.domain.user.service.dto.PolicyDto;
+import com.coniv.mait.global.auth.model.MaitUser;
 import com.coniv.mait.global.response.ApiResponse;
 import com.coniv.mait.web.user.dto.CheckPoliciesApiRequest;
 import com.coniv.mait.web.user.dto.CheckPoliciesApiResponse;

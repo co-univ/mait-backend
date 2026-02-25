@@ -16,10 +16,10 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.coniv.mait.domain.user.service.UserService;
-import com.coniv.mait.global.auth.model.MaitUser;
 import com.coniv.mait.domain.user.service.dto.UserDto;
 import com.coniv.mait.global.auth.cookie.CookieFactory;
 import com.coniv.mait.global.auth.jwt.Token;
+import com.coniv.mait.global.auth.model.MaitUser;
 import com.coniv.mait.global.response.ApiResponse;
 import com.coniv.mait.web.user.dto.RandomNicknameResponse;
 import com.coniv.mait.web.user.dto.SignUpApiRequest;

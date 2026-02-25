@@ -15,8 +15,8 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.coniv.mait.domain.auth.service.AuthService;
 import com.coniv.mait.global.auth.cookie.CookieFactory;
-import com.coniv.mait.global.auth.model.MaitUser;
 import com.coniv.mait.global.auth.jwt.Token;
+import com.coniv.mait.global.auth.model.MaitUser;
 import com.coniv.mait.global.response.ApiResponse;
 import com.coniv.mait.web.auth.dto.LoginApiRequest;
 
