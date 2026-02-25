@@ -29,9 +29,11 @@ import com.coniv.mait.domain.team.repository.TeamEntityRepository;
 import com.coniv.mait.domain.team.repository.TeamUserEntityRepository;
 import com.coniv.mait.domain.user.entity.UserEntity;
 import com.coniv.mait.domain.user.repository.UserEntityRepository;
+import com.coniv.mait.login.WithCustomUser;
 import com.coniv.mait.web.integration.BaseIntegrationTest;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
+@WithCustomUser
 public class IdempotencyIntegrationTest extends BaseIntegrationTest {
 
 	@MockitoBean
@@ -81,7 +83,7 @@ public class IdempotencyIntegrationTest extends BaseIntegrationTest {
 				.build()
 		);
 
-		QuestionSetParticipantEntity questionSetParticipant = questionSetParticipantRepository.save(
+		questionSetParticipantRepository.save(
 			QuestionSetParticipantEntity.builder()
 				.status(ParticipantStatus.ACTIVE)
 				.questionSet(questionSet)

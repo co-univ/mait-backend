@@ -22,10 +22,12 @@ import com.coniv.mait.domain.question.repository.QuestionEntityRepository;
 import com.coniv.mait.domain.question.repository.QuestionSetEntityRepository;
 import com.coniv.mait.domain.team.entity.TeamEntity;
 import com.coniv.mait.domain.team.repository.TeamEntityRepository;
+import com.coniv.mait.login.WithCustomUser;
 import com.coniv.mait.web.integration.BaseIntegrationTest;
 import com.coniv.mait.web.question.dto.UpdateQuestionSetApiRequest;
 import com.coniv.mait.web.question.dto.UpdateQuestionSetFieldApiRequest;
 
+@WithCustomUser
 public class QuestionSetApiIntegrationTest extends BaseIntegrationTest {
 
 	@Autowired

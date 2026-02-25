@@ -110,7 +110,6 @@ class TeamServiceTest {
 		Long teamId = 1L;
 		Long ownerId = 1L;
 		UserEntity mockOwner = mock(UserEntity.class);
-		when(mockOwner.getId()).thenReturn(ownerId);
 		TeamEntity team = TeamEntity.of("테스트 팀", 1L);
 		TeamUserEntity ownerTeamUser = TeamUserEntity.createOwnerUser(mockOwner, team);
 		String expectedToken = "test-invite-code";
@@ -196,7 +195,6 @@ class TeamServiceTest {
 		Long teamId = 1L;
 		Long playerId = 2L;
 		UserEntity mockPlayer = mock(UserEntity.class);
-		when(mockPlayer.getId()).thenReturn(playerId);
 		TeamEntity team = TeamEntity.of("테스트 팀", 1L);
 		TeamUserEntity playerTeamUser = TeamUserEntity.createPlayerUser(mockPlayer, team);
 		InviteTokenDuration duration = InviteTokenDuration.ONE_DAY;
@@ -275,7 +273,6 @@ class TeamServiceTest {
 
 		Long userId = 77L;
 		UserEntity user = mock(UserEntity.class);
-		when(user.getId()).thenReturn(userId);
 		MaitUser maitUser = MaitUser.builder().id(userId).build();
 
 		when(teamInvitationEntityRepository.findByTokenFetchJoinTeam(token)).thenReturn(Optional.of(invite));

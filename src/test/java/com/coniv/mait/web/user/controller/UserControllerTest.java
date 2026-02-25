@@ -5,18 +5,25 @@ import static org.mockito.Mockito.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
+import java.util.List;
+
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.http.MediaType;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
 import com.coniv.mait.domain.user.service.UserService;
 import com.coniv.mait.domain.user.service.dto.UserDto;
 import com.coniv.mait.global.auth.cookie.CookieFactory;
+import com.coniv.mait.global.auth.model.MaitUser;
 import com.coniv.mait.global.filter.JwtAuthorizationFilter;
 import com.coniv.mait.global.interceptor.idempotency.IdempotencyInterceptor;
 import com.coniv.mait.web.user.dto.UpdateNicknameRequest;
@@ -25,6 +32,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 @WebMvcTest(UserController.class)
 @AutoConfigureMockMvc(addFilters = false)
 class UserControllerTest {
+
+	private static final Long USER_ID = 1L;
 
 	@Autowired
 	private MockMvc mockMvc;
@@ -44,6 +53,22 @@ class UserControllerTest {
 	@MockitoBean
 	private CookieFactory cookieFactory;
 
+	@BeforeEach
+	void setUp() throws Exception {
+		when(idempotencyInterceptor.preHandle(any(), any(), any())).thenReturn(true);
+
+		MaitUser user = MaitUser.builder().id(USER_ID).build();
+		var authentication = new UsernamePasswordAuthenticationToken(user, null, List.of());
+		var context = SecurityContextHolder.createEmptyContext();
+		context.setAuthentication(authentication);
+		SecurityContextHolder.setContext(context);
+	}
+
+	@AfterEach
+	void tearDown() {
+		SecurityContextHolder.clearContext();
+	}
+
 	@Test
 	@DisplayName("사용자 정보 반환 API 테스트")
 	void getUserInfo() throws Exception {
@@ -57,7 +82,7 @@ class UserControllerTest {
 			.fullNickname("빠른고양이#1234")
 			.build();
 
-		when(userService.getUserInfo(nullable(Long.class))).thenReturn(mockDto);
+		when(userService.getUserInfo(USER_ID)).thenReturn(mockDto);
 
 		// when & then
 		mockMvc.perform(get("/api/v1/users/me"))
@@ -68,7 +93,7 @@ class UserControllerTest {
 			.andExpect(jsonPath("$.data.nickname").value("빠른고양이"))
 			.andExpect(jsonPath("$.data.fullNickname").value("빠른고양이#1234"));
 
-		verify(userService).getUserInfo(nullable(Long.class));
+		verify(userService).getUserInfo(USER_ID);
 	}
 
 	@Test
@@ -85,7 +110,7 @@ class UserControllerTest {
 			.fullNickname("새로운닉네임#5678")
 			.build();
 
-		when(userService.updateUserNickname(nullable(Long.class), eq("새로운닉네임"))).thenReturn(mockDto);
+		when(userService.updateUserNickname(eq(USER_ID), eq("새로운닉네임"))).thenReturn(mockDto);
 
 		// when & then
 		mockMvc.perform(patch("/api/v1/users/nickname")
@@ -96,7 +121,7 @@ class UserControllerTest {
 			.andExpect(jsonPath("$.data.nickname").value("새로운닉네임"))
 			.andExpect(jsonPath("$.data.fullNickname").value("새로운닉네임#5678"));
 
-		verify(userService).updateUserNickname(nullable(Long.class), eq("새로운닉네임"));
+		verify(userService).updateUserNickname(eq(USER_ID), eq("새로운닉네임"));
 	}
 
 	@Test
@@ -111,7 +136,7 @@ class UserControllerTest {
 				.content(requestBody))
 			.andExpect(status().isBadRequest());
 
-		verify(userService, never()).updateUserNickname(nullable(Long.class), any());
+		verify(userService, never()).updateUserNickname(anyLong(), any());
 	}
 
 	@Test
@@ -126,7 +151,7 @@ class UserControllerTest {
 				.content(objectMapper.writeValueAsString(request)))
 			.andExpect(status().isBadRequest());
 
-		verify(userService, never()).updateUserNickname(nullable(Long.class), any());
+		verify(userService, never()).updateUserNickname(anyLong(), any());
 	}
 
 	@Test

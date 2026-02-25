@@ -68,7 +68,6 @@ class UserServiceTest {
 		String newNickname = "새로운닉네임";
 
 		UserEntity mockUser = mock(UserEntity.class);
-		when(mockUser.getId()).thenReturn(userId);
 
 		when(userEntityRepository.findById(userId)).thenReturn(Optional.empty());
 
