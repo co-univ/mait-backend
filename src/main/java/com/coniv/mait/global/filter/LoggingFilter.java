@@ -19,15 +19,18 @@ import jakarta.servlet.http.HttpServletResponse;
 public class LoggingFilter extends OncePerRequestFilter {
 
 	private static final String REQUEST_ID = "requestId";
+	private static final String REQUEST_URI = "requestURI";
+	private static final String HTTP_METHOD = "httpMethod";
 
 	@Override
 	protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response,
 		FilterChain filterChain) throws ServletException, IOException {
 
-		// Todo : Request 및 헤더 정보 로깅이 필요하면 현재 위치에 추가
 		String requestId = UUID.randomUUID().toString();
 
 		MDC.put(REQUEST_ID, requestId);
+		MDC.put(REQUEST_URI, request.getRequestURI());
+		MDC.put(HTTP_METHOD, request.getMethod());
 
 		try {
 			filterChain.doFilter(request, response);
