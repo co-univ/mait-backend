@@ -12,7 +12,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.coniv.mait.domain.question.service.QuestionReviewService;
 import com.coniv.mait.domain.question.service.dto.ReviewAnswerCheckResult;
-import com.coniv.mait.domain.user.entity.UserEntity;
+import com.coniv.mait.global.auth.model.MaitUser;
 import com.coniv.mait.global.response.ApiResponse;
 import com.coniv.mait.web.question.dto.LastViewedQuestionApiRequest;
 import com.coniv.mait.web.question.dto.QuestionAnswerReviewSubmitApiResponse;
@@ -36,9 +36,9 @@ public class QuestionReviewController {
 	@GetMapping("/questions/last-viewed")
 	public ResponseEntity<ApiResponse<QuestionApiResponse>> getLastViewedQuestion(
 		@PathVariable("questionSetId") Long questionSetId,
-		@AuthenticationPrincipal UserEntity user) {
+		@AuthenticationPrincipal MaitUser user) {
 		return ResponseEntity.ok(ApiResponse.ok(
-			QuestionApiResponse.from(questionReviewService.getLastViewedQuestionInReview(questionSetId, user.getId()))
+			QuestionApiResponse.from(questionReviewService.getLastViewedQuestionInReview(questionSetId, user.id()))
 		));
 	}
 
@@ -47,8 +47,8 @@ public class QuestionReviewController {
 	public ResponseEntity<ApiResponse<Void>> updateLastViewedQuestion(
 		@PathVariable("questionSetId") Long questionSetId,
 		@RequestBody @Valid LastViewedQuestionApiRequest request,
-		@AuthenticationPrincipal UserEntity user) {
-		questionReviewService.updateLastViewedQuestion(questionSetId, request.questionId(), user.getId());
+		@AuthenticationPrincipal MaitUser user) {
+		questionReviewService.updateLastViewedQuestion(questionSetId, request.questionId(), user.id());
 		return ResponseEntity.ok(ApiResponse.noContent());
 	}
 

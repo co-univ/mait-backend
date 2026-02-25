@@ -13,6 +13,7 @@ import org.springframework.transaction.support.TransactionTemplate;
 import com.coniv.mait.domain.user.entity.UserEntity;
 import com.coniv.mait.domain.user.enums.LoginProvider;
 import com.coniv.mait.domain.user.repository.UserEntityRepository;
+import com.coniv.mait.global.auth.model.MaitUser;
 
 @TestComponent
 public class WithCustomUserSecurityContextFactory implements WithSecurityContextFactory<WithCustomUser> {
@@ -34,7 +35,8 @@ public class WithCustomUserSecurityContextFactory implements WithSecurityContext
 				return userEntityRepository.save(newUser);
 			}));
 
-		UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(user,
+		UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(
+			MaitUser.from(user),
 			"N/A",
 			List.of()
 		);

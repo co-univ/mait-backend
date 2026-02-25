@@ -20,7 +20,7 @@ import com.coniv.mait.domain.team.service.dto.TeamInvitationDto;
 import com.coniv.mait.domain.team.service.dto.TeamInvitationLinkDto;
 import com.coniv.mait.domain.team.service.dto.TeamInvitationResultDto;
 import com.coniv.mait.domain.team.service.dto.TeamUserDto;
-import com.coniv.mait.domain.user.entity.UserEntity;
+import com.coniv.mait.global.auth.model.MaitUser;
 import com.coniv.mait.global.response.ApiResponse;
 import com.coniv.mait.web.team.dto.AddTeamUserApiRequest;
 import com.coniv.mait.web.team.dto.ApplyTeamUserApiResponse;
@@ -48,9 +48,9 @@ public class TeamController {
 
 	@Operation(summary = "팀 생성 API")
 	@PostMapping
-	public ResponseEntity<ApiResponse<Void>> createTeam(@AuthenticationPrincipal UserEntity ownerUser,
+	public ResponseEntity<ApiResponse<Void>> createTeam(@AuthenticationPrincipal MaitUser ownerUser,
 		@Valid @RequestBody CreateTeamApiRequest request) {
-		teamService.createTeam(request.name(), ownerUser);
+		teamService.createTeam(request.name(), ownerUser.id());
 		return ResponseEntity.ok(ApiResponse.noContent());
 	}
 
@@ -58,9 +58,9 @@ public class TeamController {
 	@PostMapping("/{teamId}/invitation")
 	public ResponseEntity<ApiResponse<CreateTeamInviteApiResponse>> createTeamInviteCode(
 		@PathVariable("teamId") Long teamId, @RequestBody @Valid CreateTeamInviteApiRequest request,
-		@AuthenticationPrincipal UserEntity ownerUser,
+		@AuthenticationPrincipal MaitUser ownerUser,
 		@RequestParam(value = "requiresApproval", defaultValue = "false") boolean requiresApproval) {
-		String inviteCode = teamService.createTeamInviteCode(teamId, ownerUser, request.duration(), request.role(),
+		String inviteCode = teamService.createTeamInviteCode(teamId, ownerUser.id(), request.duration(), request.role(),
 			requiresApproval);
 		return ResponseEntity.ok().body(ApiResponse.ok(CreateTeamInviteApiResponse.from(inviteCode)));
 	}
@@ -69,8 +69,8 @@ public class TeamController {
 	@PostMapping("/{teamId}/applicant")
 	public ResponseEntity<ApiResponse<TeamInvitationApplyApiResponse>> applyTeamInvitation(
 		@PathVariable("teamId") Long teamId, @RequestParam("code") String code,
-		@AuthenticationPrincipal UserEntity userPrincipal) {
-		TeamInvitationResultDto result = teamService.applyTeamInvitation(teamId, code, userPrincipal);
+		@AuthenticationPrincipal MaitUser userPrincipal) {
+		TeamInvitationResultDto result = teamService.applyTeamInvitation(teamId, code, userPrincipal.id());
 		return ResponseEntity.ok(ApiResponse.ok(TeamInvitationApplyApiResponse.of(teamId, result)));
 	}
 
@@ -78,15 +78,15 @@ public class TeamController {
 	@PostMapping("/{teamId}/applicant/{applicationId}")
 	public ResponseEntity<ApiResponse<Void>> approveTeamApplication(@PathVariable("teamId") Long teamId,
 		@PathVariable("applicationId") Long applicationId, @Valid @RequestBody ApproveTeamApplicationApiRequest request,
-		@AuthenticationPrincipal UserEntity userPrincipal) {
-		teamService.approveTeamApplication(teamId, applicationId, request.status(), userPrincipal);
+		@AuthenticationPrincipal MaitUser userPrincipal) {
+		teamService.approveTeamApplication(teamId, applicationId, request.status(), userPrincipal.id());
 		return ResponseEntity.ok(ApiResponse.noContent());
 	}
 
 	@Operation(summary = "초대 링크 팀 정보 반환 API")
 	@GetMapping("/invitation/info")
 	public ResponseEntity<ApiResponse<TeamInviteApiResponse>> getTeamInfo(
-		@AuthenticationPrincipal UserEntity userPrincipal, @RequestParam("code") String code) {
+		@AuthenticationPrincipal MaitUser userPrincipal, @RequestParam("code") String code) {
 		TeamInvitationDto teamInviteInfo = teamService.getTeamInviteInfo(userPrincipal, code);
 		return ResponseEntity.ok(ApiResponse.ok(TeamInviteApiResponse.from(teamInviteInfo)));
 	}
@@ -112,8 +112,8 @@ public class TeamController {
 	@Operation(summary = "가입 팀 목록 반환 API")
 	@GetMapping("/joined")
 	public ResponseEntity<ApiResponse<List<TeamApiResponse>>> getJoinedTeams(
-		@AuthenticationPrincipal UserEntity userPrincipal) {
-		List<TeamUserDto> joinedTeams = teamService.getJoinedTeams(userPrincipal);
+		@AuthenticationPrincipal MaitUser userPrincipal) {
+		List<TeamUserDto> joinedTeams = teamService.getJoinedTeams(userPrincipal.id());
 		List<TeamApiResponse> response = joinedTeams.stream().map(TeamApiResponse::from).toList();
 		return ResponseEntity.ok(ApiResponse.ok(response));
 	}

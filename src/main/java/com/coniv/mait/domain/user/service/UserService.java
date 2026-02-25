@@ -35,14 +35,16 @@ public class UserService {
 	private final JwtTokenProvider jwtTokenProvider;
 	private final RefreshTokenRepository refreshTokenRepository;
 
-	public UserDto getUserInfo(final UserEntity user) {
+	public UserDto getUserInfo(final Long userId) {
+		UserEntity user = userEntityRepository.findById(userId)
+			.orElseThrow(() -> new EntityNotFoundException("User not found with id: " + userId));
 		return UserDto.from(user);
 	}
 
 	@Transactional
-	public UserDto updateUserNickname(final UserEntity ownerPrincipal, final String newNickname) {
-		UserEntity user = userEntityRepository.findById(ownerPrincipal.getId())
-			.orElseThrow(() -> new EntityNotFoundException("User not found with id: " + ownerPrincipal.getId()));
+	public UserDto updateUserNickname(final Long userId, final String newNickname) {
+		UserEntity user = userEntityRepository.findById(userId)
+			.orElseThrow(() -> new EntityNotFoundException("User not found with id: " + userId));
 
 		String code = userNickNameGenerator.generateNicknameCode(newNickname);
 		user.updateNickname(newNickname, code);

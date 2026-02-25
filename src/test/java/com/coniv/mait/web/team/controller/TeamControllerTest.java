@@ -6,20 +6,25 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.http.MediaType;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
 import com.coniv.mait.domain.team.enums.TeamUserRole;
 import com.coniv.mait.domain.team.service.TeamService;
 import com.coniv.mait.domain.team.service.dto.TeamInvitationDto;
-import com.coniv.mait.domain.user.entity.UserEntity;
+import com.coniv.mait.global.auth.model.MaitUser;
 import com.coniv.mait.global.enums.InviteTokenDuration;
 import com.coniv.mait.global.filter.JwtAuthorizationFilter;
 import com.coniv.mait.global.interceptor.idempotency.IdempotencyInterceptor;
@@ -30,6 +35,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 @WebMvcTest(controllers = TeamController.class)
 @AutoConfigureMockMvc(addFilters = false)
 class TeamControllerTest {
+
+	private static final Long USER_ID = 1L;
 
 	@MockitoBean
 	private TeamService teamService;
@@ -46,13 +53,29 @@ class TeamControllerTest {
 	@MockitoBean
 	private JwtAuthorizationFilter jwtAuthorizationFilter;
 
+	@BeforeEach
+	void setUp() throws Exception {
+		when(idempotencyInterceptor.preHandle(any(), any(), any())).thenReturn(true);
+
+		MaitUser user = MaitUser.builder().id(USER_ID).build();
+		var authentication = new UsernamePasswordAuthenticationToken(user, null, List.of());
+		var context = SecurityContextHolder.createEmptyContext();
+		context.setAuthentication(authentication);
+		SecurityContextHolder.setContext(context);
+	}
+
+	@AfterEach
+	void tearDown() {
+		SecurityContextHolder.clearContext();
+	}
+
 	@Test
 	@DisplayName("팀 생성 API 성공 테스트")
 	void createTeam_Success() throws Exception {
 		// given
 		CreateTeamApiRequest request = new CreateTeamApiRequest("테스트 팀");
 
-		doNothing().when(teamService).createTeam(eq("테스트 팀"), nullable(UserEntity.class));
+		doNothing().when(teamService).createTeam(eq("테스트 팀"), eq(USER_ID));
 
 		// when & then
 		mockMvc.perform(post("/api/v1/teams")
@@ -61,7 +84,7 @@ class TeamControllerTest {
 			.andExpect(status().isOk())
 			.andExpect(jsonPath("$.data").doesNotExist());
 
-		verify(teamService).createTeam(eq("테스트 팀"), nullable(UserEntity.class));
+		verify(teamService).createTeam(eq("테스트 팀"), eq(USER_ID));
 	}
 
 	@Test
@@ -76,7 +99,7 @@ class TeamControllerTest {
 				.content(objectMapper.writeValueAsString(request)))
 			.andExpect(status().isBadRequest());
 
-		verify(teamService, never()).createTeam(anyString(), any(UserEntity.class));
+		verify(teamService, never()).createTeam(anyString(), any(Long.class));
 	}
 
 	@Test
@@ -89,12 +112,11 @@ class TeamControllerTest {
 		CreateTeamInviteApiRequest request = new CreateTeamInviteApiRequest(InviteTokenDuration.ONE_DAY, role);
 		String expectedInviteCode = "INVITE123";
 
-		when(teamService.createTeamInviteCode(eq(teamId), nullable(UserEntity.class),
+		when(teamService.createTeamInviteCode(eq(teamId), eq(USER_ID),
 			eq(InviteTokenDuration.ONE_DAY), eq(role), eq(requiresApproval)))
 			.thenReturn(expectedInviteCode);
 
 		// when & then
-
 		mockMvc.perform(post("/api/v1/teams/{teamId}/invitation", teamId)
 				.param("requiresApproval", String.valueOf(requiresApproval))
 				.contentType(MediaType.APPLICATION_JSON)
@@ -105,7 +127,7 @@ class TeamControllerTest {
 				jsonPath("$.data.token").value(expectedInviteCode)
 			);
 
-		verify(teamService).createTeamInviteCode(eq(teamId), nullable(UserEntity.class),
+		verify(teamService).createTeamInviteCode(eq(teamId), eq(USER_ID),
 			eq(InviteTokenDuration.ONE_DAY), eq(role), eq(requiresApproval));
 	}
 
@@ -125,7 +147,7 @@ class TeamControllerTest {
 			.expiredAt(LocalDateTime.now().plusDays(1))
 			.build();
 
-		when(teamService.getTeamInviteInfo(nullable(UserEntity.class), eq(code))).thenReturn(dto);
+		when(teamService.getTeamInviteInfo(any(MaitUser.class), eq(code))).thenReturn(dto);
 
 		// when & then
 		mockMvc.perform(get("/api/v1/teams/invitation/info").param("code", code)
@@ -137,7 +159,7 @@ class TeamControllerTest {
 			.andExpect(jsonPath("$.data.role").value(dto.getTeamUserRole().name()))
 			.andExpect(jsonPath("$.data.requiresApproval").value(dto.isRequiresApproval()));
 
-		verify(teamService).getTeamInviteInfo(nullable(UserEntity.class), eq(code));
+		verify(teamService).getTeamInviteInfo(any(MaitUser.class), eq(code));
 	}
 
 }

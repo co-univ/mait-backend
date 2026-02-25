@@ -8,7 +8,7 @@ import java.lang.annotation.Target;
 import org.springframework.security.test.context.support.WithSecurityContext;
 
 @Retention(RetentionPolicy.RUNTIME)
-@Target({ElementType.METHOD})
+@Target({ElementType.METHOD, ElementType.TYPE})
 @WithSecurityContext(factory = WithCustomUserSecurityContextFactory.class)
 public @interface WithCustomUser {
 	String email() default "user@example.com";

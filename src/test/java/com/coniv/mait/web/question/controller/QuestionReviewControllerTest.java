@@ -33,7 +33,7 @@ import com.coniv.mait.domain.question.service.dto.GradedAnswerShortResult;
 import com.coniv.mait.domain.question.service.dto.MultipleChoiceDto;
 import com.coniv.mait.domain.question.service.dto.MultipleQuestionDto;
 import com.coniv.mait.domain.question.service.dto.ReviewAnswerCheckResult;
-import com.coniv.mait.domain.user.entity.UserEntity;
+import com.coniv.mait.global.auth.model.MaitUser;
 import com.coniv.mait.global.filter.JwtAuthorizationFilter;
 import com.coniv.mait.global.interceptor.idempotency.IdempotencyInterceptor;
 import com.coniv.mait.web.question.dto.LastViewedQuestionApiRequest;
@@ -66,12 +66,9 @@ class QuestionReviewControllerTest {
 	void setUp() throws Exception {
 		when(idempotencyInterceptor.preHandle(any(), any(), any())).thenReturn(true);
 
-		UserEntity user = mock(UserEntity.class);
-		when(user.getId()).thenReturn(USER_ID);
+		MaitUser user = MaitUser.builder().id(USER_ID).build();
 		authentication = new UsernamePasswordAuthenticationToken(user, null, List.of());
 
-		// addFilters = false 환경에서는 @AuthenticationPrincipal 주입이 null이 될 수 있어서
-		// 테스트에서 SecurityContextHolder를 직접 세팅해준다.
 		SecurityContext context = SecurityContextHolder.createEmptyContext();
 		context.setAuthentication(authentication);
 		SecurityContextHolder.setContext(context);

@@ -14,6 +14,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
+import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
@@ -22,18 +23,22 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
+import com.coniv.mait.config.TestRedisConfig;
 import com.coniv.mait.domain.question.enums.QuestionType;
 import com.coniv.mait.domain.question.service.QuestionReviewService;
 import com.coniv.mait.domain.question.service.dto.GradedAnswerShortResult;
 import com.coniv.mait.domain.question.service.dto.MultipleChoiceDto;
 import com.coniv.mait.domain.question.service.dto.MultipleQuestionDto;
 import com.coniv.mait.domain.question.service.dto.ReviewAnswerCheckResult;
-import com.coniv.mait.domain.user.entity.UserEntity;
+import com.coniv.mait.global.auth.model.MaitUser;
+import com.coniv.mait.login.WithCustomUser;
 import com.coniv.mait.web.integration.BaseIntegrationTest;
 import com.coniv.mait.web.question.dto.LastViewedQuestionApiRequest;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 @AutoConfigureMockMvc(addFilters = false)
+@WithCustomUser
+@Import(TestRedisConfig.class)
 class QuestionReviewApiIntegrationTest extends BaseIntegrationTest {
 
 	private static final Long USER_ID = 2L;
@@ -51,8 +56,7 @@ class QuestionReviewApiIntegrationTest extends BaseIntegrationTest {
 
 	@BeforeEach
 	void setUp() {
-		UserEntity user = mock(UserEntity.class);
-		when(user.getId()).thenReturn(USER_ID);
+		MaitUser user = MaitUser.builder().id(USER_ID).build();
 		authentication = new UsernamePasswordAuthenticationToken(user, null, List.of());
 
 		SecurityContext context = SecurityContextHolder.createEmptyContext();

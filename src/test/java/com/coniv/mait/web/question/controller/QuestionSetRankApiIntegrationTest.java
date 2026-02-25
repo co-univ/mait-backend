@@ -26,8 +26,10 @@ import com.coniv.mait.domain.team.repository.TeamEntityRepository;
 import com.coniv.mait.domain.team.repository.TeamUserEntityRepository;
 import com.coniv.mait.domain.user.entity.UserEntity;
 import com.coniv.mait.domain.user.repository.UserEntityRepository;
+import com.coniv.mait.login.WithCustomUser;
 import com.coniv.mait.web.integration.BaseIntegrationTest;
 
+@WithCustomUser
 @Import(TestRedisConfig.class)
 public class QuestionSetRankApiIntegrationTest extends BaseIntegrationTest {
 

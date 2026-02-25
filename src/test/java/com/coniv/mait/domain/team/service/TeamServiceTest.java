@@ -32,6 +32,7 @@ import com.coniv.mait.domain.team.service.dto.TeamInvitationDto;
 import com.coniv.mait.domain.user.entity.UserEntity;
 import com.coniv.mait.domain.user.enums.LoginProvider;
 import com.coniv.mait.domain.user.repository.UserEntityRepository;
+import com.coniv.mait.global.auth.model.MaitUser;
 import com.coniv.mait.global.enums.InviteTokenDuration;
 
 import jakarta.persistence.EntityNotFoundException;
@@ -77,7 +78,7 @@ class TeamServiceTest {
 		when(teamUserEntityRepository.save(any(TeamUserEntity.class))).thenReturn(ownerTeamUser);
 
 		// when
-		teamService.createTeam(teamName, owner);
+		teamService.createTeam(teamName, ownerId);
 
 		// then
 		verify(userEntityRepository).findById(ownerId);
@@ -109,7 +110,6 @@ class TeamServiceTest {
 		Long teamId = 1L;
 		Long ownerId = 1L;
 		UserEntity mockOwner = mock(UserEntity.class);
-		when(mockOwner.getId()).thenReturn(ownerId);
 		TeamEntity team = TeamEntity.of("테스트 팀", 1L);
 		TeamUserEntity ownerTeamUser = TeamUserEntity.createOwnerUser(mockOwner, team);
 		String expectedToken = "test-invite-code";
@@ -125,7 +125,7 @@ class TeamServiceTest {
 			invocation -> invocation.getArgument(0));
 
 		// when
-		String result = teamService.createTeamInviteCode(teamId, mockOwner, duration, role, requiresApproval);
+		String result = teamService.createTeamInviteCode(teamId, ownerId, duration, role, requiresApproval);
 
 		// then
 		assertThat(result).isEqualTo(expectedToken);
@@ -141,7 +141,7 @@ class TeamServiceTest {
 	void createTeamInviteCode_Failure_TeamNotFound() {
 		// given
 		Long teamId = 999L;
-		UserEntity mockUser = mock(UserEntity.class);
+		Long userId = 1L;
 		InviteTokenDuration duration = InviteTokenDuration.ONE_DAY;
 		TeamUserRole role = TeamUserRole.PLAYER;
 		boolean requiresApproval = false;
@@ -149,7 +149,7 @@ class TeamServiceTest {
 		when(teamEntityRepository.findById(teamId)).thenReturn(Optional.empty());
 
 		// when & then
-		assertThatThrownBy(() -> teamService.createTeamInviteCode(teamId, mockUser, duration, role, requiresApproval))
+		assertThatThrownBy(() -> teamService.createTeamInviteCode(teamId, userId, duration, role, requiresApproval))
 			.isInstanceOf(EntityNotFoundException.class)
 			.hasMessageContaining("Team not found with id: " + teamId);
 
@@ -164,19 +164,20 @@ class TeamServiceTest {
 	void createTeamInviteCode_Failure_NotTeamMember() {
 		// given
 		Long teamId = 1L;
+		Long userId = 999L;
 		UserEntity mockUser = mock(UserEntity.class);
-		when(mockUser.getId()).thenReturn(999L);
+		when(mockUser.getId()).thenReturn(userId);
 		TeamEntity team = TeamEntity.of("테스트 팀", 1L);
 		InviteTokenDuration duration = InviteTokenDuration.ONE_DAY;
 		TeamUserRole role = TeamUserRole.PLAYER;
 		boolean requiresApproval = false;
 
 		when(teamEntityRepository.findById(teamId)).thenReturn(Optional.of(team));
-		when(userEntityRepository.findById(999L)).thenReturn(Optional.of(mockUser));
+		when(userEntityRepository.findById(userId)).thenReturn(Optional.of(mockUser));
 		when(teamUserEntityRepository.findByTeamAndUser(team, mockUser)).thenReturn(Optional.empty());
 
 		// when & then
-		assertThatThrownBy(() -> teamService.createTeamInviteCode(teamId, mockUser, duration, role, requiresApproval))
+		assertThatThrownBy(() -> teamService.createTeamInviteCode(teamId, userId, duration, role, requiresApproval))
 			.isInstanceOf(EntityNotFoundException.class)
 			.hasMessageContaining("Invitor is not a member of the team");
 
@@ -194,7 +195,6 @@ class TeamServiceTest {
 		Long teamId = 1L;
 		Long playerId = 2L;
 		UserEntity mockPlayer = mock(UserEntity.class);
-		when(mockPlayer.getId()).thenReturn(playerId);
 		TeamEntity team = TeamEntity.of("테스트 팀", 1L);
 		TeamUserEntity playerTeamUser = TeamUserEntity.createPlayerUser(mockPlayer, team);
 		InviteTokenDuration duration = InviteTokenDuration.ONE_DAY;
@@ -207,7 +207,7 @@ class TeamServiceTest {
 
 		// when & then
 		Throwable thrown = catchThrowable(
-			() -> teamService.createTeamInviteCode(teamId, mockPlayer, duration, role, requiresApproval));
+			() -> teamService.createTeamInviteCode(teamId, playerId, duration, role, requiresApproval));
 		assertThat(thrown).isInstanceOf(TeamInvitationFailException.class);
 		assertThat(((TeamInvitationFailException)thrown).getErrorCode()).isEqualTo(
 			InvitationErrorCode.CANT_CREATE_INVITE);
@@ -234,6 +234,7 @@ class TeamServiceTest {
 		Long applicantId = 99L;
 		UserEntity applicant = mock(UserEntity.class);
 		when(applicant.getId()).thenReturn(applicantId);
+		MaitUser maitApplicant = MaitUser.builder().id(applicantId).build();
 
 		TeamInvitationApplicantEntity application = TeamInvitationApplicantEntity.builder()
 			.teamId(team.getId())
@@ -252,7 +253,7 @@ class TeamServiceTest {
 		)).thenReturn(Optional.of(application));
 
 		// when
-		TeamInvitationDto result = teamService.getTeamInviteInfo(applicant, token);
+		TeamInvitationDto result = teamService.getTeamInviteInfo(maitApplicant, token);
 
 		// then
 		assertThat(result).isNotNull();
@@ -272,14 +273,14 @@ class TeamServiceTest {
 
 		Long userId = 77L;
 		UserEntity user = mock(UserEntity.class);
-		when(user.getId()).thenReturn(userId);
+		MaitUser maitUser = MaitUser.builder().id(userId).build();
 
 		when(teamInvitationEntityRepository.findByTokenFetchJoinTeam(token)).thenReturn(Optional.of(invite));
 		when(userEntityRepository.findById(userId)).thenReturn(Optional.of(user));
 		when(teamUserEntityRepository.existsByTeamAndUser(team, user)).thenReturn(true);
 
 		// when & then
-		Throwable thrown = catchThrowable(() -> teamService.getTeamInviteInfo(user, token));
+		Throwable thrown = catchThrowable(() -> teamService.getTeamInviteInfo(maitUser, token));
 		assertThat(thrown).isInstanceOf(TeamInvitationFailException.class);
 		assertThat(((TeamInvitationFailException)thrown).getErrorCode()).isEqualTo(InvitationErrorCode.ALREADY_MEMBER);
 	}

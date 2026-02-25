@@ -35,6 +35,7 @@ import com.coniv.mait.domain.question.service.dto.FillBlankAnswerDto;
 import com.coniv.mait.domain.question.service.dto.MultipleChoiceDto;
 import com.coniv.mait.domain.question.service.dto.OrderingQuestionOptionDto;
 import com.coniv.mait.domain.question.service.dto.ShortAnswerDto;
+import com.coniv.mait.login.WithCustomUser;
 import com.coniv.mait.web.integration.BaseIntegrationTest;
 import com.coniv.mait.web.question.dto.UpdateFillBlankQuestionApiRequest;
 import com.coniv.mait.web.question.dto.UpdateMultipleQuestionApiRequest;
@@ -42,6 +43,7 @@ import com.coniv.mait.web.question.dto.UpdateOrderingQuestionApiRequest;
 import com.coniv.mait.web.question.dto.UpdateQuestionOrderApiRequest;
 import com.coniv.mait.web.question.dto.UpdateShortQuestionApiRequest;
 
+@WithCustomUser
 public class QuestionApiIntegrationTest extends BaseIntegrationTest {
 
 	@Autowired
