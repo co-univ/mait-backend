@@ -29,12 +29,13 @@ public class SecurityConfig {
 			})
 			.formLogin(AbstractHttpConfigurer::disable)
 			.httpBasic(AbstractHttpConfigurer::disable)
-			.exceptionHandling(exception -> exception.authenticationEntryPoint(jwtAuthenticationEntryPoint))
 			.authorizeHttpRequests(auth -> auth
 				.requestMatchers(
 					"/api/v1/auth/login",
 					"/api/v1/auth/reissue",
-					"/api/v1/auth/access-token"
+					"/api/v1/auth/access-token",
+					"/oauth2/**",
+					"/login/oauth2/**"
 				).permitAll()
 				.requestMatchers(
 					"/api/v1/users/sign-up",
@@ -47,9 +48,19 @@ public class SecurityConfig {
 					"/swagger-ui/**",
 					"/swagger-ui.html"
 				).permitAll()
+				.requestMatchers(
+					"/actuator/health",
+					"/actuator/health/**",
+					"/actuator/prometheus"
+				).permitAll()
+				.requestMatchers(
+					"/favicon.ico",
+					"/error"
+				).permitAll()
 				.requestMatchers("/ws/**").permitAll()
 				.anyRequest().authenticated()
 			)
+			.exceptionHandling(exception -> exception.authenticationEntryPoint(jwtAuthenticationEntryPoint))
 			.oauth2Login((oauth2) -> oauth2
 				.userInfoEndpoint(userInfoEndpoint -> userInfoEndpoint
 					.userService(oauth2UserService)
