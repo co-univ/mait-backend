@@ -27,11 +27,29 @@ public class SecurityConfig {
 		httpSecurity.csrf(AbstractHttpConfigurer::disable)
 			.cors(cors -> {
 			})
-			.formLogin(AbstractHttpConfigurer::disable) // 기본 폼 로그인 비활성화
-			.httpBasic(AbstractHttpConfigurer::disable) // 기본 HTTP Basic 인증 비활성화
+			.formLogin(AbstractHttpConfigurer::disable)
+			.httpBasic(AbstractHttpConfigurer::disable)
 			.exceptionHandling(exception -> exception.authenticationEntryPoint(jwtAuthenticationEntryPoint))
-			.authorizeHttpRequests(auth -> auth.requestMatchers("/api/v1/auth/login").permitAll() // 로그인 엔드포인트는 인증 없이 허용
-				.anyRequest().permitAll()) // 임시로 모든 요청 허용 TODO: 실제 서비스에서는 적절한 권한 설정 필요
+			.authorizeHttpRequests(auth -> auth
+				.requestMatchers(
+					"/api/v1/auth/login",
+					"/api/v1/auth/reissue",
+					"/api/v1/auth/access-token"
+				).permitAll()
+				.requestMatchers(
+					"/api/v1/users/sign-up",
+					"/api/v1/users/nickname/random"
+				).permitAll()
+				.requestMatchers("/api/v1/policies").permitAll()
+				.requestMatchers("/api/v1/teams/invitation/info").permitAll()
+				.requestMatchers(
+					"/api-docs/**",
+					"/swagger-ui/**",
+					"/swagger-ui.html"
+				).permitAll()
+				.requestMatchers("/ws/**").permitAll()
+				.anyRequest().authenticated()
+			)
 			.oauth2Login((oauth2) -> oauth2
 				.userInfoEndpoint(userInfoEndpoint -> userInfoEndpoint
 					.userService(oauth2UserService)
