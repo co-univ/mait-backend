@@ -51,9 +51,9 @@ public class AuthService {
 		return mayBeAccessToken;
 	}
 
-	public void logout(final UserEntity user, final String accessToken, final String refreshToken) {
+	public void logout(final Long userId, final String accessToken, final String refreshToken) {
 		Long tokenUserId = jwtTokenProvider.getUserId(accessToken);
-		if (!user.getId().equals(tokenUserId)) {
+		if (!userId.equals(tokenUserId)) {
 			throw new LoginFailException("토큰의 사용자 정보가 인증된 사용자와 일치하지 않습니다.");
 		}
 

@@ -24,7 +24,7 @@ import com.coniv.mait.domain.question.service.QuestionSetMaterialService;
 import com.coniv.mait.domain.question.service.QuestionSetService;
 import com.coniv.mait.domain.question.service.dto.QuestionSetDto;
 import com.coniv.mait.domain.question.service.dto.QuestionSetMaterialDto;
-import com.coniv.mait.domain.user.entity.UserEntity;
+import com.coniv.mait.global.auth.model.MaitUser;
 import com.coniv.mait.global.response.ApiResponse;
 import com.coniv.mait.web.question.dto.AiRequestStatusApiResponse;
 import com.coniv.mait.web.question.dto.CreateQuestionSetApiRequest;
@@ -56,10 +56,10 @@ public class QuestionSetController {
 	@Operation(summary = "문제 셋 생성 API", description = "새로운 문제 셋을 생성합니다.")
 	@PostMapping
 	public ResponseEntity<ApiResponse<CreateQuestionSetApiResponse>> createQuestionSet(
-		@AuthenticationPrincipal UserEntity user,
+		@AuthenticationPrincipal MaitUser user,
 		@Valid @RequestBody CreateQuestionSetApiRequest request) {
 		QuestionSetDto questionSetDto = questionSetService.createQuestionSet(request.toQuestionSetDto(),
-			request.counts(), request.materials(), request.instruction(), request.difficulty(), user.getId());
+			request.counts(), request.materials(), request.instruction(), request.difficulty(), user.id());
 		return ResponseEntity.status(HttpStatus.OK)
 			.body(ApiResponse.ok(CreateQuestionSetApiResponse.from(questionSetDto)));
 	}

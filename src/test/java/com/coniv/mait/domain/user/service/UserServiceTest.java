@@ -49,7 +49,7 @@ class UserServiceTest {
 		when(userNickNameGenerator.generateNicknameCode(newNickname)).thenReturn(generatedCode);
 
 		// when
-		UserDto result = userService.updateUserNickname(mockUser, newNickname);
+		UserDto result = userService.updateUserNickname(userId, newNickname);
 
 		// then
 		verify(userEntityRepository).findById(userId);
@@ -73,7 +73,7 @@ class UserServiceTest {
 		when(userEntityRepository.findById(userId)).thenReturn(Optional.empty());
 
 		// when & then
-		assertThatThrownBy(() -> userService.updateUserNickname(mockUser, newNickname))
+		assertThatThrownBy(() -> userService.updateUserNickname(userId, newNickname))
 			.isInstanceOf(EntityNotFoundException.class)
 			.hasMessageContaining("User not found with id: " + userId);
 

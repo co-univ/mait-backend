@@ -14,8 +14,8 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.coniv.mait.domain.auth.service.AuthService;
-import com.coniv.mait.domain.user.entity.UserEntity;
 import com.coniv.mait.global.auth.cookie.CookieFactory;
+import com.coniv.mait.global.auth.model.MaitUser;
 import com.coniv.mait.global.auth.jwt.Token;
 import com.coniv.mait.global.response.ApiResponse;
 import com.coniv.mait.web.auth.dto.LoginApiRequest;
@@ -53,12 +53,12 @@ public class AuthController {
 	@Operation(summary = "로그아웃 API", description = "사용자 로그아웃 API")
 	@PostMapping("/logout")
 	public ResponseEntity<ApiResponse<Void>> logout(
-		@AuthenticationPrincipal UserEntity user,
+		@AuthenticationPrincipal MaitUser user,
 		@Parameter(hidden = true) @RequestHeader(value = AUTH_HEADER) String authorizationHeader,
 		@Parameter(hidden = true) @CookieValue(name = REFRESH_TOKEN) String refreshToken) {
 
 		String accessToken = authorizationHeader.substring(BEARER_TOKEN.length()).trim();
-		authService.logout(user, accessToken, refreshToken);
+		authService.logout(user.id(), accessToken, refreshToken);
 
 		return ResponseEntity.ok()
 			.header("Set-Cookie", cookieFactory.createExpiredRefreshResponseCookie().toString())

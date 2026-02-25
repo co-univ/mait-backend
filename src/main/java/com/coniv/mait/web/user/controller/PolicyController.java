@@ -13,8 +13,8 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.coniv.mait.domain.user.entity.UserEntity;
 import com.coniv.mait.domain.user.enums.PolicyTiming;
+import com.coniv.mait.global.auth.model.MaitUser;
 import com.coniv.mait.domain.user.service.PolicyService;
 import com.coniv.mait.domain.user.service.dto.PolicyDto;
 import com.coniv.mait.global.response.ApiResponse;
@@ -56,9 +56,9 @@ public class PolicyController {
 	@PostMapping("/check")
 	public ResponseEntity<ApiResponse<CheckPoliciesApiResponse>> checkPolicies(
 		@Valid @RequestBody CheckPoliciesApiRequest request,
-		@AuthenticationPrincipal UserEntity userPrincipal) {
+		@AuthenticationPrincipal MaitUser userPrincipal) {
 
-		LocalDateTime checkTime = policyService.checkPolicies(userPrincipal.getId(), request.policyChecks());
+		LocalDateTime checkTime = policyService.checkPolicies(userPrincipal.id(), request.policyChecks());
 
 		return ResponseEntity.ok(ApiResponse.ok(CheckPoliciesApiResponse.of(checkTime)));
 	}

@@ -14,7 +14,6 @@ import org.springframework.http.MediaType;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
-import com.coniv.mait.domain.user.entity.UserEntity;
 import com.coniv.mait.domain.user.service.UserService;
 import com.coniv.mait.domain.user.service.dto.UserDto;
 import com.coniv.mait.global.auth.cookie.CookieFactory;
@@ -58,7 +57,7 @@ class UserControllerTest {
 			.fullNickname("빠른고양이#1234")
 			.build();
 
-		when(userService.getUserInfo(nullable(UserEntity.class))).thenReturn(mockDto);
+		when(userService.getUserInfo(nullable(Long.class))).thenReturn(mockDto);
 
 		// when & then
 		mockMvc.perform(get("/api/v1/users/me"))
@@ -69,7 +68,7 @@ class UserControllerTest {
 			.andExpect(jsonPath("$.data.nickname").value("빠른고양이"))
 			.andExpect(jsonPath("$.data.fullNickname").value("빠른고양이#1234"));
 
-		verify(userService).getUserInfo(nullable(UserEntity.class));
+		verify(userService).getUserInfo(nullable(Long.class));
 	}
 
 	@Test
@@ -86,7 +85,7 @@ class UserControllerTest {
 			.fullNickname("새로운닉네임#5678")
 			.build();
 
-		when(userService.updateUserNickname(nullable(UserEntity.class), eq("새로운닉네임"))).thenReturn(mockDto);
+		when(userService.updateUserNickname(nullable(Long.class), eq("새로운닉네임"))).thenReturn(mockDto);
 
 		// when & then
 		mockMvc.perform(patch("/api/v1/users/nickname")
@@ -97,7 +96,7 @@ class UserControllerTest {
 			.andExpect(jsonPath("$.data.nickname").value("새로운닉네임"))
 			.andExpect(jsonPath("$.data.fullNickname").value("새로운닉네임#5678"));
 
-		verify(userService).updateUserNickname(nullable(UserEntity.class), eq("새로운닉네임"));
+		verify(userService).updateUserNickname(nullable(Long.class), eq("새로운닉네임"));
 	}
 
 	@Test
@@ -112,7 +111,7 @@ class UserControllerTest {
 				.content(requestBody))
 			.andExpect(status().isBadRequest());
 
-		verify(userService, never()).updateUserNickname(nullable(UserEntity.class), any());
+		verify(userService, never()).updateUserNickname(nullable(Long.class), any());
 	}
 
 	@Test
@@ -127,7 +126,7 @@ class UserControllerTest {
 				.content(objectMapper.writeValueAsString(request)))
 			.andExpect(status().isBadRequest());
 
-		verify(userService, never()).updateUserNickname(nullable(UserEntity.class), any());
+		verify(userService, never()).updateUserNickname(nullable(Long.class), any());
 	}
 
 	@Test

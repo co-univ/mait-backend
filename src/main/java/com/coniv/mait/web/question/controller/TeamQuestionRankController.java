@@ -12,7 +12,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.coniv.mait.domain.question.service.TeamQuestionRankService;
 import com.coniv.mait.domain.solve.service.dto.RankDto;
-import com.coniv.mait.domain.user.entity.UserEntity;
+import com.coniv.mait.global.auth.model.MaitUser;
 import com.coniv.mait.global.response.ApiResponse;
 import com.coniv.mait.web.question.dto.TeamRankApiResponse;
 
@@ -36,12 +36,11 @@ public class TeamQuestionRankController {
 		@PathVariable("teamId") Long teamId,
 		@Parameter(description = "노출할 랭크 개수")
 		@RequestParam(value = "rankCount", required = false, defaultValue = "5") int rankCount,
-		@AuthenticationPrincipal UserEntity user) {
-		// todo 노출할 rank 조정
+		@AuthenticationPrincipal MaitUser user) {
 		List<RankDto> ranks = teamQuestionRankService.getTeamQuestionCorrectAnswerRank(teamId);
 		return ResponseEntity.ok(
 			ApiResponse.ok(
-				TeamRankApiResponse.of(ranks, teamId, user.getId(), rankCount, TeamRankApiResponse.RankType.CORRECT)));
+				TeamRankApiResponse.of(ranks, teamId, user.id(), rankCount, TeamRankApiResponse.RankType.CORRECT)));
 	}
 
 	@Operation(summary = "팀 득점자 퀴즈 랭킹 조회", description = "완료된 퀴즈에서 득점자 랭킹 반환")
@@ -50,10 +49,10 @@ public class TeamQuestionRankController {
 		@PathVariable("teamId") Long teamId,
 		@Parameter(description = "노출할 랭크 개수")
 		@RequestParam(value = "rankCount", required = false, defaultValue = "5") int rankCount,
-		@AuthenticationPrincipal UserEntity user) {
+		@AuthenticationPrincipal MaitUser user) {
 		List<RankDto> ranks = teamQuestionRankService.getTeamQuestionScorerRank(teamId);
 		return ResponseEntity.ok(
 			ApiResponse.ok(
-				TeamRankApiResponse.of(ranks, teamId, user.getId(), rankCount, TeamRankApiResponse.RankType.SCORER)));
+				TeamRankApiResponse.of(ranks, teamId, user.id(), rankCount, TeamRankApiResponse.RankType.SCORER)));
 	}
 }

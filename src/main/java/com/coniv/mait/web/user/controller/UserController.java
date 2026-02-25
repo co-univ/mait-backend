@@ -15,8 +15,8 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.coniv.mait.domain.user.entity.UserEntity;
 import com.coniv.mait.domain.user.service.UserService;
+import com.coniv.mait.global.auth.model.MaitUser;
 import com.coniv.mait.domain.user.service.dto.UserDto;
 import com.coniv.mait.global.auth.cookie.CookieFactory;
 import com.coniv.mait.global.auth.jwt.Token;
@@ -42,17 +42,17 @@ public class UserController {
 
 	@Operation(summary = "사용자 정보 반환")
 	@GetMapping("/me")
-	public ResponseEntity<ApiResponse<UserInfoApiResponse>> getUserInfo(@AuthenticationPrincipal UserEntity user) {
-		UserDto dto = userService.getUserInfo(user);
+	public ResponseEntity<ApiResponse<UserInfoApiResponse>> getUserInfo(@AuthenticationPrincipal MaitUser user) {
+		UserDto dto = userService.getUserInfo(user.id());
 		return ResponseEntity.ok(ApiResponse.ok(UserInfoApiResponse.from(dto)));
 	}
 
 	@Operation(summary = "사용자 닉네임 변경")
 	@PatchMapping("/nickname")
 	public ResponseEntity<ApiResponse<UpdateNicknameResponse>> updateUserNickname(
-		@AuthenticationPrincipal UserEntity user,
+		@AuthenticationPrincipal MaitUser user,
 		@Valid @RequestBody UpdateNicknameRequest request) {
-		UserDto dto = userService.updateUserNickname(user, request.nickname().trim());
+		UserDto dto = userService.updateUserNickname(user.id(), request.nickname().trim());
 		return ResponseEntity.ok(ApiResponse.ok(UpdateNicknameResponse.from(dto)));
 	}
 

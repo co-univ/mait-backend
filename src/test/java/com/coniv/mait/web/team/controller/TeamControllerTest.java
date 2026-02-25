@@ -19,7 +19,7 @@ import org.springframework.test.web.servlet.MockMvc;
 import com.coniv.mait.domain.team.enums.TeamUserRole;
 import com.coniv.mait.domain.team.service.TeamService;
 import com.coniv.mait.domain.team.service.dto.TeamInvitationDto;
-import com.coniv.mait.domain.user.entity.UserEntity;
+import com.coniv.mait.global.auth.model.MaitUser;
 import com.coniv.mait.global.enums.InviteTokenDuration;
 import com.coniv.mait.global.filter.JwtAuthorizationFilter;
 import com.coniv.mait.global.interceptor.idempotency.IdempotencyInterceptor;
@@ -52,7 +52,7 @@ class TeamControllerTest {
 		// given
 		CreateTeamApiRequest request = new CreateTeamApiRequest("테스트 팀");
 
-		doNothing().when(teamService).createTeam(eq("테스트 팀"), nullable(UserEntity.class));
+		doNothing().when(teamService).createTeam(eq("테스트 팀"), nullable(Long.class));
 
 		// when & then
 		mockMvc.perform(post("/api/v1/teams")
@@ -61,7 +61,7 @@ class TeamControllerTest {
 			.andExpect(status().isOk())
 			.andExpect(jsonPath("$.data").doesNotExist());
 
-		verify(teamService).createTeam(eq("테스트 팀"), nullable(UserEntity.class));
+		verify(teamService).createTeam(eq("테스트 팀"), nullable(Long.class));
 	}
 
 	@Test
@@ -76,7 +76,7 @@ class TeamControllerTest {
 				.content(objectMapper.writeValueAsString(request)))
 			.andExpect(status().isBadRequest());
 
-		verify(teamService, never()).createTeam(anyString(), any(UserEntity.class));
+		verify(teamService, never()).createTeam(anyString(), any(Long.class));
 	}
 
 	@Test
@@ -89,7 +89,7 @@ class TeamControllerTest {
 		CreateTeamInviteApiRequest request = new CreateTeamInviteApiRequest(InviteTokenDuration.ONE_DAY, role);
 		String expectedInviteCode = "INVITE123";
 
-		when(teamService.createTeamInviteCode(eq(teamId), nullable(UserEntity.class),
+		when(teamService.createTeamInviteCode(eq(teamId), nullable(Long.class),
 			eq(InviteTokenDuration.ONE_DAY), eq(role), eq(requiresApproval)))
 			.thenReturn(expectedInviteCode);
 
@@ -105,7 +105,7 @@ class TeamControllerTest {
 				jsonPath("$.data.token").value(expectedInviteCode)
 			);
 
-		verify(teamService).createTeamInviteCode(eq(teamId), nullable(UserEntity.class),
+		verify(teamService).createTeamInviteCode(eq(teamId), nullable(Long.class),
 			eq(InviteTokenDuration.ONE_DAY), eq(role), eq(requiresApproval));
 	}
 
@@ -125,7 +125,7 @@ class TeamControllerTest {
 			.expiredAt(LocalDateTime.now().plusDays(1))
 			.build();
 
-		when(teamService.getTeamInviteInfo(nullable(UserEntity.class), eq(code))).thenReturn(dto);
+		when(teamService.getTeamInviteInfo(nullable(MaitUser.class), eq(code))).thenReturn(dto);
 
 		// when & then
 		mockMvc.perform(get("/api/v1/teams/invitation/info").param("code", code)
@@ -137,7 +137,7 @@ class TeamControllerTest {
 			.andExpect(jsonPath("$.data.role").value(dto.getTeamUserRole().name()))
 			.andExpect(jsonPath("$.data.requiresApproval").value(dto.isRequiresApproval()));
 
-		verify(teamService).getTeamInviteInfo(nullable(UserEntity.class), eq(code));
+		verify(teamService).getTeamInviteInfo(nullable(MaitUser.class), eq(code));
 	}
 
 }
