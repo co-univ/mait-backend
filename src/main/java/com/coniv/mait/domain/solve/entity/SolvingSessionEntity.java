@@ -58,4 +58,14 @@ public class SolvingSessionEntity extends BaseTimeEntity {
 	private LocalDateTime startedAt;
 
 	private LocalDateTime submittedAt;
+
+	public static SolvingSessionEntity studySession(UserEntity user, QuestionSetEntity questionSet) {
+		return SolvingSessionEntity.builder()
+			.user(user)
+			.questionSet(questionSet)
+			.mode(DeliveryMode.STUDY)
+			.status(SolvingStatus.PROGRESSING)
+			.startedAt(LocalDateTime.now())
+			.build();
+	}
 }

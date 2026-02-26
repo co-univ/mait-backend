@@ -14,6 +14,7 @@ import com.coniv.mait.domain.team.repository.TeamUserEntityRepository;
 import com.coniv.mait.domain.user.entity.UserEntity;
 import com.coniv.mait.domain.user.repository.UserEntityRepository;
 
+import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 
 // Todo UserDomain에 대한 개념을 반환하는 형태로 개선 필요
@@ -33,5 +34,10 @@ public class UserReader {
 	public Map<Long, UserEntity> getUserById(Collection<Long> userIds) {
 		return userEntityRepository.findAllById(userIds).stream()
 			.collect(Collectors.toUnmodifiableMap(UserEntity::getId, Function.identity()));
+	}
+
+	public UserEntity getById(final Long userId) {
+		return userEntityRepository.findById(userId)
+			.orElseThrow(() -> new EntityNotFoundException("해당 유저를 찾을 수 없습니다."));
 	}
 }
