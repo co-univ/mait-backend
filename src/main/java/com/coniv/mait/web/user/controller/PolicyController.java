@@ -24,6 +24,7 @@ import com.coniv.mait.web.user.dto.LatestPoliciesApiResponse;
 import com.coniv.mait.web.user.dto.UnconfirmedPoliciesApiResponse;
 
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.security.SecurityRequirements;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 
@@ -34,6 +35,7 @@ public class PolicyController {
 
 	private final PolicyService policyService;
 
+	@SecurityRequirements
 	@Operation(summary = "타이밍별 최신 정책 목록 조회")
 	@GetMapping
 	public ResponseEntity<ApiResponse<List<LatestPoliciesApiResponse>>> findLatestPolicies(
