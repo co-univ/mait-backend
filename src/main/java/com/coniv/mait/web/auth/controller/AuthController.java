@@ -22,6 +22,7 @@ import com.coniv.mait.web.auth.dto.LoginApiRequest;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.security.SecurityRequirements;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -39,6 +40,7 @@ public class AuthController {
 	private final AuthService authService;
 	private final CookieFactory cookieFactory;
 
+	@SecurityRequirements
 	@Operation(summary = "로그인 API", description = "사용자 로그인 API")
 	@PostMapping("/login")
 	public ResponseEntity<ApiResponse<Void>> login(@RequestBody @Valid LoginApiRequest request) {
@@ -65,6 +67,7 @@ public class AuthController {
 			.build();
 	}
 
+	@SecurityRequirements
 	@Operation(summary = "토큰 재발급 API", description = "토큰 재발급 API")
 	@PostMapping("/reissue")
 	public ResponseEntity<ApiResponse<Void>> reissue(
@@ -78,6 +81,7 @@ public class AuthController {
 			.body(ApiResponse.noContent());
 	}
 
+	@SecurityRequirements
 	@Operation(summary = "Access token 반환 API", description = "Oauth 로그인 후 access token을 반환하는 API")
 	@GetMapping("/access-token")
 	public ResponseEntity<ApiResponse<String>> getAccessToken(@RequestParam("code") String code) {

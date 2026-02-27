@@ -29,6 +29,7 @@ import com.coniv.mait.web.user.dto.UserInfoApiResponse;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.security.SecurityRequirements;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 
@@ -56,6 +57,7 @@ public class UserController {
 		return ResponseEntity.ok(ApiResponse.ok(UpdateNicknameResponse.from(dto)));
 	}
 
+	@SecurityRequirements
 	@Operation(summary = "랜덤 닉네임 반환")
 	@GetMapping("/nickname/random")
 	public ResponseEntity<ApiResponse<RandomNicknameResponse>> getRandomNickname() {
@@ -63,6 +65,7 @@ public class UserController {
 		return ResponseEntity.ok(ApiResponse.ok(RandomNicknameResponse.from(randomNickname)));
 	}
 
+	@SecurityRequirements
 	@Operation(summary = "회원 가입")
 	@PostMapping("/sign-up")
 	public ResponseEntity<ApiResponse<Void>> signup(
