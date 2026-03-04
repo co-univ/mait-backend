@@ -17,7 +17,7 @@ import lombok.RequiredArgsConstructor;
 
 @Tag(name = "학습모드 문제 풀이 API", description = "학습 모드 풀이 및 관리를 위해 사용되는 API")
 @RestController
-@RequestMapping("/api/v1/questions-sets/{questionSetId}/study-mode")
+@RequestMapping("/api/v1/question-sets/{questionSetId}/study-mode")
 @RequiredArgsConstructor
 public class StudyModeController {
 

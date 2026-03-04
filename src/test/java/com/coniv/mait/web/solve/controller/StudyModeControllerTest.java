@@ -43,7 +43,7 @@ class StudyModeControllerTest {
 
 		// when & then
 		mockMvc.perform(
-				post("/api/v1/questions-sets/{questionSetId}/study-mode", questionSetId))
+				post("/api/v1/question-sets/{questionSetId}/study-mode", questionSetId))
 			.andExpectAll(
 				status().isOk(),
 				jsonPath("$.isSuccess").value(true),

@@ -60,7 +60,7 @@ public class StudyModeApiIntegrationTest extends BaseIntegrationTest {
 
 		// when & then
 		mockMvc.perform(
-				post("/api/v1/questions-sets/{questionSetId}/study-mode", questionSet.getId()))
+				post("/api/v1/question-sets/{questionSetId}/study-mode", questionSet.getId()))
 			.andExpectAll(
 				status().isOk(),
 				jsonPath("$.isSuccess").value(true),
