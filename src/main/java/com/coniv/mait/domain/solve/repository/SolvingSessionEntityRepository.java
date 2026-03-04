@@ -9,5 +9,6 @@ import com.coniv.mait.domain.solve.entity.SolvingSessionEntity;
 
 public interface SolvingSessionEntityRepository extends JpaRepository<SolvingSessionEntity, Long> {
 
-	Optional<SolvingSessionEntity> findByUserIdAndQuestionSetIdAndMode(Long id, Long id1, DeliveryMode deliveryMode);
+	Optional<SolvingSessionEntity> findByUserIdAndQuestionSetIdAndMode(Long userId, Long questionSetId,
+		DeliveryMode deliveryMode);
 }
