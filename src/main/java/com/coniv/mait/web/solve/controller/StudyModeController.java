@@ -29,6 +29,7 @@ public class StudyModeController {
 	public ResponseEntity<ApiResponse<UserStudyModeApiResponse>> startStudySubmission(
 		@AuthenticationPrincipal MaitUser user,
 		@PathVariable("questionSetId") Long questionSetId) {
-		return ResponseEntity.ok(ApiResponse.ok(UserStudyModeApiResponse.from(studyModeService.startStudyMode(user, questionSetId))));
+		return ResponseEntity.ok(
+			ApiResponse.ok(UserStudyModeApiResponse.from(studyModeService.startStudyMode(user, questionSetId))));
 	}
 }
