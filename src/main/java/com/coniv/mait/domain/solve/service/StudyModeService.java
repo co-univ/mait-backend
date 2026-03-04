@@ -7,6 +7,7 @@ import com.coniv.mait.domain.question.enums.DeliveryMode;
 import com.coniv.mait.domain.question.repository.QuestionSetEntityRepository;
 import com.coniv.mait.domain.solve.entity.SolvingSessionEntity;
 import com.coniv.mait.domain.solve.repository.SolvingSessionEntityRepository;
+import com.coniv.mait.domain.solve.service.dto.SolvingSessionDto;
 import com.coniv.mait.domain.user.entity.UserEntity;
 import com.coniv.mait.domain.user.service.component.TeamRoleValidator;
 import com.coniv.mait.domain.user.service.component.UserReader;
@@ -26,7 +27,7 @@ public class StudyModeService {
 	private final QuestionSetEntityRepository questionSetEntityRepository;
 	private final SolvingSessionEntityRepository solvingSessionEntityRepository;
 
-	public void startStudyMode(final MaitUser maitUser, final Long questionSetId) {
+	public SolvingSessionDto startStudyMode(final MaitUser maitUser, final Long questionSetId) {
 		QuestionSetEntity questionSet = questionSetEntityRepository.findById(questionSetId)
 			.orElseThrow(() -> new EntityNotFoundException("존재하지 않는 문제 셋 입니다."));
 
@@ -38,6 +39,6 @@ public class StudyModeService {
 			user.getId(), questionSet.getId(),
 			DeliveryMode.STUDY).orElseGet(() -> SolvingSessionEntity.studySession(user, questionSet));
 
-		solvingSessionEntityRepository.save(solvingSessionEntity);
+		return SolvingSessionDto.from(solvingSessionEntityRepository.save(solvingSessionEntity));
 	}
 }

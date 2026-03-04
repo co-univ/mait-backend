@@ -64,6 +64,9 @@ public class StudyModeApiIntegrationTest extends BaseIntegrationTest {
 			.andExpectAll(
 				status().isOk(),
 				jsonPath("$.isSuccess").value(true),
-				jsonPath("$.data").doesNotExist());
+				jsonPath("$.data.solvingSessionId").exists(),
+				jsonPath("$.data.questionSetId").value(questionSet.getId()),
+				jsonPath("$.data.status").value("PROGRESSING"),
+				jsonPath("$.data.startedAt").exists());
 	}
 }
