@@ -59,6 +59,7 @@ class StudyModeServiceTest {
 			// given
 			QuestionSetEntity mockQuestionSet = mock(QuestionSetEntity.class);
 			UserEntity mockUser = mock(UserEntity.class);
+			SolvingSessionEntity savedSession = mock(SolvingSessionEntity.class);
 
 			when(questionSetEntityRepository.findById(questionSetId)).thenReturn(Optional.of(mockQuestionSet));
 			when(userReader.getById(userId)).thenReturn(mockUser);
@@ -68,6 +69,7 @@ class StudyModeServiceTest {
 			doNothing().when(teamRoleValidator).checkHasSolveQuestionAuthorityInTeam(teamId, userId);
 			when(solvingSessionEntityRepository.findByUserIdAndQuestionSetIdAndMode(userId, questionSetId,
 				DeliveryMode.STUDY)).thenReturn(Optional.empty());
+			when(solvingSessionEntityRepository.save(any(SolvingSessionEntity.class))).thenReturn(savedSession);
 
 			// when
 			studyModeService.startStudyMode(maitUser, questionSetId);
@@ -92,6 +94,7 @@ class StudyModeServiceTest {
 			doNothing().when(teamRoleValidator).checkHasSolveQuestionAuthorityInTeam(teamId, userId);
 			when(solvingSessionEntityRepository.findByUserIdAndQuestionSetIdAndMode(userId, questionSetId,
 				DeliveryMode.STUDY)).thenReturn(Optional.of(existingSession));
+			when(solvingSessionEntityRepository.save(existingSession)).thenReturn(existingSession);
 
 			// when
 			studyModeService.startStudyMode(maitUser, questionSetId);
