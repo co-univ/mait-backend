@@ -18,6 +18,7 @@ import jakarta.persistence.PostPersist;
 import jakarta.persistence.Table;
 import jakarta.persistence.Transient;
 import lombok.AccessLevel;
+import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.experimental.SuperBuilder;
@@ -60,8 +61,12 @@ public class StudyAnswerDraftEntity extends BaseTimeEntity implements Persistabl
 	}
 
 	public static StudyAnswerDraftEntity of(SolvingSessionEntity solvingSession, Long questionId) {
+		StudyAnswerDraftId key = StudyAnswerDraftId.builder()
+			.solvingSessionId(solvingSession.getId())
+			.questionId(questionId)
+			.build();
 		return StudyAnswerDraftEntity.builder()
-			.id(new StudyAnswerDraftId(solvingSession.getId(), questionId))
+			.id(key)
 			.solvingSession(solvingSession)
 			.build();
 	}
