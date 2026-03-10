@@ -1,7 +1,10 @@
 package com.coniv.mait.web.solve.controller;
 
+import java.util.List;
+
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -10,6 +13,7 @@ import org.springframework.web.bind.annotation.RestController;
 import com.coniv.mait.domain.solve.service.StudyModeService;
 import com.coniv.mait.global.auth.model.MaitUser;
 import com.coniv.mait.global.response.ApiResponse;
+import com.coniv.mait.web.solve.dto.StudyAnswerDraftApiResponse;
 import com.coniv.mait.web.solve.dto.UserStudyModeApiResponse;
 
 import io.swagger.v3.oas.annotations.Operation;
@@ -31,5 +35,13 @@ public class StudyModeController {
 		@PathVariable Long questionSetId) {
 		return ResponseEntity.ok(
 			ApiResponse.ok(UserStudyModeApiResponse.from(studyModeService.startStudyMode(user, questionSetId))));
+	}
+
+	@Operation(summary = "학습모드 초안 조회 API", description = "학습 모드 - 사용자 세션의 문제별 답안 초안을 조회합니다.")
+	@GetMapping("/drafts")
+	public ResponseEntity<ApiResponse<List<StudyAnswerDraftApiResponse>>> getStudyDrafts(
+		@AuthenticationPrincipal MaitUser user, @PathVariable Long questionSetId) {
+		return ResponseEntity.ok(ApiResponse.ok(
+			StudyAnswerDraftApiResponse.from(studyModeService.getStudyAnswerDrafts(user, questionSetId))));
 	}
 }

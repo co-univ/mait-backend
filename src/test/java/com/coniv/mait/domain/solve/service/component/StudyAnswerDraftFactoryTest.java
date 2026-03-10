@@ -72,6 +72,7 @@ class StudyAnswerDraftFactoryTest {
 			Assertions.assertNotNull(draft.getId());
 			assertThat(draft.getId().getSolvingSessionId()).isEqualTo(solvingSessionId);
 			assertThat(draft.getSubmittedAnswer()).isNull();
+			assertThat(draft.isSubmitted()).isFalse();
 		});
 		assertThat(Objects.requireNonNull(savedDrafts.get(0).getId()).getQuestionId()).isEqualTo(100L);
 		assertThat(Objects.requireNonNull(savedDrafts.get(1).getId()).getQuestionId()).isEqualTo(101L);
@@ -93,5 +94,22 @@ class StudyAnswerDraftFactoryTest {
 		// then
 		verify(studyAnswerDraftEntityRepository).saveAll(draftsCaptor.capture());
 		assertThat(draftsCaptor.getValue()).isEmpty();
+	}
+
+	@Test
+	@DisplayName("세션 ID로 draft 목록을 조회한다")
+	void getDraftsBySolvingSessionId_returnsDrafts() {
+		// given
+		StudyAnswerDraftEntity draft1 = mock(StudyAnswerDraftEntity.class);
+		StudyAnswerDraftEntity draft2 = mock(StudyAnswerDraftEntity.class);
+		when(studyAnswerDraftEntityRepository.findAllByIdSolvingSessionIdOrderByIdQuestionIdAsc(solvingSessionId))
+			.thenReturn(List.of(draft1, draft2));
+
+		// when
+		List<StudyAnswerDraftEntity> drafts = studyAnswerDraftFactory.getDraftsBySolvingSessionId(solvingSessionId);
+
+		// then
+		assertThat(drafts).containsExactly(draft1, draft2);
+		verify(studyAnswerDraftEntityRepository).findAllByIdSolvingSessionIdOrderByIdQuestionIdAsc(solvingSessionId);
 	}
 }
