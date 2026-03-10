@@ -18,6 +18,9 @@ spring:
         show_sql: true
         format_sql: true
         dialect: org.hibernate.dialect.H2Dialect
+        jdbc:
+          batch_size: 50
+        order_inserts: true
 
   # 테스트용 Redis 설정 (내장 Redis 또는 테스트용 Redis)
   data:
@@ -58,6 +61,11 @@ springdoc:
     enabled: false
   swagger-ui:
     enabled: false
+
+logging:
+  level:
+    org.hibernate.SQL: DEBUG
+    org.hibernate.orm.jdbc.bind: TRACE
 
 mait:
   base-url: http://localhost:3000
