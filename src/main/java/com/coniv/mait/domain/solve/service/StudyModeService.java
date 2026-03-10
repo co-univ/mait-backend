@@ -41,8 +41,8 @@ public class StudyModeService {
 
 		teamRoleValidator.checkHasSolveQuestionAuthorityInTeam(questionSet.getTeamId(), user.getId());
 
-		Optional<SolvingSessionEntity> maybeSession = solvingSessionEntityRepository.findByUserIdAndQuestionSetIdAndMode(
-			user.getId(), questionSet.getId(), DeliveryMode.STUDY);
+		Optional<SolvingSessionEntity> maybeSession = solvingSessionEntityRepository
+			.findByUserIdAndQuestionSetIdAndMode(user.getId(), questionSet.getId(), DeliveryMode.STUDY);
 
 		if (maybeSession.isPresent()) {
 			return SolvingSessionDto.from(maybeSession.get());
