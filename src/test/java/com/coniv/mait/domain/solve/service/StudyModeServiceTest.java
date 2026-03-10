@@ -18,6 +18,7 @@ import com.coniv.mait.domain.question.enums.DeliveryMode;
 import com.coniv.mait.domain.question.repository.QuestionSetEntityRepository;
 import com.coniv.mait.domain.solve.entity.SolvingSessionEntity;
 import com.coniv.mait.domain.solve.repository.SolvingSessionEntityRepository;
+import com.coniv.mait.domain.solve.service.component.StudyAnswerDraftFactory;
 import com.coniv.mait.domain.user.entity.UserEntity;
 import com.coniv.mait.domain.user.exception.UserRoleException;
 import com.coniv.mait.domain.user.service.component.TeamRoleValidator;
@@ -44,6 +45,9 @@ class StudyModeServiceTest {
 	@Mock
 	private SolvingSessionEntityRepository solvingSessionEntityRepository;
 
+	@Mock
+	private StudyAnswerDraftFactory studyAnswerDraftFactory;
+
 	@Nested
 	@DisplayName("startStudyMode 메서드")
 	class StartStudyMode {
@@ -54,7 +58,7 @@ class StudyModeServiceTest {
 		private final MaitUser maitUser = MaitUser.builder().id(userId).build();
 
 		@Test
-		@DisplayName("기존 세션이 없으면 새 세션을 생성하고 저장한다")
+		@DisplayName("기존 세션이 없으면 새 세션을 생성하고 draft를 생성한다")
 		void createNewSession_WhenNoExistingSession() {
 			// given
 			QuestionSetEntity mockQuestionSet = mock(QuestionSetEntity.class);
@@ -70,17 +74,20 @@ class StudyModeServiceTest {
 			when(solvingSessionEntityRepository.findByUserIdAndQuestionSetIdAndMode(userId, questionSetId,
 				DeliveryMode.STUDY)).thenReturn(Optional.empty());
 			when(solvingSessionEntityRepository.save(any(SolvingSessionEntity.class))).thenReturn(savedSession);
+			when(savedSession.getUser()).thenReturn(mockUser);
+			when(savedSession.getQuestionSet()).thenReturn(mockQuestionSet);
 
 			// when
 			studyModeService.startStudyMode(maitUser, questionSetId);
 
 			// then
 			verify(solvingSessionEntityRepository).save(any(SolvingSessionEntity.class));
+			verify(studyAnswerDraftFactory).createDrafts(savedSession, questionSetId);
 		}
 
 		@Test
-		@DisplayName("기존 세션이 있으면 해당 세션을 그대로 저장한다")
-		void saveExistingSession_WhenSessionAlreadyExists() {
+		@DisplayName("기존 세션이 있으면 저장 없이 바로 반환한다")
+		void returnExistingSession_WhenSessionAlreadyExists() {
 			// given
 			QuestionSetEntity mockQuestionSet = mock(QuestionSetEntity.class);
 			UserEntity mockUser = mock(UserEntity.class);
@@ -94,13 +101,15 @@ class StudyModeServiceTest {
 			doNothing().when(teamRoleValidator).checkHasSolveQuestionAuthorityInTeam(teamId, userId);
 			when(solvingSessionEntityRepository.findByUserIdAndQuestionSetIdAndMode(userId, questionSetId,
 				DeliveryMode.STUDY)).thenReturn(Optional.of(existingSession));
-			when(solvingSessionEntityRepository.save(existingSession)).thenReturn(existingSession);
+			when(existingSession.getUser()).thenReturn(mockUser);
+			when(existingSession.getQuestionSet()).thenReturn(mockQuestionSet);
 
 			// when
 			studyModeService.startStudyMode(maitUser, questionSetId);
 
 			// then
-			verify(solvingSessionEntityRepository).save(existingSession);
+			verify(solvingSessionEntityRepository, never()).save(any());
+			verify(studyAnswerDraftFactory, never()).createDrafts(any(), any());
 		}
 
 		@Test
