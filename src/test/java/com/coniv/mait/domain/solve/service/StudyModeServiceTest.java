@@ -204,7 +204,8 @@ class StudyModeServiceTest {
 			when(solvingSessionEntityRepository.findByUserIdAndQuestionSetIdAndMode(userId, questionSetId,
 				DeliveryMode.STUDY)).thenReturn(Optional.of(existingSession));
 			when(existingSession.getId()).thenReturn(solvingSessionId);
-			when(studyAnswerDraftFactory.getDraftsBySolvingSessionId(solvingSessionId)).thenReturn(List.of(draft1, draft2));
+			when(studyAnswerDraftFactory.getDraftsBySolvingSessionId(solvingSessionId)).thenReturn(
+				List.of(draft1, draft2));
 
 			// when
 			List<StudyAnswerDraftDto> result = studyModeService.getStudyAnswerDrafts(maitUser, questionSetId);

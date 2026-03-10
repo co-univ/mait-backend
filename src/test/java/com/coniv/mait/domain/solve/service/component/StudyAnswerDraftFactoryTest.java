@@ -67,13 +67,13 @@ class StudyAnswerDraftFactoryTest {
 		List<StudyAnswerDraftEntity> savedDrafts = draftsCaptor.getValue();
 
 		assertThat(savedDrafts).hasSize(3);
-			assertThat(savedDrafts).allSatisfy(draft -> {
-				assertThat(draft.getSolvingSession()).isEqualTo(solvingSession);
-				Assertions.assertNotNull(draft.getId());
-				assertThat(draft.getId().getSolvingSessionId()).isEqualTo(solvingSessionId);
-				assertThat(draft.getSubmittedAnswer()).isNull();
-				assertThat(draft.isSubmitted()).isFalse();
-			});
+		assertThat(savedDrafts).allSatisfy(draft -> {
+			assertThat(draft.getSolvingSession()).isEqualTo(solvingSession);
+			Assertions.assertNotNull(draft.getId());
+			assertThat(draft.getId().getSolvingSessionId()).isEqualTo(solvingSessionId);
+			assertThat(draft.getSubmittedAnswer()).isNull();
+			assertThat(draft.isSubmitted()).isFalse();
+		});
 		assertThat(Objects.requireNonNull(savedDrafts.get(0).getId()).getQuestionId()).isEqualTo(100L);
 		assertThat(Objects.requireNonNull(savedDrafts.get(1).getId()).getQuestionId()).isEqualTo(101L);
 		assertThat(Objects.requireNonNull(savedDrafts.get(2).getId()).getQuestionId()).isEqualTo(102L);
