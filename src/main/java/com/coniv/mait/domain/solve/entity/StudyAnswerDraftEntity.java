@@ -42,7 +42,12 @@ public class StudyAnswerDraftEntity extends BaseTimeEntity implements Persistabl
 	@Column(columnDefinition = "json")
 	private String submittedAnswer;
 
+	@Column(name = "submitted", nullable = false)
+	@Builder.Default
+	private boolean submitted = false;
+
 	@Transient
+	@Builder.Default
 	private boolean isNew = true;
 
 	@Override
@@ -58,6 +63,7 @@ public class StudyAnswerDraftEntity extends BaseTimeEntity implements Persistabl
 
 	public void updateSubmittedAnswer(String submittedAnswer) {
 		this.submittedAnswer = submittedAnswer;
+		this.submitted = true;
 	}
 
 	public static StudyAnswerDraftEntity of(SolvingSessionEntity solvingSession, Long questionId) {
