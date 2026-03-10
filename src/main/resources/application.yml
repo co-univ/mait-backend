@@ -22,6 +22,9 @@ spring:
         show_sql: false
         format_sql: true
         dialect: org.hibernate.dialect.MySQL8Dialect
+        jdbc:
+          batch_size: 50
+        order_inserts: true
         session:
           events:
             log:
