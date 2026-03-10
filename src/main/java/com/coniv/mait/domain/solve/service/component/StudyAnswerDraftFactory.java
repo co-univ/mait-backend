@@ -25,4 +25,8 @@ public class StudyAnswerDraftFactory {
 			.toList();
 		studyAnswerDraftEntityRepository.saveAll(drafts);
 	}
+
+	public List<StudyAnswerDraftEntity> getDraftsBySolvingSessionId(final Long solvingSessionId) {
+		return studyAnswerDraftEntityRepository.findAllByIdSolvingSessionIdOrderByIdQuestionIdAsc(solvingSessionId);
+	}
 }
