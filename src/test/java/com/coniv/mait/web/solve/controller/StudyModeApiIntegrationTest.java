@@ -126,4 +126,40 @@ public class StudyModeApiIntegrationTest extends BaseIntegrationTest {
 		assertThat(studyAnswerDraftEntityRepository.findAll()).hasSize(1);
 		assertThat(solvingSessionEntityRepository.findAll()).hasSize(1);
 	}
+
+	@Test
+	@DisplayName("학습모드 초안 조회 API 호출 시 세션의 draft 목록이 반환된다")
+	void getStudyModeDrafts_Success() throws Exception {
+		// given
+		UserEntity user = userEntityRepository.findByEmail("user@example.com").orElseThrow();
+		TeamEntity team = teamEntityRepository.save(
+			TeamEntity.builder().name("testTeam3").creatorId(user.getId()).build());
+		teamUserEntityRepository.save(TeamUserEntity.createPlayerUser(user, team));
+
+		QuestionSetEntity questionSet = questionSetEntityRepository.save(
+			QuestionSetEntity.builder()
+				.teamId(team.getId())
+				.build());
+
+		MultipleQuestionEntity q1 = questionEntityRepository.save(
+			MultipleQuestionEntity.builder().questionSet(questionSet).number(1L).lexoRank("a").build());
+		MultipleQuestionEntity q2 = questionEntityRepository.save(
+			MultipleQuestionEntity.builder().questionSet(questionSet).number(2L).lexoRank("b").build());
+
+		mockMvc.perform(
+				post("/api/v1/question-sets/{questionSetId}/study-mode", questionSet.getId()))
+			.andExpect(status().isOk());
+
+		// when & then
+		mockMvc.perform(
+				get("/api/v1/question-sets/{questionSetId}/study-mode/drafts", questionSet.getId()))
+			.andExpectAll(
+				status().isOk(),
+				jsonPath("$.isSuccess").value(true),
+				jsonPath("$.data[0].solvingSessionId").exists(),
+				jsonPath("$.data[0].questionId").value(q1.getId()),
+				jsonPath("$.data[0].submitted").value(false),
+				jsonPath("$.data[1].questionId").value(q2.getId()),
+				jsonPath("$.data[1].submitted").value(false));
+	}
 }
