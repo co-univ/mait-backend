@@ -1,5 +1,6 @@
 package com.coniv.mait.domain.solve.service;
 
+import java.util.List;
 import java.util.Optional;
 
 import org.springframework.stereotype.Service;
@@ -12,6 +13,7 @@ import com.coniv.mait.domain.solve.entity.SolvingSessionEntity;
 import com.coniv.mait.domain.solve.repository.SolvingSessionEntityRepository;
 import com.coniv.mait.domain.solve.service.component.StudyAnswerDraftFactory;
 import com.coniv.mait.domain.solve.service.dto.SolvingSessionDto;
+import com.coniv.mait.domain.solve.service.dto.StudyAnswerDraftDto;
 import com.coniv.mait.domain.user.entity.UserEntity;
 import com.coniv.mait.domain.user.service.component.TeamRoleValidator;
 import com.coniv.mait.domain.user.service.component.UserReader;
@@ -54,5 +56,22 @@ public class StudyModeService {
 		studyAnswerDraftFactory.createDrafts(solvingSession, questionSet.getId());
 
 		return SolvingSessionDto.from(solvingSession);
+	}
+
+	public List<StudyAnswerDraftDto> getStudyAnswerDrafts(final MaitUser maitUser, final Long questionSetId) {
+		QuestionSetEntity questionSet = questionSetEntityRepository.findById(questionSetId)
+			.orElseThrow(() -> new EntityNotFoundException("존재하지 않는 문제 셋 입니다."));
+
+		UserEntity user = userReader.getById(maitUser.id());
+
+		teamRoleValidator.checkHasSolveQuestionAuthorityInTeam(questionSet.getTeamId(), user.getId());
+
+		SolvingSessionEntity solvingSession = solvingSessionEntityRepository
+			.findByUserIdAndQuestionSetIdAndMode(user.getId(), questionSet.getId(), DeliveryMode.STUDY)
+			.orElseThrow(() -> new EntityNotFoundException("존재하지 않는 학습 세션 입니다."));
+
+		return studyAnswerDraftFactory.getDraftsBySolvingSessionId(solvingSession.getId()).stream()
+			.map(StudyAnswerDraftDto::from)
+			.toList();
 	}
 }

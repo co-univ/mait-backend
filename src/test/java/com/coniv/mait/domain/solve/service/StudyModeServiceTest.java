@@ -3,6 +3,7 @@ package com.coniv.mait.domain.solve.service;
 import static org.assertj.core.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
+import java.util.List;
 import java.util.Optional;
 
 import org.junit.jupiter.api.DisplayName;
@@ -17,8 +18,11 @@ import com.coniv.mait.domain.question.entity.QuestionSetEntity;
 import com.coniv.mait.domain.question.enums.DeliveryMode;
 import com.coniv.mait.domain.question.repository.QuestionSetEntityRepository;
 import com.coniv.mait.domain.solve.entity.SolvingSessionEntity;
+import com.coniv.mait.domain.solve.entity.StudyAnswerDraftEntity;
+import com.coniv.mait.domain.solve.entity.StudyAnswerDraftId;
 import com.coniv.mait.domain.solve.repository.SolvingSessionEntityRepository;
 import com.coniv.mait.domain.solve.service.component.StudyAnswerDraftFactory;
+import com.coniv.mait.domain.solve.service.dto.StudyAnswerDraftDto;
 import com.coniv.mait.domain.user.entity.UserEntity;
 import com.coniv.mait.domain.user.exception.UserRoleException;
 import com.coniv.mait.domain.user.service.component.TeamRoleValidator;
@@ -160,6 +164,81 @@ class StudyModeServiceTest {
 				.isInstanceOf(UserRoleException.class);
 
 			verify(solvingSessionEntityRepository, never()).save(any());
+		}
+	}
+
+	@Nested
+	@DisplayName("getStudyAnswerDrafts 메서드")
+	class GetStudyAnswerDrafts {
+
+		private final Long userId = 1L;
+		private final Long questionSetId = 10L;
+		private final Long teamId = 100L;
+		private final Long solvingSessionId = 1000L;
+		private final MaitUser maitUser = MaitUser.builder().id(userId).build();
+
+		@Test
+		@DisplayName("학습 세션의 draft 목록을 DTO로 반환한다")
+		void returnsDraftDtos() {
+			// given
+			QuestionSetEntity mockQuestionSet = mock(QuestionSetEntity.class);
+			UserEntity mockUser = mock(UserEntity.class);
+			SolvingSessionEntity existingSession = mock(SolvingSessionEntity.class);
+
+			StudyAnswerDraftEntity draft1 = StudyAnswerDraftEntity.builder()
+				.id(new StudyAnswerDraftId(solvingSessionId, 101L))
+				.submittedAnswer("{\"a\":1}")
+				.submitted(true)
+				.build();
+			StudyAnswerDraftEntity draft2 = StudyAnswerDraftEntity.builder()
+				.id(new StudyAnswerDraftId(solvingSessionId, 102L))
+				.submittedAnswer(null)
+				.submitted(false)
+				.build();
+
+			when(questionSetEntityRepository.findById(questionSetId)).thenReturn(Optional.of(mockQuestionSet));
+			when(userReader.getById(userId)).thenReturn(mockUser);
+			when(mockQuestionSet.getTeamId()).thenReturn(teamId);
+			when(mockUser.getId()).thenReturn(userId);
+			when(mockQuestionSet.getId()).thenReturn(questionSetId);
+			when(solvingSessionEntityRepository.findByUserIdAndQuestionSetIdAndMode(userId, questionSetId,
+				DeliveryMode.STUDY)).thenReturn(Optional.of(existingSession));
+			when(existingSession.getId()).thenReturn(solvingSessionId);
+			when(studyAnswerDraftFactory.getDraftsBySolvingSessionId(solvingSessionId)).thenReturn(List.of(draft1, draft2));
+
+			// when
+			List<StudyAnswerDraftDto> result = studyModeService.getStudyAnswerDrafts(maitUser, questionSetId);
+
+			// then
+			assertThat(result).hasSize(2);
+			assertThat(result.get(0).getSolvingSessionId()).isEqualTo(solvingSessionId);
+			assertThat(result.get(0).getQuestionId()).isEqualTo(101L);
+			assertThat(result.get(0).getSubmittedAnswer()).isEqualTo("{\"a\":1}");
+			assertThat(result.get(0).isSubmitted()).isTrue();
+			assertThat(result.get(1).getQuestionId()).isEqualTo(102L);
+			assertThat(result.get(1).getSubmittedAnswer()).isNull();
+			assertThat(result.get(1).isSubmitted()).isFalse();
+		}
+
+		@Test
+		@DisplayName("학습 세션이 없으면 EntityNotFoundException이 발생한다")
+		void throwsException_WhenSessionNotFound() {
+			// given
+			QuestionSetEntity mockQuestionSet = mock(QuestionSetEntity.class);
+			UserEntity mockUser = mock(UserEntity.class);
+
+			when(questionSetEntityRepository.findById(questionSetId)).thenReturn(Optional.of(mockQuestionSet));
+			when(userReader.getById(userId)).thenReturn(mockUser);
+			when(mockQuestionSet.getTeamId()).thenReturn(teamId);
+			when(mockUser.getId()).thenReturn(userId);
+			when(mockQuestionSet.getId()).thenReturn(questionSetId);
+			when(solvingSessionEntityRepository.findByUserIdAndQuestionSetIdAndMode(userId, questionSetId,
+				DeliveryMode.STUDY)).thenReturn(Optional.empty());
+
+			// when & then
+			assertThatThrownBy(() -> studyModeService.getStudyAnswerDrafts(maitUser, questionSetId))
+				.isInstanceOf(EntityNotFoundException.class)
+				.hasMessage("존재하지 않는 학습 세션 입니다.");
 		}
 	}
 }
