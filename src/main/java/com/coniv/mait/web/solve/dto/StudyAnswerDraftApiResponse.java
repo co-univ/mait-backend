@@ -16,14 +16,18 @@ public record StudyAnswerDraftApiResponse(
 	@Schema(description = "제출 여부", requiredMode = Schema.RequiredMode.REQUIRED)
 	boolean submitted
 ) {
+	public static StudyAnswerDraftApiResponse from(StudyAnswerDraftDto dto) {
+		return new StudyAnswerDraftApiResponse(
+			dto.getSolvingSessionId(),
+			dto.getQuestionId(),
+			dto.getSubmittedAnswer(),
+			dto.isSubmitted()
+		);
+	}
+
 	public static List<StudyAnswerDraftApiResponse> from(List<StudyAnswerDraftDto> dtos) {
 		return dtos.stream()
-			.map(dto -> new StudyAnswerDraftApiResponse(
-				dto.getSolvingSessionId(),
-				dto.getQuestionId(),
-				dto.getSubmittedAnswer(),
-				dto.isSubmitted()
-			))
+			.map(StudyAnswerDraftApiResponse::from)
 			.toList();
 	}
 }
