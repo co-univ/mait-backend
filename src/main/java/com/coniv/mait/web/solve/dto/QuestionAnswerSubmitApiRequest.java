@@ -27,7 +27,7 @@ import lombok.experimental.SuperBuilder;
 @SuperBuilder
 public abstract class QuestionAnswerSubmitApiRequest {
 
-	@Schema(description = "문제 PK, 추후에 삭제 예정")
+	@Schema(description = "문제 PK, 추후에 삭제 예정, 학습모드의 경우 해당 필드를 입력하지 않아도 무관")
 	private Long userId;
 
 	public abstract SubmitAnswerDto<?> getSubmitAnswers();
