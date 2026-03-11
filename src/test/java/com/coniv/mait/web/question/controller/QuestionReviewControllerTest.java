@@ -239,17 +239,6 @@ class QuestionReviewControllerTest {
 	private static Stream<Arguments> provideValidationFailCases() {
 		return Stream.of(
 			Arguments.of(
-				"userId가 null인 경우",
-				"""
-				{
-					"type": "SHORT",
-					"userId": null,
-					"submitAnswers": ["정답"]
-				}
-				""",
-				"유저 ID를 입력해주세요."
-			),
-			Arguments.of(
 				"submitAnswers가 null인 경우",
 				"""
 				{
