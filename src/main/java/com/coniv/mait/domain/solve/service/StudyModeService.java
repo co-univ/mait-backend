@@ -10,14 +10,20 @@ import com.coniv.mait.domain.question.entity.QuestionSetEntity;
 import com.coniv.mait.domain.question.enums.DeliveryMode;
 import com.coniv.mait.domain.question.repository.QuestionSetEntityRepository;
 import com.coniv.mait.domain.solve.entity.SolvingSessionEntity;
+import com.coniv.mait.domain.solve.entity.StudyAnswerDraftEntity;
+import com.coniv.mait.domain.solve.entity.StudyAnswerDraftId;
 import com.coniv.mait.domain.solve.repository.SolvingSessionEntityRepository;
+import com.coniv.mait.domain.solve.repository.StudyAnswerDraftEntityRepository;
 import com.coniv.mait.domain.solve.service.component.StudyAnswerDraftFactory;
 import com.coniv.mait.domain.solve.service.dto.SolvingSessionDto;
 import com.coniv.mait.domain.solve.service.dto.StudyAnswerDraftDto;
+import com.coniv.mait.domain.solve.service.dto.SubmitAnswerDto;
 import com.coniv.mait.domain.user.entity.UserEntity;
 import com.coniv.mait.domain.user.service.component.TeamRoleValidator;
 import com.coniv.mait.domain.user.service.component.UserReader;
 import com.coniv.mait.global.auth.model.MaitUser;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
@@ -28,11 +34,14 @@ import lombok.extern.slf4j.Slf4j;
 @RequiredArgsConstructor
 public class StudyModeService {
 
+	private final ObjectMapper objectMapper;
 	private final UserReader userReader;
 	private final TeamRoleValidator teamRoleValidator;
+	private final StudyAnswerDraftFactory studyAnswerDraftFactory;
+
 	private final QuestionSetEntityRepository questionSetEntityRepository;
 	private final SolvingSessionEntityRepository solvingSessionEntityRepository;
-	private final StudyAnswerDraftFactory studyAnswerDraftFactory;
+	private final StudyAnswerDraftEntityRepository studyAnswerDraftEntityRepository;
 
 	@Transactional
 	public SolvingSessionDto startStudyMode(final MaitUser maitUser, final Long questionSetId) {
@@ -73,5 +82,32 @@ public class StudyModeService {
 		return studyAnswerDraftFactory.getDraftsBySolvingSessionId(solvingSession.getId()).stream()
 			.map(StudyAnswerDraftDto::from)
 			.toList();
+	}
+
+	@Transactional
+	public StudyAnswerDraftDto updateStudyAnswerDraft(final MaitUser maitUser, final Long questionSetId,
+		final Long questionId, final SubmitAnswerDto<?> submittedAnswer) throws JsonProcessingException {
+		QuestionSetEntity questionSet = questionSetEntityRepository.findById(questionSetId)
+			.orElseThrow(() -> new EntityNotFoundException("존재하지 않는 문제 셋 입니다."));
+
+		UserEntity user = userReader.getById(maitUser.id());
+
+		teamRoleValidator.checkHasSolveQuestionAuthorityInTeam(questionSet.getTeamId(), user.getId());
+
+		SolvingSessionEntity solvingSession = solvingSessionEntityRepository
+			.findByUserIdAndQuestionSetIdAndMode(user.getId(), questionSet.getId(), DeliveryMode.STUDY)
+			.orElseThrow(() -> new EntityNotFoundException("존재하지 않는 학습 세션 입니다."));
+
+		StudyAnswerDraftId draftId = StudyAnswerDraftId.builder()
+			.solvingSessionId(solvingSession.getId())
+			.questionId(questionId)
+			.build();
+
+		StudyAnswerDraftEntity draft = studyAnswerDraftEntityRepository.findById(draftId)
+			.orElseThrow(() -> new EntityNotFoundException("존재하지 않는 답안 초안 입니다."));
+
+		draft.updateSubmittedAnswer(objectMapper.writeValueAsString(submittedAnswer));
+
+		return StudyAnswerDraftDto.from(draft);
 	}
 }
