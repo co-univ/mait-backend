@@ -13,6 +13,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.http.MediaType;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
@@ -21,8 +22,12 @@ import com.coniv.mait.domain.solve.enums.SolvingStatus;
 import com.coniv.mait.domain.solve.service.StudyModeService;
 import com.coniv.mait.domain.solve.service.dto.SolvingSessionDto;
 import com.coniv.mait.domain.solve.service.dto.StudyAnswerDraftDto;
+import com.coniv.mait.domain.solve.service.dto.SubmitAnswerDto;
+import com.coniv.mait.domain.user.exception.UserRoleException;
 import com.coniv.mait.global.filter.JwtAuthorizationFilter;
 import com.coniv.mait.global.interceptor.idempotency.IdempotencyInterceptor;
+
+import jakarta.persistence.EntityNotFoundException;
 
 @WebMvcTest(controllers = StudyModeController.class)
 @AutoConfigureMockMvc(addFilters = false)
@@ -104,5 +109,85 @@ class StudyModeControllerTest {
 				jsonPath("$.data[1].submitted").value(false));
 
 		verify(studyModeService).getStudyAnswerDrafts(any(), eq(questionSetId));
+	}
+
+	@Test
+	@DisplayName("학습모드 답안 초안 업데이트 성공")
+	void updateStudyDraft_Success() throws Exception {
+		// given
+		Long questionSetId = 1L;
+		Long questionId = 11L;
+
+		StudyAnswerDraftDto updatedDraft = StudyAnswerDraftDto.builder()
+			.solvingSessionId(100L)
+			.questionId(questionId)
+			.submittedAnswer("{\"submitAnswers\":[\"답안\"],\"type\":\"SHORT\"}")
+			.submitted(true)
+			.build();
+
+		given(studyModeService.updateStudyAnswerDraft(any(), eq(questionSetId), eq(questionId),
+			any(SubmitAnswerDto.class))).willReturn(updatedDraft);
+
+		// when & then
+		mockMvc.perform(
+				patch("/api/v1/question-sets/{questionSetId}/study-mode/drafts/{questionId}",
+					questionSetId, questionId)
+					.contentType(MediaType.APPLICATION_JSON)
+					.content("{\"type\":\"SHORT\",\"submitAnswers\":[\"답안\"]}"))
+			.andExpectAll(
+				status().isOk(),
+				jsonPath("$.isSuccess").value(true),
+				jsonPath("$.data.solvingSessionId").value(100),
+				jsonPath("$.data.questionId").value(questionId),
+				jsonPath("$.data.submitted").value(true));
+
+		verify(studyModeService).updateStudyAnswerDraft(any(), eq(questionSetId), eq(questionId),
+			any(SubmitAnswerDto.class));
+	}
+
+	@Test
+	@DisplayName("학습모드 답안 초안 업데이트 실패 - 존재하지 않는 리소스")
+	void updateStudyDraft_Fail_EntityNotFound() throws Exception {
+		// given
+		Long questionSetId = 1L;
+		Long questionId = 11L;
+
+		given(studyModeService.updateStudyAnswerDraft(any(), eq(questionSetId), eq(questionId),
+			any(SubmitAnswerDto.class))).willThrow(new EntityNotFoundException("존재하지 않는 문제 셋 입니다."));
+
+		// when & then
+		mockMvc.perform(
+				patch("/api/v1/question-sets/{questionSetId}/study-mode/drafts/{questionId}",
+					questionSetId, questionId)
+					.contentType(MediaType.APPLICATION_JSON)
+					.content("{\"type\":\"SHORT\",\"submitAnswers\":[\"답안\"]}"))
+			.andExpectAll(
+				status().isNotFound(),
+				jsonPath("$.isSuccess").value(false),
+				jsonPath("$.code").value("C-002"),
+				jsonPath("$.reasons[0]").value("존재하지 않는 문제 셋 입니다."));
+	}
+
+	@Test
+	@DisplayName("학습모드 답안 초안 업데이트 실패 - 권한 없음")
+	void updateStudyDraft_Fail_UserRoleForbidden() throws Exception {
+		// given
+		Long questionSetId = 1L;
+		Long questionId = 11L;
+
+		given(studyModeService.updateStudyAnswerDraft(any(), eq(questionSetId), eq(questionId),
+			any(SubmitAnswerDto.class))).willThrow(new UserRoleException("해당 문제를 풀 수 있는 권한이 없습니다."));
+
+		// when & then
+		mockMvc.perform(
+				patch("/api/v1/question-sets/{questionSetId}/study-mode/drafts/{questionId}",
+					questionSetId, questionId)
+					.contentType(MediaType.APPLICATION_JSON)
+					.content("{\"type\":\"SHORT\",\"submitAnswers\":[\"답안\"]}"))
+			.andExpectAll(
+				status().isForbidden(),
+				jsonPath("$.isSuccess").value(false),
+				jsonPath("$.code").value("C-008"),
+				jsonPath("$.reasons[0]").value("해당 문제를 풀 수 있는 권한이 없습니다."));
 	}
 }

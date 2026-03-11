@@ -6,7 +6,6 @@ import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 
 import io.swagger.v3.oas.annotations.media.Schema;
-import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -28,8 +27,7 @@ import lombok.experimental.SuperBuilder;
 @SuperBuilder
 public abstract class QuestionAnswerSubmitApiRequest {
 
-	@Schema(description = "문제 PK, 추후에 삭제 예정")
-	@NotNull(message = "유저 ID를 입력해주세요.")
+	@Schema(description = "문제 PK, 추후에 삭제 예정, 학습모드의 경우 해당 필드를 입력하지 않아도 무관")
 	private Long userId;
 
 	public abstract SubmitAnswerDto<?> getSubmitAnswers();

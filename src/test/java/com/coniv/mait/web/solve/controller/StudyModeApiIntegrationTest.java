@@ -10,6 +10,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.MediaType;
 
 import com.coniv.mait.domain.question.entity.MultipleQuestionEntity;
 import com.coniv.mait.domain.question.entity.QuestionSetEntity;
@@ -161,5 +162,48 @@ public class StudyModeApiIntegrationTest extends BaseIntegrationTest {
 				jsonPath("$.data[0].submitted").value(false),
 				jsonPath("$.data[1].questionId").value(q2.getId()),
 				jsonPath("$.data[1].submitted").value(false));
+	}
+
+	@Test
+	@DisplayName("학습모드 답안 초안 업데이트 시 답안이 저장되고 submitted가 true로 변경된다")
+	void updateStudyDraft_Success() throws Exception {
+		// given
+		UserEntity user = userEntityRepository.findByEmail("user@example.com").orElseThrow();
+		TeamEntity team = teamEntityRepository.save(
+			TeamEntity.builder().name("testTeam4").creatorId(user.getId()).build());
+		teamUserEntityRepository.save(TeamUserEntity.createPlayerUser(user, team));
+
+		QuestionSetEntity questionSet = questionSetEntityRepository.save(
+			QuestionSetEntity.builder()
+				.teamId(team.getId())
+				.build());
+
+		MultipleQuestionEntity q1 = questionEntityRepository.save(
+			MultipleQuestionEntity.builder().questionSet(questionSet).number(1L).lexoRank("a").build());
+
+		mockMvc.perform(
+				post("/api/v1/question-sets/{questionSetId}/study-mode", questionSet.getId()))
+			.andExpect(status().isOk());
+
+		// when & then
+		mockMvc.perform(
+				patch("/api/v1/question-sets/{questionSetId}/study-mode/drafts/{questionId}",
+					questionSet.getId(), q1.getId())
+					.contentType(MediaType.APPLICATION_JSON)
+					.content("{\"type\":\"SHORT\",\"submitAnswers\":[\"답안1\"]}"))
+			.andExpectAll(
+				status().isOk(),
+				jsonPath("$.isSuccess").value(true),
+				jsonPath("$.data.solvingSessionId").exists(),
+				jsonPath("$.data.questionId").value(q1.getId()),
+				jsonPath("$.data.submittedAnswer").exists(),
+				jsonPath("$.data.submitted").value(true));
+
+		StudyAnswerDraftEntity updatedDraft = studyAnswerDraftEntityRepository.findAll().stream()
+			.filter(d -> d.getId().getQuestionId().equals(q1.getId()))
+			.findFirst()
+			.orElseThrow();
+		assertThat(updatedDraft.isSubmitted()).isTrue();
+		assertThat(updatedDraft.getSubmittedAnswer()).contains("답안1");
 	}
 }

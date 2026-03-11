@@ -141,16 +141,6 @@ class QuestionAnswerSubmitControllerTest {
 	static Stream<Arguments> validationFailureCases() {
 		return Stream.of(
 			Arguments.of(
-				"userId가 null인 경우",
-				"""
-					{
-						"type": "MULTIPLE",
-						"userId": null,
-						"submitAnswers": [1]
-					}
-					""",
-				"유저 ID를 입력해주세요."),
-			Arguments.of(
 				"객관식 문제에서 submitAnswers가 null인 경우",
 				"""
 					{
