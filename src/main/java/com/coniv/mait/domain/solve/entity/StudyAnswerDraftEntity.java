@@ -61,11 +61,6 @@ public class StudyAnswerDraftEntity extends BaseTimeEntity implements Persistabl
 		this.isNew = false;
 	}
 
-	public void updateSubmittedAnswer(String submittedAnswer) {
-		this.submittedAnswer = submittedAnswer;
-		this.submitted = true;
-	}
-
 	public static StudyAnswerDraftEntity of(SolvingSessionEntity solvingSession, Long questionId) {
 		StudyAnswerDraftId key = StudyAnswerDraftId.builder()
 			.solvingSessionId(solvingSession.getId())
@@ -75,5 +70,14 @@ public class StudyAnswerDraftEntity extends BaseTimeEntity implements Persistabl
 			.id(key)
 			.solvingSession(solvingSession)
 			.build();
+	}
+
+	public void updateSubmittedAnswer(String submittedAnswer) {
+		this.submittedAnswer = submittedAnswer;
+		this.submitted = true;
+	}
+
+	public Long getQuestionId() {
+		return id.getQuestionId();
 	}
 }

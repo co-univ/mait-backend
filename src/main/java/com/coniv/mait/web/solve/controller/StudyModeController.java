@@ -17,6 +17,7 @@ import com.coniv.mait.global.auth.model.MaitUser;
 import com.coniv.mait.global.response.ApiResponse;
 import com.coniv.mait.web.solve.dto.QuestionAnswerSubmitApiRequest;
 import com.coniv.mait.web.solve.dto.StudyAnswerDraftApiResponse;
+import com.coniv.mait.web.solve.dto.StudyGradeResultApiResponse;
 import com.coniv.mait.web.solve.dto.UserStudyModeApiResponse;
 import com.fasterxml.jackson.core.JsonProcessingException;
 
@@ -48,6 +49,15 @@ public class StudyModeController {
 		@AuthenticationPrincipal MaitUser user, @PathVariable Long questionSetId) {
 		return ResponseEntity.ok(ApiResponse.ok(
 			StudyAnswerDraftApiResponse.from(studyModeService.getStudyAnswerDrafts(user, questionSetId))));
+	}
+
+	@Operation(summary = "학습모드 채점 API", description = "학습 모드 - 전체 답안을 채점합니다. 미제출 문제는 오답 처리됩니다.")
+	@PostMapping("/grade")
+	public ResponseEntity<ApiResponse<StudyGradeResultApiResponse>> gradeStudySession(
+		@AuthenticationPrincipal MaitUser user,
+		@PathVariable Long questionSetId) {
+		return ResponseEntity.ok(ApiResponse.ok(
+			StudyGradeResultApiResponse.from(studyModeService.gradeStudySession(user, questionSetId))));
 	}
 
 	@Operation(summary = "학습모드 답안 업데이트 API", description = "학습 모드 - 특정 문제의 답안 초안을 업데이트합니다.")

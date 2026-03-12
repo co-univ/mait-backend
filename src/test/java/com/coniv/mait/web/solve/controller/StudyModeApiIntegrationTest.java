@@ -14,9 +14,15 @@ import org.springframework.http.MediaType;
 
 import com.coniv.mait.domain.question.entity.MultipleQuestionEntity;
 import com.coniv.mait.domain.question.entity.QuestionSetEntity;
+import com.coniv.mait.domain.question.entity.ShortAnswerEntity;
+import com.coniv.mait.domain.question.entity.ShortQuestionEntity;
 import com.coniv.mait.domain.question.repository.QuestionEntityRepository;
 import com.coniv.mait.domain.question.repository.QuestionSetEntityRepository;
+import com.coniv.mait.domain.question.repository.ShortAnswerEntityRepository;
+import com.coniv.mait.domain.solve.entity.AnswerSubmitRecordEntity;
+import com.coniv.mait.domain.solve.entity.SolvingSessionEntity;
 import com.coniv.mait.domain.solve.entity.StudyAnswerDraftEntity;
+import com.coniv.mait.domain.solve.repository.AnswerSubmitRecordEntityRepository;
 import com.coniv.mait.domain.solve.repository.SolvingSessionEntityRepository;
 import com.coniv.mait.domain.solve.repository.StudyAnswerDraftEntityRepository;
 import com.coniv.mait.domain.team.entity.TeamEntity;
@@ -52,8 +58,15 @@ public class StudyModeApiIntegrationTest extends BaseIntegrationTest {
 	@Autowired
 	private StudyAnswerDraftEntityRepository studyAnswerDraftEntityRepository;
 
+	@Autowired
+	private ShortAnswerEntityRepository shortAnswerEntityRepository;
+
+	@Autowired
+	private AnswerSubmitRecordEntityRepository answerSubmitRecordEntityRepository;
+
 	@BeforeEach
 	void clear() {
+		answerSubmitRecordEntityRepository.deleteAll();
 		solvingSessionEntityRepository.deleteAll();
 		questionSetEntityRepository.deleteAll();
 	}
@@ -162,6 +175,69 @@ public class StudyModeApiIntegrationTest extends BaseIntegrationTest {
 				jsonPath("$.data[0].submitted").value(false),
 				jsonPath("$.data[1].questionId").value(q2.getId()),
 				jsonPath("$.data[1].submitted").value(false));
+	}
+
+	@Test
+	@DisplayName("학습모드 채점 시 제출된 답안은 채점되고 미제출 답안은 오답 처리된다")
+	void gradeStudySession_Success() throws Exception {
+		// given
+		UserEntity user = userEntityRepository.findByEmail("user@example.com").orElseThrow();
+		TeamEntity team = teamEntityRepository.save(
+			TeamEntity.builder().name("gradeTeam").creatorId(user.getId()).build());
+		teamUserEntityRepository.save(TeamUserEntity.createPlayerUser(user, team));
+
+		QuestionSetEntity questionSet = questionSetEntityRepository.save(
+			QuestionSetEntity.builder()
+				.teamId(team.getId())
+				.build());
+
+		ShortQuestionEntity q1 = questionEntityRepository.save(
+			ShortQuestionEntity.builder()
+				.questionSet(questionSet).number(1L).lexoRank("a").answerCount(1).build());
+		ShortQuestionEntity q2 = questionEntityRepository.save(
+			ShortQuestionEntity.builder()
+				.questionSet(questionSet).number(2L).lexoRank("b").answerCount(1).build());
+
+		shortAnswerEntityRepository.save(
+			ShortAnswerEntity.builder()
+				.shortQuestionId(q1.getId()).answer("정답").number(1L).isMain(true).build());
+		shortAnswerEntityRepository.save(
+			ShortAnswerEntity.builder()
+				.shortQuestionId(q2.getId()).answer("정답2").number(1L).isMain(true).build());
+
+		mockMvc.perform(
+				post("/api/v1/question-sets/{questionSetId}/study-mode", questionSet.getId()))
+			.andExpect(status().isOk());
+
+		mockMvc.perform(
+				patch("/api/v1/question-sets/{questionSetId}/study-mode/drafts/{questionId}",
+					questionSet.getId(), q1.getId())
+					.contentType(MediaType.APPLICATION_JSON)
+					.content("{\"type\":\"SHORT\",\"submitAnswers\":[\"정답\"]}"))
+			.andExpect(status().isOk());
+
+		// when & then
+		mockMvc.perform(
+				post("/api/v1/question-sets/{questionSetId}/study-mode/grade", questionSet.getId()))
+			.andExpectAll(
+				status().isOk(),
+				jsonPath("$.isSuccess").value(true),
+				jsonPath("$.data.questionSetId").value(questionSet.getId()),
+				jsonPath("$.data.solvingSessionId").exists(),
+				jsonPath("$.data.totalCount").value(2),
+				jsonPath("$.data.correctCount").value(1),
+				jsonPath("$.data.results").isArray(),
+				jsonPath("$.data.results.length()").value(2));
+
+		List<AnswerSubmitRecordEntity> records = answerSubmitRecordEntityRepository.findAll();
+		assertThat(records).hasSize(2);
+		assertThat(records).filteredOn(AnswerSubmitRecordEntity::isCorrect).hasSize(1);
+
+		SolvingSessionEntity session = solvingSessionEntityRepository.findAll().getFirst();
+		assertThat(session.getStatus()).isEqualTo(com.coniv.mait.domain.solve.enums.SolvingStatus.COMPLETE);
+		assertThat(session.getTotalCount()).isEqualTo(2);
+		assertThat(session.getCorrectCount()).isEqualTo(1);
+		assertThat(session.getSubmittedAt()).isNotNull();
 	}
 
 	@Test
