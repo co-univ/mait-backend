@@ -34,7 +34,6 @@ public class AnswerSubmitRecordEntity extends BaseTimeEntity {
 	@Column(nullable = false)
 	private Long questionId;
 
-	@Column(nullable = false)
 	private Long submitOrder;
 
 	@Column(nullable = false)
