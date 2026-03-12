@@ -14,7 +14,9 @@ public record QuestionAnswerSubmitApiResponse(
 	@Schema(description = "제출한 문제 PK", requiredMode = Schema.RequiredMode.REQUIRED)
 	Long questionId,
 	@Schema(description = "정/오답 여부", requiredMode = Schema.RequiredMode.REQUIRED)
-	boolean isCorrect
+	boolean isCorrect,
+	@Schema(description = "제출한 답안", requiredMode = Schema.RequiredMode.NOT_REQUIRED)
+	String submittedAnswer
 ) {
 
 	public static QuestionAnswerSubmitApiResponse from(AnswerSubmitDto answerSubmitDto) {
@@ -23,6 +25,7 @@ public record QuestionAnswerSubmitApiResponse(
 			.userId(answerSubmitDto.getUserId())
 			.questionId(answerSubmitDto.getQuestionId())
 			.isCorrect(answerSubmitDto.isCorrect())
+			.submittedAnswer(answerSubmitDto.getSubmittedAnswer())
 			.build();
 	}
 }
