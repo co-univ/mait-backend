@@ -59,6 +59,17 @@ public class SolvingSessionEntity extends BaseTimeEntity {
 
 	private LocalDateTime submittedAt;
 
+	private Integer totalCount;
+
+	private Integer correctCount;
+
+	public void submit(int totalCount, int correctCount) {
+		this.status = SolvingStatus.COMPLETE;
+		this.submittedAt = LocalDateTime.now();
+		this.totalCount = totalCount;
+		this.correctCount = correctCount;
+	}
+
 	public static SolvingSessionEntity studySession(UserEntity user, QuestionSetEntity questionSet) {
 		return SolvingSessionEntity.builder()
 			.user(user)
