@@ -13,17 +13,25 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import com.coniv.mait.domain.question.entity.QuestionEntity;
 import com.coniv.mait.domain.question.entity.QuestionSetEntity;
 import com.coniv.mait.domain.question.enums.DeliveryMode;
 import com.coniv.mait.domain.question.repository.QuestionSetEntityRepository;
+import com.coniv.mait.domain.question.service.component.QuestionReader;
 import com.coniv.mait.domain.solve.entity.SolvingSessionEntity;
 import com.coniv.mait.domain.solve.entity.StudyAnswerDraftEntity;
 import com.coniv.mait.domain.solve.entity.StudyAnswerDraftId;
+import com.coniv.mait.domain.solve.enums.SolvingStatus;
+import com.coniv.mait.domain.solve.exception.QuestionSolveExceptionCode;
+import com.coniv.mait.domain.solve.exception.QuestionSolvingException;
+import com.coniv.mait.domain.solve.repository.AnswerSubmitRecordEntityRepository;
 import com.coniv.mait.domain.solve.repository.SolvingSessionEntityRepository;
 import com.coniv.mait.domain.solve.repository.StudyAnswerDraftEntityRepository;
+import com.coniv.mait.domain.solve.service.component.AnswerGrader;
 import com.coniv.mait.domain.solve.service.component.StudyAnswerDraftFactory;
 import com.coniv.mait.domain.solve.service.dto.ShortQuestionSubmitAnswer;
 import com.coniv.mait.domain.solve.service.dto.StudyAnswerDraftDto;
+import com.coniv.mait.domain.solve.service.dto.StudyGradeResultDto;
 import com.coniv.mait.domain.solve.service.dto.SubmitAnswerDto;
 import com.coniv.mait.domain.user.entity.UserEntity;
 import com.coniv.mait.domain.user.exception.UserRoleException;
@@ -63,6 +71,15 @@ class StudyModeServiceTest {
 
 	@Mock
 	private StudyAnswerDraftFactory studyAnswerDraftFactory;
+
+	@Mock
+	private AnswerSubmitRecordEntityRepository answerSubmitRecordEntityRepository;
+
+	@Mock
+	private QuestionReader questionReader;
+
+	@Mock
+	private AnswerGrader answerGrader;
 
 	@Mock
 	private ObjectMapper objectMapper;
@@ -235,6 +252,129 @@ class StudyModeServiceTest {
 		assertThatThrownBy(() -> studyModeService.getStudyAnswerDrafts(MAIT_USER, QUESTION_SET_ID))
 			.isInstanceOf(EntityNotFoundException.class)
 			.hasMessage("존재하지 않는 학습 세션 입니다.");
+	}
+
+	@Test
+	@DisplayName("gradeStudySession - 제출/미제출 답안을 채점하고 결과를 반환한다")
+	void gradeStudySession_success() {
+		// given
+		Long solvingSessionId = 1000L;
+		Long questionId1 = 101L;
+		Long questionId2 = 102L;
+		String submittedAnswer = "{\"type\":\"SHORT\",\"submitAnswers\":[\"답안\"]}";
+
+		QuestionSetEntity mockQuestionSet = mock(QuestionSetEntity.class);
+		UserEntity mockUser = mock(UserEntity.class);
+		SolvingSessionEntity mockSession = mock(SolvingSessionEntity.class);
+		QuestionEntity mockQuestion = mock(QuestionEntity.class);
+
+		StudyAnswerDraftEntity submittedDraft = StudyAnswerDraftEntity.builder()
+			.id(new StudyAnswerDraftId(solvingSessionId, questionId1))
+			.solvingSession(mockSession)
+			.submittedAnswer(submittedAnswer)
+			.submitted(true)
+			.build();
+
+		StudyAnswerDraftEntity unsubmittedDraft = StudyAnswerDraftEntity.builder()
+			.id(new StudyAnswerDraftId(solvingSessionId, questionId2))
+			.solvingSession(mockSession)
+			.submitted(false)
+			.build();
+
+		when(questionSetEntityRepository.findById(QUESTION_SET_ID)).thenReturn(Optional.of(mockQuestionSet));
+		when(userReader.getById(USER_ID)).thenReturn(mockUser);
+		when(mockQuestionSet.getTeamId()).thenReturn(TEAM_ID);
+		when(mockUser.getId()).thenReturn(USER_ID);
+		when(mockQuestionSet.getId()).thenReturn(QUESTION_SET_ID);
+		doNothing().when(teamRoleValidator).checkHasSolveQuestionAuthorityInTeam(TEAM_ID, USER_ID);
+		when(solvingSessionEntityRepository.findByUserIdAndQuestionSetIdAndMode(USER_ID, QUESTION_SET_ID,
+			DeliveryMode.STUDY)).thenReturn(Optional.of(mockSession));
+		when(mockSession.getId()).thenReturn(solvingSessionId);
+		when(mockSession.getStatus()).thenReturn(SolvingStatus.PROGRESSING);
+		when(mockSession.getQuestionSet()).thenReturn(mockQuestionSet);
+		when(studyAnswerDraftFactory.getDraftsBySolvingSessionId(solvingSessionId))
+			.thenReturn(List.of(submittedDraft, unsubmittedDraft));
+		when(questionReader.getQuestion(questionId1)).thenReturn(mockQuestion);
+		when(answerGrader.gradeAnswer(eq(mockQuestion), any(SubmitAnswerDto.class))).thenReturn(true);
+
+		// when
+		StudyGradeResultDto result = studyModeService.gradeStudySession(MAIT_USER, QUESTION_SET_ID);
+
+		// then
+		assertThat(result.getTotalCount()).isEqualTo(2);
+		assertThat(result.getCorrectCount()).isEqualTo(1);
+		assertThat(result.getSolvingSessionId()).isEqualTo(solvingSessionId);
+		assertThat(result.getResults()).hasSize(2);
+		assertThat(result.getResults().get(0).getQuestionId()).isEqualTo(questionId1);
+		assertThat(result.getResults().get(0).isCorrect()).isTrue();
+		assertThat(result.getResults().get(0).getSubmittedAnswer()).isEqualTo(submittedAnswer);
+		assertThat(result.getResults().get(1).getQuestionId()).isEqualTo(questionId2);
+		assertThat(result.getResults().get(1).isCorrect()).isFalse();
+		assertThat(result.getResults().get(1).getSubmittedAnswer()).isNull();
+
+		verify(answerSubmitRecordEntityRepository).saveAll(anyList());
+		verify(mockSession).submit(2, 1);
+	}
+
+	@Test
+	@DisplayName("gradeStudySession - 문제셋이 없으면 EntityNotFoundException이 발생한다")
+	void gradeStudySession_throwsException_WhenQuestionSetNotFound() {
+		// given
+		when(questionSetEntityRepository.findById(QUESTION_SET_ID)).thenReturn(Optional.empty());
+
+		// when & then
+		assertThatThrownBy(() -> studyModeService.gradeStudySession(MAIT_USER, QUESTION_SET_ID))
+			.isInstanceOf(EntityNotFoundException.class)
+			.hasMessage("존재하지 않는 문제 셋 입니다.");
+	}
+
+	@Test
+	@DisplayName("gradeStudySession - 학습 세션이 없으면 EntityNotFoundException이 발생한다")
+	void gradeStudySession_throwsException_WhenSessionNotFound() {
+		// given
+		QuestionSetEntity mockQuestionSet = mock(QuestionSetEntity.class);
+		UserEntity mockUser = mock(UserEntity.class);
+
+		when(questionSetEntityRepository.findById(QUESTION_SET_ID)).thenReturn(Optional.of(mockQuestionSet));
+		when(userReader.getById(USER_ID)).thenReturn(mockUser);
+		when(mockQuestionSet.getTeamId()).thenReturn(TEAM_ID);
+		when(mockUser.getId()).thenReturn(USER_ID);
+		when(mockQuestionSet.getId()).thenReturn(QUESTION_SET_ID);
+		doNothing().when(teamRoleValidator).checkHasSolveQuestionAuthorityInTeam(TEAM_ID, USER_ID);
+		when(solvingSessionEntityRepository.findByUserIdAndQuestionSetIdAndMode(USER_ID, QUESTION_SET_ID,
+			DeliveryMode.STUDY)).thenReturn(Optional.empty());
+
+		// when & then
+		assertThatThrownBy(() -> studyModeService.gradeStudySession(MAIT_USER, QUESTION_SET_ID))
+			.isInstanceOf(EntityNotFoundException.class)
+			.hasMessage("존재하지 않는 학습 세션 입니다.");
+	}
+
+	@Test
+	@DisplayName("gradeStudySession - 이미 채점된 세션이면 QuestionSolvingException이 발생한다")
+	void gradeStudySession_throwsException_WhenAlreadyGraded() {
+		// given
+		QuestionSetEntity mockQuestionSet = mock(QuestionSetEntity.class);
+		UserEntity mockUser = mock(UserEntity.class);
+		SolvingSessionEntity mockSession = mock(SolvingSessionEntity.class);
+
+		when(questionSetEntityRepository.findById(QUESTION_SET_ID)).thenReturn(Optional.of(mockQuestionSet));
+		when(userReader.getById(USER_ID)).thenReturn(mockUser);
+		when(mockQuestionSet.getTeamId()).thenReturn(TEAM_ID);
+		when(mockUser.getId()).thenReturn(USER_ID);
+		when(mockQuestionSet.getId()).thenReturn(QUESTION_SET_ID);
+		doNothing().when(teamRoleValidator).checkHasSolveQuestionAuthorityInTeam(TEAM_ID, USER_ID);
+		when(solvingSessionEntityRepository.findByUserIdAndQuestionSetIdAndMode(USER_ID, QUESTION_SET_ID,
+			DeliveryMode.STUDY)).thenReturn(Optional.of(mockSession));
+		when(mockSession.getStatus()).thenReturn(SolvingStatus.COMPLETE);
+
+		// when & then
+		assertThatThrownBy(() -> studyModeService.gradeStudySession(MAIT_USER, QUESTION_SET_ID))
+			.isInstanceOf(QuestionSolvingException.class)
+			.satisfies(ex -> assertThat(((QuestionSolvingException)ex).getExceptionCode())
+				.isEqualTo(QuestionSolveExceptionCode.ALREADY_GRADED));
+
+		verify(answerSubmitRecordEntityRepository, never()).saveAll(anyList());
 	}
 
 	@Test
