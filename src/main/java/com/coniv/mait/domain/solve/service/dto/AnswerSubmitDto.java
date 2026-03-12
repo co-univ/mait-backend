@@ -21,12 +21,15 @@ public class AnswerSubmitDto {
 
 	private boolean isCorrect;
 
+	private String submittedAnswer;
+
 	public static AnswerSubmitDto from(final AnswerSubmitRecordEntity submitAnswer) {
 		return AnswerSubmitDto.builder()
 			.id(submitAnswer.getId())
 			.userId(submitAnswer.getUserId())
 			.questionId(submitAnswer.getQuestionId())
 			.isCorrect(submitAnswer.isCorrect())
+			.submittedAnswer(submitAnswer.getSubmittedAnswer())
 			.build();
 	}
 }
