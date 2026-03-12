@@ -20,8 +20,10 @@ import org.springframework.test.web.servlet.MockMvc;
 import com.coniv.mait.domain.question.enums.DeliveryMode;
 import com.coniv.mait.domain.solve.enums.SolvingStatus;
 import com.coniv.mait.domain.solve.service.StudyModeService;
+import com.coniv.mait.domain.solve.service.dto.AnswerSubmitDto;
 import com.coniv.mait.domain.solve.service.dto.SolvingSessionDto;
 import com.coniv.mait.domain.solve.service.dto.StudyAnswerDraftDto;
+import com.coniv.mait.domain.solve.service.dto.StudyGradeResultDto;
 import com.coniv.mait.domain.solve.service.dto.SubmitAnswerDto;
 import com.coniv.mait.domain.user.exception.UserRoleException;
 import com.coniv.mait.global.filter.JwtAuthorizationFilter;
@@ -109,6 +111,55 @@ class StudyModeControllerTest {
 				jsonPath("$.data[1].submitted").value(false));
 
 		verify(studyModeService).getStudyAnswerDrafts(any(), eq(questionSetId));
+	}
+
+	@Test
+	@DisplayName("학습모드 채점 성공")
+	void gradeStudySession_Success() throws Exception {
+		// given
+		Long questionSetId = 1L;
+
+		StudyGradeResultDto gradeResult = StudyGradeResultDto.builder()
+			.questionSetId(questionSetId)
+			.solvingSessionId(100L)
+			.totalCount(2)
+			.correctCount(1)
+			.results(List.of(
+				AnswerSubmitDto.builder()
+					.id(1L)
+					.userId(1L)
+					.questionId(11L)
+					.isCorrect(true)
+					.submittedAnswer("{\"type\":\"SHORT\",\"submitAnswers\":[\"답안\"]}")
+					.build(),
+				AnswerSubmitDto.builder()
+					.id(2L)
+					.userId(1L)
+					.questionId(12L)
+					.isCorrect(false)
+					.submittedAnswer(null)
+					.build()
+			))
+			.build();
+
+		given(studyModeService.gradeStudySession(any(), eq(questionSetId))).willReturn(gradeResult);
+
+		// when & then
+		mockMvc.perform(
+				post("/api/v1/question-sets/{questionSetId}/study-mode/grade", questionSetId))
+			.andExpectAll(
+				status().isOk(),
+				jsonPath("$.isSuccess").value(true),
+				jsonPath("$.data.questionSetId").value(questionSetId),
+				jsonPath("$.data.solvingSessionId").value(100),
+				jsonPath("$.data.totalCount").value(2),
+				jsonPath("$.data.correctCount").value(1),
+				jsonPath("$.data.results[0].questionId").value(11),
+				jsonPath("$.data.results[0].isCorrect").value(true),
+				jsonPath("$.data.results[1].questionId").value(12),
+				jsonPath("$.data.results[1].isCorrect").value(false));
+
+		verify(studyModeService).gradeStudySession(any(), eq(questionSetId));
 	}
 
 	@Test
