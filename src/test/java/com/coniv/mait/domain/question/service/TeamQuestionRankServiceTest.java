@@ -26,6 +26,8 @@ import com.coniv.mait.domain.solve.service.dto.RankDto;
 import com.coniv.mait.domain.team.entity.TeamEntity;
 import com.coniv.mait.domain.team.service.component.TeamReader;
 import com.coniv.mait.domain.user.entity.UserEntity;
+import com.coniv.mait.domain.user.exception.UserRoleException;
+import com.coniv.mait.domain.user.service.component.TeamRoleValidator;
 import com.coniv.mait.domain.user.service.component.UserReader;
 
 @ExtendWith(MockitoExtension.class)
@@ -48,6 +50,9 @@ class TeamQuestionRankServiceTest {
 
 	@Mock
 	private UserReader userReader;
+
+	@Mock
+	private TeamRoleValidator teamRoleValidator;
 
 	private UserEntity createMockUser(Long id, String name) {
 		UserEntity user = mock(UserEntity.class);
@@ -681,6 +686,25 @@ class TeamQuestionRankServiceTest {
 			assertThat(result.totalSolvedCount()).isEqualTo(2);
 			assertThat(result.correctCount()).isZero();
 			assertThat(result.accuracyRate()).isEqualTo(0.0);
+		}
+
+		@Test
+		@DisplayName("팀 멤버가 아닌 유저가 조회하면 예외 발생")
+		void throwExceptionWhenNotTeamMember() {
+			// given
+			Long teamId = 1L;
+			Long userId = 999L;
+
+			doThrow(new UserRoleException("해당 팀의 멤버가 아닙니다."))
+				.when(teamRoleValidator).checkIsTeamMember(teamId, userId);
+
+			// when & then
+			assertThatThrownBy(() -> teamQuestionRankService.getPersonalAccuracy(teamId, userId))
+				.isInstanceOf(UserRoleException.class)
+				.hasMessage("해당 팀의 멤버가 아닙니다.");
+
+			verifyNoInteractions(questionReader);
+			verifyNoInteractions(answerSubmitRecordEntityRepository);
 		}
 	}
 }

@@ -156,6 +156,80 @@ class TeamRoleValidatorTest {
 	}
 
 	@Test
+	@DisplayName("checkIsTeamMember - 팀 멤버인 경우 예외 없이 통과")
+	void checkIsTeamMember_Success() {
+		// given
+		Long teamId = 1L;
+		Long userId = 100L;
+
+		TeamEntity team = mock(TeamEntity.class);
+		UserEntity user = mock(UserEntity.class);
+
+		when(teamEntityRepository.findById(teamId)).thenReturn(Optional.of(team));
+		when(userEntityRepository.findById(userId)).thenReturn(Optional.of(user));
+		when(teamUserEntityRepository.existsByTeamAndUser(team, user)).thenReturn(true);
+
+		// when & then
+		assertThatCode(() -> teamRoleValidator.checkIsTeamMember(teamId, userId))
+			.doesNotThrowAnyException();
+	}
+
+	@Test
+	@DisplayName("checkIsTeamMember - 존재하지 않는 팀인 경우 EntityNotFoundException 발생")
+	void checkIsTeamMember_TeamNotFound_ThrowsException() {
+		// given
+		Long teamId = 999L;
+		Long userId = 100L;
+
+		when(teamEntityRepository.findById(teamId)).thenReturn(Optional.empty());
+
+		// when & then
+		assertThatThrownBy(() -> teamRoleValidator.checkIsTeamMember(teamId, userId))
+			.isInstanceOf(EntityNotFoundException.class)
+			.hasMessage("존재하지 않는 팀입니다.");
+
+		verify(userEntityRepository, never()).findById(anyLong());
+	}
+
+	@Test
+	@DisplayName("checkIsTeamMember - 존재하지 않는 사용자인 경우 EntityNotFoundException 발생")
+	void checkIsTeamMember_UserNotFound_ThrowsException() {
+		// given
+		Long teamId = 1L;
+		Long userId = 999L;
+
+		TeamEntity team = mock(TeamEntity.class);
+
+		when(teamEntityRepository.findById(teamId)).thenReturn(Optional.of(team));
+		when(userEntityRepository.findById(userId)).thenReturn(Optional.empty());
+
+		// when & then
+		assertThatThrownBy(() -> teamRoleValidator.checkIsTeamMember(teamId, userId))
+			.isInstanceOf(EntityNotFoundException.class)
+			.hasMessage("존재하지 않는 사용자입니다.");
+	}
+
+	@Test
+	@DisplayName("checkIsTeamMember - 팀 멤버가 아닌 경우 UserRoleException 발생")
+	void checkIsTeamMember_NotMember_ThrowsException() {
+		// given
+		Long teamId = 1L;
+		Long userId = 100L;
+
+		TeamEntity team = mock(TeamEntity.class);
+		UserEntity user = mock(UserEntity.class);
+
+		when(teamEntityRepository.findById(teamId)).thenReturn(Optional.of(team));
+		when(userEntityRepository.findById(userId)).thenReturn(Optional.of(user));
+		when(teamUserEntityRepository.existsByTeamAndUser(team, user)).thenReturn(false);
+
+		// when & then
+		assertThatThrownBy(() -> teamRoleValidator.checkIsTeamMember(teamId, userId))
+			.isInstanceOf(UserRoleException.class)
+			.hasMessage("해당 팀의 멤버가 아닙니다.");
+	}
+
+	@Test
 	@DisplayName("checkHasCreateQuestionSetAuthority - PLAYER 권한을 가진 사용자는 UserRoleException 발생")
 	void checkHasCreateQuestionSetAuthority_Player_ThrowsUserRoleException() {
 		// given

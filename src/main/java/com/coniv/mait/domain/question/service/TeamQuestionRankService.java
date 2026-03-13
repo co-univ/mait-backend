@@ -17,6 +17,7 @@ import com.coniv.mait.domain.solve.service.dto.RankDto;
 import com.coniv.mait.domain.team.entity.TeamEntity;
 import com.coniv.mait.domain.team.service.component.TeamReader;
 import com.coniv.mait.domain.user.entity.UserEntity;
+import com.coniv.mait.domain.user.service.component.TeamRoleValidator;
 import com.coniv.mait.domain.user.service.component.UserReader;
 import com.coniv.mait.domain.user.service.dto.UserDto;
 
@@ -32,6 +33,7 @@ public class TeamQuestionRankService {
 	private final QuestionReader questionReader;
 	private final TeamReader teamReader;
 	private final UserReader userReader;
+	private final TeamRoleValidator teamRoleValidator;
 
 	public List<RankDto> getTeamQuestionScorerRank(final Long teamId) {
 		TeamEntity team = teamReader.getTeam(teamId);
@@ -92,6 +94,8 @@ public class TeamQuestionRankService {
 	}
 
 	public PersonalAccuracyDto getPersonalAccuracy(final Long teamId, final Long userId) {
+		teamRoleValidator.checkIsTeamMember(teamId, userId);
+
 		TeamEntity team = teamReader.getTeam(teamId);
 
 		List<QuestionEntity> completedQuestions = questionReader.getCompletedQuestionsInTeam(team);
