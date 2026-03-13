@@ -13,7 +13,6 @@ import org.springframework.web.bind.annotation.RestController;
 import com.coniv.mait.domain.question.service.TeamQuestionRankService;
 import com.coniv.mait.domain.solve.service.dto.RankDto;
 import com.coniv.mait.global.auth.model.MaitUser;
-import com.coniv.mait.domain.question.service.dto.PersonalAccuracyDto;
 import com.coniv.mait.global.response.ApiResponse;
 import com.coniv.mait.web.question.dto.PersonalAccuracyApiResponse;
 import com.coniv.mait.web.question.dto.TeamRankApiResponse;
@@ -63,7 +62,7 @@ public class TeamQuestionRankController {
 	public ResponseEntity<ApiResponse<PersonalAccuracyApiResponse>> getPersonalAccuracy(
 		@PathVariable Long teamId,
 		@AuthenticationPrincipal MaitUser user) {
-		PersonalAccuracyDto dto = teamQuestionRankService.getPersonalAccuracy(teamId, user.id());
-		return ResponseEntity.ok(ApiResponse.ok(PersonalAccuracyApiResponse.from(dto)));
+		return ResponseEntity.ok(ApiResponse.ok(
+			PersonalAccuracyApiResponse.from(teamQuestionRankService.getPersonalAccuracy(teamId, user.id()))));
 	}
 }

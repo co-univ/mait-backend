@@ -117,7 +117,8 @@ public class TeamQuestionRankService {
 			.map(session -> session.getQuestionSet().getId())
 			.toList();
 
-		List<Long> questionSetIds = Stream.concat(finishedLiveQuestionSetIds.stream(), userCompletedQuestionSetIds.stream())
+		List<Long> questionSetIds = Stream.concat(finishedLiveQuestionSetIds.stream(),
+				userCompletedQuestionSetIds.stream())
 			.toList();
 
 		List<Long> questionIds = questionEntityRepository.findAllByQuestionSetIdIn(questionSetIds).stream()
