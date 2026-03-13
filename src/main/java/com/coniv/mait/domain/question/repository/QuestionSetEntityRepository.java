@@ -14,4 +14,7 @@ public interface QuestionSetEntityRepository extends JpaRepository<QuestionSetEn
 	List<QuestionSetEntity> findAllByTeamIdAndDeliveryMode(Long teamId, DeliveryMode deliveryMode);
 
 	List<QuestionSetEntity> findAllByTeamIdAndOngoingStatus(Long teamId, QuestionSetOngoingStatus status);
+
+	List<QuestionSetEntity> findAllByTeamIdAndDeliveryModeAndOngoingStatus(Long teamId, DeliveryMode deliveryMode,
+		QuestionSetOngoingStatus status);
 }
