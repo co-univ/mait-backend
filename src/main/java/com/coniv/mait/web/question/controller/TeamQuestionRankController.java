@@ -33,9 +33,9 @@ public class TeamQuestionRankController {
 		parameters = @Parameter(name = "type", description = "랭킹 타입", required = true, example = "CORRECT"))
 	@GetMapping(params = "type=CORRECT")
 	public ResponseEntity<ApiResponse<TeamRankApiResponse>> getTeamQuestionCorrectRank(
-		@PathVariable("teamId") Long teamId,
+		@PathVariable Long teamId,
 		@Parameter(description = "노출할 랭크 개수")
-		@RequestParam(value = "rankCount", required = false, defaultValue = "5") int rankCount,
+		@RequestParam(value = "rankCount", required = false, defaultValue = "3") int rankCount,
 		@AuthenticationPrincipal MaitUser user) {
 		List<RankDto> ranks = teamQuestionRankService.getTeamQuestionCorrectAnswerRank(teamId);
 		return ResponseEntity.ok(
@@ -46,9 +46,9 @@ public class TeamQuestionRankController {
 	@Operation(summary = "팀 득점자 퀴즈 랭킹 조회", description = "완료된 퀴즈에서 득점자 랭킹 반환")
 	@GetMapping(params = "type=SCORER")
 	public ResponseEntity<ApiResponse<TeamRankApiResponse>> getTeamQuestionScorerRank(
-		@PathVariable("teamId") Long teamId,
+		@PathVariable Long teamId,
 		@Parameter(description = "노출할 랭크 개수")
-		@RequestParam(value = "rankCount", required = false, defaultValue = "5") int rankCount,
+		@RequestParam(value = "rankCount", required = false, defaultValue = "3") int rankCount,
 		@AuthenticationPrincipal MaitUser user) {
 		List<RankDto> ranks = teamQuestionRankService.getTeamQuestionScorerRank(teamId);
 		return ResponseEntity.ok(
