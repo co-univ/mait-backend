@@ -17,6 +17,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import com.coniv.mait.domain.question.entity.QuestionEntity;
 import com.coniv.mait.domain.question.service.component.QuestionReader;
+import com.coniv.mait.domain.question.service.dto.PersonalAccuracyDto;
 import com.coniv.mait.domain.solve.entity.AnswerSubmitRecordEntity;
 import com.coniv.mait.domain.solve.entity.QuestionScorerEntity;
 import com.coniv.mait.domain.solve.repository.AnswerSubmitRecordEntityRepository;
@@ -474,6 +475,212 @@ class TeamQuestionRankServiceTest {
 			assertThat(result).hasSize(3);
 			assertThat(result).allMatch(r -> r.getRank() == 1);
 			assertThat(result).allMatch(r -> r.getCount() == 1L);
+		}
+	}
+
+	@Nested
+	@DisplayName("getPersonalAccuracy")
+	class GetPersonalAccuracy {
+
+		@Test
+		@DisplayName("개인 정답률 조회 성공 - 정상 케이스")
+		void success() {
+			// given
+			Long teamId = 1L;
+			Long userId = 1L;
+			TeamEntity team = mock(TeamEntity.class);
+			QuestionEntity q1 = mock(QuestionEntity.class);
+			QuestionEntity q2 = mock(QuestionEntity.class);
+			QuestionEntity q3 = mock(QuestionEntity.class);
+
+			when(q1.getId()).thenReturn(1L);
+			when(q2.getId()).thenReturn(2L);
+			when(q3.getId()).thenReturn(3L);
+
+			when(teamReader.getTeam(teamId)).thenReturn(team);
+			when(questionReader.getCompletedQuestionsInTeam(team)).thenReturn(List.of(q1, q2, q3));
+
+			AnswerSubmitRecordEntity a1 = mock(AnswerSubmitRecordEntity.class);
+			AnswerSubmitRecordEntity a2 = mock(AnswerSubmitRecordEntity.class);
+			AnswerSubmitRecordEntity a3 = mock(AnswerSubmitRecordEntity.class);
+
+			when(a1.getQuestionId()).thenReturn(1L);
+			when(a1.isCorrect()).thenReturn(true);
+			when(a2.getQuestionId()).thenReturn(2L);
+			when(a2.isCorrect()).thenReturn(true);
+			when(a3.getQuestionId()).thenReturn(3L);
+			when(a3.isCorrect()).thenReturn(false);
+
+			when(answerSubmitRecordEntityRepository.findAllByUserIdAndQuestionIdIn(userId, List.of(1L, 2L, 3L)))
+				.thenReturn(List.of(a1, a2, a3));
+
+			// when
+			PersonalAccuracyDto result = teamQuestionRankService.getPersonalAccuracy(teamId, userId);
+
+			// then
+			assertThat(result.totalSolvedCount()).isEqualTo(3);
+			assertThat(result.correctCount()).isEqualTo(2);
+			assertThat(result.accuracyRate()).isEqualTo(66.7);
+		}
+
+		@Test
+		@DisplayName("완료된 퀴즈가 없으면 모두 0 반환")
+		void emptyWhenNoCompletedQuestions() {
+			// given
+			Long teamId = 1L;
+			Long userId = 1L;
+			TeamEntity team = mock(TeamEntity.class);
+
+			when(teamReader.getTeam(teamId)).thenReturn(team);
+			when(questionReader.getCompletedQuestionsInTeam(team)).thenReturn(List.of());
+
+			// when
+			PersonalAccuracyDto result = teamQuestionRankService.getPersonalAccuracy(teamId, userId);
+
+			// then
+			assertThat(result.totalSolvedCount()).isZero();
+			assertThat(result.correctCount()).isZero();
+			assertThat(result.accuracyRate()).isZero();
+			verifyNoInteractions(answerSubmitRecordEntityRepository);
+		}
+
+		@Test
+		@DisplayName("유저가 푼 기록이 없으면 모두 0 반환")
+		void emptyWhenNoUserRecords() {
+			// given
+			Long teamId = 1L;
+			Long userId = 1L;
+			TeamEntity team = mock(TeamEntity.class);
+			QuestionEntity q1 = mock(QuestionEntity.class);
+
+			when(q1.getId()).thenReturn(1L);
+
+			when(teamReader.getTeam(teamId)).thenReturn(team);
+			when(questionReader.getCompletedQuestionsInTeam(team)).thenReturn(List.of(q1));
+			when(answerSubmitRecordEntityRepository.findAllByUserIdAndQuestionIdIn(userId, List.of(1L)))
+				.thenReturn(List.of());
+
+			// when
+			PersonalAccuracyDto result = teamQuestionRankService.getPersonalAccuracy(teamId, userId);
+
+			// then
+			assertThat(result.totalSolvedCount()).isZero();
+			assertThat(result.correctCount()).isZero();
+			assertThat(result.accuracyRate()).isZero();
+		}
+
+		@Test
+		@DisplayName("같은 문제를 여러 번 제출해도 DISTINCT하게 1개로 카운트")
+		void distinctCountForSameQuestion() {
+			// given
+			Long teamId = 1L;
+			Long userId = 1L;
+			TeamEntity team = mock(TeamEntity.class);
+			QuestionEntity q1 = mock(QuestionEntity.class);
+
+			when(q1.getId()).thenReturn(1L);
+
+			when(teamReader.getTeam(teamId)).thenReturn(team);
+			when(questionReader.getCompletedQuestionsInTeam(team)).thenReturn(List.of(q1));
+
+			AnswerSubmitRecordEntity a1 = mock(AnswerSubmitRecordEntity.class);
+			AnswerSubmitRecordEntity a2 = mock(AnswerSubmitRecordEntity.class);
+			AnswerSubmitRecordEntity a3 = mock(AnswerSubmitRecordEntity.class);
+
+			when(a1.getQuestionId()).thenReturn(1L);
+			when(a1.isCorrect()).thenReturn(false);
+			when(a2.getQuestionId()).thenReturn(1L);
+			when(a2.isCorrect()).thenReturn(false);
+			when(a3.getQuestionId()).thenReturn(1L);
+			when(a3.isCorrect()).thenReturn(true);
+
+			when(answerSubmitRecordEntityRepository.findAllByUserIdAndQuestionIdIn(userId, List.of(1L)))
+				.thenReturn(List.of(a1, a2, a3));
+
+			// when
+			PersonalAccuracyDto result = teamQuestionRankService.getPersonalAccuracy(teamId, userId);
+
+			// then
+			assertThat(result.totalSolvedCount()).isEqualTo(1);
+			assertThat(result.correctCount()).isEqualTo(1);
+			assertThat(result.accuracyRate()).isEqualTo(100.0);
+		}
+
+		@Test
+		@DisplayName("재제출로 정답 처리 - 오답 후 정답이면 맞은 문제로 카운트")
+		void retryCorrectAnswer() {
+			// given
+			Long teamId = 1L;
+			Long userId = 1L;
+			TeamEntity team = mock(TeamEntity.class);
+			QuestionEntity q1 = mock(QuestionEntity.class);
+			QuestionEntity q2 = mock(QuestionEntity.class);
+
+			when(q1.getId()).thenReturn(1L);
+			when(q2.getId()).thenReturn(2L);
+
+			when(teamReader.getTeam(teamId)).thenReturn(team);
+			when(questionReader.getCompletedQuestionsInTeam(team)).thenReturn(List.of(q1, q2));
+
+			// q1: 오답 → 정답 (재제출 성공)
+			AnswerSubmitRecordEntity a1 = mock(AnswerSubmitRecordEntity.class);
+			AnswerSubmitRecordEntity a2 = mock(AnswerSubmitRecordEntity.class);
+			when(a1.getQuestionId()).thenReturn(1L);
+			when(a1.isCorrect()).thenReturn(false);
+			when(a2.getQuestionId()).thenReturn(1L);
+			when(a2.isCorrect()).thenReturn(true);
+
+			// q2: 오답만
+			AnswerSubmitRecordEntity a3 = mock(AnswerSubmitRecordEntity.class);
+			when(a3.getQuestionId()).thenReturn(2L);
+			when(a3.isCorrect()).thenReturn(false);
+
+			when(answerSubmitRecordEntityRepository.findAllByUserIdAndQuestionIdIn(userId, List.of(1L, 2L)))
+				.thenReturn(List.of(a1, a2, a3));
+
+			// when
+			PersonalAccuracyDto result = teamQuestionRankService.getPersonalAccuracy(teamId, userId);
+
+			// then
+			assertThat(result.totalSolvedCount()).isEqualTo(2);
+			assertThat(result.correctCount()).isEqualTo(1);
+			assertThat(result.accuracyRate()).isEqualTo(50.0);
+		}
+
+		@Test
+		@DisplayName("전부 오답이면 정답률 0.0")
+		void allWrong() {
+			// given
+			Long teamId = 1L;
+			Long userId = 1L;
+			TeamEntity team = mock(TeamEntity.class);
+			QuestionEntity q1 = mock(QuestionEntity.class);
+			QuestionEntity q2 = mock(QuestionEntity.class);
+
+			when(q1.getId()).thenReturn(1L);
+			when(q2.getId()).thenReturn(2L);
+
+			when(teamReader.getTeam(teamId)).thenReturn(team);
+			when(questionReader.getCompletedQuestionsInTeam(team)).thenReturn(List.of(q1, q2));
+
+			AnswerSubmitRecordEntity a1 = mock(AnswerSubmitRecordEntity.class);
+			AnswerSubmitRecordEntity a2 = mock(AnswerSubmitRecordEntity.class);
+
+			when(a1.getQuestionId()).thenReturn(1L);
+			when(a1.isCorrect()).thenReturn(false);
+			when(a2.getQuestionId()).thenReturn(2L);
+			when(a2.isCorrect()).thenReturn(false);
+
+			when(answerSubmitRecordEntityRepository.findAllByUserIdAndQuestionIdIn(userId, List.of(1L, 2L)))
+				.thenReturn(List.of(a1, a2));
+
+			// when
+			PersonalAccuracyDto result = teamQuestionRankService.getPersonalAccuracy(teamId, userId);
+
+			// then
+			assertThat(result.totalSolvedCount()).isEqualTo(2);
+			assertThat(result.correctCount()).isZero();
+			assertThat(result.accuracyRate()).isEqualTo(0.0);
 		}
 	}
 }

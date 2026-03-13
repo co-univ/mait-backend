@@ -8,6 +8,7 @@ import org.springframework.stereotype.Service;
 
 import com.coniv.mait.domain.question.entity.QuestionEntity;
 import com.coniv.mait.domain.question.service.component.QuestionReader;
+import com.coniv.mait.domain.question.service.dto.PersonalAccuracyDto;
 import com.coniv.mait.domain.solve.entity.AnswerSubmitRecordEntity;
 import com.coniv.mait.domain.solve.entity.QuestionScorerEntity;
 import com.coniv.mait.domain.solve.repository.AnswerSubmitRecordEntityRepository;
@@ -88,6 +89,32 @@ public class TeamQuestionRankService {
 		calculateRanks(ranks);
 
 		return ranks;
+	}
+
+	public PersonalAccuracyDto getPersonalAccuracy(final Long teamId, final Long userId) {
+		TeamEntity team = teamReader.getTeam(teamId);
+
+		List<QuestionEntity> completedQuestions = questionReader.getCompletedQuestionsInTeam(team);
+
+		if (completedQuestions.isEmpty()) {
+			return PersonalAccuracyDto.of(0, 0);
+		}
+
+		List<Long> questionIds = completedQuestions.stream().map(QuestionEntity::getId).toList();
+
+		List<AnswerSubmitRecordEntity> userRecords =
+			answerSubmitRecordEntityRepository.findAllByUserIdAndQuestionIdIn(userId, questionIds);
+
+		Map<Long, List<AnswerSubmitRecordEntity>> recordsByQuestionId =
+			userRecords.stream().collect(Collectors.groupingBy(AnswerSubmitRecordEntity::getQuestionId));
+
+		long totalSolvedCount = recordsByQuestionId.size();
+
+		long correctCount = recordsByQuestionId.values().stream()
+			.filter(records -> records.stream().anyMatch(AnswerSubmitRecordEntity::isCorrect))
+			.count();
+
+		return PersonalAccuracyDto.of(totalSolvedCount, correctCount);
 	}
 
 	private void calculateRanks(List<RankDto> sortedRanks) {
