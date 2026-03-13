@@ -13,7 +13,9 @@ import org.springframework.web.bind.annotation.RestController;
 import com.coniv.mait.domain.question.service.TeamQuestionRankService;
 import com.coniv.mait.domain.solve.service.dto.RankDto;
 import com.coniv.mait.global.auth.model.MaitUser;
+import com.coniv.mait.domain.question.service.dto.PersonalAccuracyDto;
 import com.coniv.mait.global.response.ApiResponse;
+import com.coniv.mait.web.question.dto.PersonalAccuracyApiResponse;
 import com.coniv.mait.web.question.dto.TeamRankApiResponse;
 
 import io.swagger.v3.oas.annotations.Operation;
@@ -23,7 +25,7 @@ import lombok.RequiredArgsConstructor;
 
 @Tag(name = "팀 문제 랭킹 API", description = "팀 문제 랭킹 API")
 @RestController
-@RequestMapping("/api/v1/teams/{teamId}/question-ranks")
+@RequestMapping("/api/v1/teams/{teamId}")
 @RequiredArgsConstructor
 public class TeamQuestionRankController {
 
@@ -31,7 +33,7 @@ public class TeamQuestionRankController {
 
 	@Operation(summary = "팀 정답 퀴즈 랭킹 조회", description = "완료된 퀴즈에서 정답자 랭킹 반환",
 		parameters = @Parameter(name = "type", description = "랭킹 타입", required = true, example = "CORRECT"))
-	@GetMapping(params = "type=CORRECT")
+	@GetMapping(value = "/question-ranks", params = "type=CORRECT")
 	public ResponseEntity<ApiResponse<TeamRankApiResponse>> getTeamQuestionCorrectRank(
 		@PathVariable Long teamId,
 		@Parameter(description = "노출할 랭크 개수")
@@ -44,7 +46,7 @@ public class TeamQuestionRankController {
 	}
 
 	@Operation(summary = "팀 득점자 퀴즈 랭킹 조회", description = "완료된 퀴즈에서 득점자 랭킹 반환")
-	@GetMapping(params = "type=SCORER")
+	@GetMapping(value = "/question-ranks", params = "type=SCORER")
 	public ResponseEntity<ApiResponse<TeamRankApiResponse>> getTeamQuestionScorerRank(
 		@PathVariable Long teamId,
 		@Parameter(description = "노출할 랭크 개수")
@@ -54,5 +56,14 @@ public class TeamQuestionRankController {
 		return ResponseEntity.ok(
 			ApiResponse.ok(
 				TeamRankApiResponse.of(ranks, teamId, user.id(), rankCount, TeamRankApiResponse.RankType.SCORER)));
+	}
+
+	@Operation(summary = "개인 정답률 조회", description = "완료된 퀴즈에서 로그인한 유저의 개인 정답률 통계 반환")
+	@GetMapping("/user-solving-stats")
+	public ResponseEntity<ApiResponse<PersonalAccuracyApiResponse>> getPersonalAccuracy(
+		@PathVariable Long teamId,
+		@AuthenticationPrincipal MaitUser user) {
+		PersonalAccuracyDto dto = teamQuestionRankService.getPersonalAccuracy(teamId, user.id());
+		return ResponseEntity.ok(ApiResponse.ok(PersonalAccuracyApiResponse.from(dto)));
 	}
 }
