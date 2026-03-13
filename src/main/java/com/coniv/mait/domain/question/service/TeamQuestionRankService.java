@@ -3,16 +3,23 @@ package com.coniv.mait.domain.question.service;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import org.springframework.stereotype.Service;
 
 import com.coniv.mait.domain.question.entity.QuestionEntity;
+import com.coniv.mait.domain.question.entity.QuestionSetEntity;
+import com.coniv.mait.domain.question.enums.DeliveryMode;
+import com.coniv.mait.domain.question.repository.QuestionEntityRepository;
 import com.coniv.mait.domain.question.service.component.QuestionReader;
+import com.coniv.mait.domain.question.service.component.QuestionSetReader;
 import com.coniv.mait.domain.question.service.dto.PersonalAccuracyDto;
 import com.coniv.mait.domain.solve.entity.AnswerSubmitRecordEntity;
 import com.coniv.mait.domain.solve.entity.QuestionScorerEntity;
+import com.coniv.mait.domain.solve.enums.SolvingStatus;
 import com.coniv.mait.domain.solve.repository.AnswerSubmitRecordEntityRepository;
 import com.coniv.mait.domain.solve.repository.QuestionScorerEntityRepository;
+import com.coniv.mait.domain.solve.repository.SolvingSessionEntityRepository;
 import com.coniv.mait.domain.solve.service.dto.RankDto;
 import com.coniv.mait.domain.team.entity.TeamEntity;
 import com.coniv.mait.domain.team.service.component.TeamReader;
@@ -29,8 +36,11 @@ public class TeamQuestionRankService {
 
 	private final QuestionScorerEntityRepository questionScorerEntityRepository;
 	private final AnswerSubmitRecordEntityRepository answerSubmitRecordEntityRepository;
+	private final SolvingSessionEntityRepository solvingSessionEntityRepository;
+	private final QuestionEntityRepository questionEntityRepository;
 
 	private final QuestionReader questionReader;
+	private final QuestionSetReader questionSetReader;
 	private final TeamReader teamReader;
 	private final UserReader userReader;
 	private final TeamRoleValidator teamRoleValidator;
@@ -98,16 +108,28 @@ public class TeamQuestionRankService {
 
 		TeamEntity team = teamReader.getTeam(teamId);
 
-		List<QuestionEntity> completedQuestions = questionReader.getCompletedQuestionsInTeam(team);
+		List<Long> finishedLiveQuestionSetIds = questionSetReader.getFinishedLiveQuestionSetsInTeam(
+			team.getId()).stream().map(QuestionSetEntity::getId).toList();
 
-		if (completedQuestions.isEmpty()) {
+		List<Long> userCompletedQuestionSetIds = solvingSessionEntityRepository
+			.findAllByUserIdAndStatusAndModeAndQuestionSetTeamId(userId, SolvingStatus.COMPLETE, DeliveryMode.STUDY,
+				teamId).stream()
+			.map(session -> session.getQuestionSet().getId())
+			.toList();
+
+		List<Long> questionSetIds = Stream.concat(finishedLiveQuestionSetIds.stream(), userCompletedQuestionSetIds.stream())
+			.toList();
+
+		List<Long> questionIds = questionEntityRepository.findAllByQuestionSetIdIn(questionSetIds).stream()
+			.map(QuestionEntity::getId)
+			.toList();
+
+		if (questionIds.isEmpty()) {
 			return PersonalAccuracyDto.of(0, 0);
 		}
 
-		List<Long> questionIds = completedQuestions.stream().map(QuestionEntity::getId).toList();
-
 		List<AnswerSubmitRecordEntity> userRecords =
-			answerSubmitRecordEntityRepository.findAllByUserIdAndQuestionIdIn(userId, questionIds);
+			answerSubmitRecordEntityRepository.findAllByUserIdAndQuestionIdIn(userId, List.copyOf(questionIds));
 
 		Map<Long, List<AnswerSubmitRecordEntity>> recordsByQuestionId =
 			userRecords.stream().collect(Collectors.groupingBy(AnswerSubmitRecordEntity::getQuestionId));

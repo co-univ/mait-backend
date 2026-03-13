@@ -1,6 +1,7 @@
 package com.coniv.mait.domain.question.service;
 
 import static org.assertj.core.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
 import java.util.List;
@@ -16,12 +17,19 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import com.coniv.mait.domain.question.entity.QuestionEntity;
+import com.coniv.mait.domain.question.entity.QuestionSetEntity;
+import com.coniv.mait.domain.question.enums.DeliveryMode;
+import com.coniv.mait.domain.question.repository.QuestionEntityRepository;
 import com.coniv.mait.domain.question.service.component.QuestionReader;
+import com.coniv.mait.domain.question.service.component.QuestionSetReader;
 import com.coniv.mait.domain.question.service.dto.PersonalAccuracyDto;
 import com.coniv.mait.domain.solve.entity.AnswerSubmitRecordEntity;
 import com.coniv.mait.domain.solve.entity.QuestionScorerEntity;
+import com.coniv.mait.domain.solve.entity.SolvingSessionEntity;
+import com.coniv.mait.domain.solve.enums.SolvingStatus;
 import com.coniv.mait.domain.solve.repository.AnswerSubmitRecordEntityRepository;
 import com.coniv.mait.domain.solve.repository.QuestionScorerEntityRepository;
+import com.coniv.mait.domain.solve.repository.SolvingSessionEntityRepository;
 import com.coniv.mait.domain.solve.service.dto.RankDto;
 import com.coniv.mait.domain.team.entity.TeamEntity;
 import com.coniv.mait.domain.team.service.component.TeamReader;
@@ -46,10 +54,19 @@ class TeamQuestionRankServiceTest {
 	private QuestionReader questionReader;
 
 	@Mock
+	private QuestionSetReader questionSetReader;
+
+	@Mock
 	private TeamReader teamReader;
 
 	@Mock
 	private UserReader userReader;
+
+	@Mock
+	private SolvingSessionEntityRepository solvingSessionEntityRepository;
+
+	@Mock
+	private QuestionEntityRepository questionEntityRepository;
 
 	@Mock
 	private TeamRoleValidator teamRoleValidator;
@@ -488,27 +505,35 @@ class TeamQuestionRankServiceTest {
 	class GetPersonalAccuracy {
 
 		@Test
-		@DisplayName("개인 정답률 조회 성공 - 정상 케이스")
+		@DisplayName("개인 정답률 조회 성공 - 실시간 문제만 있는 경우")
 		void success() {
 			// given
 			Long teamId = 1L;
 			Long userId = 1L;
 			TeamEntity team = mock(TeamEntity.class);
+			when(team.getId()).thenReturn(teamId);
+			when(teamReader.getTeam(teamId)).thenReturn(team);
+
+			QuestionSetEntity liveQs = mock(QuestionSetEntity.class);
+			when(liveQs.getId()).thenReturn(100L);
+			when(questionSetReader.getFinishedLiveQuestionSetsInTeam(teamId)).thenReturn(List.of(liveQs));
+
+			when(solvingSessionEntityRepository.findAllByUserIdAndStatusAndModeAndQuestionSetTeamId(
+				userId, SolvingStatus.COMPLETE, DeliveryMode.STUDY, teamId)).thenReturn(List.of());
+
 			QuestionEntity q1 = mock(QuestionEntity.class);
 			QuestionEntity q2 = mock(QuestionEntity.class);
 			QuestionEntity q3 = mock(QuestionEntity.class);
-
 			when(q1.getId()).thenReturn(1L);
 			when(q2.getId()).thenReturn(2L);
 			when(q3.getId()).thenReturn(3L);
 
-			when(teamReader.getTeam(teamId)).thenReturn(team);
-			when(questionReader.getCompletedQuestionsInTeam(team)).thenReturn(List.of(q1, q2, q3));
+			when(questionEntityRepository.findAllByQuestionSetIdIn(List.of(100L)))
+				.thenReturn(List.of(q1, q2, q3));
 
 			AnswerSubmitRecordEntity a1 = mock(AnswerSubmitRecordEntity.class);
 			AnswerSubmitRecordEntity a2 = mock(AnswerSubmitRecordEntity.class);
 			AnswerSubmitRecordEntity a3 = mock(AnswerSubmitRecordEntity.class);
-
 			when(a1.getQuestionId()).thenReturn(1L);
 			when(a1.isCorrect()).thenReturn(true);
 			when(a2.getQuestionId()).thenReturn(2L);
@@ -516,7 +541,7 @@ class TeamQuestionRankServiceTest {
 			when(a3.getQuestionId()).thenReturn(3L);
 			when(a3.isCorrect()).thenReturn(false);
 
-			when(answerSubmitRecordEntityRepository.findAllByUserIdAndQuestionIdIn(userId, List.of(1L, 2L, 3L)))
+			when(answerSubmitRecordEntityRepository.findAllByUserIdAndQuestionIdIn(eq(userId), anyList()))
 				.thenReturn(List.of(a1, a2, a3));
 
 			// when
@@ -529,15 +554,115 @@ class TeamQuestionRankServiceTest {
 		}
 
 		@Test
+		@DisplayName("실시간 + 학습모드 문제를 합산하여 정답률 계산")
+		void combineLiveAndStudyQuestions() {
+			// given
+			Long teamId = 1L;
+			Long userId = 1L;
+			TeamEntity team = mock(TeamEntity.class);
+			when(team.getId()).thenReturn(teamId);
+			when(teamReader.getTeam(teamId)).thenReturn(team);
+
+			QuestionSetEntity liveQs = mock(QuestionSetEntity.class);
+			when(liveQs.getId()).thenReturn(100L);
+			when(questionSetReader.getFinishedLiveQuestionSetsInTeam(teamId)).thenReturn(List.of(liveQs));
+
+			QuestionSetEntity studyQs = mock(QuestionSetEntity.class);
+			when(studyQs.getId()).thenReturn(200L);
+			SolvingSessionEntity session = mock(SolvingSessionEntity.class);
+			when(session.getQuestionSet()).thenReturn(studyQs);
+
+			when(solvingSessionEntityRepository.findAllByUserIdAndStatusAndModeAndQuestionSetTeamId(
+				userId, SolvingStatus.COMPLETE, DeliveryMode.STUDY, teamId)).thenReturn(List.of(session));
+
+			QuestionEntity liveQ1 = mock(QuestionEntity.class);
+			when(liveQ1.getId()).thenReturn(1L);
+			QuestionEntity studyQ1 = mock(QuestionEntity.class);
+			QuestionEntity studyQ2 = mock(QuestionEntity.class);
+			when(studyQ1.getId()).thenReturn(2L);
+			when(studyQ2.getId()).thenReturn(3L);
+
+			when(questionEntityRepository.findAllByQuestionSetIdIn(anyList()))
+				.thenReturn(List.of(liveQ1, studyQ1, studyQ2));
+
+			AnswerSubmitRecordEntity a1 = mock(AnswerSubmitRecordEntity.class);
+			AnswerSubmitRecordEntity a2 = mock(AnswerSubmitRecordEntity.class);
+			AnswerSubmitRecordEntity a3 = mock(AnswerSubmitRecordEntity.class);
+			when(a1.getQuestionId()).thenReturn(1L);
+			when(a1.isCorrect()).thenReturn(true);
+			when(a2.getQuestionId()).thenReturn(2L);
+			when(a2.isCorrect()).thenReturn(true);
+			when(a3.getQuestionId()).thenReturn(3L);
+			when(a3.isCorrect()).thenReturn(false);
+
+			when(answerSubmitRecordEntityRepository.findAllByUserIdAndQuestionIdIn(eq(userId), anyList()))
+				.thenReturn(List.of(a1, a2, a3));
+
+			// when
+			PersonalAccuracyDto result = teamQuestionRankService.getPersonalAccuracy(teamId, userId);
+
+			// then
+			assertThat(result.totalSolvedCount()).isEqualTo(3);
+			assertThat(result.correctCount()).isEqualTo(2);
+			assertThat(result.accuracyRate()).isEqualTo(66.7);
+		}
+
+		@Test
+		@DisplayName("학습모드 문제만 있는 경우에도 정상 계산")
+		void studyModeOnly() {
+			// given
+			Long teamId = 1L;
+			Long userId = 1L;
+			TeamEntity team = mock(TeamEntity.class);
+			when(team.getId()).thenReturn(teamId);
+			when(teamReader.getTeam(teamId)).thenReturn(team);
+
+			when(questionSetReader.getFinishedLiveQuestionSetsInTeam(teamId)).thenReturn(List.of());
+
+			QuestionSetEntity studyQs = mock(QuestionSetEntity.class);
+			when(studyQs.getId()).thenReturn(200L);
+			SolvingSessionEntity session = mock(SolvingSessionEntity.class);
+			when(session.getQuestionSet()).thenReturn(studyQs);
+
+			when(solvingSessionEntityRepository.findAllByUserIdAndStatusAndModeAndQuestionSetTeamId(
+				userId, SolvingStatus.COMPLETE, DeliveryMode.STUDY, teamId)).thenReturn(List.of(session));
+
+			QuestionEntity studyQ1 = mock(QuestionEntity.class);
+			when(studyQ1.getId()).thenReturn(1L);
+
+			when(questionEntityRepository.findAllByQuestionSetIdIn(List.of(200L)))
+				.thenReturn(List.of(studyQ1));
+
+			AnswerSubmitRecordEntity a1 = mock(AnswerSubmitRecordEntity.class);
+			when(a1.getQuestionId()).thenReturn(1L);
+			when(a1.isCorrect()).thenReturn(true);
+
+			when(answerSubmitRecordEntityRepository.findAllByUserIdAndQuestionIdIn(eq(userId), anyList()))
+				.thenReturn(List.of(a1));
+
+			// when
+			PersonalAccuracyDto result = teamQuestionRankService.getPersonalAccuracy(teamId, userId);
+
+			// then
+			assertThat(result.totalSolvedCount()).isEqualTo(1);
+			assertThat(result.correctCount()).isEqualTo(1);
+			assertThat(result.accuracyRate()).isEqualTo(100.0);
+		}
+
+		@Test
 		@DisplayName("완료된 퀴즈가 없으면 모두 0 반환")
 		void emptyWhenNoCompletedQuestions() {
 			// given
 			Long teamId = 1L;
 			Long userId = 1L;
 			TeamEntity team = mock(TeamEntity.class);
-
+			when(team.getId()).thenReturn(teamId);
 			when(teamReader.getTeam(teamId)).thenReturn(team);
-			when(questionReader.getCompletedQuestionsInTeam(team)).thenReturn(List.of());
+
+			when(questionSetReader.getFinishedLiveQuestionSetsInTeam(teamId)).thenReturn(List.of());
+			when(solvingSessionEntityRepository.findAllByUserIdAndStatusAndModeAndQuestionSetTeamId(
+				userId, SolvingStatus.COMPLETE, DeliveryMode.STUDY, teamId)).thenReturn(List.of());
+			when(questionEntityRepository.findAllByQuestionSetIdIn(anyList())).thenReturn(List.of());
 
 			// when
 			PersonalAccuracyDto result = teamQuestionRankService.getPersonalAccuracy(teamId, userId);
@@ -556,13 +681,20 @@ class TeamQuestionRankServiceTest {
 			Long teamId = 1L;
 			Long userId = 1L;
 			TeamEntity team = mock(TeamEntity.class);
-			QuestionEntity q1 = mock(QuestionEntity.class);
-
-			when(q1.getId()).thenReturn(1L);
-
+			when(team.getId()).thenReturn(teamId);
 			when(teamReader.getTeam(teamId)).thenReturn(team);
-			when(questionReader.getCompletedQuestionsInTeam(team)).thenReturn(List.of(q1));
-			when(answerSubmitRecordEntityRepository.findAllByUserIdAndQuestionIdIn(userId, List.of(1L)))
+
+			QuestionSetEntity liveQs = mock(QuestionSetEntity.class);
+			when(liveQs.getId()).thenReturn(100L);
+			when(questionSetReader.getFinishedLiveQuestionSetsInTeam(teamId)).thenReturn(List.of(liveQs));
+			when(solvingSessionEntityRepository.findAllByUserIdAndStatusAndModeAndQuestionSetTeamId(
+				userId, SolvingStatus.COMPLETE, DeliveryMode.STUDY, teamId)).thenReturn(List.of());
+
+			QuestionEntity q1 = mock(QuestionEntity.class);
+			when(q1.getId()).thenReturn(1L);
+			when(questionEntityRepository.findAllByQuestionSetIdIn(List.of(100L))).thenReturn(List.of(q1));
+
+			when(answerSubmitRecordEntityRepository.findAllByUserIdAndQuestionIdIn(eq(userId), anyList()))
 				.thenReturn(List.of());
 
 			// when
@@ -581,17 +713,22 @@ class TeamQuestionRankServiceTest {
 			Long teamId = 1L;
 			Long userId = 1L;
 			TeamEntity team = mock(TeamEntity.class);
-			QuestionEntity q1 = mock(QuestionEntity.class);
-
-			when(q1.getId()).thenReturn(1L);
-
+			when(team.getId()).thenReturn(teamId);
 			when(teamReader.getTeam(teamId)).thenReturn(team);
-			when(questionReader.getCompletedQuestionsInTeam(team)).thenReturn(List.of(q1));
+
+			QuestionSetEntity liveQs = mock(QuestionSetEntity.class);
+			when(liveQs.getId()).thenReturn(100L);
+			when(questionSetReader.getFinishedLiveQuestionSetsInTeam(teamId)).thenReturn(List.of(liveQs));
+			when(solvingSessionEntityRepository.findAllByUserIdAndStatusAndModeAndQuestionSetTeamId(
+				userId, SolvingStatus.COMPLETE, DeliveryMode.STUDY, teamId)).thenReturn(List.of());
+
+			QuestionEntity q1 = mock(QuestionEntity.class);
+			when(q1.getId()).thenReturn(1L);
+			when(questionEntityRepository.findAllByQuestionSetIdIn(List.of(100L))).thenReturn(List.of(q1));
 
 			AnswerSubmitRecordEntity a1 = mock(AnswerSubmitRecordEntity.class);
 			AnswerSubmitRecordEntity a2 = mock(AnswerSubmitRecordEntity.class);
 			AnswerSubmitRecordEntity a3 = mock(AnswerSubmitRecordEntity.class);
-
 			when(a1.getQuestionId()).thenReturn(1L);
 			when(a1.isCorrect()).thenReturn(false);
 			when(a2.getQuestionId()).thenReturn(1L);
@@ -599,7 +736,7 @@ class TeamQuestionRankServiceTest {
 			when(a3.getQuestionId()).thenReturn(1L);
 			when(a3.isCorrect()).thenReturn(true);
 
-			when(answerSubmitRecordEntityRepository.findAllByUserIdAndQuestionIdIn(userId, List.of(1L)))
+			when(answerSubmitRecordEntityRepository.findAllByUserIdAndQuestionIdIn(eq(userId), anyList()))
 				.thenReturn(List.of(a1, a2, a3));
 
 			// when
@@ -618,16 +755,21 @@ class TeamQuestionRankServiceTest {
 			Long teamId = 1L;
 			Long userId = 1L;
 			TeamEntity team = mock(TeamEntity.class);
+			when(team.getId()).thenReturn(teamId);
+			when(teamReader.getTeam(teamId)).thenReturn(team);
+
+			QuestionSetEntity liveQs = mock(QuestionSetEntity.class);
+			when(liveQs.getId()).thenReturn(100L);
+			when(questionSetReader.getFinishedLiveQuestionSetsInTeam(teamId)).thenReturn(List.of(liveQs));
+			when(solvingSessionEntityRepository.findAllByUserIdAndStatusAndModeAndQuestionSetTeamId(
+				userId, SolvingStatus.COMPLETE, DeliveryMode.STUDY, teamId)).thenReturn(List.of());
+
 			QuestionEntity q1 = mock(QuestionEntity.class);
 			QuestionEntity q2 = mock(QuestionEntity.class);
-
 			when(q1.getId()).thenReturn(1L);
 			when(q2.getId()).thenReturn(2L);
+			when(questionEntityRepository.findAllByQuestionSetIdIn(List.of(100L))).thenReturn(List.of(q1, q2));
 
-			when(teamReader.getTeam(teamId)).thenReturn(team);
-			when(questionReader.getCompletedQuestionsInTeam(team)).thenReturn(List.of(q1, q2));
-
-			// q1: 오답 → 정답 (재제출 성공)
 			AnswerSubmitRecordEntity a1 = mock(AnswerSubmitRecordEntity.class);
 			AnswerSubmitRecordEntity a2 = mock(AnswerSubmitRecordEntity.class);
 			when(a1.getQuestionId()).thenReturn(1L);
@@ -635,12 +777,11 @@ class TeamQuestionRankServiceTest {
 			when(a2.getQuestionId()).thenReturn(1L);
 			when(a2.isCorrect()).thenReturn(true);
 
-			// q2: 오답만
 			AnswerSubmitRecordEntity a3 = mock(AnswerSubmitRecordEntity.class);
 			when(a3.getQuestionId()).thenReturn(2L);
 			when(a3.isCorrect()).thenReturn(false);
 
-			when(answerSubmitRecordEntityRepository.findAllByUserIdAndQuestionIdIn(userId, List.of(1L, 2L)))
+			when(answerSubmitRecordEntityRepository.findAllByUserIdAndQuestionIdIn(eq(userId), anyList()))
 				.thenReturn(List.of(a1, a2, a3));
 
 			// when
@@ -659,24 +800,29 @@ class TeamQuestionRankServiceTest {
 			Long teamId = 1L;
 			Long userId = 1L;
 			TeamEntity team = mock(TeamEntity.class);
+			when(team.getId()).thenReturn(teamId);
+			when(teamReader.getTeam(teamId)).thenReturn(team);
+
+			QuestionSetEntity liveQs = mock(QuestionSetEntity.class);
+			when(liveQs.getId()).thenReturn(100L);
+			when(questionSetReader.getFinishedLiveQuestionSetsInTeam(teamId)).thenReturn(List.of(liveQs));
+			when(solvingSessionEntityRepository.findAllByUserIdAndStatusAndModeAndQuestionSetTeamId(
+				userId, SolvingStatus.COMPLETE, DeliveryMode.STUDY, teamId)).thenReturn(List.of());
+
 			QuestionEntity q1 = mock(QuestionEntity.class);
 			QuestionEntity q2 = mock(QuestionEntity.class);
-
 			when(q1.getId()).thenReturn(1L);
 			when(q2.getId()).thenReturn(2L);
-
-			when(teamReader.getTeam(teamId)).thenReturn(team);
-			when(questionReader.getCompletedQuestionsInTeam(team)).thenReturn(List.of(q1, q2));
+			when(questionEntityRepository.findAllByQuestionSetIdIn(List.of(100L))).thenReturn(List.of(q1, q2));
 
 			AnswerSubmitRecordEntity a1 = mock(AnswerSubmitRecordEntity.class);
 			AnswerSubmitRecordEntity a2 = mock(AnswerSubmitRecordEntity.class);
-
 			when(a1.getQuestionId()).thenReturn(1L);
 			when(a1.isCorrect()).thenReturn(false);
 			when(a2.getQuestionId()).thenReturn(2L);
 			when(a2.isCorrect()).thenReturn(false);
 
-			when(answerSubmitRecordEntityRepository.findAllByUserIdAndQuestionIdIn(userId, List.of(1L, 2L)))
+			when(answerSubmitRecordEntityRepository.findAllByUserIdAndQuestionIdIn(eq(userId), anyList()))
 				.thenReturn(List.of(a1, a2));
 
 			// when
@@ -703,7 +849,7 @@ class TeamQuestionRankServiceTest {
 				.isInstanceOf(UserRoleException.class)
 				.hasMessage("해당 팀의 멤버가 아닙니다.");
 
-			verifyNoInteractions(questionReader);
+			verifyNoInteractions(questionSetReader);
 			verifyNoInteractions(answerSubmitRecordEntityRepository);
 		}
 	}
