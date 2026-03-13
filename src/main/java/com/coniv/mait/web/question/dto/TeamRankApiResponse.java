@@ -27,7 +27,7 @@ public record TeamRankApiResponse(
 			.findFirst()
 			.orElse(null);
 		List<RankDto> limitedRank = ranks.stream()
-			.limit(rankCount)
+			.filter(rank -> rank.getRank() <= rankCount)
 			.toList();
 		return TeamRankApiResponse.builder()
 			.type(type)

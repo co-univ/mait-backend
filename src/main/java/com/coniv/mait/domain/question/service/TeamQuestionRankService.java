@@ -94,7 +94,7 @@ public class TeamQuestionRankService {
 		int rank = 1;
 		for (int i = 0; i < sortedRanks.size(); i++) {
 			if (i > 0 && sortedRanks.get(i).getCount() != sortedRanks.get(i - 1).getCount()) {
-				rank = i + 1;
+				rank++;
 			}
 			sortedRanks.get(i).setRank(rank);
 		}
