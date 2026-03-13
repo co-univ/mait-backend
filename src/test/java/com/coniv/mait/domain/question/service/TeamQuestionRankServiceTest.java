@@ -200,16 +200,16 @@ class TeamQuestionRankServiceTest {
 			List<QuestionScorerEntity> scorers = new java.util.ArrayList<>();
 			for (long userId = 1; userId <= 3; userId++) {
 				for (int j = 0; j < 3; j++) {
-					QuestionScorerEntity s = mock(QuestionScorerEntity.class);
-					when(s.getUserId()).thenReturn(userId);
-					scorers.add(s);
+					QuestionScorerEntity scorer = mock(QuestionScorerEntity.class);
+					when(scorer.getUserId()).thenReturn(userId);
+					scorers.add(scorer);
 				}
 			}
 			for (long userId = 4; userId <= 5; userId++) {
 				for (int j = 0; j < 2; j++) {
-					QuestionScorerEntity s = mock(QuestionScorerEntity.class);
-					when(s.getUserId()).thenReturn(userId);
-					scorers.add(s);
+					QuestionScorerEntity scorer = mock(QuestionScorerEntity.class);
+					when(scorer.getUserId()).thenReturn(userId);
+					scorers.add(scorer);
 				}
 			}
 			QuestionScorerEntity s6Only = mock(QuestionScorerEntity.class);
@@ -387,23 +387,23 @@ class TeamQuestionRankServiceTest {
 			List<AnswerSubmitRecordEntity> records = new java.util.ArrayList<>();
 			for (long userId = 1; userId <= 3; userId++) {
 				for (int j = 0; j < 10; j++) {
-					AnswerSubmitRecordEntity r = mock(AnswerSubmitRecordEntity.class);
-					when(r.getUserId()).thenReturn(userId);
-					records.add(r);
+					AnswerSubmitRecordEntity record = mock(AnswerSubmitRecordEntity.class);
+					when(record.getUserId()).thenReturn(userId);
+					records.add(record);
 				}
 			}
 			for (long userId = 4; userId <= 8; userId++) {
 				for (int j = 0; j < 8; j++) {
-					AnswerSubmitRecordEntity r = mock(AnswerSubmitRecordEntity.class);
-					when(r.getUserId()).thenReturn(userId);
-					records.add(r);
+					AnswerSubmitRecordEntity record = mock(AnswerSubmitRecordEntity.class);
+					when(record.getUserId()).thenReturn(userId);
+					records.add(record);
 				}
 			}
 			for (long userId = 9; userId <= 14; userId++) {
 				for (int j = 0; j < 5; j++) {
-					AnswerSubmitRecordEntity r = mock(AnswerSubmitRecordEntity.class);
-					when(r.getUserId()).thenReturn(userId);
-					records.add(r);
+					AnswerSubmitRecordEntity record = mock(AnswerSubmitRecordEntity.class);
+					when(record.getUserId()).thenReturn(userId);
+					records.add(record);
 				}
 			}
 
