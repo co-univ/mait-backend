@@ -548,9 +548,9 @@ class TeamQuestionRankServiceTest {
 			PersonalAccuracyDto result = teamQuestionRankService.getPersonalAccuracy(teamId, userId);
 
 			// then
-			assertThat(result.totalSolvedCount()).isEqualTo(3);
-			assertThat(result.correctCount()).isEqualTo(2);
-			assertThat(result.accuracyRate()).isEqualTo(66.7);
+			assertThat(result.getTotalSolvedCount()).isEqualTo(3);
+			assertThat(result.getCorrectCount()).isEqualTo(2);
+			assertThat(result.getAccuracyRate()).isEqualTo(66.7);
 		}
 
 		@Test
@@ -602,9 +602,9 @@ class TeamQuestionRankServiceTest {
 			PersonalAccuracyDto result = teamQuestionRankService.getPersonalAccuracy(teamId, userId);
 
 			// then
-			assertThat(result.totalSolvedCount()).isEqualTo(3);
-			assertThat(result.correctCount()).isEqualTo(2);
-			assertThat(result.accuracyRate()).isEqualTo(66.7);
+			assertThat(result.getTotalSolvedCount()).isEqualTo(3);
+			assertThat(result.getCorrectCount()).isEqualTo(2);
+			assertThat(result.getAccuracyRate()).isEqualTo(66.7);
 		}
 
 		@Test
@@ -644,9 +644,9 @@ class TeamQuestionRankServiceTest {
 			PersonalAccuracyDto result = teamQuestionRankService.getPersonalAccuracy(teamId, userId);
 
 			// then
-			assertThat(result.totalSolvedCount()).isEqualTo(1);
-			assertThat(result.correctCount()).isEqualTo(1);
-			assertThat(result.accuracyRate()).isEqualTo(100.0);
+			assertThat(result.getTotalSolvedCount()).isEqualTo(1);
+			assertThat(result.getCorrectCount()).isEqualTo(1);
+			assertThat(result.getAccuracyRate()).isEqualTo(100.0);
 		}
 
 		@Test
@@ -668,9 +668,9 @@ class TeamQuestionRankServiceTest {
 			PersonalAccuracyDto result = teamQuestionRankService.getPersonalAccuracy(teamId, userId);
 
 			// then
-			assertThat(result.totalSolvedCount()).isZero();
-			assertThat(result.correctCount()).isZero();
-			assertThat(result.accuracyRate()).isZero();
+			assertThat(result.getTotalSolvedCount()).isZero();
+			assertThat(result.getCorrectCount()).isZero();
+			assertThat(result.getAccuracyRate()).isZero();
 			verifyNoInteractions(answerSubmitRecordEntityRepository);
 		}
 
@@ -701,9 +701,9 @@ class TeamQuestionRankServiceTest {
 			PersonalAccuracyDto result = teamQuestionRankService.getPersonalAccuracy(teamId, userId);
 
 			// then
-			assertThat(result.totalSolvedCount()).isZero();
-			assertThat(result.correctCount()).isZero();
-			assertThat(result.accuracyRate()).isZero();
+			assertThat(result.getTotalSolvedCount()).isZero();
+			assertThat(result.getCorrectCount()).isZero();
+			assertThat(result.getAccuracyRate()).isZero();
 		}
 
 		@Test
@@ -743,9 +743,9 @@ class TeamQuestionRankServiceTest {
 			PersonalAccuracyDto result = teamQuestionRankService.getPersonalAccuracy(teamId, userId);
 
 			// then
-			assertThat(result.totalSolvedCount()).isEqualTo(1);
-			assertThat(result.correctCount()).isEqualTo(1);
-			assertThat(result.accuracyRate()).isEqualTo(100.0);
+			assertThat(result.getTotalSolvedCount()).isEqualTo(1);
+			assertThat(result.getCorrectCount()).isEqualTo(1);
+			assertThat(result.getAccuracyRate()).isEqualTo(100.0);
 		}
 
 		@Test
@@ -788,9 +788,9 @@ class TeamQuestionRankServiceTest {
 			PersonalAccuracyDto result = teamQuestionRankService.getPersonalAccuracy(teamId, userId);
 
 			// then
-			assertThat(result.totalSolvedCount()).isEqualTo(2);
-			assertThat(result.correctCount()).isEqualTo(1);
-			assertThat(result.accuracyRate()).isEqualTo(50.0);
+			assertThat(result.getTotalSolvedCount()).isEqualTo(2);
+			assertThat(result.getCorrectCount()).isEqualTo(1);
+			assertThat(result.getAccuracyRate()).isEqualTo(50.0);
 		}
 
 		@Test
@@ -829,9 +829,9 @@ class TeamQuestionRankServiceTest {
 			PersonalAccuracyDto result = teamQuestionRankService.getPersonalAccuracy(teamId, userId);
 
 			// then
-			assertThat(result.totalSolvedCount()).isEqualTo(2);
-			assertThat(result.correctCount()).isZero();
-			assertThat(result.accuracyRate()).isEqualTo(0.0);
+			assertThat(result.getTotalSolvedCount()).isEqualTo(2);
+			assertThat(result.getCorrectCount()).isZero();
+			assertThat(result.getAccuracyRate()).isEqualTo(0.0);
 		}
 
 		@Test

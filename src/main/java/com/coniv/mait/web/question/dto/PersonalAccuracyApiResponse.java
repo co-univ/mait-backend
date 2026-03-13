@@ -18,9 +18,9 @@ public record PersonalAccuracyApiResponse(
 ) {
 	public static PersonalAccuracyApiResponse from(PersonalAccuracyDto dto) {
 		return PersonalAccuracyApiResponse.builder()
-			.totalSolvedCount(dto.totalSolvedCount())
-			.correctCount(dto.correctCount())
-			.accuracyRate(dto.accuracyRate())
+			.totalSolvedCount(dto.getTotalSolvedCount())
+			.correctCount(dto.getCorrectCount())
+			.accuracyRate(dto.getAccuracyRate())
 			.build();
 	}
 }
