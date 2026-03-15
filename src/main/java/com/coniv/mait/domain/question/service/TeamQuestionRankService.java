@@ -53,17 +53,20 @@ public class TeamQuestionRankService {
 		if (completedQuestions.isEmpty()) {
 			return List.of();
 		}
+
+		List<UserEntity> teamUsers = userReader.getUsersByTeam(team);
+		if (teamUsers.isEmpty()) {
+			return List.of();
+		}
 		List<Long> questionIds = completedQuestions.stream().map(QuestionEntity::getId).toList();
 
 		Map<Long, Long> scorerCountByUserId = questionScorerEntityRepository.findAllByQuestionIdIn(questionIds).stream()
 			.collect(Collectors.groupingBy(QuestionScorerEntity::getUserId, Collectors.counting()));
 
-		Map<Long, UserEntity> userById = userReader.getUserById(scorerCountByUserId.keySet());
-
-		List<RankDto> ranks = scorerCountByUserId.entrySet().stream()
+		List<RankDto> ranks = teamUsers.stream()
 			.map(entry -> RankDto.builder()
-				.user(UserDto.from(userById.get(entry.getKey())))
-				.count(entry.getValue())
+				.user(UserDto.from(entry))
+				.count(scorerCountByUserId.getOrDefault(entry.getId(), 0L))
 				.build())
 			.sorted()
 			.toList();
