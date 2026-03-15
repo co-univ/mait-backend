@@ -9,6 +9,8 @@ import com.coniv.mait.domain.solve.entity.AnswerSubmitRecordEntity;
 public interface AnswerSubmitRecordEntityRepository extends JpaRepository<AnswerSubmitRecordEntity, Long> {
 	List<AnswerSubmitRecordEntity> findAllByQuestionId(Long questionId);
 
+	List<AnswerSubmitRecordEntity> findAllByQuestionIdIn(List<Long> questionIds);
+
 	List<AnswerSubmitRecordEntity> findAllByQuestionIdInAndIsCorrect(List<Long> questionIds, boolean isCorrect);
 
 	boolean existsByUserIdAndQuestionIdAndIsCorrectTrue(Long id, Long questionId);
