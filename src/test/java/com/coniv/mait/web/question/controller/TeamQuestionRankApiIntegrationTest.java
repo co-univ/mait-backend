@@ -297,4 +297,35 @@ public class TeamQuestionRankApiIntegrationTest extends BaseIntegrationTest {
 				jsonPath("$.data.accuracyRate").value(0.0)
 			);
 	}
+
+	@Test
+	@DisplayName("팀 정답 랭킹 조회 API 통합 테스트 - containsUserRank 필드 반환")
+	void getTeamQuestionCorrectRank_ContainsUserRank() throws Exception {
+		UserEntity currentUser = userEntityRepository.findByEmail("user@example.com").orElseThrow();
+
+		TeamEntity team = teamEntityRepository.save(
+			TeamEntity.builder().name("랭킹 테스트 팀").creatorId(currentUser.getId()).build());
+		teamUserEntityRepository.save(TeamUserEntity.createPlayerUser(currentUser, team));
+
+		QuestionSetEntity questionSet = questionSetEntityRepository.save(
+			QuestionSetEntity.builder()
+				.subject("랭킹 문제집")
+				.teamId(team.getId())
+				.deliveryMode(DeliveryMode.LIVE_TIME)
+				.ongoingStatus(QuestionSetOngoingStatus.AFTER)
+				.build());
+
+		questionEntityRepository.save(
+			MultipleQuestionEntity.builder()
+				.questionSet(questionSet).content("문제 1").number(1L).lexoRank("a").build());
+
+		mockMvc.perform(get("/api/v1/teams/{teamId}/question-ranks", team.getId())
+				.param("type", "CORRECT")
+				.param("rankCount", "1")
+				.accept(MediaType.APPLICATION_JSON))
+			.andExpectAll(
+				status().isOk(),
+				jsonPath("$.isSuccess").value(true),
+				jsonPath("$.data.containsUserRank").value(true));
+	}
 }

@@ -21,6 +21,8 @@ import org.springframework.test.web.servlet.MockMvc;
 
 import com.coniv.mait.domain.question.service.TeamQuestionRankService;
 import com.coniv.mait.domain.question.service.dto.PersonalAccuracyDto;
+import com.coniv.mait.domain.solve.service.dto.RankDto;
+import com.coniv.mait.domain.user.service.dto.UserDto;
 import com.coniv.mait.global.auth.model.MaitUser;
 import com.coniv.mait.global.filter.JwtAuthorizationFilter;
 import com.coniv.mait.global.interceptor.idempotency.IdempotencyInterceptor;
@@ -98,5 +100,55 @@ class TeamQuestionRankControllerTest {
 				jsonPath("$.data.correctCount").value(0),
 				jsonPath("$.data.accuracyRate").value(0.0)
 			);
+	}
+
+	@Test
+	@DisplayName("팀 정답 랭킹 조회 API - containsUserRank=true")
+	void getTeamQuestionCorrectRank_ContainsUserRankTrue() throws Exception {
+		RankDto myRank = RankDto.builder()
+			.user(UserDto.builder().id(USER_ID).name("나").build())
+			.rank(1)
+			.count(3L)
+			.build();
+		RankDto otherRank = RankDto.builder()
+			.user(UserDto.builder().id(2L).name("다른유저").build())
+			.rank(2)
+			.count(1L)
+			.build();
+
+		when(teamQuestionRankService.getTeamQuestionCorrectAnswerRank(TEAM_ID)).thenReturn(List.of(myRank, otherRank));
+
+		mockMvc.perform(get("/api/v1/teams/{teamId}/question-ranks", TEAM_ID)
+				.param("type", "CORRECT")
+				.param("rankCount", "1"))
+			.andExpectAll(
+				status().isOk(),
+				jsonPath("$.isSuccess").value(true),
+				jsonPath("$.data.containsUserRank").value(true));
+	}
+
+	@Test
+	@DisplayName("팀 정답 랭킹 조회 API - containsUserRank=false")
+	void getTeamQuestionCorrectRank_ContainsUserRankFalse() throws Exception {
+		RankDto otherRank = RankDto.builder()
+			.user(UserDto.builder().id(2L).name("다른유저").build())
+			.rank(1)
+			.count(3L)
+			.build();
+		RankDto myRank = RankDto.builder()
+			.user(UserDto.builder().id(USER_ID).name("나").build())
+			.rank(2)
+			.count(1L)
+			.build();
+
+		when(teamQuestionRankService.getTeamQuestionCorrectAnswerRank(TEAM_ID)).thenReturn(List.of(otherRank, myRank));
+
+		mockMvc.perform(get("/api/v1/teams/{teamId}/question-ranks", TEAM_ID)
+				.param("type", "CORRECT")
+				.param("rankCount", "1"))
+			.andExpectAll(
+				status().isOk(),
+				jsonPath("$.isSuccess").value(true),
+				jsonPath("$.data.containsUserRank").value(false));
 	}
 }
