@@ -209,7 +209,27 @@ class QuestionAnswerSubmitControllerTest {
 						"submitAnswers": []
 					}
 					""",
-				"빈칸 문제의 답변은 필수입니다."));
+				"빈칸 문제의 답변은 필수입니다."),
+			Arguments.of(
+				"순서 문제에서 submitAnswers가 null인 경우",
+				"""
+					{
+						"type": "ORDERING",
+						"userId": 1,
+						"submitAnswers": null
+					}
+					""",
+				"순서 문제의 답변은 필수입니다."),
+			Arguments.of(
+				"순서 문제에서 submitAnswers가 빈 리스트인 경우",
+				"""
+					{
+						"type": "ORDERING",
+						"userId": 1,
+						"submitAnswers": []
+					}
+					""",
+				"순서 문제의 답변은 필수입니다."));
 	}
 
 	@ParameterizedTest(name = "{0}")
