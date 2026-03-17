@@ -37,7 +37,7 @@ public class QuestionAnswerSubmitController {
 	@PostMapping("/submit")
 	public ResponseEntity<ApiResponse<QuestionAnswerSubmitApiResponse>> submitAnswer(
 		@Valid @RequestBody QuestionAnswerSubmitApiRequest request,
-		@PathVariable("questionSetId") Long questionSetId, @PathVariable("questionId") Long questionId) throws
+		@PathVariable Long questionSetId, @PathVariable Long questionId) throws
 		JsonProcessingException {
 		return ResponseEntity.ok().body(ApiResponse.ok(
 			QuestionAnswerSubmitApiResponse.from(questionAnswerSubmitService.submitAnswer(questionSetId, questionId,
@@ -47,8 +47,8 @@ public class QuestionAnswerSubmitController {
 	@Operation(summary = "문제별 득점자 조회 API")
 	@GetMapping("/scorers")
 	public ResponseEntity<ApiResponse<QuestionScorerApiResponse>> getScorer(
-		@PathVariable("questionSetId") Long questionSetId,
-		@PathVariable("questionId") Long questionId
+		@PathVariable Long questionSetId,
+		@PathVariable Long questionId
 	) {
 		return ResponseEntity.ok().body(ApiResponse.ok(
 			QuestionScorerApiResponse.from(questionScorerService.getScorer(questionSetId, questionId))));
@@ -57,7 +57,7 @@ public class QuestionAnswerSubmitController {
 	@Operation(summary = "문제 풀이 정답 제출 기록 조회 API")
 	@GetMapping("/submit-records")
 	public ResponseEntity<ApiResponse<QuestionAnswerSubmitRecordsApiResponse>> getSubmitRecords(
-		@PathVariable("questionSetId") Long questionSetId, @PathVariable("questionId") Long questionId) {
+		@PathVariable Long questionSetId, @PathVariable Long questionId) {
 		return ResponseEntity.ok().body(ApiResponse.ok(
 			QuestionAnswerSubmitRecordsApiResponse.from(QuestionAnswerSubmitRecordApiResponse.from(
 				questionAnswerSubmitService.getSubmitRecords(questionSetId, questionId)))
