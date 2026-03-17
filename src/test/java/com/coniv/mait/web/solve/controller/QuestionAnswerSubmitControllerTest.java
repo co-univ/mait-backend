@@ -189,7 +189,47 @@ class QuestionAnswerSubmitControllerTest {
 						"submitAnswers": [""]
 					}
 					""",
-				"답변은 빈 문자열일 수 없습니다."));
+				"답변은 빈 문자열일 수 없습니다."),
+			Arguments.of(
+				"빈칸 문제에서 submitAnswers가 null인 경우",
+				"""
+					{
+						"type": "FILL_BLANK",
+						"userId": 1,
+						"submitAnswers": null
+					}
+					""",
+				"빈칸 문제의 답변은 필수입니다."),
+			Arguments.of(
+				"빈칸 문제에서 submitAnswers가 빈 리스트인 경우",
+				"""
+					{
+						"type": "FILL_BLANK",
+						"userId": 1,
+						"submitAnswers": []
+					}
+					""",
+				"빈칸 문제의 답변은 필수입니다."),
+			Arguments.of(
+				"순서 문제에서 submitAnswers가 null인 경우",
+				"""
+					{
+						"type": "ORDERING",
+						"userId": 1,
+						"submitAnswers": null
+					}
+					""",
+				"순서 문제의 답변은 필수입니다."),
+			Arguments.of(
+				"순서 문제에서 submitAnswers가 빈 리스트인 경우",
+				"""
+					{
+						"type": "ORDERING",
+						"userId": 1,
+						"submitAnswers": []
+					}
+					""",
+				"순서 문제의 답변은 필수입니다."));
 	}
 
 	@ParameterizedTest(name = "{0}")
