@@ -3,6 +3,7 @@ package com.coniv.mait.global.exception.handler;
 import java.sql.SQLException;
 import java.util.List;
 
+import org.hibernate.LazyInitializationException;
 import org.springframework.context.support.DefaultMessageSourceResolvable;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
@@ -61,6 +62,15 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
 			exception.getMessage());
 		return ResponseEntity.status(HttpStatus.BAD_REQUEST)
 			.body(ErrorResponse.of(CommonExceptionCode.USER_INPUT_EXCEPTION, List.of("요청 본문 형식이 올바르지 않습니다.")));
+	}
+
+	@ExceptionHandler(LazyInitializationException.class)
+	public ResponseEntity<ErrorResponse> handleLazyInitializationException(LazyInitializationException exception,
+		HttpServletRequest request) {
+		log.error("LazyInitializationException 발생: {}, 경로: {}", exception.getMessage(), request.getRequestURI(),
+			exception);
+		return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+			.body(ErrorResponse.from(CommonExceptionCode.UNEXPECTED_EXCEPTION));
 	}
 
 	@ExceptionHandler(Exception.class)
