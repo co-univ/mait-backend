@@ -24,6 +24,8 @@ import org.springframework.web.context.request.ServletWebRequest;
 import com.coniv.mait.global.exception.CommonExceptionCode;
 import com.coniv.mait.global.response.ErrorResponse;
 
+import org.hibernate.LazyInitializationException;
+
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.servlet.http.HttpServletRequest;
 
@@ -202,6 +204,29 @@ class GlobalExceptionHandlerTest {
 		ErrorResponse errorResponse = response.getBody();
 		assertThat(errorResponse.getIsSuccess()).isFalse();
 		assertThat(errorResponse.getStatus()).isEqualTo(HttpStatus.INTERNAL_SERVER_ERROR);
+	}
+
+	@Test
+	@DisplayName("LazyInitializationException 처리 - FE에는 UNEXPECTED_EXCEPTION 반환")
+	void handleLazyInitializationException() {
+		// Given
+		String requestUri = "/api/test";
+		when(httpServletRequest.getRequestURI()).thenReturn(requestUri);
+
+		// When
+		ResponseEntity<ErrorResponse> response = globalExceptionHandler.handleLazyInitializationException(
+			new LazyInitializationException("could not initialize proxy - no Session"), httpServletRequest);
+
+		// Then
+		assertThat(response.getStatusCode()).isEqualTo(HttpStatus.INTERNAL_SERVER_ERROR);
+		assertThat(response.getBody()).isNotNull();
+
+		ErrorResponse errorResponse = response.getBody();
+		assertThat(errorResponse.getIsSuccess()).isFalse();
+		assertThat(errorResponse.getStatus()).isEqualTo(HttpStatus.INTERNAL_SERVER_ERROR);
+		assertThat(errorResponse.getMessage()).isEqualTo(CommonExceptionCode.UNEXPECTED_EXCEPTION.getMessage());
+
+		verify(httpServletRequest).getRequestURI();
 	}
 
 	@Test
