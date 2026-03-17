@@ -53,17 +53,20 @@ public class TeamQuestionRankService {
 		if (completedQuestions.isEmpty()) {
 			return List.of();
 		}
+
+		List<UserEntity> teamUsers = userReader.getUsersByTeam(team);
+		if (teamUsers.isEmpty()) {
+			return List.of();
+		}
 		List<Long> questionIds = completedQuestions.stream().map(QuestionEntity::getId).toList();
 
 		Map<Long, Long> scorerCountByUserId = questionScorerEntityRepository.findAllByQuestionIdIn(questionIds).stream()
 			.collect(Collectors.groupingBy(QuestionScorerEntity::getUserId, Collectors.counting()));
 
-		Map<Long, UserEntity> userById = userReader.getUserById(scorerCountByUserId.keySet());
-
-		List<RankDto> ranks = scorerCountByUserId.entrySet().stream()
+		List<RankDto> ranks = teamUsers.stream()
 			.map(entry -> RankDto.builder()
-				.user(UserDto.from(userById.get(entry.getKey())))
-				.count(entry.getValue())
+				.user(UserDto.from(entry))
+				.count(scorerCountByUserId.getOrDefault(entry.getId(), 0L))
 				.build())
 			.sorted()
 			.toList();
@@ -82,18 +85,32 @@ public class TeamQuestionRankService {
 			return List.of();
 		}
 
+		List<UserEntity> teamUsers = userReader.getUsersByTeam(team);
+		if (teamUsers.isEmpty()) {
+			return List.of();
+		}
+
 		List<Long> questionIds = completedQuestions.stream().map(QuestionEntity::getId).toList();
 
-		Map<Long, List<AnswerSubmitRecordEntity>> correctAnswersByUserId =
-			answerSubmitRecordEntityRepository.findAllByQuestionIdInAndIsCorrect(questionIds, true).stream()
+		Map<Long, List<AnswerSubmitRecordEntity>> answerRecordsByUserId =
+			answerSubmitRecordEntityRepository.findAllByQuestionIdIn(questionIds).stream()
 				.collect(Collectors.groupingBy(AnswerSubmitRecordEntity::getUserId));
 
-		Map<Long, UserEntity> userById = userReader.getUserById(correctAnswersByUserId.keySet());
+		Map<Long, Long> correctQuestionCountByUserId = answerRecordsByUserId.entrySet().stream()
+			.collect(Collectors.toMap(
+				Map.Entry::getKey,
+				entry -> entry.getValue().stream()
+					.collect(Collectors.groupingBy(AnswerSubmitRecordEntity::getQuestionId))
+					.values().stream()
+					.filter(records -> records.stream().allMatch(AnswerSubmitRecordEntity::isCorrect))
+					.count()))
+			.entrySet().stream()
+			.collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
 
-		List<RankDto> ranks = correctAnswersByUserId.entrySet().stream()
+		List<RankDto> ranks = teamUsers.stream()
 			.map(entry -> RankDto.builder()
-				.user(UserDto.from(userById.get(entry.getKey())))
-				.count(entry.getValue().size())
+				.user(UserDto.from(entry))
+				.count(correctQuestionCountByUserId.getOrDefault(entry.getId(), 0L))
 				.build())
 			.sorted()
 			.toList();

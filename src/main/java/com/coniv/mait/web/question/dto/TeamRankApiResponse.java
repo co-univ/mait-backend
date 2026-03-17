@@ -18,7 +18,10 @@ public record TeamRankApiResponse(
 	List<RankDto> teamRankings,
 
 	@Schema(description = "내 랭킹", requiredMode = Schema.RequiredMode.NOT_REQUIRED)
-	RankDto userRank
+	RankDto userRank,
+
+	@Schema(description = "요청한 rankCount 범위 내에 내 랭킹(userRank)이 포함되는지 여부", requiredMode = Schema.RequiredMode.REQUIRED)
+	boolean containsUserRank
 ) {
 
 	public static TeamRankApiResponse of(List<RankDto> ranks, Long teamId, Long userId, int rankCount, RankType type) {
@@ -26,6 +29,7 @@ public record TeamRankApiResponse(
 			.filter(rank -> rank.getUser().getId().equals(userId))
 			.findFirst()
 			.orElse(null);
+		boolean containsUserRank = userRank != null && userRank.getRank() <= rankCount;
 		List<RankDto> limitedRank = ranks.stream()
 			.filter(rank -> rank.getRank() <= rankCount)
 			.toList();
@@ -34,6 +38,7 @@ public record TeamRankApiResponse(
 			.teamId(teamId)
 			.teamRankings(limitedRank)
 			.userRank(userRank)
+			.containsUserRank(containsUserRank)
 			.build();
 	}
 
@@ -42,4 +47,3 @@ public record TeamRankApiResponse(
 		CORRECT
 	}
 }
-

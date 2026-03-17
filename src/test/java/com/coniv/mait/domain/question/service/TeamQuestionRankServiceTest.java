@@ -5,8 +5,6 @@ import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
 import java.util.List;
-import java.util.Map;
-import java.util.Set;
 
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -114,18 +112,21 @@ class TeamQuestionRankServiceTest {
 
 			UserEntity user1 = createMockUser(1L, "가나다");
 			UserEntity user2 = createMockUser(2L, "라마바");
+			UserEntity user3 = createMockUser(3L, "사아자");
 
-			when(userReader.getUserById(Set.of(1L, 2L))).thenReturn(Map.of(1L, user1, 2L, user2));
+			when(userReader.getUsersByTeam(team)).thenReturn(List.of(user1, user2, user3));
 
 			// when
 			List<RankDto> result = teamQuestionRankService.getTeamQuestionScorerRank(teamId);
 
 			// then
-			assertThat(result).hasSize(2);
+			assertThat(result).hasSize(3);
 			assertThat(result.get(0).getCount()).isEqualTo(2L);
 			assertThat(result.get(0).getRank()).isEqualTo(1);
 			assertThat(result.get(1).getCount()).isEqualTo(1L);
 			assertThat(result.get(1).getRank()).isEqualTo(2);
+			assertThat(result.get(2).getCount()).isEqualTo(0L);
+			assertThat(result.get(2).getRank()).isEqualTo(3);
 		}
 
 		@Test
@@ -188,8 +189,7 @@ class TeamQuestionRankServiceTest {
 			UserEntity user2 = createMockUser(2L, "라마바");
 			UserEntity user3 = createMockUser(3L, "사아자");
 
-			when(userReader.getUserById(Set.of(1L, 2L, 3L)))
-				.thenReturn(Map.of(1L, user1, 2L, user2, 3L, user3));
+			when(userReader.getUsersByTeam(team)).thenReturn(List.of(user1, user2, user3));
 
 			// when
 			List<RankDto> result = teamQuestionRankService.getTeamQuestionScorerRank(teamId);
@@ -249,8 +249,7 @@ class TeamQuestionRankServiceTest {
 			UserEntity user5 = createMockUser(5L, "마");
 			UserEntity user6 = createMockUser(6L, "바");
 
-			when(userReader.getUserById(Set.of(1L, 2L, 3L, 4L, 5L, 6L)))
-				.thenReturn(Map.of(1L, user1, 2L, user2, 3L, user3, 4L, user4, 5L, user5, 6L, user6));
+			when(userReader.getUsersByTeam(team)).thenReturn(List.of(user1, user2, user3, user4, user5, user6));
 
 			// when
 			List<RankDto> result = teamQuestionRankService.getTeamQuestionScorerRank(teamId);
@@ -278,6 +277,13 @@ class TeamQuestionRankServiceTest {
 	@Nested
 	@DisplayName("getTeamQuestionCorrectAnswerRank")
 	class GetTeamQuestionCorrectAnswerRank {
+		private AnswerSubmitRecordEntity mockRecord(long userId, long questionId, boolean isCorrect) {
+			AnswerSubmitRecordEntity record = mock(AnswerSubmitRecordEntity.class);
+			when(record.getUserId()).thenReturn(userId);
+			when(record.getQuestionId()).thenReturn(questionId);
+			when(record.isCorrect()).thenReturn(isCorrect);
+			return record;
+		}
 
 		@Test
 		@DisplayName("정답자 랭킹 조회 성공 - 정상 케이스")
@@ -294,21 +300,17 @@ class TeamQuestionRankServiceTest {
 			when(teamReader.getTeam(teamId)).thenReturn(team);
 			when(questionReader.getCompletedQuestionsInTeam(team)).thenReturn(List.of(q1, q2));
 
-			AnswerSubmitRecordEntity a1 = mock(AnswerSubmitRecordEntity.class);
-			AnswerSubmitRecordEntity a2 = mock(AnswerSubmitRecordEntity.class);
-			AnswerSubmitRecordEntity a3 = mock(AnswerSubmitRecordEntity.class);
+			AnswerSubmitRecordEntity a1 = mockRecord(1L, 1L, true);
+			AnswerSubmitRecordEntity a2 = mockRecord(1L, 2L, true);
+			AnswerSubmitRecordEntity a3 = mockRecord(2L, 1L, true);
 
-			when(a1.getUserId()).thenReturn(1L);
-			when(a2.getUserId()).thenReturn(1L);
-			when(a3.getUserId()).thenReturn(2L);
-
-			when(answerSubmitRecordEntityRepository.findAllByQuestionIdInAndIsCorrect(List.of(1L, 2L), true))
+			when(answerSubmitRecordEntityRepository.findAllByQuestionIdIn(List.of(1L, 2L)))
 				.thenReturn(List.of(a1, a2, a3));
 
 			UserEntity user1 = createMockUser(1L, "가나다");
 			UserEntity user2 = createMockUser(2L, "라마바");
 
-			when(userReader.getUserById(Set.of(1L, 2L))).thenReturn(Map.of(1L, user1, 2L, user2));
+			when(userReader.getUsersByTeam(team)).thenReturn(List.of(user1, user2));
 
 			// when
 			List<RankDto> result = teamQuestionRankService.getTeamQuestionCorrectAnswerRank(teamId);
@@ -319,6 +321,47 @@ class TeamQuestionRankServiceTest {
 			assertThat(result.get(0).getRank()).isEqualTo(1);
 			assertThat(result.get(1).getCount()).isEqualTo(1L);
 			assertThat(result.get(1).getRank()).isEqualTo(2);
+		}
+
+		@Test
+		@DisplayName("동일 문제에 오답 기록이 있으면 해당 문제는 오답으로 처리")
+		void questionWithAnyWrongAnswerIsWrong() {
+			Long teamId = 1L;
+			TeamEntity team = mock(TeamEntity.class);
+			QuestionEntity q1 = mock(QuestionEntity.class);
+			QuestionEntity q2 = mock(QuestionEntity.class);
+
+			when(q1.getId()).thenReturn(1L);
+			when(q2.getId()).thenReturn(2L);
+
+			when(teamReader.getTeam(teamId)).thenReturn(team);
+			when(questionReader.getCompletedQuestionsInTeam(team)).thenReturn(List.of(q1, q2));
+
+			List<AnswerSubmitRecordEntity> records = List.of(
+				mockRecord(1L, 1L, true),
+				mockRecord(1L, 1L, false),
+				mockRecord(1L, 2L, true),
+				mockRecord(2L, 1L, true),
+				mockRecord(2L, 2L, true));
+
+			when(answerSubmitRecordEntityRepository.findAllByQuestionIdIn(List.of(1L, 2L)))
+				.thenReturn(records);
+
+			UserEntity user1 = createMockUser(1L, "가나다");
+			UserEntity user2 = createMockUser(2L, "라마바");
+			UserEntity user3 = createMockUser(3L, "사아자");
+			when(userReader.getUsersByTeam(team)).thenReturn(List.of(user1, user2, user3));
+
+			List<RankDto> result = teamQuestionRankService.getTeamQuestionCorrectAnswerRank(teamId);
+
+			assertThat(result).hasSize(3);
+			assertThat(result.get(0).getUser().getId()).isEqualTo(2L);
+			assertThat(result.get(0).getCount()).isEqualTo(2L);
+			assertThat(result.get(1).getUser().getId()).isEqualTo(1L);
+			assertThat(result.get(1).getCount()).isEqualTo(1L);
+			assertThat(result.get(2).getUser().getId()).isEqualTo(3L);
+			assertThat(result.get(2).getCount()).isEqualTo(0L);
+			assertThat(result.get(2).getRank()).isEqualTo(3);
 		}
 
 		@Test
@@ -347,34 +390,29 @@ class TeamQuestionRankServiceTest {
 			Long teamId = 1L;
 			TeamEntity team = mock(TeamEntity.class);
 			QuestionEntity q1 = mock(QuestionEntity.class);
+			QuestionEntity q2 = mock(QuestionEntity.class);
 
 			when(q1.getId()).thenReturn(1L);
+			when(q2.getId()).thenReturn(2L);
 
 			when(teamReader.getTeam(teamId)).thenReturn(team);
-			when(questionReader.getCompletedQuestionsInTeam(team)).thenReturn(List.of(q1));
+			when(questionReader.getCompletedQuestionsInTeam(team)).thenReturn(List.of(q1, q2));
 
 			// user1: 2개, user2: 2개, user3: 1개
-			AnswerSubmitRecordEntity a1 = mock(AnswerSubmitRecordEntity.class);
-			AnswerSubmitRecordEntity a2 = mock(AnswerSubmitRecordEntity.class);
-			AnswerSubmitRecordEntity a3 = mock(AnswerSubmitRecordEntity.class);
-			AnswerSubmitRecordEntity a4 = mock(AnswerSubmitRecordEntity.class);
-			AnswerSubmitRecordEntity a5 = mock(AnswerSubmitRecordEntity.class);
+			AnswerSubmitRecordEntity a1 = mockRecord(1L, 1L, true);
+			AnswerSubmitRecordEntity a2 = mockRecord(1L, 2L, true);
+			AnswerSubmitRecordEntity a3 = mockRecord(2L, 1L, true);
+			AnswerSubmitRecordEntity a4 = mockRecord(2L, 2L, true);
+			AnswerSubmitRecordEntity a5 = mockRecord(3L, 1L, true);
 
-			when(a1.getUserId()).thenReturn(1L);
-			when(a2.getUserId()).thenReturn(1L);
-			when(a3.getUserId()).thenReturn(2L);
-			when(a4.getUserId()).thenReturn(2L);
-			when(a5.getUserId()).thenReturn(3L);
-
-			when(answerSubmitRecordEntityRepository.findAllByQuestionIdInAndIsCorrect(List.of(1L), true))
+			when(answerSubmitRecordEntityRepository.findAllByQuestionIdIn(List.of(1L, 2L)))
 				.thenReturn(List.of(a1, a2, a3, a4, a5));
 
 			UserEntity user1 = createMockUser(1L, "가나다");
 			UserEntity user2 = createMockUser(2L, "라마바");
 			UserEntity user3 = createMockUser(3L, "사아자");
 
-			when(userReader.getUserById(Set.of(1L, 2L, 3L)))
-				.thenReturn(Map.of(1L, user1, 2L, user2, 3L, user3));
+			when(userReader.getUsersByTeam(team)).thenReturn(List.of(user1, user2, user3));
 
 			// when
 			List<RankDto> result = teamQuestionRankService.getTeamQuestionCorrectAnswerRank(teamId);
@@ -399,46 +437,45 @@ class TeamQuestionRankServiceTest {
 			// given
 			Long teamId = 1L;
 			TeamEntity team = mock(TeamEntity.class);
-			QuestionEntity q1 = mock(QuestionEntity.class);
-
-			when(q1.getId()).thenReturn(1L);
+			List<QuestionEntity> questions = new java.util.ArrayList<>();
+			List<Long> questionIds = new java.util.ArrayList<>();
+			for (long questionId = 1L; questionId <= 10L; questionId++) {
+				QuestionEntity question = mock(QuestionEntity.class);
+				when(question.getId()).thenReturn(questionId);
+				questions.add(question);
+				questionIds.add(questionId);
+			}
 
 			when(teamReader.getTeam(teamId)).thenReturn(team);
-			when(questionReader.getCompletedQuestionsInTeam(team)).thenReturn(List.of(q1));
+			when(questionReader.getCompletedQuestionsInTeam(team)).thenReturn(questions);
 
 			// 1등(10개): user1~3, 2등(8개): user4~8, 3등(5개): user9~14
 			List<AnswerSubmitRecordEntity> records = new java.util.ArrayList<>();
 			for (long userId = 1; userId <= 3; userId++) {
-				for (int j = 0; j < 10; j++) {
-					AnswerSubmitRecordEntity record = mock(AnswerSubmitRecordEntity.class);
-					when(record.getUserId()).thenReturn(userId);
-					records.add(record);
+				for (long questionId = 1; questionId <= 10; questionId++) {
+					records.add(mockRecord(userId, questionId, true));
 				}
 			}
 			for (long userId = 4; userId <= 8; userId++) {
-				for (int j = 0; j < 8; j++) {
-					AnswerSubmitRecordEntity record = mock(AnswerSubmitRecordEntity.class);
-					when(record.getUserId()).thenReturn(userId);
-					records.add(record);
+				for (long questionId = 1; questionId <= 8; questionId++) {
+					records.add(mockRecord(userId, questionId, true));
 				}
 			}
 			for (long userId = 9; userId <= 14; userId++) {
-				for (int j = 0; j < 5; j++) {
-					AnswerSubmitRecordEntity record = mock(AnswerSubmitRecordEntity.class);
-					when(record.getUserId()).thenReturn(userId);
-					records.add(record);
+				for (long questionId = 1; questionId <= 5; questionId++) {
+					records.add(mockRecord(userId, questionId, true));
 				}
 			}
 
-			when(answerSubmitRecordEntityRepository.findAllByQuestionIdInAndIsCorrect(List.of(1L), true))
+			when(answerSubmitRecordEntityRepository.findAllByQuestionIdIn(questionIds))
 				.thenReturn(records);
 
-			Map<Long, UserEntity> userMap = new java.util.HashMap<>();
+			List<UserEntity> teamUsers = new java.util.ArrayList<>();
 			for (long userId = 1; userId <= 14; userId++) {
-				userMap.put(userId, createMockUser(userId, "유저" + userId));
+				UserEntity user = createMockUser(userId, "유저" + userId);
+				teamUsers.add(user);
 			}
-
-			when(userReader.getUserById(anyCollection())).thenReturn(userMap);
+			when(userReader.getUsersByTeam(team)).thenReturn(teamUsers);
 
 			// when
 			List<RankDto> result = teamQuestionRankService.getTeamQuestionCorrectAnswerRank(teamId);
@@ -472,23 +509,18 @@ class TeamQuestionRankServiceTest {
 			when(teamReader.getTeam(teamId)).thenReturn(team);
 			when(questionReader.getCompletedQuestionsInTeam(team)).thenReturn(List.of(q1));
 
-			AnswerSubmitRecordEntity a1 = mock(AnswerSubmitRecordEntity.class);
-			AnswerSubmitRecordEntity a2 = mock(AnswerSubmitRecordEntity.class);
-			AnswerSubmitRecordEntity a3 = mock(AnswerSubmitRecordEntity.class);
+			AnswerSubmitRecordEntity a1 = mockRecord(1L, 1L, true);
+			AnswerSubmitRecordEntity a2 = mockRecord(2L, 1L, true);
+			AnswerSubmitRecordEntity a3 = mockRecord(3L, 1L, true);
 
-			when(a1.getUserId()).thenReturn(1L);
-			when(a2.getUserId()).thenReturn(2L);
-			when(a3.getUserId()).thenReturn(3L);
-
-			when(answerSubmitRecordEntityRepository.findAllByQuestionIdInAndIsCorrect(List.of(1L), true))
+			when(answerSubmitRecordEntityRepository.findAllByQuestionIdIn(List.of(1L)))
 				.thenReturn(List.of(a1, a2, a3));
 
 			UserEntity user1 = createMockUser(1L, "가");
 			UserEntity user2 = createMockUser(2L, "나");
 			UserEntity user3 = createMockUser(3L, "다");
 
-			when(userReader.getUserById(Set.of(1L, 2L, 3L)))
-				.thenReturn(Map.of(1L, user1, 2L, user2, 3L, user3));
+			when(userReader.getUsersByTeam(team)).thenReturn(List.of(user1, user2, user3));
 
 			// when
 			List<RankDto> result = teamQuestionRankService.getTeamQuestionCorrectAnswerRank(teamId);
