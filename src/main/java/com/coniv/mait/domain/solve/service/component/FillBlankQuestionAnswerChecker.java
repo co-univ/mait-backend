@@ -38,6 +38,10 @@ public class FillBlankQuestionAnswerChecker implements AnswerChecker<FillBlankSu
 
 		List<FillBlankSubmitAnswer> submitAnswers = answers.getSubmitAnswers();
 
+		if (submitAnswers.size() != answersByNumber.size()) {
+			return false;
+		}
+
 		for (FillBlankSubmitAnswer submitAnswer : submitAnswers) {
 			Set<String> correctAnswers = answersByNumber.get(submitAnswer.number());
 

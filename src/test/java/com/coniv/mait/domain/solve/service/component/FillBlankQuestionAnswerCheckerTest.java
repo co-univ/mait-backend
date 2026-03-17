@@ -160,4 +160,82 @@ class FillBlankQuestionAnswerCheckerTest {
 		assertThat(fillBlankQuestionAnswerChecker.checkAnswer(question, submit2)).isFalse();
 		assertThat(fillBlankQuestionAnswerChecker.checkAnswer(question, submit3)).isFalse();
 	}
+
+	@Test
+	@DisplayName("빈칸 - 오답 케이스 (빈 답안 제출)")
+	void checkAnswer_emptySubmitAnswers() {
+		QuestionEntity question = mock(QuestionEntity.class);
+		when(question.getId()).thenReturn(1L);
+
+		List<FillBlankAnswerEntity> entities = List.of(
+			FillBlankAnswerEntity.builder()
+				.id(1L)
+				.answer("신유승")
+				.fillBlankQuestionId(1L)
+				.isMain(true)
+				.number(1L)
+				.build(),
+			FillBlankAnswerEntity.builder()
+				.id(2L)
+				.answer("스끼야끼")
+				.fillBlankQuestionId(1L)
+				.isMain(true)
+				.number(2L)
+				.build()
+		);
+		when(fillBlankAnswerEntityRepository.findAllByFillBlankQuestionId(1L)).thenReturn(entities);
+
+		SubmitAnswerDto<FillBlankSubmitAnswer> emptySubmit = new SubmitAnswerDto<>() {
+			@Override
+			public QuestionType getType() {
+				return QuestionType.FILL_BLANK;
+			}
+
+			@Override
+			public List<FillBlankSubmitAnswer> getSubmitAnswers() {
+				return List.of();
+			}
+		};
+
+		assertThat(fillBlankQuestionAnswerChecker.checkAnswer(question, emptySubmit)).isFalse();
+	}
+
+	@Test
+	@DisplayName("빈칸 - 오답 케이스 (일부 빈칸만 제출)")
+	void checkAnswer_partialSubmitAnswers() {
+		QuestionEntity question = mock(QuestionEntity.class);
+		when(question.getId()).thenReturn(1L);
+
+		List<FillBlankAnswerEntity> entities = List.of(
+			FillBlankAnswerEntity.builder()
+				.id(1L)
+				.answer("신유승")
+				.fillBlankQuestionId(1L)
+				.isMain(true)
+				.number(1L)
+				.build(),
+			FillBlankAnswerEntity.builder()
+				.id(2L)
+				.answer("스끼야끼")
+				.fillBlankQuestionId(1L)
+				.isMain(true)
+				.number(2L)
+				.build()
+		);
+		when(fillBlankAnswerEntityRepository.findAllByFillBlankQuestionId(1L)).thenReturn(entities);
+
+		SubmitAnswerDto<FillBlankSubmitAnswer> partialSubmit = new SubmitAnswerDto<>() {
+			@Override
+			public QuestionType getType() {
+				return QuestionType.FILL_BLANK;
+			}
+
+			@Override
+			public List<FillBlankSubmitAnswer> getSubmitAnswers() {
+				return List.of(new FillBlankSubmitAnswer(1L, "신유승"));
+			}
+		};
+
+		assertThat(fillBlankQuestionAnswerChecker.checkAnswer(question, partialSubmit)).isFalse();
+	}
 }
