@@ -31,6 +31,12 @@ public class UserReader {
 			.toList();
 	}
 
+	public List<UserEntity> getUsersByTeamFetchUser(final TeamEntity team) {
+		return teamUserEntityRepository.findAllByTeamIdFetchJoinUser(team.getId()).stream()
+			.map(TeamUserEntity::getUser)
+			.toList();
+	}
+
 	public Map<Long, UserEntity> getUserById(Collection<Long> userIds) {
 		return userEntityRepository.findAllById(userIds).stream()
 			.collect(Collectors.toUnmodifiableMap(UserEntity::getId, Function.identity()));

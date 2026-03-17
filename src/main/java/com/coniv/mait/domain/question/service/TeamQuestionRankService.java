@@ -54,7 +54,7 @@ public class TeamQuestionRankService {
 			return List.of();
 		}
 
-		List<UserEntity> teamUsers = userReader.getUsersByTeam(team);
+		List<UserEntity> teamUsers = userReader.getUsersByTeamFetchUser(team);
 		if (teamUsers.isEmpty()) {
 			return List.of();
 		}
@@ -85,7 +85,7 @@ public class TeamQuestionRankService {
 			return List.of();
 		}
 
-		List<UserEntity> teamUsers = userReader.getUsersByTeam(team);
+		List<UserEntity> teamUsers = userReader.getUsersByTeamFetchUser(team);
 		if (teamUsers.isEmpty()) {
 			return List.of();
 		}

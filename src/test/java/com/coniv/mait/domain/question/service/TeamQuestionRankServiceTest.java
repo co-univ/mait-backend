@@ -114,7 +114,7 @@ class TeamQuestionRankServiceTest {
 			UserEntity user2 = createMockUser(2L, "라마바");
 			UserEntity user3 = createMockUser(3L, "사아자");
 
-			when(userReader.getUsersByTeam(team)).thenReturn(List.of(user1, user2, user3));
+			when(userReader.getUsersByTeamFetchUser(team)).thenReturn(List.of(user1, user2, user3));
 
 			// when
 			List<RankDto> result = teamQuestionRankService.getTeamQuestionScorerRank(teamId);
@@ -189,7 +189,7 @@ class TeamQuestionRankServiceTest {
 			UserEntity user2 = createMockUser(2L, "라마바");
 			UserEntity user3 = createMockUser(3L, "사아자");
 
-			when(userReader.getUsersByTeam(team)).thenReturn(List.of(user1, user2, user3));
+			when(userReader.getUsersByTeamFetchUser(team)).thenReturn(List.of(user1, user2, user3));
 
 			// when
 			List<RankDto> result = teamQuestionRankService.getTeamQuestionScorerRank(teamId);
@@ -249,7 +249,7 @@ class TeamQuestionRankServiceTest {
 			UserEntity user5 = createMockUser(5L, "마");
 			UserEntity user6 = createMockUser(6L, "바");
 
-			when(userReader.getUsersByTeam(team)).thenReturn(List.of(user1, user2, user3, user4, user5, user6));
+			when(userReader.getUsersByTeamFetchUser(team)).thenReturn(List.of(user1, user2, user3, user4, user5, user6));
 
 			// when
 			List<RankDto> result = teamQuestionRankService.getTeamQuestionScorerRank(teamId);
@@ -310,7 +310,7 @@ class TeamQuestionRankServiceTest {
 			UserEntity user1 = createMockUser(1L, "가나다");
 			UserEntity user2 = createMockUser(2L, "라마바");
 
-			when(userReader.getUsersByTeam(team)).thenReturn(List.of(user1, user2));
+			when(userReader.getUsersByTeamFetchUser(team)).thenReturn(List.of(user1, user2));
 
 			// when
 			List<RankDto> result = teamQuestionRankService.getTeamQuestionCorrectAnswerRank(teamId);
@@ -350,7 +350,7 @@ class TeamQuestionRankServiceTest {
 			UserEntity user1 = createMockUser(1L, "가나다");
 			UserEntity user2 = createMockUser(2L, "라마바");
 			UserEntity user3 = createMockUser(3L, "사아자");
-			when(userReader.getUsersByTeam(team)).thenReturn(List.of(user1, user2, user3));
+			when(userReader.getUsersByTeamFetchUser(team)).thenReturn(List.of(user1, user2, user3));
 
 			List<RankDto> result = teamQuestionRankService.getTeamQuestionCorrectAnswerRank(teamId);
 
@@ -412,7 +412,7 @@ class TeamQuestionRankServiceTest {
 			UserEntity user2 = createMockUser(2L, "라마바");
 			UserEntity user3 = createMockUser(3L, "사아자");
 
-			when(userReader.getUsersByTeam(team)).thenReturn(List.of(user1, user2, user3));
+			when(userReader.getUsersByTeamFetchUser(team)).thenReturn(List.of(user1, user2, user3));
 
 			// when
 			List<RankDto> result = teamQuestionRankService.getTeamQuestionCorrectAnswerRank(teamId);
@@ -475,7 +475,7 @@ class TeamQuestionRankServiceTest {
 				UserEntity user = createMockUser(userId, "유저" + userId);
 				teamUsers.add(user);
 			}
-			when(userReader.getUsersByTeam(team)).thenReturn(teamUsers);
+			when(userReader.getUsersByTeamFetchUser(team)).thenReturn(teamUsers);
 
 			// when
 			List<RankDto> result = teamQuestionRankService.getTeamQuestionCorrectAnswerRank(teamId);
@@ -520,7 +520,7 @@ class TeamQuestionRankServiceTest {
 			UserEntity user2 = createMockUser(2L, "나");
 			UserEntity user3 = createMockUser(3L, "다");
 
-			when(userReader.getUsersByTeam(team)).thenReturn(List.of(user1, user2, user3));
+			when(userReader.getUsersByTeamFetchUser(team)).thenReturn(List.of(user1, user2, user3));
 
 			// when
 			List<RankDto> result = teamQuestionRankService.getTeamQuestionCorrectAnswerRank(teamId);
