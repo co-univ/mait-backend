@@ -249,7 +249,8 @@ class TeamQuestionRankServiceTest {
 			UserEntity user5 = createMockUser(5L, "마");
 			UserEntity user6 = createMockUser(6L, "바");
 
-			when(userReader.getUsersByTeamFetchUser(team)).thenReturn(List.of(user1, user2, user3, user4, user5, user6));
+			when(userReader.getUsersByTeamFetchUser(team)).thenReturn(
+				List.of(user1, user2, user3, user4, user5, user6));
 
 			// when
 			List<RankDto> result = teamQuestionRankService.getTeamQuestionScorerRank(teamId);

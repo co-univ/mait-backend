@@ -6,6 +6,7 @@ import static org.mockito.Mockito.*;
 
 import java.util.List;
 
+import org.hibernate.LazyInitializationException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -23,8 +24,6 @@ import org.springframework.web.context.request.ServletWebRequest;
 
 import com.coniv.mait.global.exception.CommonExceptionCode;
 import com.coniv.mait.global.response.ErrorResponse;
-
-import org.hibernate.LazyInitializationException;
 
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.servlet.http.HttpServletRequest;
