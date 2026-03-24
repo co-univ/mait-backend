@@ -3,6 +3,7 @@ package com.coniv.mait.global.filter;
 import java.io.IOException;
 import java.util.List;
 
+import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -14,6 +15,7 @@ import com.coniv.mait.domain.user.repository.UserEntityRepository;
 import com.coniv.mait.global.auth.jwt.JwtTokenProvider;
 import com.coniv.mait.global.auth.model.MaitUser;
 
+import io.jsonwebtoken.ExpiredJwtException;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -49,6 +51,9 @@ public class JwtAuthorizationFilter extends OncePerRequestFilter {
 			UserEntity user = userEntityRepository.findById(userId).orElseThrow();
 
 			setAuthentication(user);
+		} catch (ExpiredJwtException ex) {
+			log.warn("[JWT 토큰 만료] {}", ex.getMessage());
+			throw new BadCredentialsException("Access token expired", ex);
 		} catch (Exception ex) {
 			log.warn("[JWT 토큰 인증 실패] {}", ex.getMessage(), ex);
 		}

@@ -31,8 +31,7 @@ public class JwtAuthenticationEntryPoint implements AuthenticationEntryPoint {
 
 		log.info("Unauthorized error: {}", authException.getMessage());
 		CommonExceptionCode exceptionCode = CommonExceptionCode.JWT_AUTH_EXCEPTION;
-		Throwable cause = authException.getCause();
-		if (cause instanceof ExpiredJwtException) {
+		if (authException.getCause() instanceof ExpiredJwtException) {
 			exceptionCode = CommonExceptionCode.JWT_EXPIRED;
 		}
 		response.setStatus(exceptionCode.getStatus().value());
