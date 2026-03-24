@@ -7,7 +7,7 @@ import org.springframework.security.config.annotation.web.configuration.EnableWe
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.web.SecurityFilterChain;
-import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.security.web.access.ExceptionTranslationFilter;
 
 import com.coniv.mait.domain.auth.service.Oauth2UserService;
 import com.coniv.mait.global.auth.jwt.JwtAuthenticationEntryPoint;
@@ -67,7 +67,7 @@ public class SecurityConfig {
 				.anyRequest().authenticated()
 			)
 			.exceptionHandling(exception -> exception.authenticationEntryPoint(jwtAuthenticationEntryPoint))
-			.addFilterBefore(jwtAuthorizationFilter, UsernamePasswordAuthenticationFilter.class)
+			.addFilterAfter(jwtAuthorizationFilter, ExceptionTranslationFilter.class)
 			.oauth2Login((oauth2) -> oauth2
 				.userInfoEndpoint(userInfoEndpoint -> userInfoEndpoint
 					.userService(oauth2UserService)
