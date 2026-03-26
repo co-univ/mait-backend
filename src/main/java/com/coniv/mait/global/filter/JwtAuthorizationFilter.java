@@ -30,9 +30,15 @@ public class JwtAuthorizationFilter extends OncePerRequestFilter {
 
 	private static final String AUTH_HEADER = "Authorization";
 	private static final String BEARER = "Bearer ";
+	private static final String REISSUE_URL = "/api/v1/auth/reissue";
 
 	private final JwtTokenProvider jwtTokenProvider;
 	private final UserEntityRepository userEntityRepository;
+
+	@Override
+	protected boolean shouldNotFilter(HttpServletRequest request) {
+		return REISSUE_URL.equals(request.getRequestURI());
+	}
 
 	@Override
 	protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
