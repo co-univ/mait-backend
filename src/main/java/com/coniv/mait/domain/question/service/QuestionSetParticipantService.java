@@ -115,17 +115,13 @@ public class QuestionSetParticipantService {
 			return;
 		}
 
-		List<Long> questionIds = questionEntityRepository.findAllByQuestionSetId(questionSet.getId()).stream()
-			.map(QuestionEntity::getId)
-			.toList();
-
 		QuestionSetParticipantEntity participant = QuestionSetParticipantEntity.builder()
 			.questionSet(questionSet)
 			.user(user)
 			.winner(false)
 			.build();
 
-		if (answerSubmitRecordEntityRepository.existsByQuestionIdIn(questionIds)) {
+		if (questionSet.isAdvancementSelected()) {
 			participant.updateStatus(ParticipantStatus.ELIMINATED);
 		} else {
 			participant.updateStatus(ParticipantStatus.ACTIVE);
