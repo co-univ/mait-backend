@@ -66,6 +66,9 @@ public class QuestionSetEntity extends BaseTimeEntity {
 
 	private String difficulty;
 
+	@Builder.Default
+	private boolean advancementSelected = false;
+
 	private LocalDateTime startTime;
 
 	private LocalDateTime endTime;
@@ -137,5 +140,9 @@ public class QuestionSetEntity extends BaseTimeEntity {
 
 	public void updateOngoingStatus(QuestionSetOngoingStatus status) {
 		this.ongoingStatus = status;
+	}
+
+	public void markAdvancementSelected() {
+		this.advancementSelected = true;
 	}
 }
