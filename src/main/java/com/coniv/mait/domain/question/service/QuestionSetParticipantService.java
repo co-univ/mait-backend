@@ -11,16 +11,13 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.coniv.mait.domain.question.dto.ParticipantDto;
-import com.coniv.mait.domain.question.entity.QuestionEntity;
 import com.coniv.mait.domain.question.entity.QuestionSetEntity;
 import com.coniv.mait.domain.question.entity.QuestionSetParticipantEntity;
 import com.coniv.mait.domain.question.enums.ParticipantStatus;
 import com.coniv.mait.domain.question.exception.QuestionSetStatusException;
 import com.coniv.mait.domain.question.exception.code.QuestionSetStatusExceptionCode;
-import com.coniv.mait.domain.question.repository.QuestionEntityRepository;
 import com.coniv.mait.domain.question.repository.QuestionSetEntityRepository;
 import com.coniv.mait.domain.question.repository.QuestionSetParticipantRepository;
-import com.coniv.mait.domain.solve.repository.AnswerSubmitRecordEntityRepository;
 import com.coniv.mait.domain.user.entity.UserEntity;
 import com.coniv.mait.domain.user.repository.UserEntityRepository;
 import com.coniv.mait.global.exception.custom.UserParameterException;
@@ -35,10 +32,6 @@ public class QuestionSetParticipantService {
 	private final QuestionSetEntityRepository questionSetEntityRepository;
 
 	private final QuestionSetParticipantRepository questionSetParticipantRepository;
-
-	private final QuestionEntityRepository questionEntityRepository;
-
-	private final AnswerSubmitRecordEntityRepository answerSubmitRecordEntityRepository;
 
 	private final UserEntityRepository userEntityRepository;
 
@@ -59,6 +52,8 @@ public class QuestionSetParticipantService {
 
 		QuestionSetEntity questionSet = questionSetEntityRepository.findById(questionSetId)
 			.orElseThrow(() -> new EntityNotFoundException("해당 문제 셋을 조회할 수 없음 id: " + questionSetId));
+
+		questionSet.markAdvancementSelected();
 
 		Map<Long, QuestionSetParticipantEntity> participantByUserId = questionSetParticipantRepository
 			.findAllByQuestionSetWithFetchJoinUser(
@@ -120,17 +115,13 @@ public class QuestionSetParticipantService {
 			return;
 		}
 
-		List<Long> questionIds = questionEntityRepository.findAllByQuestionSetId(questionSet.getId()).stream()
-			.map(QuestionEntity::getId)
-			.toList();
-
 		QuestionSetParticipantEntity participant = QuestionSetParticipantEntity.builder()
 			.questionSet(questionSet)
 			.user(user)
 			.winner(false)
 			.build();
 
-		if (answerSubmitRecordEntityRepository.existsByQuestionIdIn(questionIds)) {
+		if (questionSet.isAdvancementSelected()) {
 			participant.updateStatus(ParticipantStatus.ELIMINATED);
 		} else {
 			participant.updateStatus(ParticipantStatus.ACTIVE);
