@@ -14,12 +14,14 @@ import com.coniv.mait.domain.question.dto.ParticipantDto;
 import com.coniv.mait.domain.question.entity.QuestionSetEntity;
 import com.coniv.mait.domain.question.entity.QuestionSetParticipantEntity;
 import com.coniv.mait.domain.question.enums.ParticipantStatus;
+import com.coniv.mait.domain.question.event.NewParticipantEvent;
 import com.coniv.mait.domain.question.exception.QuestionSetStatusException;
 import com.coniv.mait.domain.question.exception.code.QuestionSetStatusExceptionCode;
 import com.coniv.mait.domain.question.repository.QuestionSetEntityRepository;
 import com.coniv.mait.domain.question.repository.QuestionSetParticipantRepository;
 import com.coniv.mait.domain.user.entity.UserEntity;
 import com.coniv.mait.domain.user.repository.UserEntityRepository;
+import com.coniv.mait.global.event.MaitEventPublisher;
 import com.coniv.mait.global.exception.custom.UserParameterException;
 
 import jakarta.persistence.EntityNotFoundException;
@@ -34,6 +36,8 @@ public class QuestionSetParticipantService {
 	private final QuestionSetParticipantRepository questionSetParticipantRepository;
 
 	private final UserEntityRepository userEntityRepository;
+
+	private final MaitEventPublisher maitEventPublisher;
 
 	public List<ParticipantDto> getParticipants(final Long questionSetId) {
 		QuestionSetEntity questionSet = questionSetEntityRepository.findById(questionSetId)
@@ -127,6 +131,10 @@ public class QuestionSetParticipantService {
 			participant.updateStatus(ParticipantStatus.ACTIVE);
 		}
 
-		questionSetParticipantRepository.save(participant);
+		QuestionSetParticipantEntity saved = questionSetParticipantRepository.save(participant);
+		maitEventPublisher.publishEvent(NewParticipantEvent.builder()
+			.questionSetId(questionSetId)
+			.participant(ParticipantDto.from(saved))
+			.build());
 	}
 }
