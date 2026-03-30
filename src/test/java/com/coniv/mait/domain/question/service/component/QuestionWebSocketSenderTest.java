@@ -14,6 +14,7 @@ import org.springframework.messaging.simp.SimpMessagingTemplate;
 import com.coniv.mait.domain.question.dto.ParticipantDto;
 import com.coniv.mait.domain.question.dto.QuestionSetParticipationStatusMessage;
 import com.coniv.mait.domain.question.enums.ParticipantStatus;
+import com.coniv.mait.domain.question.enums.QuestionStatusType;
 
 @ExtendWith(MockitoExtension.class)
 class QuestionWebSocketSenderTest {
@@ -43,14 +44,16 @@ class QuestionWebSocketSenderTest {
 	}
 
 	@Test
-	@DisplayName("본인 참여 상태를 user queue로 전송한다")
+	@DisplayName("본인 참여 상태와 현재 문제 상태를 user queue로 전송한다")
 	void sendMyParticipationStatus_SendsToUserQueue() {
 		// given
 		Long userId = 10L;
 		Long questionSetId = 42L;
+		Long questionId = 99L;
 
 		// when
-		questionWebSocketSender.sendMyParticipationStatus(userId, questionSetId, ParticipantStatus.ELIMINATED);
+		questionWebSocketSender.sendMyParticipationStatus(userId, questionSetId, ParticipantStatus.ELIMINATED,
+			questionId, QuestionStatusType.SOLVE_PERMISSION);
 
 		// then
 		then(messagingTemplate).should().convertAndSendToUser(
@@ -60,7 +63,9 @@ class QuestionWebSocketSenderTest {
 				QuestionSetParticipationStatusMessage statusMessage =
 					(QuestionSetParticipationStatusMessage)message;
 				return statusMessage.getQuestionSetId().equals(questionSetId)
-					&& statusMessage.getParticipantStatus() == ParticipantStatus.ELIMINATED;
+					&& statusMessage.getParticipantStatus() == ParticipantStatus.ELIMINATED
+					&& statusMessage.getQuestionId().equals(questionId)
+					&& statusMessage.getStatusType() == QuestionStatusType.SOLVE_PERMISSION;
 			}));
 	}
 }
