@@ -9,7 +9,7 @@ import lombok.NoArgsConstructor;
 
 @Getter
 @NoArgsConstructor
-public class QuestionSetInitialStateMessage {
+public class QuestionSetParticipationStatusMessage {
 
 	private Long questionSetId;
 	private ParticipantStatus participantStatus;
@@ -17,7 +17,7 @@ public class QuestionSetInitialStateMessage {
 	private QuestionStatusType statusType;
 
 	@Builder
-	public QuestionSetInitialStateMessage(Long questionSetId, ParticipantStatus participantStatus,
+	public QuestionSetParticipationStatusMessage(Long questionSetId, ParticipantStatus participantStatus,
 		Long questionId, QuestionStatusType statusType) {
 		this.questionSetId = questionSetId;
 		this.participantStatus = participantStatus;

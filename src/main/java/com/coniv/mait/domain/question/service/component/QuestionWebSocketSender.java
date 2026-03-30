@@ -4,7 +4,7 @@ import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 
 import com.coniv.mait.domain.question.dto.ParticipantDto;
-import com.coniv.mait.domain.question.dto.QuestionSetInitialStateMessage;
+import com.coniv.mait.domain.question.dto.QuestionSetParticipationStatusMessage;
 import com.coniv.mait.domain.question.dto.QuestionSetStatusMessage;
 import com.coniv.mait.domain.question.dto.QuestionStatusMessage;
 import com.coniv.mait.domain.question.enums.ParticipantStatus;
@@ -43,10 +43,10 @@ public class QuestionWebSocketSender {
 		log.info("Broadcasting new participant to maker {}: userId={}", destination, participant.getUserId());
 	}
 
-	public void sendInitialState(Long userId, Long questionSetId, ParticipantStatus participantStatus,
+	public void sendMyParticipationStatus(Long userId, Long questionSetId, ParticipantStatus participantStatus,
 		Long questionId, QuestionStatusType statusType) {
-		String destination = WebSocketConstants.getQuestionSetInitialStateQueue(questionSetId);
-		QuestionSetInitialStateMessage message = QuestionSetInitialStateMessage.builder()
+		String destination = WebSocketConstants.getQuestionSetParticipationStatusQueue(questionSetId);
+		QuestionSetParticipationStatusMessage message = QuestionSetParticipationStatusMessage.builder()
 			.questionSetId(questionSetId)
 			.participantStatus(participantStatus)
 			.questionId(questionId)
@@ -56,7 +56,7 @@ public class QuestionWebSocketSender {
 		messagingTemplate.convertAndSendToUser(String.valueOf(userId), destination, message);
 
 		log.info(
-			"Sending initial state to userId={} destination={} participantStatus={} questionId={} statusType={}",
+			"Sending participation status to userId={} destination={} participantStatus={} questionId={} statusType={}",
 			userId, destination, participantStatus, questionId, statusType);
 	}
 }

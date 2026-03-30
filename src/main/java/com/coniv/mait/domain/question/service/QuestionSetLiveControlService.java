@@ -3,23 +3,30 @@ package com.coniv.mait.domain.question.service;
 import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 
+import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.coniv.mait.domain.question.dto.ParticipantDto;
 import com.coniv.mait.domain.question.dto.QuestionSetParticipantsMessage;
 import com.coniv.mait.domain.question.dto.QuestionSetStatusMessage;
+import com.coniv.mait.domain.question.dto.QuestionStatusMessage;
+import com.coniv.mait.domain.question.entity.QuestionEntity;
 import com.coniv.mait.domain.question.entity.QuestionSetEntity;
 import com.coniv.mait.domain.question.entity.QuestionSetParticipantEntity;
 import com.coniv.mait.domain.question.enums.DeliveryMode;
 import com.coniv.mait.domain.question.enums.ParticipantStatus;
 import com.coniv.mait.domain.question.enums.QuestionSetCommandType;
 import com.coniv.mait.domain.question.enums.QuestionSetOngoingStatus;
+import com.coniv.mait.domain.question.enums.QuestionStatusType;
+import com.coniv.mait.domain.question.repository.QuestionEntityRepository;
 import com.coniv.mait.domain.question.repository.QuestionSetEntityRepository;
 import com.coniv.mait.domain.question.repository.QuestionSetParticipantRepository;
 import com.coniv.mait.domain.question.service.component.QuestionWebSocketSender;
+import com.coniv.mait.global.constant.WebSocketConstants;
 import com.coniv.mait.global.exception.custom.ResourceNotBelongException;
 import com.coniv.mait.web.question.dto.ParticipantSendType;
 
@@ -35,6 +42,8 @@ public class QuestionSetLiveControlService {
 	private final QuestionSetEntityRepository questionSetEntityRepository;
 	private final QuestionWebSocketSender questionWebSocketSender;
 	private final QuestionSetParticipantRepository questionSetParticipantRepository;
+	private final QuestionEntityRepository questionEntityRepository;
+	private final SimpMessagingTemplate messagingTemplate;
 
 	@Transactional
 	public void startLiveQuestionSet(Long questionSetId) {
@@ -130,6 +139,32 @@ public class QuestionSetLiveControlService {
 			.filter(participant -> participant.getStatus() == ParticipantStatus.ACTIVE)
 			.toList();
 		sendActiveParticipantsUpdateMessage(questionSetId, activeParticipants);
+	}
+
+	public void sendCurrentQuestionStatus(Long questionSetId, String sessionId) {
+		QuestionSetEntity questionSet = findQuestionSetById(questionSetId);
+
+		Optional<QuestionEntity> mayBeOpenQuestion = questionEntityRepository.findFirstByQuestionSetAndQuestionStatusIn(
+			questionSet, List.of(QuestionStatusType.ACCESS_PERMISSION, QuestionStatusType.SOLVE_PERMISSION));
+
+		String destination = WebSocketConstants.getQuestionSetParticipateTopic(questionSetId);
+
+		QuestionStatusMessage message;
+		if (mayBeOpenQuestion.isPresent()) {
+			message = QuestionStatusMessage.builder()
+				.questionSetId(questionSetId)
+				.questionId(mayBeOpenQuestion.get().getId())
+				.statusType(mayBeOpenQuestion.get().getQuestionStatus())
+				.build();
+		} else {
+			message = QuestionStatusMessage.builder()
+				.questionSetId(questionSetId)
+				.statusType(QuestionStatusType.NOT_OPEN)
+				.build();
+		}
+		log.info("Sending current question status for question set ID: {} sessionId = {}", questionSetId, sessionId);
+		//messagingTemplate.convertAndSendToUser(sessionId, destination, message);
+		questionWebSocketSender.broadcastQuestionStatus(questionSetId, message);
 	}
 
 	private void sendActiveParticipantsUpdateMessage(Long questionSetId,

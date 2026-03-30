@@ -60,7 +60,7 @@ public class WebSocketSubscriptionHandler {
 			ParticipantDto participant = questionSetParticipantService.participateLiveQuestionSet(questionSetId,
 				userId);
 			CurrentQuestionDto currentQuestion = questionService.findCurrentQuestion(questionSetId);
-			questionWebSocketSender.sendInitialState(userId, questionSetId, participant.getStatus(),
+			questionWebSocketSender.sendMyParticipationStatus(userId, questionSetId, participant.getStatus(),
 				currentQuestion.getQuestionId(), currentQuestion.getQuestionStatus());
 			log.info(
 				"[소켓 연결] userId={} subscribed to live question set {} with status={} questionId={} questionStatus={}",
