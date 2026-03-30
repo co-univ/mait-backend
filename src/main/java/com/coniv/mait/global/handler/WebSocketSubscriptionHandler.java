@@ -10,7 +10,9 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.stereotype.Component;
 import org.springframework.web.socket.messaging.SessionSubscribeEvent;
 
+import com.coniv.mait.domain.question.dto.ParticipantDto;
 import com.coniv.mait.domain.question.service.QuestionSetParticipantService;
+import com.coniv.mait.domain.question.service.component.QuestionWebSocketSender;
 import com.coniv.mait.global.constant.WebSocketConstants;
 
 import lombok.RequiredArgsConstructor;
@@ -24,6 +26,7 @@ public class WebSocketSubscriptionHandler {
 		WebSocketConstants.QUESTION_SET_PARTICIPATE_TOPIC_PATTERN);
 
 	private final QuestionSetParticipantService questionSetParticipantService;
+	private final QuestionWebSocketSender questionWebSocketSender;
 
 	@EventListener
 	public void handleSubscription(SessionSubscribeEvent event) {
@@ -51,8 +54,11 @@ public class WebSocketSubscriptionHandler {
 
 	private void handleLiveQuestionSubscription(Long questionSetId, Long userId) {
 		try {
-			questionSetParticipantService.participateLiveQuestionSet(questionSetId, userId);
-			log.info("[소켓 연결] userId={} subscribed to live question set {}", userId, questionSetId);
+			ParticipantDto participant = questionSetParticipantService.participateLiveQuestionSet(questionSetId,
+				userId);
+			questionWebSocketSender.sendMyParticipationStatus(userId, questionSetId, participant.getStatus());
+			log.info("[소켓 연결] userId={} subscribed to live question set {} with status={}",
+				userId, questionSetId, participant.getStatus());
 		} catch (Exception e) {
 			log.error("Failed to add participant on WebSocket subscription: userId={}, questionSetId={}",
 				userId, questionSetId, e);
