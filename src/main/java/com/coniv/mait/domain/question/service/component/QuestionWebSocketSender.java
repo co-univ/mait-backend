@@ -3,6 +3,7 @@ package com.coniv.mait.domain.question.service.component;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 
+import com.coniv.mait.domain.question.dto.ParticipantDto;
 import com.coniv.mait.domain.question.dto.QuestionSetStatusMessage;
 import com.coniv.mait.domain.question.dto.QuestionStatusMessage;
 import com.coniv.mait.global.constant.WebSocketConstants;
@@ -30,6 +31,13 @@ public class QuestionWebSocketSender {
 		messagingTemplate.convertAndSend(destination, message);
 
 		log.info("Broadcasting question set status to {}: {}", destination, message);
+	}
+
+	public void broadcastNewParticipantToMaker(Long questionSetId, ParticipantDto participant) {
+		String destination = WebSocketConstants.getQuestionSetManageTopic(questionSetId);
+		messagingTemplate.convertAndSend(destination, participant);
+
+		log.info("Broadcasting new participant to maker {}: userId={}", destination, participant.getUserId());
 	}
 }
 

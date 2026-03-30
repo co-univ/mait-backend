@@ -20,11 +20,13 @@ import com.coniv.mait.domain.question.entity.QuestionSetParticipantEntity;
 import com.coniv.mait.domain.question.enums.DeliveryMode;
 import com.coniv.mait.domain.question.enums.ParticipantStatus;
 import com.coniv.mait.domain.question.enums.QuestionSetOngoingStatus;
+import com.coniv.mait.domain.question.event.NewParticipantEvent;
 import com.coniv.mait.domain.question.exception.QuestionSetStatusException;
 import com.coniv.mait.domain.question.repository.QuestionSetEntityRepository;
 import com.coniv.mait.domain.question.repository.QuestionSetParticipantRepository;
 import com.coniv.mait.domain.user.entity.UserEntity;
 import com.coniv.mait.domain.user.repository.UserEntityRepository;
+import com.coniv.mait.global.event.MaitEventPublisher;
 
 import jakarta.persistence.EntityNotFoundException;
 
@@ -42,6 +44,9 @@ class QuestionSetParticipantServiceTest {
 
 	@Mock
 	private UserEntityRepository userEntityRepository;
+
+	@Mock
+	private MaitEventPublisher maitEventPublisher;
 
 	@Test
 	@DisplayName("진출자 선정 전이면 ACTIVE 상태로 참가한다")
@@ -61,6 +66,7 @@ class QuestionSetParticipantServiceTest {
 		given(questionSetEntityRepository.findById(questionSetId)).willReturn(Optional.of(questionSet));
 		given(userEntityRepository.findById(userId)).willReturn(Optional.of(user));
 		given(questionSetParticipantRepository.existsByQuestionSetAndUserId(questionSet, userId)).willReturn(false);
+		given(questionSetParticipantRepository.save(any())).willAnswer(invocation -> invocation.getArgument(0));
 
 		// when
 		questionSetParticipantService.participateLiveQuestionSet(questionSetId, userId);
@@ -91,6 +97,7 @@ class QuestionSetParticipantServiceTest {
 		given(questionSetEntityRepository.findById(questionSetId)).willReturn(Optional.of(questionSet));
 		given(userEntityRepository.findById(userId)).willReturn(Optional.of(user));
 		given(questionSetParticipantRepository.existsByQuestionSetAndUserId(questionSet, userId)).willReturn(false);
+		given(questionSetParticipantRepository.save(any())).willAnswer(invocation -> invocation.getArgument(0));
 
 		// when
 		questionSetParticipantService.participateLiveQuestionSet(questionSetId, userId);
@@ -120,6 +127,62 @@ class QuestionSetParticipantServiceTest {
 		assertThatThrownBy(
 			() -> questionSetParticipantService.participateLiveQuestionSet(questionSetId, userId))
 			.isInstanceOf(QuestionSetStatusException.class);
+	}
+
+	@Test
+	@DisplayName("참가 성공 시 NewParticipantEvent를 발행한다")
+	void participateLiveQuestionSet_Success_PublishesNewParticipantEvent() {
+		// given
+		Long questionSetId = 1L;
+		Long userId = 1L;
+
+		QuestionSetEntity questionSet = QuestionSetEntity.builder()
+			.deliveryMode(DeliveryMode.LIVE_TIME)
+			.ongoingStatus(QuestionSetOngoingStatus.ONGOING)
+			.build();
+
+		UserEntity user = mock(UserEntity.class);
+		given(user.getId()).willReturn(userId);
+
+		given(questionSetEntityRepository.findById(questionSetId)).willReturn(Optional.of(questionSet));
+		given(userEntityRepository.findById(userId)).willReturn(Optional.of(user));
+		given(questionSetParticipantRepository.existsByQuestionSetAndUserId(questionSet, userId)).willReturn(false);
+		given(questionSetParticipantRepository.save(any())).willAnswer(invocation -> invocation.getArgument(0));
+
+		// when
+		questionSetParticipantService.participateLiveQuestionSet(questionSetId, userId);
+
+		// then
+		ArgumentCaptor<NewParticipantEvent> eventCaptor = ArgumentCaptor.forClass(NewParticipantEvent.class);
+		then(maitEventPublisher).should().publishEvent(eventCaptor.capture());
+		assertThat(eventCaptor.getValue().questionSetId()).isEqualTo(questionSetId);
+		assertThat(eventCaptor.getValue().participant()).isNotNull();
+	}
+
+	@Test
+	@DisplayName("이미 참가한 유저면 이벤트를 발행하지 않는다")
+	void participateLiveQuestionSet_AlreadyParticipated_DoesNotPublishEvent() {
+		// given
+		Long questionSetId = 1L;
+		Long userId = 1L;
+
+		QuestionSetEntity questionSet = QuestionSetEntity.builder()
+			.deliveryMode(DeliveryMode.LIVE_TIME)
+			.ongoingStatus(QuestionSetOngoingStatus.ONGOING)
+			.build();
+
+		UserEntity user = mock(UserEntity.class);
+		given(user.getId()).willReturn(userId);
+
+		given(questionSetEntityRepository.findById(questionSetId)).willReturn(Optional.of(questionSet));
+		given(userEntityRepository.findById(userId)).willReturn(Optional.of(user));
+		given(questionSetParticipantRepository.existsByQuestionSetAndUserId(questionSet, userId)).willReturn(true);
+
+		// when
+		questionSetParticipantService.participateLiveQuestionSet(questionSetId, userId);
+
+		// then
+		then(maitEventPublisher).should(never()).publishEvent(any());
 	}
 
 	@Test

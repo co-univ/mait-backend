@@ -8,9 +8,12 @@ public final class WebSocketConstants {
 
 	// Topic Patterns (Regex)
 	public static final String QUESTION_SET_PARTICIPATE_TOPIC_PATTERN = "^/topic/question-sets/(\\d+)/participate$";
-
 	// Topic Builders
 	public static String getQuestionSetParticipateTopic(Long questionSetId) {
 		return "/topic/question-sets/" + questionSetId + "/participate";
+	}
+
+	public static String getQuestionSetManageTopic(Long questionSetId) {
+		return "/topic/question-sets/" + questionSetId + "/manage";
 	}
 }
