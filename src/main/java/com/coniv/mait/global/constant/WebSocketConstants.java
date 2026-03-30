@@ -17,7 +17,7 @@ public final class WebSocketConstants {
 		return "/topic/question-sets/" + questionSetId + "/manage";
 	}
 
-	public static String getQuestionSetParticipationStatusQueue(Long questionSetId) {
-		return "/queue/question-sets/" + questionSetId + "/participation-status";
+	public static String getQuestionSetInitialStateQueue(Long questionSetId) {
+		return "/queue/question-sets/" + questionSetId + "/initial-state";
 	}
 }
