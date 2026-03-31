@@ -20,11 +20,14 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
 
 	@Override
 	public void configureMessageBroker(MessageBrokerRegistry config) {
-		// 메시지 브로커 설정 - "/topic"으로 시작하는 메시지는 브로커가 처리
-		config.enableSimpleBroker("/topic");
+		// 메시지 브로커 설정 - 브로드캐스트는 "/topic", 개인 큐는 "/queue"로 처리
+		config.enableSimpleBroker("/topic", "/queue");
 
 		// 클라이언트에서 메시지를 보낼 때 사용할 prefix
 		config.setApplicationDestinationPrefixes("/app");
+
+		// "/user" prefix는 Spring user destination 규약을 사용한다.
+		config.setUserDestinationPrefix("/user");
 	}
 
 	@Override

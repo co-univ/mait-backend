@@ -64,18 +64,20 @@ class QuestionSetParticipantServiceTest {
 		given(user.getId()).willReturn(userId);
 
 		given(questionSetEntityRepository.findById(questionSetId)).willReturn(Optional.of(questionSet));
+		given(questionSetParticipantRepository.findByQuestionSetAndUserId(questionSet, userId))
+			.willReturn(Optional.empty());
 		given(userEntityRepository.findById(userId)).willReturn(Optional.of(user));
-		given(questionSetParticipantRepository.existsByQuestionSetAndUserId(questionSet, userId)).willReturn(false);
 		given(questionSetParticipantRepository.save(any())).willAnswer(invocation -> invocation.getArgument(0));
 
 		// when
-		questionSetParticipantService.participateLiveQuestionSet(questionSetId, userId);
+		ParticipantDto result = questionSetParticipantService.participateLiveQuestionSet(questionSetId, userId);
 
 		// then
 		ArgumentCaptor<QuestionSetParticipantEntity> captor = ArgumentCaptor.forClass(
 			QuestionSetParticipantEntity.class);
 		then(questionSetParticipantRepository).should().save(captor.capture());
 		assertThat(captor.getValue().getStatus()).isEqualTo(ParticipantStatus.ACTIVE);
+		assertThat(result.getStatus()).isEqualTo(ParticipantStatus.ACTIVE);
 	}
 
 	@Test
@@ -95,18 +97,20 @@ class QuestionSetParticipantServiceTest {
 		given(user.getId()).willReturn(userId);
 
 		given(questionSetEntityRepository.findById(questionSetId)).willReturn(Optional.of(questionSet));
+		given(questionSetParticipantRepository.findByQuestionSetAndUserId(questionSet, userId))
+			.willReturn(Optional.empty());
 		given(userEntityRepository.findById(userId)).willReturn(Optional.of(user));
-		given(questionSetParticipantRepository.existsByQuestionSetAndUserId(questionSet, userId)).willReturn(false);
 		given(questionSetParticipantRepository.save(any())).willAnswer(invocation -> invocation.getArgument(0));
 
 		// when
-		questionSetParticipantService.participateLiveQuestionSet(questionSetId, userId);
+		ParticipantDto result = questionSetParticipantService.participateLiveQuestionSet(questionSetId, userId);
 
 		// then
 		ArgumentCaptor<QuestionSetParticipantEntity> captor = ArgumentCaptor.forClass(
 			QuestionSetParticipantEntity.class);
 		then(questionSetParticipantRepository).should().save(captor.capture());
 		assertThat(captor.getValue().getStatus()).isEqualTo(ParticipantStatus.ELIMINATED);
+		assertThat(result.getStatus()).isEqualTo(ParticipantStatus.ELIMINATED);
 	}
 
 	@Test
@@ -145,8 +149,9 @@ class QuestionSetParticipantServiceTest {
 		given(user.getId()).willReturn(userId);
 
 		given(questionSetEntityRepository.findById(questionSetId)).willReturn(Optional.of(questionSet));
+		given(questionSetParticipantRepository.findByQuestionSetAndUserId(questionSet, userId))
+			.willReturn(Optional.empty());
 		given(userEntityRepository.findById(userId)).willReturn(Optional.of(user));
-		given(questionSetParticipantRepository.existsByQuestionSetAndUserId(questionSet, userId)).willReturn(false);
 		given(questionSetParticipantRepository.save(any())).willAnswer(invocation -> invocation.getArgument(0));
 
 		// when
@@ -160,8 +165,8 @@ class QuestionSetParticipantServiceTest {
 	}
 
 	@Test
-	@DisplayName("이미 참가한 유저면 이벤트를 발행하지 않는다")
-	void participateLiveQuestionSet_AlreadyParticipated_DoesNotPublishEvent() {
+	@DisplayName("이미 참가한 유저면 기존 상태를 반환하고 이벤트를 발행하지 않는다")
+	void participateLiveQuestionSet_AlreadyParticipated_ReturnsExistingStatus() {
 		// given
 		Long questionSetId = 1L;
 		Long userId = 1L;
@@ -174,41 +179,23 @@ class QuestionSetParticipantServiceTest {
 		UserEntity user = mock(UserEntity.class);
 		given(user.getId()).willReturn(userId);
 
+		QuestionSetParticipantEntity existingParticipant = QuestionSetParticipantEntity.builder()
+			.questionSet(questionSet)
+			.user(user)
+			.status(ParticipantStatus.ELIMINATED)
+			.build();
+
 		given(questionSetEntityRepository.findById(questionSetId)).willReturn(Optional.of(questionSet));
-		given(userEntityRepository.findById(userId)).willReturn(Optional.of(user));
-		given(questionSetParticipantRepository.existsByQuestionSetAndUserId(questionSet, userId)).willReturn(true);
+		given(questionSetParticipantRepository.findByQuestionSetAndUserId(questionSet, userId))
+			.willReturn(Optional.of(existingParticipant));
 
 		// when
-		questionSetParticipantService.participateLiveQuestionSet(questionSetId, userId);
+		ParticipantDto result = questionSetParticipantService.participateLiveQuestionSet(questionSetId, userId);
 
 		// then
 		then(maitEventPublisher).should(never()).publishEvent(any());
-	}
-
-	@Test
-	@DisplayName("이미 참가한 유저면 중복 저장하지 않는다")
-	void participateLiveQuestionSet_AlreadyParticipated_Skip() {
-		// given
-		Long questionSetId = 1L;
-		Long userId = 1L;
-
-		QuestionSetEntity questionSet = QuestionSetEntity.builder()
-			.deliveryMode(DeliveryMode.LIVE_TIME)
-			.ongoingStatus(QuestionSetOngoingStatus.ONGOING)
-			.build();
-
-		UserEntity user = mock(UserEntity.class);
-		given(user.getId()).willReturn(userId);
-
-		given(questionSetEntityRepository.findById(questionSetId)).willReturn(Optional.of(questionSet));
-		given(userEntityRepository.findById(userId)).willReturn(Optional.of(user));
-		given(questionSetParticipantRepository.existsByQuestionSetAndUserId(questionSet, userId)).willReturn(true);
-
-		// when
-		questionSetParticipantService.participateLiveQuestionSet(questionSetId, userId);
-
-		// then
 		then(questionSetParticipantRepository).should(never()).save(any());
+		assertThat(result.getStatus()).isEqualTo(ParticipantStatus.ELIMINATED);
 	}
 
 	@Test
@@ -225,8 +212,6 @@ class QuestionSetParticipantServiceTest {
 			() -> questionSetParticipantService.participateLiveQuestionSet(questionSetId, userId))
 			.isInstanceOf(EntityNotFoundException.class);
 	}
-
-	// === updateParticipantsStatus 테스트 ===
 
 	@Test
 	@DisplayName("진출자 선정 시 advancementSelected 플래그가 true로 변경된다")
