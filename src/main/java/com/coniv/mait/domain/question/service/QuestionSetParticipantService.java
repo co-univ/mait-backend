@@ -104,7 +104,7 @@ public class QuestionSetParticipantService {
 	}
 
 	@Transactional
-	public void participateLiveQuestionSet(final Long questionSetId, final Long userId) {
+	public ParticipantDto participateLiveQuestionSet(final Long questionSetId, final Long userId) {
 		QuestionSetEntity questionSet = questionSetEntityRepository.findById(questionSetId)
 			.orElseThrow(() -> new EntityNotFoundException("해당 문제 셋을 찾을 수 없습니다. id=" + questionSetId));
 
@@ -112,12 +112,15 @@ public class QuestionSetParticipantService {
 			throw new QuestionSetStatusException(QuestionSetStatusExceptionCode.ONLY_LIVE_TIME);
 		}
 
+		QuestionSetParticipantEntity existingParticipant = questionSetParticipantRepository.findByQuestionSetAndUserId(
+				questionSet, userId)
+			.orElse(null);
+		if (existingParticipant != null) {
+			return ParticipantDto.from(existingParticipant);
+		}
+
 		UserEntity user = userEntityRepository.findById(userId)
 			.orElseThrow(() -> new EntityNotFoundException("해당 유저를 찾을 수 없습니다. id=" + userId));
-
-		if (questionSetParticipantRepository.existsByQuestionSetAndUserId(questionSet, user.getId())) {
-			return;
-		}
 
 		QuestionSetParticipantEntity participant = QuestionSetParticipantEntity.builder()
 			.questionSet(questionSet)
@@ -132,9 +135,11 @@ public class QuestionSetParticipantService {
 		}
 
 		QuestionSetParticipantEntity saved = questionSetParticipantRepository.save(participant);
+		ParticipantDto participantDto = ParticipantDto.from(saved);
 		maitEventPublisher.publishEvent(NewParticipantEvent.builder()
 			.questionSetId(questionSetId)
-			.participant(ParticipantDto.from(saved))
+			.participant(participantDto)
 			.build());
+		return participantDto;
 	}
 }
