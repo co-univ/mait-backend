@@ -26,6 +26,7 @@ import com.coniv.mait.domain.question.repository.QuestionEntityRepository;
 import com.coniv.mait.domain.question.repository.QuestionSetEntityRepository;
 import com.coniv.mait.domain.question.repository.QuestionSetParticipantRepository;
 import com.coniv.mait.domain.question.service.component.QuestionWebSocketSender;
+import com.coniv.mait.domain.question.service.dto.CurrentQuestionDto;
 import com.coniv.mait.global.constant.WebSocketConstants;
 import com.coniv.mait.global.exception.custom.ResourceNotBelongException;
 import com.coniv.mait.web.question.dto.ParticipantSendType;
@@ -44,6 +45,8 @@ public class QuestionSetLiveControlService {
 	private final QuestionSetParticipantRepository questionSetParticipantRepository;
 	private final QuestionEntityRepository questionEntityRepository;
 	private final SimpMessagingTemplate messagingTemplate;
+	private final QuestionSetParticipantService questionSetParticipantService;
+	private final QuestionService questionService;
 
 	@Transactional
 	public void startLiveQuestionSet(Long questionSetId) {
@@ -182,6 +185,16 @@ public class QuestionSetLiveControlService {
 
 		questionWebSocketSender.broadcastQuestionStatus(questionSetId, message);
 		log.info("Updated active participants for question set ID: {}", questionSetId);
+	}
+
+	public void handleParticipation(Long questionSetId, Long userId) {
+		ParticipantDto participant = questionSetParticipantService.participateLiveQuestionSet(questionSetId, userId);
+		CurrentQuestionDto currentQuestion = questionService.findCurrentQuestion(questionSetId);
+		questionWebSocketSender.sendMyParticipationStatus(userId, questionSetId,
+			participant.getStatus(), currentQuestion.getQuestionId(), currentQuestion.getQuestionStatus());
+		log.info("[초기 상태 전송] userId={} questionSetId={} status={} questionId={} questionStatus={}",
+			userId, questionSetId, participant.getStatus(),
+			currentQuestion.getQuestionId(), currentQuestion.getQuestionStatus());
 	}
 
 	public void sendParticipants(Long questionSetId, ParticipantSendType type) {
