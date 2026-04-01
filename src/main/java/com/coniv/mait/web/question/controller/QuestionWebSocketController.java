@@ -38,9 +38,9 @@ public class QuestionWebSocketController {
 
 	@MessageExceptionHandler
 	@SendToUser("/queue/errors")
-	public WebSocketErrorResponse handleException(Exception e) {
-		log.error("WebSocket 메시지 처리 중 오류 발생", e);
-		return WebSocketErrorResponse.from(e.getMessage());
+	public WebSocketErrorResponse handleException(Exception exception) {
+		log.error("WebSocket 메시지 처리 중 오류 발생", exception);
+		return WebSocketErrorResponse.from(exception.getMessage());
 	}
 
 	private Long extractUserId(final Principal principal) {
