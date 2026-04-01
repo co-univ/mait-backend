@@ -9,11 +9,7 @@ import org.springframework.messaging.simp.annotation.SendToUser;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.stereotype.Controller;
 
-import com.coniv.mait.domain.question.dto.ParticipantDto;
-import com.coniv.mait.domain.question.service.QuestionService;
-import com.coniv.mait.domain.question.service.QuestionSetParticipantService;
-import com.coniv.mait.domain.question.service.component.QuestionWebSocketSender;
-import com.coniv.mait.domain.question.service.dto.CurrentQuestionDto;
+import com.coniv.mait.domain.question.service.QuestionSetLiveControlService;
 import com.coniv.mait.global.response.WebSocketErrorResponse;
 
 import lombok.RequiredArgsConstructor;
@@ -24,9 +20,7 @@ import lombok.extern.slf4j.Slf4j;
 @RequiredArgsConstructor
 public class QuestionWebSocketController {
 
-	private final QuestionService questionService;
-	private final QuestionSetParticipantService questionSetParticipantService;
-	private final QuestionWebSocketSender questionWebSocketSender;
+	private final QuestionSetLiveControlService questionSetLiveControlService;
 
 	@MessageMapping("/question-sets/{questionSetId}/participation-status")
 	public void requestParticipationStatus(
@@ -39,16 +33,7 @@ public class QuestionWebSocketController {
 			return;
 		}
 
-		ParticipantDto participant = questionSetParticipantService.participateLiveQuestionSet(
-			questionSetId, userId);
-		CurrentQuestionDto currentQuestion = questionService.findCurrentQuestion(questionSetId);
-		questionWebSocketSender.sendMyParticipationStatus(userId, questionSetId,
-			participant.getStatus(), currentQuestion.getQuestionId(),
-			currentQuestion.getQuestionStatus());
-		log.info(
-			"[초기 상태 전송] userId={} questionSetId={} status={} questionId={} questionStatus={}",
-			userId, questionSetId, participant.getStatus(),
-			currentQuestion.getQuestionId(), currentQuestion.getQuestionStatus());
+		questionSetLiveControlService.handleParticipation(questionSetId, userId);
 	}
 
 	@MessageExceptionHandler
