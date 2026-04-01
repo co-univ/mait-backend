@@ -1,5 +1,6 @@
 package com.coniv.mait.web.question.controller;
 
+import static org.assertj.core.api.Assertions.*;
 import static org.mockito.BDDMockito.*;
 
 import org.junit.jupiter.api.DisplayName;
@@ -17,6 +18,7 @@ import com.coniv.mait.domain.question.service.QuestionService;
 import com.coniv.mait.domain.question.service.QuestionSetParticipantService;
 import com.coniv.mait.domain.question.service.component.QuestionWebSocketSender;
 import com.coniv.mait.domain.question.service.dto.CurrentQuestionDto;
+import com.coniv.mait.global.response.WebSocketErrorResponse;
 
 @ExtendWith(MockitoExtension.class)
 class QuestionWebSocketControllerTest {
@@ -69,5 +71,19 @@ class QuestionWebSocketControllerTest {
 		// then
 		then(questionSetParticipantService).shouldHaveNoInteractions();
 		then(questionWebSocketSender).shouldHaveNoInteractions();
+	}
+
+	@Test
+	@DisplayName("예외 발생 시 에러 응답을 반환한다")
+	void handleException_ReturnsErrorResponse() {
+		// given
+		Exception exception = new RuntimeException("문제셋을 찾을 수 없습니다");
+
+		// when
+		WebSocketErrorResponse response = questionWebSocketController.handleException(exception);
+
+		// then
+		assertThat(response.isSuccess()).isFalse();
+		assertThat(response.getMessage()).isEqualTo("문제셋을 찾을 수 없습니다");
 	}
 }
