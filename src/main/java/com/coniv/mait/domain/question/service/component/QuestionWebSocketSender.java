@@ -59,4 +59,17 @@ public class QuestionWebSocketSender {
 			"Sending participation status to userId={} destination={} participantStatus={} questionId={} statusType={}",
 			userId, destination, participantStatus, questionId, statusType);
 	}
+
+	public void sendParticipantStatusChange(Long userId, Long questionSetId, ParticipantStatus participantStatus) {
+		String destination = WebSocketConstants.getQuestionSetParticipationStatusQueue(questionSetId);
+		QuestionSetParticipationStatusMessage message = QuestionSetParticipationStatusMessage.builder()
+			.questionSetId(questionSetId)
+			.participantStatus(participantStatus)
+			.build();
+
+		messagingTemplate.convertAndSendToUser(String.valueOf(userId), destination, message);
+
+		log.info("Sending status change to userId={} destination={} participantStatus={}",
+			userId, destination, participantStatus);
+	}
 }

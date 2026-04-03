@@ -131,10 +131,16 @@ public class QuestionSetLiveControlService {
 		Set<Long> activeIdSet = new HashSet<>(activeUserIds);
 
 		allParticipants.forEach(p -> {
+			ParticipantStatus oldStatus = p.getStatus();
 			ParticipantStatus newStatus = activeIdSet.contains(p.getUser().getId())
 				? ParticipantStatus.ACTIVE
 				: ParticipantStatus.ELIMINATED;
-			p.updateStatus(newStatus);
+
+			if (oldStatus != newStatus) {
+				p.updateStatus(newStatus);
+				questionWebSocketSender.sendParticipantStatusChange(
+					p.getUser().getId(), questionSetId, newStatus);
+			}
 		});
 
 		// ACTIVE 상태인 참가자들만 필터링해서 메시지 전송
@@ -142,6 +148,7 @@ public class QuestionSetLiveControlService {
 			.filter(participant -> participant.getStatus() == ParticipantStatus.ACTIVE)
 			.toList();
 		sendActiveParticipantsUpdateMessage(questionSetId, activeParticipants);
+		log.info("Sent individual status change messages for questionSetId={}", questionSetId);
 	}
 
 	public void sendCurrentQuestionStatus(Long questionSetId, String sessionId) {
