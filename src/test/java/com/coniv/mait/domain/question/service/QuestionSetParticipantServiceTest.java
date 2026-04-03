@@ -1,7 +1,9 @@
 package com.coniv.mait.domain.question.service;
 
 import static org.assertj.core.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.BDDMockito.*;
+import static org.mockito.Mockito.times;
 
 import java.util.List;
 import java.util.Optional;
@@ -24,6 +26,7 @@ import com.coniv.mait.domain.question.event.NewParticipantEvent;
 import com.coniv.mait.domain.question.exception.QuestionSetStatusException;
 import com.coniv.mait.domain.question.repository.QuestionSetEntityRepository;
 import com.coniv.mait.domain.question.repository.QuestionSetParticipantRepository;
+import com.coniv.mait.domain.question.service.component.QuestionWebSocketSender;
 import com.coniv.mait.domain.user.entity.UserEntity;
 import com.coniv.mait.domain.user.repository.UserEntityRepository;
 import com.coniv.mait.global.event.MaitEventPublisher;
@@ -44,6 +47,9 @@ class QuestionSetParticipantServiceTest {
 
 	@Mock
 	private UserEntityRepository userEntityRepository;
+
+	@Mock
+	private QuestionWebSocketSender questionWebSocketSender;
 
 	@Mock
 	private MaitEventPublisher maitEventPublisher;
@@ -233,6 +239,55 @@ class QuestionSetParticipantServiceTest {
 
 		// then
 		assertThat(questionSet.isAdvancementSelected()).isTrue();
+	}
+
+	@Test
+	@DisplayName("참가자 상태 업데이트 시 모든 참가자에게 개인 큐로 상태 메시지를 전송한다")
+	void updateParticipantsStatus_SendsStatusToAllParticipants() {
+		// given
+		Long questionSetId = 1L;
+
+		QuestionSetEntity questionSet = QuestionSetEntity.builder()
+			.deliveryMode(DeliveryMode.LIVE_TIME)
+			.ongoingStatus(QuestionSetOngoingStatus.ONGOING)
+			.build();
+
+		UserEntity user1 = mock(UserEntity.class);
+		UserEntity user2 = mock(UserEntity.class);
+		UserEntity user3 = mock(UserEntity.class);
+		given(user1.getId()).willReturn(1L);
+		given(user2.getId()).willReturn(2L);
+		given(user3.getId()).willReturn(3L);
+
+		QuestionSetParticipantEntity participant1 = QuestionSetParticipantEntity.builder()
+			.questionSet(questionSet).user(user1).status(ParticipantStatus.ACTIVE).build();
+		QuestionSetParticipantEntity participant2 = QuestionSetParticipantEntity.builder()
+			.questionSet(questionSet).user(user2).status(ParticipantStatus.ACTIVE).build();
+		QuestionSetParticipantEntity participant3 = QuestionSetParticipantEntity.builder()
+			.questionSet(questionSet).user(user3).status(ParticipantStatus.ACTIVE).build();
+
+		given(questionSetEntityRepository.findById(questionSetId)).willReturn(Optional.of(questionSet));
+		given(questionSetParticipantRepository.findAllByQuestionSetWithFetchJoinUser(questionSet))
+			.willReturn(List.of(participant1, participant2, participant3));
+
+		List<ParticipantDto> activeUsers = List.of(
+			ParticipantDto.builder().userId(1L).build());
+		List<ParticipantDto> eliminatedUsers = List.of(
+			ParticipantDto.builder().userId(2L).build(),
+			ParticipantDto.builder().userId(3L).build());
+
+		// when
+		questionSetParticipantService.updateParticipantsStatus(questionSetId, activeUsers, eliminatedUsers);
+
+		// then
+		then(questionWebSocketSender).should()
+			.sendParticipantStatusChange(1L, questionSetId, ParticipantStatus.ACTIVE);
+		then(questionWebSocketSender).should()
+			.sendParticipantStatusChange(2L, questionSetId, ParticipantStatus.ELIMINATED);
+		then(questionWebSocketSender).should()
+			.sendParticipantStatusChange(3L, questionSetId, ParticipantStatus.ELIMINATED);
+		then(questionWebSocketSender).should(times(3))
+			.sendParticipantStatusChange(anyLong(), eq(questionSetId), any());
 	}
 
 	@Test
