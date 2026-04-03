@@ -19,6 +19,7 @@ import com.coniv.mait.domain.question.exception.QuestionSetStatusException;
 import com.coniv.mait.domain.question.exception.code.QuestionSetStatusExceptionCode;
 import com.coniv.mait.domain.question.repository.QuestionSetEntityRepository;
 import com.coniv.mait.domain.question.repository.QuestionSetParticipantRepository;
+import com.coniv.mait.domain.question.service.component.QuestionWebSocketSender;
 import com.coniv.mait.domain.user.entity.UserEntity;
 import com.coniv.mait.domain.user.repository.UserEntityRepository;
 import com.coniv.mait.global.event.MaitEventPublisher;
@@ -26,9 +27,11 @@ import com.coniv.mait.global.exception.custom.UserParameterException;
 
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class QuestionSetParticipantService {
 
 	private final QuestionSetEntityRepository questionSetEntityRepository;
@@ -36,6 +39,8 @@ public class QuestionSetParticipantService {
 	private final QuestionSetParticipantRepository questionSetParticipantRepository;
 
 	private final UserEntityRepository userEntityRepository;
+
+	private final QuestionWebSocketSender questionWebSocketSender;
 
 	private final MaitEventPublisher maitEventPublisher;
 
@@ -75,6 +80,12 @@ public class QuestionSetParticipantService {
 			QuestionSetParticipantEntity eliminated = participantByUserId.get(eliminatedUser.getUserId());
 			eliminated.updateStatus(ParticipantStatus.ELIMINATED);
 		}
+
+		participantByUserId.values().forEach(p ->
+			questionWebSocketSender.sendParticipantStatusChange(
+				p.getUser().getId(), questionSetId, p.getStatus()));
+		log.info("Sent participant status to all {} users for questionSetId={}",
+			participantByUserId.size(), questionSetId);
 
 		return participantByUserId.values().stream().map(ParticipantDto::from).toList();
 	}
