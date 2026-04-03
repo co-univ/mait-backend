@@ -2,6 +2,7 @@ package com.coniv.mait.domain.question.service;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.lenient;
 
 import java.util.Arrays;
 import java.util.List;
@@ -40,6 +41,9 @@ class QuestionSetLiveControlServiceTest {
 
 	@Mock
 	private QuestionSetParticipantRepository questionSetParticipantRepository;
+
+	@Mock
+	private QuestionService questionService;
 
 	@InjectMocks
 	private QuestionSetLiveControlService questionSetLiveControlService;
@@ -178,7 +182,7 @@ class QuestionSetLiveControlServiceTest {
 	}
 
 	@Test
-	@DisplayName("활성 참가자 업데이트 - 성공")
+	@DisplayName("활성 참가자 업데이트 - 성공 (상태 변경된 유저에게 개인 메시지 전송)")
 	void updateActiveParticipants_Success() {
 		// given
 		Long questionSetId = 1L;
@@ -194,15 +198,24 @@ class QuestionSetLiveControlServiceTest {
 		when(questionSetParticipantRepository.findAllByQuestionSetWithFetchJoinUser(questionSetEntity))
 			.thenReturn(allParticipants);
 
-		// 사용자 설정
+		// 사용자 설정 - user1, user2는 기존 ACTIVE, user3는 기존 ACTIVE → ELIMINATED로 변경
 		when(activeParticipant1.getUser()).thenReturn(user1);
 		when(user1.getId()).thenReturn(1L);
+		when(activeParticipant1.getStatus()).thenReturn(ParticipantStatus.ACTIVE);
+		when(activeParticipant1.getId()).thenReturn(101L);
+		when(activeParticipant1.getParticipantName()).thenReturn("김철수");
 
 		when(activeParticipant2.getUser()).thenReturn(user2);
 		when(user2.getId()).thenReturn(2L);
+		when(activeParticipant2.getStatus()).thenReturn(ParticipantStatus.ACTIVE);
+		when(activeParticipant2.getId()).thenReturn(102L);
+		when(activeParticipant2.getParticipantName()).thenReturn("이영희");
 
 		when(eliminatedParticipant.getUser()).thenReturn(user3);
 		when(user3.getId()).thenReturn(3L);
+		when(eliminatedParticipant.getStatus()).thenReturn(ParticipantStatus.ACTIVE); // 기존 ACTIVE → ELIMINATED
+		lenient().when(eliminatedParticipant.getId()).thenReturn(103L);
+		lenient().when(eliminatedParticipant.getParticipantName()).thenReturn("박민수");
 
 		// when
 		questionSetLiveControlService.updateActiveParticipants(questionSetId, activeUserIds);
@@ -211,10 +224,18 @@ class QuestionSetLiveControlServiceTest {
 		verify(questionSetEntityRepository).findById(questionSetId);
 		verify(questionSetParticipantRepository).findAllByQuestionSetWithFetchJoinUser(questionSetEntity);
 
-		// 상태 업데이트 검증
-		verify(activeParticipant1).updateStatus(ParticipantStatus.ACTIVE);
-		verify(activeParticipant2).updateStatus(ParticipantStatus.ACTIVE);
+		// 상태가 변경된 user3에게만 updateStatus + 개인 메시지 전송
+		verify(activeParticipant1, never()).updateStatus(any());
+		verify(activeParticipant2, never()).updateStatus(any());
 		verify(eliminatedParticipant).updateStatus(ParticipantStatus.ELIMINATED);
+
+		// 상태가 변경된 user3에게만 개인 큐 메시지 전송
+		verify(questionWebSocketSender).sendParticipantStatusChange(
+			3L, questionSetId, ParticipantStatus.ELIMINATED);
+		verify(questionWebSocketSender, never()).sendParticipantStatusChange(
+			eq(1L), anyLong(), any());
+		verify(questionWebSocketSender, never()).sendParticipantStatusChange(
+			eq(2L), anyLong(), any());
 	}
 
 	@Test
@@ -235,7 +256,7 @@ class QuestionSetLiveControlServiceTest {
 	}
 
 	@Test
-	@DisplayName("활성 참가자 업데이트 - 빈 활성 사용자 목록")
+	@DisplayName("활성 참가자 업데이트 - 빈 활성 사용자 목록 (전원 탈락, 개인 메시지 전송)")
 	void updateActiveParticipants_EmptyActiveUserIds() {
 		// given
 		Long questionSetId = 1L;
@@ -252,9 +273,15 @@ class QuestionSetLiveControlServiceTest {
 
 		when(activeParticipant1.getUser()).thenReturn(user1);
 		when(user1.getId()).thenReturn(1L);
+		when(activeParticipant1.getStatus()).thenReturn(ParticipantStatus.ACTIVE);
+		when(activeParticipant1.getId()).thenReturn(101L);
+		when(activeParticipant1.getParticipantName()).thenReturn("김철수");
 
 		when(activeParticipant2.getUser()).thenReturn(user2);
 		when(user2.getId()).thenReturn(2L);
+		when(activeParticipant2.getStatus()).thenReturn(ParticipantStatus.ACTIVE);
+		when(activeParticipant2.getId()).thenReturn(102L);
+		when(activeParticipant2.getParticipantName()).thenReturn("이영희");
 
 		// when
 		questionSetLiveControlService.updateActiveParticipants(questionSetId, activeUserIds);
@@ -263,10 +290,16 @@ class QuestionSetLiveControlServiceTest {
 		// 모든 참가자가 ELIMINATED 상태가 되어야 함
 		verify(activeParticipant1).updateStatus(ParticipantStatus.ELIMINATED);
 		verify(activeParticipant2).updateStatus(ParticipantStatus.ELIMINATED);
+
+		// 전원에게 개인 메시지 전송
+		verify(questionWebSocketSender).sendParticipantStatusChange(
+			1L, questionSetId, ParticipantStatus.ELIMINATED);
+		verify(questionWebSocketSender).sendParticipantStatusChange(
+			2L, questionSetId, ParticipantStatus.ELIMINATED);
 	}
 
 	@Test
-	@DisplayName("활성 참가자 업데이트 - 모든 참가자 활성화")
+	@DisplayName("활성 참가자 업데이트 - 모든 참가자 활성화 (ELIMINATED → ACTIVE 복귀 유저에게 개인 메시지)")
 	void updateActiveParticipants_AllParticipantsActive() {
 		// given
 		Long questionSetId = 1L;
@@ -281,23 +314,39 @@ class QuestionSetLiveControlServiceTest {
 		when(questionSetParticipantRepository.findAllByQuestionSetWithFetchJoinUser(questionSetEntity))
 			.thenReturn(allParticipants);
 
+		// user1, user2는 이미 ACTIVE, user3는 ELIMINATED → ACTIVE 복귀
 		when(activeParticipant1.getUser()).thenReturn(user1);
 		when(user1.getId()).thenReturn(1L);
+		when(activeParticipant1.getStatus()).thenReturn(ParticipantStatus.ACTIVE);
+		when(activeParticipant1.getId()).thenReturn(101L);
+		when(activeParticipant1.getParticipantName()).thenReturn("김철수");
 
 		when(activeParticipant2.getUser()).thenReturn(user2);
 		when(user2.getId()).thenReturn(2L);
+		when(activeParticipant2.getStatus()).thenReturn(ParticipantStatus.ACTIVE);
+		when(activeParticipant2.getId()).thenReturn(102L);
+		when(activeParticipant2.getParticipantName()).thenReturn("이영희");
 
 		when(eliminatedParticipant.getUser()).thenReturn(user3);
 		when(user3.getId()).thenReturn(3L);
+		when(eliminatedParticipant.getStatus()).thenReturn(ParticipantStatus.ELIMINATED);
+		lenient().when(eliminatedParticipant.getId()).thenReturn(103L);
+		lenient().when(eliminatedParticipant.getParticipantName()).thenReturn("박민수");
 
 		// when
 		questionSetLiveControlService.updateActiveParticipants(questionSetId, activeUserIds);
 
 		// then
-		// 모든 참가자가 ACTIVE 상태가 되어야 함
-		verify(activeParticipant1).updateStatus(ParticipantStatus.ACTIVE);
-		verify(activeParticipant2).updateStatus(ParticipantStatus.ACTIVE);
+		// 상태가 변경된 user3만 updateStatus 호출
+		verify(activeParticipant1, never()).updateStatus(any());
+		verify(activeParticipant2, never()).updateStatus(any());
 		verify(eliminatedParticipant).updateStatus(ParticipantStatus.ACTIVE);
+
+		// ELIMINATED → ACTIVE 복귀한 user3에게만 개인 메시지 전송
+		verify(questionWebSocketSender).sendParticipantStatusChange(
+			3L, questionSetId, ParticipantStatus.ACTIVE);
+		verify(questionWebSocketSender, never()).sendParticipantStatusChange(
+			eq(1L), anyLong(), any());
 	}
 
 	@Test
