@@ -19,9 +19,9 @@ import com.coniv.mait.domain.question.exception.QuestionSetStatusException;
 import com.coniv.mait.domain.question.exception.code.QuestionSetStatusExceptionCode;
 import com.coniv.mait.domain.question.repository.QuestionSetEntityRepository;
 import com.coniv.mait.domain.question.repository.QuestionSetParticipantRepository;
+import com.coniv.mait.domain.question.service.component.QuestionWebSocketSender;
 import com.coniv.mait.domain.user.entity.UserEntity;
 import com.coniv.mait.domain.user.repository.UserEntityRepository;
-import com.coniv.mait.domain.question.service.component.QuestionWebSocketSender;
 import com.coniv.mait.global.event.MaitEventPublisher;
 import com.coniv.mait.global.exception.custom.UserParameterException;
 
@@ -84,7 +84,8 @@ public class QuestionSetParticipantService {
 		participantByUserId.values().forEach(p ->
 			questionWebSocketSender.sendParticipantStatusChange(
 				p.getUser().getId(), questionSetId, p.getStatus()));
-		log.info("Sent participant status to all {} users for questionSetId={}", participantByUserId.size(), questionSetId);
+		log.info("Sent participant status to all {} users for questionSetId={}",
+			participantByUserId.size(), questionSetId);
 
 		return participantByUserId.values().stream().map(ParticipantDto::from).toList();
 	}

@@ -280,10 +280,14 @@ class QuestionSetParticipantServiceTest {
 		questionSetParticipantService.updateParticipantsStatus(questionSetId, activeUsers, eliminatedUsers);
 
 		// then
-		then(questionWebSocketSender).should().sendParticipantStatusChange(1L, questionSetId, ParticipantStatus.ACTIVE);
-		then(questionWebSocketSender).should().sendParticipantStatusChange(2L, questionSetId, ParticipantStatus.ELIMINATED);
-		then(questionWebSocketSender).should().sendParticipantStatusChange(3L, questionSetId, ParticipantStatus.ELIMINATED);
-		then(questionWebSocketSender).should(times(3)).sendParticipantStatusChange(anyLong(), eq(questionSetId), any());
+		then(questionWebSocketSender).should()
+			.sendParticipantStatusChange(1L, questionSetId, ParticipantStatus.ACTIVE);
+		then(questionWebSocketSender).should()
+			.sendParticipantStatusChange(2L, questionSetId, ParticipantStatus.ELIMINATED);
+		then(questionWebSocketSender).should()
+			.sendParticipantStatusChange(3L, questionSetId, ParticipantStatus.ELIMINATED);
+		then(questionWebSocketSender).should(times(3))
+			.sendParticipantStatusChange(anyLong(), eq(questionSetId), any());
 	}
 
 	@Test
