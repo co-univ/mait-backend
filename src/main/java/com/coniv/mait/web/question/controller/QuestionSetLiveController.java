@@ -64,14 +64,6 @@ public class QuestionSetLiveController {
 		return ResponseEntity.ok(ApiResponse.noContent());
 	}
 
-	@Operation(summary = "실시간 문제셋 상태 조회")
-	@GetMapping
-	public ResponseEntity<ApiResponse<QuestionSetLiveStatusResponse>> getLiveStatus(
-		@PathVariable Long questionSetId) {
-		QuestionSetStatus status = questionSetLiveControlService.getLiveStatus(questionSetId);
-		return ResponseEntity.ok(ApiResponse.ok(QuestionSetLiveStatusResponse.from(questionSetId, status)));
-	}
-
 	@Operation(summary = "상태에 따른 실시간 풀이 참여 인원 조회 API", description = "현재 풀이가 가능한 인원 및 불가능한 인원 반환")
 	@GetMapping("/participants")
 	public ResponseEntity<ApiResponse<ParticipantsByStatusApiResponse>> getParticipants(

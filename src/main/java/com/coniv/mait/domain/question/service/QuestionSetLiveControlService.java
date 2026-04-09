@@ -75,15 +75,6 @@ public class QuestionSetLiveControlService {
 		log.info("Ended live question set with ID: {}", questionSetId);
 	}
 
-	@Transactional(readOnly = true)
-	public QuestionSetStatus getLiveStatus(Long questionSetId) {
-		QuestionSetEntity questionSet = findQuestionSetById(questionSetId);
-		if (questionSet.canReview() || questionSet.getSolveMode() != QuestionSetSolveMode.LIVE_TIME) {
-			throw new ResourceNotBelongException("review mode can't find live status.");
-		}
-		return questionSet.getStatus();
-	}
-
 	private QuestionSetEntity findQuestionSetById(Long questionSetId) {
 		return questionSetEntityRepository.findById(questionSetId)
 			.orElseThrow(() -> new EntityNotFoundException("QuestionSet not found with id: " + questionSetId));
