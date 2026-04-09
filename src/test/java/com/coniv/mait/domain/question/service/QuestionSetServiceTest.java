@@ -288,7 +288,6 @@ class QuestionSetServiceTest {
 		assertThat(result).isNotNull();
 		assertThat(result.getTitle()).isEqualTo(newTitle);
 		assertThat(result.getSubject()).isEqualTo(newSubject);
-		assertThat(result.getDeliveryMode()).isEqualTo(DeliveryMode.LIVE_TIME);
 		assertThat(result.getSolveMode()).isEqualTo(QuestionSetSolveMode.LIVE_TIME);
 		assertThat(result.getStatus()).isEqualTo(QuestionSetStatus.BEFORE);
 		assertThat(result.getDifficulty()).isEqualTo(difficulty);

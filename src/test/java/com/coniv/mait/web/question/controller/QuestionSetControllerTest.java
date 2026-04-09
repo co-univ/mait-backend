@@ -283,8 +283,8 @@ class QuestionSetControllerTest {
 			.id(questionSetId)
 			.subject(subject)
 			.title(title)
-			.deliveryMode(DeliveryMode.LIVE_TIME)
 			.solveMode(solveMode)
+			.status(QuestionSetStatus.BEFORE)
 			.difficulty(difficulty)
 			.visibility(visibility)
 			.build();

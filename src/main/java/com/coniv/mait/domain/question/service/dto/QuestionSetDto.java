@@ -5,7 +5,6 @@ import java.util.List;
 
 import com.coniv.mait.domain.question.dto.MaterialDto;
 import com.coniv.mait.domain.question.entity.QuestionSetEntity;
-import com.coniv.mait.domain.question.enums.DeliveryMode;
 import com.coniv.mait.domain.question.enums.QuestionSetCreationType;
 import com.coniv.mait.domain.question.enums.QuestionSetSolveMode;
 import com.coniv.mait.domain.question.enums.QuestionSetStatus;
@@ -26,7 +25,6 @@ public class QuestionSetDto {
 	private String title;
 	private QuestionSetCreationType creationType;
 	private QuestionSetVisibility visibility;
-	private DeliveryMode deliveryMode;
 	private QuestionSetSolveMode solveMode;
 	private QuestionSetStatus status;
 	private Long teamId;
@@ -42,7 +40,6 @@ public class QuestionSetDto {
 			.title(questionSetEntity.getTitle())
 			.creationType(questionSetEntity.getCreationType())
 			.visibility(questionSetEntity.getVisibility())
-			.deliveryMode(questionSetEntity.getDisplayMode())
 			.solveMode(questionSetEntity.getSolveMode())
 			.status(questionSetEntity.getStatus())
 			.teamId(questionSetEntity.getTeamId())
@@ -58,7 +55,6 @@ public class QuestionSetDto {
 			.title(questionSetEntity.getTitle())
 			.creationType(questionSetEntity.getCreationType())
 			.visibility(questionSetEntity.getVisibility())
-			.deliveryMode(questionSetEntity.getDisplayMode())
 			.solveMode(questionSetEntity.getSolveMode())
 			.teamId(questionSetEntity.getTeamId())
 			.difficulty(questionSetEntity.getDifficulty())
