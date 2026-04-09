@@ -86,18 +86,15 @@ public class QuestionSetController {
 	@Operation(summary = "문제 셋 단건 조회")
 	@GetMapping("/{questionSetId}")
 	public ResponseEntity<ApiResponse<QuestionSetApiResponse>> getQuestionSet(
-		@AuthenticationPrincipal MaitUser user,
-		@PathVariable("questionSetId") Long questionSetId) {
-		QuestionSetDto questionSetDto = questionSetService.getQuestionSet(
-			questionSetId, user != null ? user.id() : null);
+		@AuthenticationPrincipal MaitUser user, @PathVariable Long questionSetId) {
+		QuestionSetDto questionSetDto = questionSetService.getQuestionSet(questionSetId, user);
 		return ResponseEntity.ok(ApiResponse.ok(QuestionSetApiResponse.from(questionSetDto)));
 	}
 
 	@Operation(summary = "문제 셋을 최종 저장 API", description = "문제 셋을 제작 완료 상태로 변경")
 	@PutMapping("/{questionSetId}")
 	public ResponseEntity<ApiResponse<QuestionSetApiResponse>> completeQuestionSet(
-		@PathVariable("questionSetId") Long questionSetId,
-		@Valid @RequestBody UpdateQuestionSetApiRequest request) {
+		@PathVariable Long questionSetId, @Valid @RequestBody UpdateQuestionSetApiRequest request) {
 		return ResponseEntity.ok(ApiResponse.ok(QuestionSetApiResponse.from(
 			questionSetService.completeQuestionSet(questionSetId, request.title(), request.subject(),
 				request.solveMode(), request.difficulty(), request.visibility()))));

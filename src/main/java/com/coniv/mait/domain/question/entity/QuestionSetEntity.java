@@ -126,9 +126,7 @@ public class QuestionSetEntity extends BaseTimeEntity {
 		this.title = title;
 		this.subject = subject;
 		this.solveMode = solveMode;
-		this.status = solveMode == QuestionSetSolveMode.STUDY
-			? QuestionSetStatus.ONGOING
-			: QuestionSetStatus.BEFORE;
+		this.status = QuestionSetStatus.BEFORE;
 		this.difficulty = difficulty;
 		this.visibility = visibility;
 	}

@@ -115,7 +115,7 @@ public class QuestionSetService {
 		return QuestionSetGroup.of(questionSets);
 	}
 
-	public QuestionSetDto getQuestionSet(final Long questionSetId, final Long userId) {
+	public QuestionSetDto getQuestionSet(final Long questionSetId, final MaitUser maitUser) {
 		final QuestionSetEntity questionSetEntity = questionSetEntityRepository.findById(questionSetId)
 			.orElseThrow(() -> new IllegalArgumentException("Question set not found"));
 

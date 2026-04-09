@@ -254,7 +254,7 @@ class QuestionSetControllerTest {
 			.subject(subject)
 			.build();
 
-		when(questionSetService.getQuestionSet(questionSetId, USER_ID)).thenReturn(questionSetDto);
+		when(questionSetService.getQuestionSet(eq(questionSetId), any(MaitUser.class))).thenReturn(questionSetDto);
 
 		// when & then
 		mockMvc.perform(get("/api/v1/question-sets/{questionSetId}", questionSetId))
@@ -263,7 +263,7 @@ class QuestionSetControllerTest {
 				jsonPath("$.data.id").value(questionSetId),
 				jsonPath("$.data.subject").value(subject));
 
-		verify(questionSetService).getQuestionSet(questionSetId, USER_ID);
+		verify(questionSetService).getQuestionSet(eq(questionSetId), any(MaitUser.class));
 	}
 
 	@Test

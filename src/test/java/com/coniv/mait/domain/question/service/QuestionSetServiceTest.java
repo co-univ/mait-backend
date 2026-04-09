@@ -208,6 +208,7 @@ class QuestionSetServiceTest {
 	void getQuestionSetTest_Success() {
 		// given
 		final Long questionSetId = 1L;
+		final MaitUser user = MaitUser.builder().id(USER_ID).build();
 		final QuestionSetEntity questionSetEntity = mock(QuestionSetEntity.class);
 		when(questionSetEntity.getId()).thenReturn(questionSetId);
 		when(questionSetEntity.getSubject()).thenReturn("Test Subject");
@@ -218,7 +219,7 @@ class QuestionSetServiceTest {
 			.thenReturn(5L); // 예시로 5개의 문제를 가진다고 가정
 
 		// when
-		QuestionSetDto result = questionSetService.getQuestionSet(questionSetId, null);
+		QuestionSetDto result = questionSetService.getQuestionSet(questionSetId, user);
 
 		// then
 		assertThat(result).isNotNull();
@@ -233,11 +234,12 @@ class QuestionSetServiceTest {
 	void getQuestionSetTest_Fail_NotFound() {
 		// given
 		final Long questionSetId = 1L;
+		final MaitUser user = MaitUser.builder().id(USER_ID).build();
 		when(questionSetEntityRepository.findById(questionSetId))
 			.thenReturn(Optional.empty());
 
 		// when & then
-		assertThatThrownBy(() -> questionSetService.getQuestionSet(questionSetId, null))
+		assertThatThrownBy(() -> questionSetService.getQuestionSet(questionSetId, user))
 			.isInstanceOf(IllegalArgumentException.class)
 			.hasMessage("Question set not found");
 
@@ -279,6 +281,7 @@ class QuestionSetServiceTest {
 		assertThat(questionSetEntity.getTitle()).isEqualTo(newTitle);
 		assertThat(questionSetEntity.getSubject()).isEqualTo(newSubject);
 		assertThat(questionSetEntity.getSolveMode()).isEqualTo(QuestionSetSolveMode.LIVE_TIME);
+		assertThat(questionSetEntity.getStatus()).isEqualTo(QuestionSetStatus.BEFORE);
 		assertThat(questionSetEntity.getDifficulty()).isEqualTo(difficulty);
 		assertThat(questionSetEntity.getVisibility()).isEqualTo(newVisibility);
 
@@ -287,6 +290,7 @@ class QuestionSetServiceTest {
 		assertThat(result.getSubject()).isEqualTo(newSubject);
 		assertThat(result.getDeliveryMode()).isEqualTo(DeliveryMode.LIVE_TIME);
 		assertThat(result.getSolveMode()).isEqualTo(QuestionSetSolveMode.LIVE_TIME);
+		assertThat(result.getStatus()).isEqualTo(QuestionSetStatus.BEFORE);
 		assertThat(result.getDifficulty()).isEqualTo(difficulty);
 		assertThat(result.getVisibility()).isEqualTo(newVisibility);
 	}
