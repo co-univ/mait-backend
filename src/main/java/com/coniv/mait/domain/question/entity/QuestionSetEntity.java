@@ -1,7 +1,6 @@
 package com.coniv.mait.domain.question.entity;
 
 import java.time.LocalDateTime;
-import java.util.EnumSet;
 
 import com.coniv.mait.domain.question.enums.DeliveryMode;
 import com.coniv.mait.domain.question.enums.QuestionSetCreationType;
@@ -170,6 +169,6 @@ public class QuestionSetEntity extends BaseTimeEntity {
 			return DeliveryMode.MAKING;
 		}
 
-		return solveMode.toDeliveryMode();
+		return DeliveryMode.from(solveMode);
 	}
 }

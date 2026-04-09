@@ -10,16 +10,4 @@ public enum QuestionSetSolveMode {
 			case STUDY -> DeliveryMode.STUDY;
 		};
 	}
-
-	public static QuestionSetSolveMode fromDeliveryMode(final DeliveryMode deliveryMode) {
-		if (deliveryMode == null) {
-			return null;
-		}
-
-		return switch (deliveryMode) {
-			case LIVE_TIME -> LIVE_TIME;
-			case STUDY -> STUDY;
-			default -> null;
-		};
-	}
 }

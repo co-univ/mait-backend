@@ -69,6 +69,6 @@ public record QuestionSetApiResponse(
 			return DeliveryMode.MAKING;
 		}
 
-		return solveMode.toDeliveryMode();
+		return DeliveryMode.from(solveMode);
 	}
 }
