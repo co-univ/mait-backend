@@ -7,6 +7,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import java.util.List;
 import java.util.stream.Stream;
 
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -18,6 +19,8 @@ import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMock
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.http.MediaType;
 import org.springframework.mock.web.MockMultipartFile;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
@@ -32,6 +35,7 @@ import com.coniv.mait.domain.question.service.QuestionSetService;
 import com.coniv.mait.domain.question.service.dto.QuestionSetDto;
 import com.coniv.mait.domain.question.service.dto.QuestionSetMaterialDto;
 import com.coniv.mait.domain.question.service.dto.QuestionValidateDto;
+import com.coniv.mait.global.auth.model.MaitUser;
 import com.coniv.mait.global.filter.JwtAuthorizationFilter;
 import com.coniv.mait.global.interceptor.idempotency.IdempotencyInterceptor;
 import com.coniv.mait.web.question.dto.QuestionSetGroup;
@@ -44,6 +48,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 @WebMvcTest(controllers = QuestionSetController.class)
 @AutoConfigureMockMvc(addFilters = false)
 class QuestionSetControllerTest {
+
+	private static final Long USER_ID = 10L;
 
 	@MockitoBean
 	private QuestionSetService questionSetService;
@@ -66,6 +72,17 @@ class QuestionSetControllerTest {
 	@BeforeEach
 	void setUp() throws Exception {
 		when(idempotencyInterceptor.preHandle(any(), any(), any())).thenReturn(true);
+
+		MaitUser user = MaitUser.builder().id(USER_ID).build();
+		var authentication = new UsernamePasswordAuthenticationToken(user, null, List.of());
+		var context = SecurityContextHolder.createEmptyContext();
+		context.setAuthentication(authentication);
+		SecurityContextHolder.setContext(context);
+	}
+
+	@AfterEach
+	void tearDown() {
+		SecurityContextHolder.clearContext();
 	}
 
 	// @Test
@@ -168,7 +185,7 @@ class QuestionSetControllerTest {
 			.build();
 
 		QuestionSetList questionSetList = QuestionSetList.of(List.of(questionSet1, questionSet2));
-		when(questionSetService.getQuestionSets(teamId, mode, null)).thenReturn(questionSetList);
+		when(questionSetService.getQuestionSets(eq(teamId), eq(mode), any(MaitUser.class))).thenReturn(questionSetList);
 
 		// when & then
 		mockMvc.perform(get("/api/v1/question-sets")
@@ -183,7 +200,7 @@ class QuestionSetControllerTest {
 				jsonPath("$.data.content.questionSets[1].id").value(2L),
 				jsonPath("$.data.content.questionSets[1].subject").value("Subject 2"));
 
-		verify(questionSetService).getQuestionSets(teamId, mode, null);
+		verify(questionSetService).getQuestionSets(eq(teamId), eq(mode), any(MaitUser.class));
 	}
 
 	@Test
@@ -204,7 +221,8 @@ class QuestionSetControllerTest {
 			.build();
 
 		QuestionSetGroup questionSetGroup = QuestionSetGroup.of(List.of(beforeSet, ongoingSet));
-		when(questionSetService.getQuestionSets(teamId, mode, null)).thenReturn(questionSetGroup);
+		when(questionSetService.getQuestionSets(eq(teamId), eq(mode), any(MaitUser.class)))
+			.thenReturn(questionSetGroup);
 
 		// when & then
 		mockMvc.perform(get("/api/v1/question-sets")
@@ -222,7 +240,7 @@ class QuestionSetControllerTest {
 				jsonPath("$.data.content.questionSets.ONGOING[0].id").value(2L),
 				jsonPath("$.data.content.questionSets.ONGOING[0].subject").value("Subject 2"));
 
-		verify(questionSetService).getQuestionSets(teamId, mode, null);
+		verify(questionSetService).getQuestionSets(eq(teamId), eq(mode), any(MaitUser.class));
 	}
 
 	@Test
@@ -236,7 +254,7 @@ class QuestionSetControllerTest {
 			.subject(subject)
 			.build();
 
-		when(questionSetService.getQuestionSet(questionSetId, null)).thenReturn(questionSetDto);
+		when(questionSetService.getQuestionSet(questionSetId, USER_ID)).thenReturn(questionSetDto);
 
 		// when & then
 		mockMvc.perform(get("/api/v1/question-sets/{questionSetId}", questionSetId))
@@ -245,7 +263,7 @@ class QuestionSetControllerTest {
 				jsonPath("$.data.id").value(questionSetId),
 				jsonPath("$.data.subject").value(subject));
 
-		verify(questionSetService).getQuestionSet(questionSetId, null);
+		verify(questionSetService).getQuestionSet(questionSetId, USER_ID);
 	}
 
 	@Test

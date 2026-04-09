@@ -77,10 +77,8 @@ public class QuestionSetController {
 	@GetMapping
 	public ResponseEntity<ApiResponse<QuestionSetsApiResponse>> getQuestionSets(
 		@AuthenticationPrincipal MaitUser user,
-		@RequestParam(value = "mode") DeliveryMode mode,
-		@RequestParam("teamId") Long teamId) {
-		QuestionSetContainer questionSets = questionSetService.getQuestionSets(teamId, mode,
-			user != null ? user.id() : null);
+		@RequestParam(value = "mode") DeliveryMode mode, @RequestParam("teamId") Long teamId) {
+		QuestionSetContainer questionSets = questionSetService.getQuestionSets(teamId, mode, user);
 		QuestionSetsApiResponse response = QuestionSetsApiResponse.of(mode, questionSets);
 		return ResponseEntity.ok(ApiResponse.ok(response));
 	}

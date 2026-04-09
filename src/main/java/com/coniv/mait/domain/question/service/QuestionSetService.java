@@ -29,6 +29,7 @@ import com.coniv.mait.domain.solve.entity.SolvingSessionEntity;
 import com.coniv.mait.domain.solve.enums.QuestionSetUserSolveStatus;
 import com.coniv.mait.domain.solve.repository.SolvingSessionEntityRepository;
 import com.coniv.mait.domain.user.service.component.TeamRoleValidator;
+import com.coniv.mait.global.auth.model.MaitUser;
 import com.coniv.mait.global.event.MaitEventPublisher;
 import com.coniv.mait.web.question.dto.QuestionSetContainer;
 import com.coniv.mait.web.question.dto.QuestionSetGroup;
@@ -99,10 +100,15 @@ public class QuestionSetService {
 		return QuestionSetDto.from(questionSetEntity);
 	}
 
-	public QuestionSetContainer getQuestionSets(final Long teamId, final DeliveryMode mode, final Long userId) {
-		// Todo: 조회하려는 유저와 팀이 일치하는지 확인
-		Map<Long, QuestionSetUserSolveStatus> userSolveStatusByQuestionSetId = getUserSolveStatusByQuestionSetId(teamId,
-			mode, userId);
+	public QuestionSetContainer getQuestionSets(final Long teamId, final DeliveryMode mode, final MaitUser user) {
+		final Long userId = user.id();
+		teamRoleValidator.checkIsTeamMember(teamId, userId);
+		if (mode == DeliveryMode.MAKING || mode == DeliveryMode.MANAGING) {
+			teamRoleValidator.checkHasCreateQuestionSetAuthority(teamId, userId);
+		}
+
+		Map<Long, QuestionSetUserSolveStatus> userSolveStatusByQuestionSetId =
+			getUserSolveStatusByQuestionSetId(teamId, mode, userId);
 
 		List<QuestionSetDto> questionSets = questionSetEntityRepository.findAllByTeamId(teamId)
 			.stream()
@@ -202,14 +208,13 @@ public class QuestionSetService {
 
 		return solvingSessionEntityRepository.findAllByUserIdAndModeAndQuestionSetTeamId(userId, DeliveryMode.STUDY,
 				teamId).stream()
-			.collect(Collectors.toMap(
+			.collect(Collectors.toUnmodifiableMap(
 				session -> session.getQuestionSet().getId(),
 				session -> QuestionSetUserSolveStatus.from(session.getStatus()),
 				(existing, replacement) -> replacement));
 	}
 
-	private QuestionSetUserSolveStatus getUserSolveStatus(
-		final QuestionSetEntity questionSetEntity,
+	private QuestionSetUserSolveStatus getUserSolveStatus(final QuestionSetEntity questionSetEntity,
 		final Long userId) {
 		if (questionSetEntity.getSolveMode() != QuestionSetSolveMode.STUDY || userId == null) {
 			return null;

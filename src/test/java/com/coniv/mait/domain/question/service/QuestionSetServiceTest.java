@@ -29,6 +29,7 @@ import com.coniv.mait.domain.question.repository.QuestionSetEntityRepository;
 import com.coniv.mait.domain.question.service.dto.QuestionSetDto;
 import com.coniv.mait.domain.question.service.dto.QuestionValidateDto;
 import com.coniv.mait.domain.user.service.component.TeamRoleValidator;
+import com.coniv.mait.global.auth.model.MaitUser;
 import com.coniv.mait.web.question.dto.QuestionSetContainer;
 import com.coniv.mait.web.question.dto.QuestionSetGroup;
 import com.coniv.mait.web.question.dto.QuestionSetList;
@@ -37,6 +38,8 @@ import jakarta.persistence.EntityNotFoundException;
 
 @ExtendWith(MockitoExtension.class)
 class QuestionSetServiceTest {
+
+	private static final Long USER_ID = 10L;
 
 	@InjectMocks
 	private QuestionSetService questionSetService;
@@ -85,6 +88,7 @@ class QuestionSetServiceTest {
 		final Long teamId = 1L;
 		final LocalDateTime now = LocalDateTime.now();
 		final DeliveryMode mode = DeliveryMode.MAKING;
+		final MaitUser user = MaitUser.builder().id(USER_ID).build();
 		QuestionSetEntity older = mock(QuestionSetEntity.class);
 		QuestionSetEntity newer = mock(QuestionSetEntity.class);
 
@@ -106,7 +110,7 @@ class QuestionSetServiceTest {
 			.thenReturn(List.of(older, newer));
 
 		// when
-		QuestionSetContainer result = questionSetService.getQuestionSets(teamId, mode, null);
+		QuestionSetContainer result = questionSetService.getQuestionSets(teamId, mode, user);
 
 		// then
 		assertThat(result).isInstanceOf(QuestionSetList.class);
@@ -115,6 +119,8 @@ class QuestionSetServiceTest {
 		assertThat(list.questionSets().get(0).getId()).isEqualTo(2L); // 최신 것이 먼저
 		assertThat(list.questionSets().get(1).getId()).isEqualTo(1L);
 
+		verify(teamRoleValidator).checkIsTeamMember(teamId, USER_ID);
+		verify(teamRoleValidator).checkHasCreateQuestionSetAuthority(teamId, USER_ID);
 		verify(questionSetEntityRepository, times(1)).findAllByTeamId(teamId);
 	}
 
@@ -125,6 +131,7 @@ class QuestionSetServiceTest {
 		final Long teamId = 1L;
 		final LocalDateTime now = LocalDateTime.now();
 		final DeliveryMode mode = DeliveryMode.LIVE_TIME;
+		final MaitUser user = MaitUser.builder().id(USER_ID).build();
 		QuestionSetEntity beforeStatus = mock(QuestionSetEntity.class);
 		QuestionSetEntity ongoingStatus = mock(QuestionSetEntity.class);
 		QuestionSetEntity afterStatus = mock(QuestionSetEntity.class);
@@ -154,7 +161,7 @@ class QuestionSetServiceTest {
 			.thenReturn(List.of(beforeStatus, ongoingStatus, afterStatus));
 
 		// when
-		QuestionSetContainer result = questionSetService.getQuestionSets(teamId, mode, null);
+		QuestionSetContainer result = questionSetService.getQuestionSets(teamId, mode, user);
 
 		// then
 		assertThat(result).isInstanceOf(QuestionSetGroup.class);
@@ -171,7 +178,29 @@ class QuestionSetServiceTest {
 		assertThat(group.questionSets().get(QuestionSetStatus.ONGOING).get(0).getId()).isEqualTo(2L);
 		assertThat(group.questionSets().get(QuestionSetStatus.AFTER).get(0).getId()).isEqualTo(3L);
 
+		verify(teamRoleValidator).checkIsTeamMember(teamId, USER_ID);
+		verify(teamRoleValidator, never()).checkHasCreateQuestionSetAuthority(anyLong(), anyLong());
 		verify(questionSetEntityRepository, times(1)).findAllByTeamId(teamId);
+	}
+
+	@Test
+	@DisplayName("문제 셋 목록 조회 테스트 - MANAGING 모드는 생성 권한을 검증한다")
+	void getQuestionSets_ManagingMode_ChecksCreateAuthority() {
+		// given
+		final Long teamId = 1L;
+		final DeliveryMode mode = DeliveryMode.MANAGING;
+		final MaitUser user = MaitUser.builder().id(USER_ID).build();
+
+		when(questionSetEntityRepository.findAllByTeamId(teamId)).thenReturn(List.of());
+
+		// when
+		QuestionSetContainer result = questionSetService.getQuestionSets(teamId, mode, user);
+
+		// then
+		assertThat(result).isInstanceOf(QuestionSetGroup.class);
+		verify(teamRoleValidator).checkIsTeamMember(teamId, USER_ID);
+		verify(teamRoleValidator).checkHasCreateQuestionSetAuthority(teamId, USER_ID);
+		verify(questionSetEntityRepository).findAllByTeamId(teamId);
 	}
 
 	@Test
