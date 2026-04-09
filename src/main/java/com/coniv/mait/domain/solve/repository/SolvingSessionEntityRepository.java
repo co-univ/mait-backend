@@ -14,10 +14,6 @@ public interface SolvingSessionEntityRepository extends JpaRepository<SolvingSes
 	Optional<SolvingSessionEntity> findByUserIdAndQuestionSetIdAndMode(Long userId, Long questionSetId,
 		DeliveryMode deliveryMode);
 
-	List<SolvingSessionEntity> findAllByUserIdAndModeAndQuestionSetTeamId(Long userId, DeliveryMode mode, Long teamId);
-
 	List<SolvingSessionEntity> findAllByUserIdAndStatusAndModeAndQuestionSetTeamId(Long userId, SolvingStatus status,
 		DeliveryMode mode, Long teamId);
-
-	boolean existsByQuestionSetId(Long questionSetId);
 }
