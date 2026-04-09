@@ -57,6 +57,10 @@ public class QuestionSetEntity extends BaseTimeEntity {
 	@Column
 	private QuestionSetSolveMode solveMode;
 
+	@Enumerated(EnumType.STRING)
+	@Column(name = "delivery_mode", insertable = false, updatable = false)
+	private DeliveryMode deliveryMode;
+
 	// @Column(nullable = false)
 	private Long teamId;
 
@@ -158,6 +162,14 @@ public class QuestionSetEntity extends BaseTimeEntity {
 
 	public void markAdvancementSelected() {
 		this.advancementSelected = true;
+	}
+
+	public void backfillSolveMode(QuestionSetSolveMode solveMode) {
+		this.solveMode = solveMode;
+	}
+
+	public void backfillStatus(QuestionSetStatus status) {
+		this.status = status;
 	}
 
 	public DeliveryMode getDisplayMode() {
