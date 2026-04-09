@@ -21,8 +21,8 @@ import com.coniv.mait.domain.question.entity.QuestionSetEntity;
 import com.coniv.mait.domain.question.entity.QuestionSetParticipantEntity;
 import com.coniv.mait.domain.question.enums.DeliveryMode;
 import com.coniv.mait.domain.question.enums.ParticipantStatus;
-import com.coniv.mait.domain.question.enums.QuestionSetStatus;
 import com.coniv.mait.domain.question.enums.QuestionSetSolveMode;
+import com.coniv.mait.domain.question.enums.QuestionSetStatus;
 import com.coniv.mait.domain.question.event.NewParticipantEvent;
 import com.coniv.mait.domain.question.exception.QuestionSetStatusException;
 import com.coniv.mait.domain.question.repository.QuestionSetEntityRepository;
@@ -63,7 +63,6 @@ class QuestionSetParticipantServiceTest {
 		Long userId = 1L;
 
 		QuestionSetEntity questionSet = QuestionSetEntity.builder()
-			.deliveryMode(DeliveryMode.LIVE_TIME)
 			.solveMode(QuestionSetSolveMode.LIVE_TIME)
 			.status(QuestionSetStatus.ONGOING)
 			.build();
@@ -96,7 +95,6 @@ class QuestionSetParticipantServiceTest {
 		Long userId = 1L;
 
 		QuestionSetEntity questionSet = QuestionSetEntity.builder()
-			.deliveryMode(DeliveryMode.LIVE_TIME)
 			.solveMode(QuestionSetSolveMode.LIVE_TIME)
 			.status(QuestionSetStatus.ONGOING)
 			.build();
@@ -130,7 +128,6 @@ class QuestionSetParticipantServiceTest {
 		Long userId = 1L;
 
 		QuestionSetEntity questionSet = QuestionSetEntity.builder()
-			.deliveryMode(DeliveryMode.STUDY)
 			.solveMode(QuestionSetSolveMode.STUDY)
 			.status(QuestionSetStatus.ONGOING)
 			.build();
@@ -151,7 +148,6 @@ class QuestionSetParticipantServiceTest {
 		Long userId = 1L;
 
 		QuestionSetEntity questionSet = QuestionSetEntity.builder()
-			.deliveryMode(DeliveryMode.LIVE_TIME)
 			.solveMode(QuestionSetSolveMode.LIVE_TIME)
 			.status(QuestionSetStatus.ONGOING)
 			.build();
@@ -183,7 +179,6 @@ class QuestionSetParticipantServiceTest {
 		Long userId = 1L;
 
 		QuestionSetEntity questionSet = QuestionSetEntity.builder()
-			.deliveryMode(DeliveryMode.LIVE_TIME)
 			.solveMode(QuestionSetSolveMode.LIVE_TIME)
 			.status(QuestionSetStatus.ONGOING)
 			.build();
@@ -232,7 +227,6 @@ class QuestionSetParticipantServiceTest {
 		Long questionSetId = 1L;
 
 		QuestionSetEntity questionSet = QuestionSetEntity.builder()
-			.deliveryMode(DeliveryMode.LIVE_TIME)
 			.solveMode(QuestionSetSolveMode.LIVE_TIME)
 			.status(QuestionSetStatus.ONGOING)
 			.build();
@@ -255,7 +249,6 @@ class QuestionSetParticipantServiceTest {
 		Long questionSetId = 1L;
 
 		QuestionSetEntity questionSet = QuestionSetEntity.builder()
-			.deliveryMode(DeliveryMode.LIVE_TIME)
 			.solveMode(QuestionSetSolveMode.LIVE_TIME)
 			.status(QuestionSetStatus.ONGOING)
 			.build();

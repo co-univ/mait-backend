@@ -5,8 +5,8 @@ import java.util.EnumSet;
 
 import com.coniv.mait.domain.question.enums.DeliveryMode;
 import com.coniv.mait.domain.question.enums.QuestionSetCreationType;
-import com.coniv.mait.domain.question.enums.QuestionSetStatus;
 import com.coniv.mait.domain.question.enums.QuestionSetSolveMode;
+import com.coniv.mait.domain.question.enums.QuestionSetStatus;
 import com.coniv.mait.domain.question.enums.QuestionSetVisibility;
 import com.coniv.mait.domain.question.exception.QuestionSetStatusException;
 import com.coniv.mait.domain.question.exception.code.QuestionSetStatusExceptionCode;
@@ -53,11 +53,6 @@ public class QuestionSetEntity extends BaseTimeEntity {
 	@Column(nullable = false)
 	@Builder.Default
 	private QuestionSetVisibility visibility = QuestionSetVisibility.GROUP;
-
-	@Enumerated(EnumType.STRING)
-	@Column(nullable = false)
-	@Builder.Default
-	private DeliveryMode deliveryMode = DeliveryMode.MAKING;
 
 	@Enumerated(EnumType.STRING)
 	@Column
@@ -122,16 +117,14 @@ public class QuestionSetEntity extends BaseTimeEntity {
 		}
 	}
 
-	public void completeQuestionSet(String title, String subject, DeliveryMode mode, String difficulty,
+	public void completeQuestionSet(String title, String subject, QuestionSetSolveMode solveMode, String difficulty,
 		QuestionSetVisibility visibility) {
-		QuestionSetSolveMode solveMode = QuestionSetSolveMode.fromDeliveryMode(mode);
 		if (solveMode == null) {
-			throw new IllegalArgumentException("문제 셋 완료 시 LIVE_TIME 또는 STUDY만 설정할 수 있습니다. 현재 mode: " + mode);
+			throw new IllegalArgumentException("문제 셋 완료 시 solveMode는 필수입니다.");
 		}
 
 		this.title = title;
 		this.subject = subject;
-		this.deliveryMode = solveMode.toDeliveryMode();
 		this.solveMode = solveMode;
 		this.status = solveMode == QuestionSetSolveMode.STUDY
 			? QuestionSetStatus.ONGOING
@@ -142,10 +135,6 @@ public class QuestionSetEntity extends BaseTimeEntity {
 
 	public void updateTitle(String title) {
 		this.title = title;
-	}
-
-	public void backfillSolveMode(QuestionSetSolveMode solveMode) {
-		this.solveMode = solveMode;
 	}
 
 	public void openReview(QuestionSetVisibility visibility) {
@@ -166,12 +155,6 @@ public class QuestionSetEntity extends BaseTimeEntity {
 		this.status = QuestionSetStatus.ONGOING;
 	}
 
-	public void migrateLegacyReviewState(QuestionSetSolveMode solveMode) {
-		this.deliveryMode = solveMode.toDeliveryMode();
-		this.solveMode = solveMode;
-		this.status = QuestionSetStatus.REVIEW;
-	}
-
 	public void markAdvancementSelected() {
 		this.advancementSelected = true;
 	}
@@ -181,7 +164,11 @@ public class QuestionSetEntity extends BaseTimeEntity {
 			return DeliveryMode.REVIEW;
 		}
 
-		return deliveryMode;
+		if (solveMode == null) {
+			return DeliveryMode.MAKING;
+		}
+
+		return solveMode.toDeliveryMode();
 	}
 
 	private void validateAfterStatus() {

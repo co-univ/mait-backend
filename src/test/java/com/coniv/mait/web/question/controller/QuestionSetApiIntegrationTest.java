@@ -1,7 +1,7 @@
 package com.coniv.mait.web.question.controller;
 
-import static org.hamcrest.Matchers.*;
 import static org.assertj.core.api.Assertions.*;
+import static org.hamcrest.Matchers.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
@@ -97,12 +97,10 @@ public class QuestionSetApiIntegrationTest extends BaseIntegrationTest {
 		QuestionSetEntity questionSet1 = QuestionSetEntity.builder()
 			.subject(subject1)
 			.teamId(team.getId())
-			.deliveryMode(deliveryMode)
 			.build();
 		QuestionSetEntity questionSet2 = QuestionSetEntity.builder()
 			.subject(subject2)
 			.teamId(team.getId())
-			.deliveryMode(deliveryMode)
 			.build();
 
 		questionSetEntityRepository.save(questionSet1);
@@ -135,24 +133,24 @@ public class QuestionSetApiIntegrationTest extends BaseIntegrationTest {
 		QuestionSetEntity beforeSet = QuestionSetEntity.builder()
 			.subject("시작 전 문제")
 			.teamId(team.getId())
-			.deliveryMode(deliveryMode)
 			.status(QuestionSetStatus.BEFORE)
+			.solveMode(QuestionSetSolveMode.LIVE_TIME)
 			.build();
 
 		// ONGOING 상태 문제 셋
 		QuestionSetEntity ongoingSet = QuestionSetEntity.builder()
 			.subject("진행 중 문제")
 			.teamId(team.getId())
-			.deliveryMode(deliveryMode)
 			.status(QuestionSetStatus.ONGOING)
+			.solveMode(QuestionSetSolveMode.LIVE_TIME)
 			.build();
 
 		// AFTER 상태 문제 셋
 		QuestionSetEntity afterSet = QuestionSetEntity.builder()
 			.subject("종료된 문제")
 			.teamId(team.getId())
-			.deliveryMode(deliveryMode)
 			.status(QuestionSetStatus.AFTER)
+			.solveMode(QuestionSetSolveMode.LIVE_TIME)
 			.build();
 
 		questionSetEntityRepository.save(beforeSet);
@@ -193,7 +191,6 @@ public class QuestionSetApiIntegrationTest extends BaseIntegrationTest {
 			QuestionSetEntity.builder()
 				.subject("아직 안 푼 문제")
 				.teamId(team.getId())
-				.deliveryMode(deliveryMode)
 				.solveMode(QuestionSetSolveMode.STUDY)
 				.status(QuestionSetStatus.ONGOING)
 				.build());
@@ -202,7 +199,6 @@ public class QuestionSetApiIntegrationTest extends BaseIntegrationTest {
 			QuestionSetEntity.builder()
 				.subject("풀고 있는 문제")
 				.teamId(team.getId())
-				.deliveryMode(deliveryMode)
 				.solveMode(QuestionSetSolveMode.STUDY)
 				.status(QuestionSetStatus.ONGOING)
 				.build());
@@ -211,7 +207,6 @@ public class QuestionSetApiIntegrationTest extends BaseIntegrationTest {
 			QuestionSetEntity.builder()
 				.subject("채점 완료 문제")
 				.teamId(team.getId())
-				.deliveryMode(deliveryMode)
 				.solveMode(QuestionSetSolveMode.STUDY)
 				.status(QuestionSetStatus.ONGOING)
 				.build());
@@ -262,7 +257,7 @@ public class QuestionSetApiIntegrationTest extends BaseIntegrationTest {
 		UpdateQuestionSetApiRequest request = new UpdateQuestionSetApiRequest(
 			"Updated Title",
 			"Updated Subject",
-			DeliveryMode.LIVE_TIME,
+			QuestionSetSolveMode.LIVE_TIME,
 			"중급",
 			QuestionSetVisibility.GROUP);
 

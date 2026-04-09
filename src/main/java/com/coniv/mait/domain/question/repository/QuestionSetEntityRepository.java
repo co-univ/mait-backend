@@ -5,9 +5,8 @@ import java.util.List;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import com.coniv.mait.domain.question.entity.QuestionSetEntity;
-import com.coniv.mait.domain.question.enums.DeliveryMode;
-import com.coniv.mait.domain.question.enums.QuestionSetStatus;
 import com.coniv.mait.domain.question.enums.QuestionSetSolveMode;
+import com.coniv.mait.domain.question.enums.QuestionSetStatus;
 
 public interface QuestionSetEntityRepository extends JpaRepository<QuestionSetEntity, Long> {
 	List<QuestionSetEntity> findAllByTeamId(Long teamId);
@@ -18,6 +17,4 @@ public interface QuestionSetEntityRepository extends JpaRepository<QuestionSetEn
 
 	List<QuestionSetEntity> findAllByTeamIdAndSolveModeAndStatusIn(Long teamId, QuestionSetSolveMode solveMode,
 		List<QuestionSetStatus> statuses);
-
-	List<QuestionSetEntity> findAllBySolveModeIsNullAndDeliveryModeIn(List<DeliveryMode> deliveryModes);
 }

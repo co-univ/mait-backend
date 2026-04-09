@@ -135,7 +135,7 @@ public class QuestionSetService {
 		final Long questionSetId,
 		final String title,
 		final String subject,
-		final DeliveryMode mode,
+		final QuestionSetSolveMode solveMode,
 		final String difficulty,
 		final QuestionSetVisibility visibility) {
 		QuestionSetEntity questionSet = questionSetEntityRepository.findById(questionSetId)
@@ -150,7 +150,7 @@ public class QuestionSetService {
 			question.updateNumber(number++);
 		}
 
-		questionSet.completeQuestionSet(title, subject, mode, difficulty, visibility);
+		questionSet.completeQuestionSet(title, subject, solveMode, difficulty, visibility);
 		return QuestionSetDto.from(questionSet);
 	}
 
@@ -208,13 +208,15 @@ public class QuestionSetService {
 				(existing, replacement) -> replacement));
 	}
 
-	private QuestionSetUserSolveStatus getUserSolveStatus(final QuestionSetEntity questionSetEntity, final Long userId) {
+	private QuestionSetUserSolveStatus getUserSolveStatus(
+		final QuestionSetEntity questionSetEntity,
+		final Long userId) {
 		if (questionSetEntity.getSolveMode() != QuestionSetSolveMode.STUDY || userId == null) {
 			return null;
 		}
 
-		return solvingSessionEntityRepository.findByUserIdAndQuestionSetIdAndMode(userId, questionSetEntity.getId(),
-				DeliveryMode.STUDY)
+		return solvingSessionEntityRepository.findByUserIdAndQuestionSetIdAndMode(
+				userId, questionSetEntity.getId(), DeliveryMode.STUDY)
 			.map(SolvingSessionEntity::getStatus)
 			.map(QuestionSetUserSolveStatus::from)
 			.orElse(QuestionSetUserSolveStatus.NOT_STARTED);

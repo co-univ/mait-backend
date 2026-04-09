@@ -80,7 +80,6 @@ public class TeamQuestionRankApiIntegrationTest extends BaseIntegrationTest {
 			QuestionSetEntity.builder()
 				.subject("테스트 문제집")
 				.teamId(team.getId())
-				.deliveryMode(DeliveryMode.LIVE_TIME)
 				.solveMode(QuestionSetSolveMode.LIVE_TIME)
 				.status(QuestionSetStatus.AFTER)
 				.build());
@@ -136,7 +135,6 @@ public class TeamQuestionRankApiIntegrationTest extends BaseIntegrationTest {
 			QuestionSetEntity.builder()
 				.subject("테스트 문제집")
 				.teamId(team.getId())
-				.deliveryMode(DeliveryMode.LIVE_TIME)
 				.solveMode(QuestionSetSolveMode.LIVE_TIME)
 				.status(QuestionSetStatus.AFTER)
 				.build());
@@ -181,7 +179,6 @@ public class TeamQuestionRankApiIntegrationTest extends BaseIntegrationTest {
 			QuestionSetEntity.builder()
 				.subject("학습 문제집")
 				.teamId(team.getId())
-				.deliveryMode(DeliveryMode.STUDY)
 				.solveMode(QuestionSetSolveMode.STUDY)
 				.status(QuestionSetStatus.BEFORE)
 				.build());
@@ -234,7 +231,6 @@ public class TeamQuestionRankApiIntegrationTest extends BaseIntegrationTest {
 			QuestionSetEntity.builder()
 				.subject("실시간 문제집")
 				.teamId(team.getId())
-				.deliveryMode(DeliveryMode.LIVE_TIME)
 				.solveMode(QuestionSetSolveMode.LIVE_TIME)
 				.status(QuestionSetStatus.AFTER)
 				.build());
@@ -252,7 +248,6 @@ public class TeamQuestionRankApiIntegrationTest extends BaseIntegrationTest {
 			QuestionSetEntity.builder()
 				.subject("학습 문제집")
 				.teamId(team.getId())
-				.deliveryMode(DeliveryMode.STUDY)
 				.solveMode(QuestionSetSolveMode.STUDY)
 				.status(QuestionSetStatus.BEFORE)
 				.build());
@@ -317,7 +312,6 @@ public class TeamQuestionRankApiIntegrationTest extends BaseIntegrationTest {
 			QuestionSetEntity.builder()
 				.subject("랭킹 문제집")
 				.teamId(team.getId())
-				.deliveryMode(DeliveryMode.LIVE_TIME)
 				.solveMode(QuestionSetSolveMode.LIVE_TIME)
 				.status(QuestionSetStatus.AFTER)
 				.build());

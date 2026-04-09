@@ -17,8 +17,8 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import com.coniv.mait.domain.question.entity.QuestionEntity;
 import com.coniv.mait.domain.question.entity.QuestionSetEntity;
 import com.coniv.mait.domain.question.enums.DeliveryMode;
-import com.coniv.mait.domain.question.enums.QuestionSetStatus;
 import com.coniv.mait.domain.question.enums.QuestionSetSolveMode;
+import com.coniv.mait.domain.question.enums.QuestionSetStatus;
 import com.coniv.mait.domain.question.enums.QuestionSetVisibility;
 import com.coniv.mait.domain.question.enums.QuestionValidationResult;
 import com.coniv.mait.domain.question.exception.QuestionSetStatusException;
@@ -223,14 +223,13 @@ class QuestionSetServiceTest {
 		final String originalSubject = "원래 주제";
 		final String newTitle = "변경할 제목";
 		final String newSubject = "변경할 주제";
-		final DeliveryMode newMode = DeliveryMode.LIVE_TIME;
+		final QuestionSetSolveMode newSolveMode = QuestionSetSolveMode.LIVE_TIME;
 		final String difficulty = "난이도 설명";
 		final QuestionSetVisibility newVisibility = QuestionSetVisibility.GROUP;
 
 		QuestionSetEntity questionSetEntity = QuestionSetEntity.builder()
 			.subject(originalSubject)
 			.title("원래 제목")
-			.deliveryMode(DeliveryMode.LIVE_TIME)
 			.visibility(QuestionSetVisibility.GROUP)
 			.build();
 
@@ -241,7 +240,7 @@ class QuestionSetServiceTest {
 			questionSetId,
 			newTitle,
 			newSubject,
-			newMode,
+			newSolveMode,
 			difficulty,
 			newVisibility);
 
@@ -250,7 +249,6 @@ class QuestionSetServiceTest {
 
 		assertThat(questionSetEntity.getTitle()).isEqualTo(newTitle);
 		assertThat(questionSetEntity.getSubject()).isEqualTo(newSubject);
-		assertThat(questionSetEntity.getDeliveryMode()).isEqualTo(newMode);
 		assertThat(questionSetEntity.getSolveMode()).isEqualTo(QuestionSetSolveMode.LIVE_TIME);
 		assertThat(questionSetEntity.getDifficulty()).isEqualTo(difficulty);
 		assertThat(questionSetEntity.getVisibility()).isEqualTo(newVisibility);
@@ -258,7 +256,7 @@ class QuestionSetServiceTest {
 		assertThat(result).isNotNull();
 		assertThat(result.getTitle()).isEqualTo(newTitle);
 		assertThat(result.getSubject()).isEqualTo(newSubject);
-		assertThat(result.getDeliveryMode()).isEqualTo(newMode);
+		assertThat(result.getDeliveryMode()).isEqualTo(DeliveryMode.LIVE_TIME);
 		assertThat(result.getSolveMode()).isEqualTo(QuestionSetSolveMode.LIVE_TIME);
 		assertThat(result.getDifficulty()).isEqualTo(difficulty);
 		assertThat(result.getVisibility()).isEqualTo(newVisibility);
@@ -277,7 +275,7 @@ class QuestionSetServiceTest {
 			questionSetId,
 			"제목",
 			"주제",
-			DeliveryMode.LIVE_TIME,
+			QuestionSetSolveMode.LIVE_TIME,
 			"설명",
 			QuestionSetVisibility.GROUP))
 			.isInstanceOf(EntityNotFoundException.class)
@@ -297,7 +295,6 @@ class QuestionSetServiceTest {
 		QuestionSetEntity questionSetEntity = QuestionSetEntity.builder()
 			.subject("주제")
 			.title(originalTitle)
-			.deliveryMode(DeliveryMode.LIVE_TIME)
 			.visibility(QuestionSetVisibility.GROUP)
 			.build();
 
@@ -454,7 +451,6 @@ class QuestionSetServiceTest {
 		QuestionSetEntity questionSetEntity = QuestionSetEntity.builder()
 			.id(questionSetId)
 			.status(QuestionSetStatus.AFTER)
-			.deliveryMode(DeliveryMode.LIVE_TIME)
 			.solveMode(QuestionSetSolveMode.LIVE_TIME)
 			.build();
 		questionSetEntity.openReview(QuestionSetVisibility.GROUP);
@@ -475,7 +471,6 @@ class QuestionSetServiceTest {
 		QuestionSetEntity questionSetEntity = QuestionSetEntity.builder()
 			.id(questionSetId)
 			.status(QuestionSetStatus.ONGOING)
-			.deliveryMode(DeliveryMode.LIVE_TIME)
 			.solveMode(QuestionSetSolveMode.LIVE_TIME)
 			.build();
 		when(questionSetEntityRepository.findById(questionSetId)).thenReturn(Optional.of(questionSetEntity));

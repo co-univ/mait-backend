@@ -90,7 +90,8 @@ public class QuestionSetController {
 	public ResponseEntity<ApiResponse<QuestionSetApiResponse>> getQuestionSet(
 		@AuthenticationPrincipal MaitUser user,
 		@PathVariable("questionSetId") Long questionSetId) {
-		QuestionSetDto questionSetDto = questionSetService.getQuestionSet(questionSetId, user != null ? user.id() : null);
+		QuestionSetDto questionSetDto = questionSetService.getQuestionSet(
+			questionSetId, user != null ? user.id() : null);
 		return ResponseEntity.ok(ApiResponse.ok(QuestionSetApiResponse.from(questionSetDto)));
 	}
 
@@ -101,7 +102,7 @@ public class QuestionSetController {
 		@Valid @RequestBody UpdateQuestionSetApiRequest request) {
 		return ResponseEntity.ok(ApiResponse.ok(QuestionSetApiResponse.from(
 			questionSetService.completeQuestionSet(questionSetId, request.title(), request.subject(),
-				request.mode(), request.difficulty(), request.visibility()))));
+				request.solveMode(), request.difficulty(), request.visibility()))));
 	}
 
 	@Operation(summary = "문제 셋 제목 단건 수정 API", description = "연필 버튼 클릭을 통한 문제 셋 단건 수정")
