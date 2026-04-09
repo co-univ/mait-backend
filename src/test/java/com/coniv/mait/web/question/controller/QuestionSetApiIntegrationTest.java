@@ -15,7 +15,7 @@ import com.coniv.mait.domain.question.entity.MultipleQuestionEntity;
 import com.coniv.mait.domain.question.entity.QuestionSetEntity;
 import com.coniv.mait.domain.question.enums.DeliveryMode;
 import com.coniv.mait.domain.question.enums.QuestionSetCreationType;
-import com.coniv.mait.domain.question.enums.QuestionSetOngoingStatus;
+import com.coniv.mait.domain.question.enums.QuestionSetStatus;
 import com.coniv.mait.domain.question.enums.QuestionSetVisibility;
 import com.coniv.mait.domain.question.repository.MultipleChoiceEntityRepository;
 import com.coniv.mait.domain.question.repository.QuestionEntityRepository;
@@ -123,7 +123,7 @@ public class QuestionSetApiIntegrationTest extends BaseIntegrationTest {
 			.subject("시작 전 문제")
 			.teamId(team.getId())
 			.deliveryMode(deliveryMode)
-			.ongoingStatus(QuestionSetOngoingStatus.BEFORE)
+			.status(QuestionSetStatus.BEFORE)
 			.build();
 
 		// ONGOING 상태 문제 셋
@@ -131,7 +131,7 @@ public class QuestionSetApiIntegrationTest extends BaseIntegrationTest {
 			.subject("진행 중 문제")
 			.teamId(team.getId())
 			.deliveryMode(deliveryMode)
-			.ongoingStatus(QuestionSetOngoingStatus.ONGOING)
+			.status(QuestionSetStatus.ONGOING)
 			.build();
 
 		// AFTER 상태 문제 셋
@@ -139,7 +139,7 @@ public class QuestionSetApiIntegrationTest extends BaseIntegrationTest {
 			.subject("종료된 문제")
 			.teamId(team.getId())
 			.deliveryMode(deliveryMode)
-			.ongoingStatus(QuestionSetOngoingStatus.AFTER)
+			.status(QuestionSetStatus.AFTER)
 			.build();
 
 		questionSetEntityRepository.save(beforeSet);

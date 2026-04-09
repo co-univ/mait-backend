@@ -23,7 +23,7 @@ import org.springframework.test.web.servlet.MockMvc;
 
 import com.coniv.mait.domain.question.enums.DeliveryMode;
 import com.coniv.mait.domain.question.enums.QuestionSetCreationType;
-import com.coniv.mait.domain.question.enums.QuestionSetOngoingStatus;
+import com.coniv.mait.domain.question.enums.QuestionSetStatus;
 import com.coniv.mait.domain.question.enums.QuestionSetVisibility;
 import com.coniv.mait.domain.question.enums.QuestionValidationResult;
 import com.coniv.mait.domain.question.service.QuestionSetMaterialService;
@@ -194,12 +194,12 @@ class QuestionSetControllerTest {
 		QuestionSetDto beforeSet = QuestionSetDto.builder()
 			.id(1L)
 			.subject("Subject 1")
-			.ongoingStatus(QuestionSetOngoingStatus.BEFORE)
+			.ongoingStatus(QuestionSetStatus.BEFORE)
 			.build();
 		QuestionSetDto ongoingSet = QuestionSetDto.builder()
 			.id(2L)
 			.subject("Subject 2")
-			.ongoingStatus(QuestionSetOngoingStatus.ONGOING)
+			.ongoingStatus(QuestionSetStatus.ONGOING)
 			.build();
 
 		QuestionSetGroup questionSetGroup = QuestionSetGroup.of(List.of(beforeSet, ongoingSet));

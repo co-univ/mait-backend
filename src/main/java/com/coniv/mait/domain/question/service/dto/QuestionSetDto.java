@@ -7,7 +7,8 @@ import com.coniv.mait.domain.question.dto.MaterialDto;
 import com.coniv.mait.domain.question.entity.QuestionSetEntity;
 import com.coniv.mait.domain.question.enums.DeliveryMode;
 import com.coniv.mait.domain.question.enums.QuestionSetCreationType;
-import com.coniv.mait.domain.question.enums.QuestionSetOngoingStatus;
+import com.coniv.mait.domain.question.enums.QuestionSetStatus;
+import com.coniv.mait.domain.question.enums.QuestionSetSolveMode;
 import com.coniv.mait.domain.question.enums.QuestionSetVisibility;
 
 import lombok.AllArgsConstructor;
@@ -26,7 +27,8 @@ public class QuestionSetDto {
 	private QuestionSetCreationType creationType;
 	private QuestionSetVisibility visibility;
 	private DeliveryMode deliveryMode;
-	private QuestionSetOngoingStatus ongoingStatus;
+	private QuestionSetSolveMode solveMode;
+	private QuestionSetStatus ongoingStatus;
 	private Long teamId;
 	private Long questionCount;
 	private String difficulty;
@@ -40,8 +42,9 @@ public class QuestionSetDto {
 			.title(questionSetEntity.getTitle())
 			.creationType(questionSetEntity.getCreationType())
 			.visibility(questionSetEntity.getVisibility())
-			.deliveryMode(questionSetEntity.getDeliveryMode())
-			.ongoingStatus(questionSetEntity.getOngoingStatus())
+			.deliveryMode(questionSetEntity.getDisplayMode())
+			.solveMode(questionSetEntity.getSolveMode())
+			.ongoingStatus(questionSetEntity.getStatus())
 			.teamId(questionSetEntity.getTeamId())
 			.difficulty(questionSetEntity.getDifficulty())
 			.updatedAt(questionSetEntity.getModifiedAt())
@@ -55,10 +58,11 @@ public class QuestionSetDto {
 			.title(questionSetEntity.getTitle())
 			.creationType(questionSetEntity.getCreationType())
 			.visibility(questionSetEntity.getVisibility())
-			.deliveryMode(questionSetEntity.getDeliveryMode())
+			.deliveryMode(questionSetEntity.getDisplayMode())
+			.solveMode(questionSetEntity.getSolveMode())
 			.teamId(questionSetEntity.getTeamId())
 			.difficulty(questionSetEntity.getDifficulty())
-			.ongoingStatus(questionSetEntity.getOngoingStatus())
+			.ongoingStatus(questionSetEntity.getStatus())
 			.updatedAt(questionSetEntity.getModifiedAt())
 			.questionCount(questionCount)
 			.build();

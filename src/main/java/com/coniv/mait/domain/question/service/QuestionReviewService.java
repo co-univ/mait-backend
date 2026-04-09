@@ -12,7 +12,7 @@ import org.springframework.transaction.annotation.Transactional;
 import com.coniv.mait.domain.question.entity.QuestionEntity;
 import com.coniv.mait.domain.question.entity.QuestionSetEntity;
 import com.coniv.mait.domain.question.enums.DeliveryMode;
-import com.coniv.mait.domain.question.enums.QuestionSetOngoingStatus;
+import com.coniv.mait.domain.question.enums.QuestionSetStatus;
 import com.coniv.mait.domain.question.enums.QuestionSetVisibility;
 import com.coniv.mait.domain.question.enums.QuestionType;
 import com.coniv.mait.domain.question.exception.QuestionSetStatusException;
@@ -63,8 +63,8 @@ public class QuestionReviewService {
 		QuestionSetEntity questionSet = questionSetEntityRepository.findById(questionSetId)
 			.orElseThrow(() -> new EntityNotFoundException("해당 문제 셋을 조회할 수 없음"));
 
-		if (questionSet.getOngoingStatus() != QuestionSetOngoingStatus.AFTER) {
-			throw new QuestionSetStatusException(QuestionSetStatusExceptionCode.ONLY_AFTER);
+		if (questionSet.getStatus() != QuestionSetStatus.REVIEW) {
+			throw new QuestionSetStatusException(QuestionSetStatusExceptionCode.ONLY_REVIEW);
 		}
 
 		teamRoleValidator.checkHasSolveQuestionAuthorityInTeam(questionSet.getTeamId(), userId);

@@ -21,7 +21,7 @@ import com.coniv.mait.domain.question.entity.QuestionSetEntity;
 import com.coniv.mait.domain.question.entity.QuestionSetParticipantEntity;
 import com.coniv.mait.domain.question.enums.DeliveryMode;
 import com.coniv.mait.domain.question.enums.ParticipantStatus;
-import com.coniv.mait.domain.question.enums.QuestionSetOngoingStatus;
+import com.coniv.mait.domain.question.enums.QuestionSetStatus;
 import com.coniv.mait.domain.question.event.NewParticipantEvent;
 import com.coniv.mait.domain.question.exception.QuestionSetStatusException;
 import com.coniv.mait.domain.question.repository.QuestionSetEntityRepository;
@@ -63,7 +63,7 @@ class QuestionSetParticipantServiceTest {
 
 		QuestionSetEntity questionSet = QuestionSetEntity.builder()
 			.deliveryMode(DeliveryMode.LIVE_TIME)
-			.ongoingStatus(QuestionSetOngoingStatus.ONGOING)
+			.status(QuestionSetStatus.ONGOING)
 			.build();
 
 		UserEntity user = mock(UserEntity.class);
@@ -95,7 +95,7 @@ class QuestionSetParticipantServiceTest {
 
 		QuestionSetEntity questionSet = QuestionSetEntity.builder()
 			.deliveryMode(DeliveryMode.LIVE_TIME)
-			.ongoingStatus(QuestionSetOngoingStatus.ONGOING)
+			.status(QuestionSetStatus.ONGOING)
 			.build();
 		questionSet.markAdvancementSelected();
 
@@ -128,7 +128,7 @@ class QuestionSetParticipantServiceTest {
 
 		QuestionSetEntity questionSet = QuestionSetEntity.builder()
 			.deliveryMode(DeliveryMode.STUDY)
-			.ongoingStatus(QuestionSetOngoingStatus.ONGOING)
+			.status(QuestionSetStatus.ONGOING)
 			.build();
 
 		given(questionSetEntityRepository.findById(questionSetId)).willReturn(Optional.of(questionSet));
@@ -148,7 +148,7 @@ class QuestionSetParticipantServiceTest {
 
 		QuestionSetEntity questionSet = QuestionSetEntity.builder()
 			.deliveryMode(DeliveryMode.LIVE_TIME)
-			.ongoingStatus(QuestionSetOngoingStatus.ONGOING)
+			.status(QuestionSetStatus.ONGOING)
 			.build();
 
 		UserEntity user = mock(UserEntity.class);
@@ -179,7 +179,7 @@ class QuestionSetParticipantServiceTest {
 
 		QuestionSetEntity questionSet = QuestionSetEntity.builder()
 			.deliveryMode(DeliveryMode.LIVE_TIME)
-			.ongoingStatus(QuestionSetOngoingStatus.ONGOING)
+			.status(QuestionSetStatus.ONGOING)
 			.build();
 
 		UserEntity user = mock(UserEntity.class);
@@ -227,7 +227,7 @@ class QuestionSetParticipantServiceTest {
 
 		QuestionSetEntity questionSet = QuestionSetEntity.builder()
 			.deliveryMode(DeliveryMode.LIVE_TIME)
-			.ongoingStatus(QuestionSetOngoingStatus.ONGOING)
+			.status(QuestionSetStatus.ONGOING)
 			.build();
 
 		given(questionSetEntityRepository.findById(questionSetId)).willReturn(Optional.of(questionSet));
@@ -249,7 +249,7 @@ class QuestionSetParticipantServiceTest {
 
 		QuestionSetEntity questionSet = QuestionSetEntity.builder()
 			.deliveryMode(DeliveryMode.LIVE_TIME)
-			.ongoingStatus(QuestionSetOngoingStatus.ONGOING)
+			.status(QuestionSetStatus.ONGOING)
 			.build();
 
 		UserEntity user1 = mock(UserEntity.class);

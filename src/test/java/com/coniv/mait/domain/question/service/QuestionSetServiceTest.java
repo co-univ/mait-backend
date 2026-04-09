@@ -17,7 +17,8 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import com.coniv.mait.domain.question.entity.QuestionEntity;
 import com.coniv.mait.domain.question.entity.QuestionSetEntity;
 import com.coniv.mait.domain.question.enums.DeliveryMode;
-import com.coniv.mait.domain.question.enums.QuestionSetOngoingStatus;
+import com.coniv.mait.domain.question.enums.QuestionSetStatus;
+import com.coniv.mait.domain.question.enums.QuestionSetSolveMode;
 import com.coniv.mait.domain.question.enums.QuestionSetVisibility;
 import com.coniv.mait.domain.question.enums.QuestionValidationResult;
 import com.coniv.mait.domain.question.exception.QuestionSetStatusException;
@@ -89,19 +90,19 @@ class QuestionSetServiceTest {
 
 		// older mock 설정
 		when(older.getId()).thenReturn(1L);
-		when(older.getDeliveryMode()).thenReturn(mode);
-		when(older.getOngoingStatus()).thenReturn(QuestionSetOngoingStatus.BEFORE);
+		when(older.getDisplayMode()).thenReturn(mode);
+		when(older.getStatus()).thenReturn(QuestionSetStatus.BEFORE);
 		when(older.getTeamId()).thenReturn(teamId);
 		when(older.getModifiedAt()).thenReturn(now.minusDays(1));
 
 		// newer mock 설정
 		when(newer.getId()).thenReturn(2L);
-		when(newer.getDeliveryMode()).thenReturn(mode);
-		when(newer.getOngoingStatus()).thenReturn(QuestionSetOngoingStatus.ONGOING);
+		when(newer.getDisplayMode()).thenReturn(mode);
+		when(newer.getStatus()).thenReturn(QuestionSetStatus.ONGOING);
 		when(newer.getTeamId()).thenReturn(teamId);
 		when(newer.getModifiedAt()).thenReturn(now.plusDays(1));
 
-		when(questionSetEntityRepository.findAllByTeamIdAndDeliveryMode(teamId, mode))
+		when(questionSetEntityRepository.findAllByTeamId(teamId))
 			.thenReturn(List.of(older, newer));
 
 		// when
@@ -114,7 +115,7 @@ class QuestionSetServiceTest {
 		assertThat(list.questionSets().get(0).getId()).isEqualTo(2L); // 최신 것이 먼저
 		assertThat(list.questionSets().get(1).getId()).isEqualTo(1L);
 
-		verify(questionSetEntityRepository, times(1)).findAllByTeamIdAndDeliveryMode(teamId, mode);
+		verify(questionSetEntityRepository, times(1)).findAllByTeamId(teamId);
 	}
 
 	@Test
@@ -130,26 +131,26 @@ class QuestionSetServiceTest {
 
 		// BEFORE status mock 설정
 		when(beforeStatus.getId()).thenReturn(1L);
-		when(beforeStatus.getDeliveryMode()).thenReturn(mode);
-		when(beforeStatus.getOngoingStatus()).thenReturn(QuestionSetOngoingStatus.BEFORE);
+		when(beforeStatus.getDisplayMode()).thenReturn(mode);
+		when(beforeStatus.getStatus()).thenReturn(QuestionSetStatus.BEFORE);
 		when(beforeStatus.getTeamId()).thenReturn(teamId);
 		when(beforeStatus.getModifiedAt()).thenReturn(now.minusDays(2));
 
 		// ONGOING status mock 설정
 		when(ongoingStatus.getId()).thenReturn(2L);
-		when(ongoingStatus.getDeliveryMode()).thenReturn(mode);
-		when(ongoingStatus.getOngoingStatus()).thenReturn(QuestionSetOngoingStatus.ONGOING);
+		when(ongoingStatus.getDisplayMode()).thenReturn(mode);
+		when(ongoingStatus.getStatus()).thenReturn(QuestionSetStatus.ONGOING);
 		when(ongoingStatus.getTeamId()).thenReturn(teamId);
 		when(ongoingStatus.getModifiedAt()).thenReturn(now.minusDays(1));
 
 		// AFTER status mock 설정
 		when(afterStatus.getId()).thenReturn(3L);
-		when(afterStatus.getDeliveryMode()).thenReturn(mode);
-		when(afterStatus.getOngoingStatus()).thenReturn(QuestionSetOngoingStatus.AFTER);
+		when(afterStatus.getDisplayMode()).thenReturn(mode);
+		when(afterStatus.getStatus()).thenReturn(QuestionSetStatus.AFTER);
 		when(afterStatus.getTeamId()).thenReturn(teamId);
 		when(afterStatus.getModifiedAt()).thenReturn(now);
 
-		when(questionSetEntityRepository.findAllByTeamIdAndDeliveryMode(teamId, mode))
+		when(questionSetEntityRepository.findAllByTeamId(teamId))
 			.thenReturn(List.of(beforeStatus, ongoingStatus, afterStatus));
 
 		// when
@@ -160,17 +161,17 @@ class QuestionSetServiceTest {
 		QuestionSetGroup group = (QuestionSetGroup)result;
 		assertThat(group.questionSets()).hasSize(3); // 3개의 status
 		assertThat(group.questionSets()).containsKeys(
-			QuestionSetOngoingStatus.BEFORE,
-			QuestionSetOngoingStatus.ONGOING,
-			QuestionSetOngoingStatus.AFTER);
-		assertThat(group.questionSets().get(QuestionSetOngoingStatus.BEFORE)).hasSize(1);
-		assertThat(group.questionSets().get(QuestionSetOngoingStatus.ONGOING)).hasSize(1);
-		assertThat(group.questionSets().get(QuestionSetOngoingStatus.AFTER)).hasSize(1);
-		assertThat(group.questionSets().get(QuestionSetOngoingStatus.BEFORE).get(0).getId()).isEqualTo(1L);
-		assertThat(group.questionSets().get(QuestionSetOngoingStatus.ONGOING).get(0).getId()).isEqualTo(2L);
-		assertThat(group.questionSets().get(QuestionSetOngoingStatus.AFTER).get(0).getId()).isEqualTo(3L);
+			QuestionSetStatus.BEFORE,
+			QuestionSetStatus.ONGOING,
+			QuestionSetStatus.AFTER);
+		assertThat(group.questionSets().get(QuestionSetStatus.BEFORE)).hasSize(1);
+		assertThat(group.questionSets().get(QuestionSetStatus.ONGOING)).hasSize(1);
+		assertThat(group.questionSets().get(QuestionSetStatus.AFTER)).hasSize(1);
+		assertThat(group.questionSets().get(QuestionSetStatus.BEFORE).get(0).getId()).isEqualTo(1L);
+		assertThat(group.questionSets().get(QuestionSetStatus.ONGOING).get(0).getId()).isEqualTo(2L);
+		assertThat(group.questionSets().get(QuestionSetStatus.AFTER).get(0).getId()).isEqualTo(3L);
 
-		verify(questionSetEntityRepository, times(1)).findAllByTeamIdAndDeliveryMode(teamId, mode);
+		verify(questionSetEntityRepository, times(1)).findAllByTeamId(teamId);
 	}
 
 	@Test
@@ -222,7 +223,7 @@ class QuestionSetServiceTest {
 		final String originalSubject = "원래 주제";
 		final String newTitle = "변경할 제목";
 		final String newSubject = "변경할 주제";
-		final DeliveryMode newMode = DeliveryMode.REVIEW;
+		final DeliveryMode newMode = DeliveryMode.LIVE_TIME;
 		final String difficulty = "난이도 설명";
 		final QuestionSetVisibility newVisibility = QuestionSetVisibility.GROUP;
 
@@ -250,6 +251,7 @@ class QuestionSetServiceTest {
 		assertThat(questionSetEntity.getTitle()).isEqualTo(newTitle);
 		assertThat(questionSetEntity.getSubject()).isEqualTo(newSubject);
 		assertThat(questionSetEntity.getDeliveryMode()).isEqualTo(newMode);
+		assertThat(questionSetEntity.getSolveMode()).isEqualTo(QuestionSetSolveMode.LIVE_TIME);
 		assertThat(questionSetEntity.getDifficulty()).isEqualTo(difficulty);
 		assertThat(questionSetEntity.getVisibility()).isEqualTo(newVisibility);
 
@@ -257,6 +259,7 @@ class QuestionSetServiceTest {
 		assertThat(result.getTitle()).isEqualTo(newTitle);
 		assertThat(result.getSubject()).isEqualTo(newSubject);
 		assertThat(result.getDeliveryMode()).isEqualTo(newMode);
+		assertThat(result.getSolveMode()).isEqualTo(QuestionSetSolveMode.LIVE_TIME);
 		assertThat(result.getDifficulty()).isEqualTo(difficulty);
 		assertThat(result.getVisibility()).isEqualTo(newVisibility);
 	}
@@ -416,17 +419,13 @@ class QuestionSetServiceTest {
 		final QuestionSetVisibility visibility = QuestionSetVisibility.GROUP;
 		QuestionSetEntity questionSetEntity = mock(QuestionSetEntity.class);
 		when(questionSetEntityRepository.findById(questionSetId)).thenReturn(Optional.of(questionSetEntity));
-		when(questionSetEntity.getOngoingStatus()).thenReturn(QuestionSetOngoingStatus.AFTER);
-		when(questionSetEntity.getDeliveryMode()).thenReturn(DeliveryMode.REVIEW);
 		when(questionSetEntity.getVisibility()).thenReturn(visibility);
 
 		// when
 		questionSetService.updateQuestionSetToReviewMode(questionSetId, visibility);
 
 		// then
-		verify(questionSetEntity).updateMode(DeliveryMode.REVIEW);
-		verify(questionSetEntity).updateVisibility(visibility);
-		assertThat(questionSetEntity.getDeliveryMode()).isEqualTo(DeliveryMode.REVIEW);
+		verify(questionSetEntity).openReview(visibility);
 		assertThat(questionSetEntity.getVisibility()).isEqualTo(visibility);
 	}
 
@@ -438,7 +437,9 @@ class QuestionSetServiceTest {
 		final QuestionSetVisibility visibility = QuestionSetVisibility.GROUP;
 		QuestionSetEntity questionSetEntity = mock(QuestionSetEntity.class);
 		when(questionSetEntityRepository.findById(questionSetId)).thenReturn(Optional.of(questionSetEntity));
-		when(questionSetEntity.getOngoingStatus()).thenReturn(QuestionSetOngoingStatus.BEFORE);
+		doThrow(new QuestionSetStatusException(QuestionSetStatusExceptionCode.ONLY_AFTER))
+			.when(questionSetEntity)
+			.openReview(visibility);
 
 		// when, then
 		assertThatThrownBy(() -> questionSetService.updateQuestionSetToReviewMode(questionSetId, visibility))
@@ -452,16 +453,18 @@ class QuestionSetServiceTest {
 		final Long questionSetId = 1L;
 		QuestionSetEntity questionSetEntity = QuestionSetEntity.builder()
 			.id(questionSetId)
-			.ongoingStatus(QuestionSetOngoingStatus.AFTER)
+			.status(QuestionSetStatus.AFTER)
 			.deliveryMode(DeliveryMode.LIVE_TIME)
+			.solveMode(QuestionSetSolveMode.LIVE_TIME)
 			.build();
+		questionSetEntity.openReview(QuestionSetVisibility.GROUP);
 		when(questionSetEntityRepository.findById(questionSetId)).thenReturn(Optional.of(questionSetEntity));
 
 		// when
 		questionSetService.restartQuestionSet(questionSetId);
 
 		// then
-		assertThat(questionSetEntity.getOngoingStatus()).isEqualTo(QuestionSetOngoingStatus.ONGOING);
+		assertThat(questionSetEntity.getStatus()).isEqualTo(QuestionSetStatus.ONGOING);
 	}
 
 	@Test
@@ -471,8 +474,9 @@ class QuestionSetServiceTest {
 		final Long questionSetId = 1L;
 		QuestionSetEntity questionSetEntity = QuestionSetEntity.builder()
 			.id(questionSetId)
-			.ongoingStatus(QuestionSetOngoingStatus.ONGOING)
+			.status(QuestionSetStatus.ONGOING)
 			.deliveryMode(DeliveryMode.LIVE_TIME)
+			.solveMode(QuestionSetSolveMode.LIVE_TIME)
 			.build();
 		when(questionSetEntityRepository.findById(questionSetId)).thenReturn(Optional.of(questionSetEntity));
 
