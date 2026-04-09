@@ -2,8 +2,6 @@ package com.coniv.mait.domain.question.service;
 
 import java.util.Comparator;
 import java.util.List;
-import java.util.Map;
-import java.util.stream.Collectors;
 
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
@@ -25,9 +23,6 @@ import com.coniv.mait.domain.question.service.component.QuestionChecker;
 import com.coniv.mait.domain.question.service.dto.QuestionCount;
 import com.coniv.mait.domain.question.service.dto.QuestionSetDto;
 import com.coniv.mait.domain.question.service.dto.QuestionValidateDto;
-import com.coniv.mait.domain.solve.entity.SolvingSessionEntity;
-import com.coniv.mait.domain.solve.enums.QuestionSetUserSolveStatus;
-import com.coniv.mait.domain.solve.repository.SolvingSessionEntityRepository;
 import com.coniv.mait.domain.user.service.component.TeamRoleValidator;
 import com.coniv.mait.global.auth.model.MaitUser;
 import com.coniv.mait.global.event.MaitEventPublisher;
@@ -62,8 +57,6 @@ public class QuestionSetService {
 	private final QuestionSetMaterialService questionSetMaterialService;
 
 	private final AiRequestStatusManager aiRequestStatusManager;
-
-	private final SolvingSessionEntityRepository solvingSessionEntityRepository;
 
 	private final RedisTemplate<String, String> redisTemplate;
 
@@ -107,17 +100,12 @@ public class QuestionSetService {
 			teamRoleValidator.checkHasCreateQuestionSetAuthority(teamId, userId);
 		}
 
-		Map<Long, QuestionSetUserSolveStatus> userSolveStatusByQuestionSetId =
-			getUserSolveStatusByQuestionSetId(teamId, mode, userId);
-
-		List<QuestionSetDto> questionSets = questionSetEntityRepository.findAllByTeamId(teamId)
-			.stream()
+		List<QuestionSetDto> questionSets = questionSetEntityRepository.findAllByTeamId(teamId).stream()
 			.filter(questionSet -> questionSet.getDisplayMode() == mode)
 			.sorted(Comparator.comparing(
 				QuestionSetEntity::getModifiedAt,
 				Comparator.nullsLast(Comparator.naturalOrder())).reversed())
-			.map(questionSet -> QuestionSetDto.from(questionSet,
-				getUserSolveStatus(questionSet, userSolveStatusByQuestionSetId, userId)))
+			.map(QuestionSetDto::from)
 			.toList();
 
 		if (mode == DeliveryMode.MAKING || mode == DeliveryMode.REVIEW) {
@@ -133,7 +121,7 @@ public class QuestionSetService {
 
 		long questionCount = questionEntityRepository.countByQuestionSetId(questionSetEntity.getId());
 
-		return QuestionSetDto.of(questionSetEntity, questionCount, getUserSolveStatus(questionSetEntity, userId));
+		return QuestionSetDto.of(questionSetEntity, questionCount);
 	}
 
 	@Transactional
@@ -198,42 +186,5 @@ public class QuestionSetService {
 			.orElseThrow(() -> new EntityNotFoundException("해당 문제 셋을 찾을 수 없습니다."));
 
 		questionSet.restartLive();
-	}
-
-	private Map<Long, QuestionSetUserSolveStatus> getUserSolveStatusByQuestionSetId(final Long teamId,
-		final DeliveryMode mode, final Long userId) {
-		if (mode != DeliveryMode.STUDY || userId == null) {
-			return Map.of();
-		}
-
-		return solvingSessionEntityRepository.findAllByUserIdAndModeAndQuestionSetTeamId(userId, DeliveryMode.STUDY,
-				teamId).stream()
-			.collect(Collectors.toUnmodifiableMap(
-				session -> session.getQuestionSet().getId(),
-				session -> QuestionSetUserSolveStatus.from(session.getStatus()),
-				(existing, replacement) -> replacement));
-	}
-
-	private QuestionSetUserSolveStatus getUserSolveStatus(final QuestionSetEntity questionSetEntity,
-		final Long userId) {
-		if (questionSetEntity.getSolveMode() != QuestionSetSolveMode.STUDY || userId == null) {
-			return null;
-		}
-
-		return solvingSessionEntityRepository.findByUserIdAndQuestionSetIdAndMode(
-				userId, questionSetEntity.getId(), DeliveryMode.STUDY)
-			.map(SolvingSessionEntity::getStatus)
-			.map(QuestionSetUserSolveStatus::from)
-			.orElse(QuestionSetUserSolveStatus.NOT_STARTED);
-	}
-
-	private QuestionSetUserSolveStatus getUserSolveStatus(final QuestionSetEntity questionSetEntity,
-		final Map<Long, QuestionSetUserSolveStatus> userSolveStatusByQuestionSetId, final Long userId) {
-		if (questionSetEntity.getSolveMode() != QuestionSetSolveMode.STUDY || userId == null) {
-			return null;
-		}
-
-		return userSolveStatusByQuestionSetId.getOrDefault(questionSetEntity.getId(),
-			QuestionSetUserSolveStatus.NOT_STARTED);
 	}
 }

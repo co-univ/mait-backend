@@ -22,10 +22,12 @@ import com.coniv.mait.domain.question.enums.QuestionSetVisibility;
 import com.coniv.mait.domain.question.repository.MultipleChoiceEntityRepository;
 import com.coniv.mait.domain.question.repository.QuestionEntityRepository;
 import com.coniv.mait.domain.question.repository.QuestionSetEntityRepository;
-import com.coniv.mait.domain.solve.entity.SolvingSessionEntity;
 import com.coniv.mait.domain.solve.repository.SolvingSessionEntityRepository;
 import com.coniv.mait.domain.team.entity.TeamEntity;
+import com.coniv.mait.domain.team.entity.TeamUserEntity;
+import com.coniv.mait.domain.team.enums.TeamUserRole;
 import com.coniv.mait.domain.team.repository.TeamEntityRepository;
+import com.coniv.mait.domain.team.repository.TeamUserEntityRepository;
 import com.coniv.mait.domain.user.entity.UserEntity;
 import com.coniv.mait.domain.user.repository.UserEntityRepository;
 import com.coniv.mait.login.WithCustomUser;
@@ -43,6 +45,9 @@ public class QuestionSetApiIntegrationTest extends BaseIntegrationTest {
 	private TeamEntityRepository teamEntityRepository;
 
 	@Autowired
+	private TeamUserEntityRepository teamUserEntityRepository;
+
+	@Autowired
 	private QuestionEntityRepository questionEntityRepository;
 
 	@Autowired
@@ -57,6 +62,7 @@ public class QuestionSetApiIntegrationTest extends BaseIntegrationTest {
 	@BeforeEach
 	void setUp() {
 		solvingSessionEntityRepository.deleteAll();
+		teamUserEntityRepository.deleteAll();
 		questionSetEntityRepository.deleteAll();
 		questionEntityRepository.deleteAll();
 		multipleChoiceEntityRepository.deleteAll();
@@ -89,7 +95,9 @@ public class QuestionSetApiIntegrationTest extends BaseIntegrationTest {
 	@DisplayName("문제 셋 목록 조회 API 성공 테스트 - MAKING 모드 (List 구조)")
 	void getQuestionSetsApiSuccess_MakingMode() throws Exception {
 		// given
+		UserEntity currentUser = userEntityRepository.findByEmail("user@example.com").orElseThrow();
 		TeamEntity team = teamEntityRepository.save(TeamEntity.builder().name("코니브").creatorId(1L).build());
+		teamUserEntityRepository.save(TeamUserEntity.createTeamUser(currentUser, team, TeamUserRole.MAKER));
 		String subject1 = "Subject 1";
 		String subject2 = "Subject 2";
 		final DeliveryMode deliveryMode = DeliveryMode.MAKING;
@@ -126,7 +134,9 @@ public class QuestionSetApiIntegrationTest extends BaseIntegrationTest {
 	@DisplayName("문제 셋 목록 조회 API 성공 테스트 - LIVE_TIME 모드 (Map 구조)")
 	void getQuestionSetsApiSuccess_LiveTimeMode() throws Exception {
 		// given
+		UserEntity currentUser = userEntityRepository.findByEmail("user@example.com").orElseThrow();
 		TeamEntity team = teamEntityRepository.save(TeamEntity.builder().name("코니브").creatorId(1L).build());
+		teamUserEntityRepository.save(TeamUserEntity.createPlayerUser(currentUser, team));
 		final DeliveryMode deliveryMode = DeliveryMode.LIVE_TIME;
 
 		// BEFORE 상태 문제 셋
@@ -185,6 +195,7 @@ public class QuestionSetApiIntegrationTest extends BaseIntegrationTest {
 		// given
 		UserEntity currentUser = userEntityRepository.findByEmail("user@example.com").orElseThrow();
 		TeamEntity team = teamEntityRepository.save(TeamEntity.builder().name("코니브").creatorId(1L).build());
+		teamUserEntityRepository.save(TeamUserEntity.createPlayerUser(currentUser, team));
 		final DeliveryMode deliveryMode = DeliveryMode.STUDY;
 
 		QuestionSetEntity notStartedSet = questionSetEntityRepository.save(
@@ -211,12 +222,6 @@ public class QuestionSetApiIntegrationTest extends BaseIntegrationTest {
 				.status(QuestionSetStatus.ONGOING)
 				.build());
 
-		solvingSessionEntityRepository.save(SolvingSessionEntity.studySession(currentUser, progressingSet));
-
-		SolvingSessionEntity completedSession = SolvingSessionEntity.studySession(currentUser, completedSet);
-		completedSession.submit(3, 2);
-		solvingSessionEntityRepository.save(completedSession);
-
 		// when & then
 		mockMvc.perform(get("/api/v1/question-sets")
 				.param("teamId", String.valueOf(team.getId()))
@@ -225,13 +230,7 @@ public class QuestionSetApiIntegrationTest extends BaseIntegrationTest {
 			.andExpect(status().isOk())
 			.andExpect(jsonPath("$.data.mode").value("STUDY"))
 			.andExpect(jsonPath("$.data.content.questionSets.ONGOING").isArray())
-			.andExpect(jsonPath("$.data.content.questionSets.ONGOING.length()").value(3))
-			.andExpect(jsonPath("$.data.content.questionSets.ONGOING[?(@.subject=='채점 완료 문제')].userSolveStatus")
-				.value(contains("COMPLETED")))
-			.andExpect(jsonPath("$.data.content.questionSets.ONGOING[?(@.subject=='풀고 있는 문제')].userSolveStatus")
-				.value(contains("IN_PROGRESS")))
-			.andExpect(jsonPath("$.data.content.questionSets.ONGOING[?(@.subject=='아직 안 푼 문제')].userSolveStatus")
-				.value(contains("NOT_STARTED")));
+			.andExpect(jsonPath("$.data.content.questionSets.ONGOING.length()").value(3));
 	}
 
 	@Test

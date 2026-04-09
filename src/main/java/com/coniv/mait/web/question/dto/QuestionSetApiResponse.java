@@ -8,7 +8,6 @@ import com.coniv.mait.domain.question.enums.QuestionSetSolveMode;
 import com.coniv.mait.domain.question.enums.QuestionSetStatus;
 import com.coniv.mait.domain.question.enums.QuestionSetVisibility;
 import com.coniv.mait.domain.question.service.dto.QuestionSetDto;
-import com.coniv.mait.domain.solve.enums.QuestionSetUserSolveStatus;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Builder;
@@ -29,9 +28,6 @@ public record QuestionSetApiResponse(
 	DeliveryMode deliveryMode,
 	@Schema(description = "원래 풀이 방식", requiredMode = Schema.RequiredMode.NOT_REQUIRED, enumAsRef = true)
 	QuestionSetSolveMode solveMode,
-	@Schema(description = "현재 사용자 기준 학습 풀이 상태", requiredMode = Schema.RequiredMode.NOT_REQUIRED,
-		enumAsRef = true)
-	QuestionSetUserSolveStatus userSolveStatus,
 	@Schema(requiredMode = Schema.RequiredMode.REQUIRED)
 	Long teamId,
 
@@ -55,7 +51,6 @@ public record QuestionSetApiResponse(
 			.visibility(questionSetDto.getVisibility())
 			.deliveryMode(questionSetDto.getDeliveryMode())
 			.solveMode(questionSetDto.getSolveMode())
-			.userSolveStatus(questionSetDto.getUserSolveStatus())
 			.status(questionSetDto.getStatus())
 			.teamId(questionSetDto.getTeamId())
 			.questionCount(questionSetDto.getQuestionCount())

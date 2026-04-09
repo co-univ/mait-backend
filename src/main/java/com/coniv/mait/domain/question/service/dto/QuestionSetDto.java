@@ -10,7 +10,6 @@ import com.coniv.mait.domain.question.enums.QuestionSetCreationType;
 import com.coniv.mait.domain.question.enums.QuestionSetSolveMode;
 import com.coniv.mait.domain.question.enums.QuestionSetStatus;
 import com.coniv.mait.domain.question.enums.QuestionSetVisibility;
-import com.coniv.mait.domain.solve.enums.QuestionSetUserSolveStatus;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -30,7 +29,6 @@ public class QuestionSetDto {
 	private DeliveryMode deliveryMode;
 	private QuestionSetSolveMode solveMode;
 	private QuestionSetStatus status;
-	private QuestionSetUserSolveStatus userSolveStatus;
 	private Long teamId;
 	private Long questionCount;
 	private String difficulty;
@@ -53,13 +51,6 @@ public class QuestionSetDto {
 			.build();
 	}
 
-	public static QuestionSetDto from(final QuestionSetEntity questionSetEntity,
-		final QuestionSetUserSolveStatus userSolveStatus) {
-		QuestionSetDto dto = from(questionSetEntity);
-		dto.setUserSolveStatus(userSolveStatus);
-		return dto;
-	}
-
 	public static QuestionSetDto of(QuestionSetEntity questionSetEntity, long questionCount) {
 		return QuestionSetDto.builder()
 			.id(questionSetEntity.getId())
@@ -77,10 +68,4 @@ public class QuestionSetDto {
 			.build();
 	}
 
-	public static QuestionSetDto of(QuestionSetEntity questionSetEntity, long questionCount,
-		QuestionSetUserSolveStatus userSolveStatus) {
-		QuestionSetDto dto = of(questionSetEntity, questionCount);
-		dto.setUserSolveStatus(userSolveStatus);
-		return dto;
-	}
 }
