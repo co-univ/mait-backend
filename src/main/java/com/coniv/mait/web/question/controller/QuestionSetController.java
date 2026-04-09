@@ -76,9 +76,11 @@ public class QuestionSetController {
 	@Operation(summary = "문제 셋 목록 조회")
 	@GetMapping
 	public ResponseEntity<ApiResponse<QuestionSetsApiResponse>> getQuestionSets(
+		@AuthenticationPrincipal MaitUser user,
 		@RequestParam(value = "mode") DeliveryMode mode,
 		@RequestParam("teamId") Long teamId) {
-		QuestionSetContainer questionSets = questionSetService.getQuestionSets(teamId, mode);
+		QuestionSetContainer questionSets = questionSetService.getQuestionSets(teamId, mode,
+			user != null ? user.id() : null);
 		QuestionSetsApiResponse response = QuestionSetsApiResponse.of(mode, questionSets);
 		return ResponseEntity.ok(ApiResponse.ok(response));
 	}
@@ -86,8 +88,9 @@ public class QuestionSetController {
 	@Operation(summary = "문제 셋 단건 조회")
 	@GetMapping("/{questionSetId}")
 	public ResponseEntity<ApiResponse<QuestionSetApiResponse>> getQuestionSet(
+		@AuthenticationPrincipal MaitUser user,
 		@PathVariable("questionSetId") Long questionSetId) {
-		QuestionSetDto questionSetDto = questionSetService.getQuestionSet(questionSetId);
+		QuestionSetDto questionSetDto = questionSetService.getQuestionSet(questionSetId, user != null ? user.id() : null);
 		return ResponseEntity.ok(ApiResponse.ok(QuestionSetApiResponse.from(questionSetDto)));
 	}
 

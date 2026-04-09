@@ -106,7 +106,7 @@ class QuestionSetServiceTest {
 			.thenReturn(List.of(older, newer));
 
 		// when
-		QuestionSetContainer result = questionSetService.getQuestionSets(teamId, mode);
+		QuestionSetContainer result = questionSetService.getQuestionSets(teamId, mode, null);
 
 		// then
 		assertThat(result).isInstanceOf(QuestionSetList.class);
@@ -154,7 +154,7 @@ class QuestionSetServiceTest {
 			.thenReturn(List.of(beforeStatus, ongoingStatus, afterStatus));
 
 		// when
-		QuestionSetContainer result = questionSetService.getQuestionSets(teamId, mode);
+		QuestionSetContainer result = questionSetService.getQuestionSets(teamId, mode, null);
 
 		// then
 		assertThat(result).isInstanceOf(QuestionSetGroup.class);
@@ -189,7 +189,7 @@ class QuestionSetServiceTest {
 			.thenReturn(5L); // 예시로 5개의 문제를 가진다고 가정
 
 		// when
-		QuestionSetDto result = questionSetService.getQuestionSet(questionSetId);
+		QuestionSetDto result = questionSetService.getQuestionSet(questionSetId, null);
 
 		// then
 		assertThat(result).isNotNull();
@@ -208,7 +208,7 @@ class QuestionSetServiceTest {
 			.thenReturn(Optional.empty());
 
 		// when & then
-		assertThatThrownBy(() -> questionSetService.getQuestionSet(questionSetId))
+		assertThatThrownBy(() -> questionSetService.getQuestionSet(questionSetId, null))
 			.isInstanceOf(IllegalArgumentException.class)
 			.hasMessage("Question set not found");
 

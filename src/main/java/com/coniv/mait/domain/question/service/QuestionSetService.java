@@ -2,6 +2,8 @@ package com.coniv.mait.domain.question.service;
 
 import java.util.Comparator;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
@@ -13,6 +15,7 @@ import com.coniv.mait.domain.question.entity.QuestionSetEntity;
 import com.coniv.mait.domain.question.enums.AiRequestStatus;
 import com.coniv.mait.domain.question.enums.DeliveryMode;
 import com.coniv.mait.domain.question.enums.QuestionSetCreationType;
+import com.coniv.mait.domain.question.enums.QuestionSetSolveMode;
 import com.coniv.mait.domain.question.enums.QuestionSetVisibility;
 import com.coniv.mait.domain.question.event.AiQuestionGenerationRequestedEvent;
 import com.coniv.mait.domain.question.repository.AiRequestStatusManager;
@@ -22,6 +25,9 @@ import com.coniv.mait.domain.question.service.component.QuestionChecker;
 import com.coniv.mait.domain.question.service.dto.QuestionCount;
 import com.coniv.mait.domain.question.service.dto.QuestionSetDto;
 import com.coniv.mait.domain.question.service.dto.QuestionValidateDto;
+import com.coniv.mait.domain.solve.entity.SolvingSessionEntity;
+import com.coniv.mait.domain.solve.enums.QuestionSetUserSolveStatus;
+import com.coniv.mait.domain.solve.repository.SolvingSessionEntityRepository;
 import com.coniv.mait.domain.user.service.component.TeamRoleValidator;
 import com.coniv.mait.global.event.MaitEventPublisher;
 import com.coniv.mait.web.question.dto.QuestionSetContainer;
@@ -55,6 +61,8 @@ public class QuestionSetService {
 	private final QuestionSetMaterialService questionSetMaterialService;
 
 	private final AiRequestStatusManager aiRequestStatusManager;
+
+	private final SolvingSessionEntityRepository solvingSessionEntityRepository;
 
 	private final RedisTemplate<String, String> redisTemplate;
 
@@ -91,15 +99,19 @@ public class QuestionSetService {
 		return QuestionSetDto.from(questionSetEntity);
 	}
 
-	public QuestionSetContainer getQuestionSets(final Long teamId, final DeliveryMode mode) {
+	public QuestionSetContainer getQuestionSets(final Long teamId, final DeliveryMode mode, final Long userId) {
 		// Todo: 조회하려는 유저와 팀이 일치하는지 확인
+		Map<Long, QuestionSetUserSolveStatus> userSolveStatusByQuestionSetId = getUserSolveStatusByQuestionSetId(teamId,
+			mode, userId);
+
 		List<QuestionSetDto> questionSets = questionSetEntityRepository.findAllByTeamId(teamId)
 			.stream()
 			.filter(questionSet -> questionSet.getDisplayMode() == mode)
 			.sorted(Comparator.comparing(
 				QuestionSetEntity::getModifiedAt,
 				Comparator.nullsLast(Comparator.naturalOrder())).reversed())
-			.map(QuestionSetDto::from)
+			.map(questionSet -> QuestionSetDto.from(questionSet,
+				getUserSolveStatus(questionSet, userSolveStatusByQuestionSetId, userId)))
 			.toList();
 
 		if (mode == DeliveryMode.MAKING || mode == DeliveryMode.REVIEW) {
@@ -109,13 +121,13 @@ public class QuestionSetService {
 		return QuestionSetGroup.of(questionSets);
 	}
 
-	public QuestionSetDto getQuestionSet(final Long questionSetId) {
+	public QuestionSetDto getQuestionSet(final Long questionSetId, final Long userId) {
 		final QuestionSetEntity questionSetEntity = questionSetEntityRepository.findById(questionSetId)
 			.orElseThrow(() -> new IllegalArgumentException("Question set not found"));
 
 		long questionCount = questionEntityRepository.countByQuestionSetId(questionSetEntity.getId());
 
-		return QuestionSetDto.of(questionSetEntity, questionCount);
+		return QuestionSetDto.of(questionSetEntity, questionCount, getUserSolveStatus(questionSetEntity, userId));
 	}
 
 	@Transactional
@@ -180,5 +192,41 @@ public class QuestionSetService {
 			.orElseThrow(() -> new EntityNotFoundException("해당 문제 셋을 찾을 수 없습니다."));
 
 		questionSet.restartLive();
+	}
+
+	private Map<Long, QuestionSetUserSolveStatus> getUserSolveStatusByQuestionSetId(final Long teamId,
+		final DeliveryMode mode, final Long userId) {
+		if (mode != DeliveryMode.STUDY || userId == null) {
+			return Map.of();
+		}
+
+		return solvingSessionEntityRepository.findAllByUserIdAndModeAndQuestionSetTeamId(userId, DeliveryMode.STUDY,
+				teamId).stream()
+			.collect(Collectors.toMap(
+				session -> session.getQuestionSet().getId(),
+				session -> QuestionSetUserSolveStatus.from(session.getStatus()),
+				(existing, replacement) -> replacement));
+	}
+
+	private QuestionSetUserSolveStatus getUserSolveStatus(final QuestionSetEntity questionSetEntity, final Long userId) {
+		if (questionSetEntity.getSolveMode() != QuestionSetSolveMode.STUDY || userId == null) {
+			return null;
+		}
+
+		return solvingSessionEntityRepository.findByUserIdAndQuestionSetIdAndMode(userId, questionSetEntity.getId(),
+				DeliveryMode.STUDY)
+			.map(SolvingSessionEntity::getStatus)
+			.map(QuestionSetUserSolveStatus::from)
+			.orElse(QuestionSetUserSolveStatus.NOT_STARTED);
+	}
+
+	private QuestionSetUserSolveStatus getUserSolveStatus(final QuestionSetEntity questionSetEntity,
+		final Map<Long, QuestionSetUserSolveStatus> userSolveStatusByQuestionSetId, final Long userId) {
+		if (questionSetEntity.getSolveMode() != QuestionSetSolveMode.STUDY || userId == null) {
+			return null;
+		}
+
+		return userSolveStatusByQuestionSetId.getOrDefault(questionSetEntity.getId(),
+			QuestionSetUserSolveStatus.NOT_STARTED);
 	}
 }

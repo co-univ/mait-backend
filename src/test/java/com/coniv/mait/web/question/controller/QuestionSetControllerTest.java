@@ -167,7 +167,7 @@ class QuestionSetControllerTest {
 			.build();
 
 		QuestionSetList questionSetList = QuestionSetList.of(List.of(questionSet1, questionSet2));
-		when(questionSetService.getQuestionSets(teamId, mode)).thenReturn(questionSetList);
+		when(questionSetService.getQuestionSets(teamId, mode, null)).thenReturn(questionSetList);
 
 		// when & then
 		mockMvc.perform(get("/api/v1/question-sets")
@@ -182,7 +182,7 @@ class QuestionSetControllerTest {
 				jsonPath("$.data.content.questionSets[1].id").value(2L),
 				jsonPath("$.data.content.questionSets[1].subject").value("Subject 2"));
 
-		verify(questionSetService).getQuestionSets(teamId, mode);
+		verify(questionSetService).getQuestionSets(teamId, mode, null);
 	}
 
 	@Test
@@ -194,16 +194,16 @@ class QuestionSetControllerTest {
 		QuestionSetDto beforeSet = QuestionSetDto.builder()
 			.id(1L)
 			.subject("Subject 1")
-			.ongoingStatus(QuestionSetStatus.BEFORE)
+			.status(QuestionSetStatus.BEFORE)
 			.build();
 		QuestionSetDto ongoingSet = QuestionSetDto.builder()
 			.id(2L)
 			.subject("Subject 2")
-			.ongoingStatus(QuestionSetStatus.ONGOING)
+			.status(QuestionSetStatus.ONGOING)
 			.build();
 
 		QuestionSetGroup questionSetGroup = QuestionSetGroup.of(List.of(beforeSet, ongoingSet));
-		when(questionSetService.getQuestionSets(teamId, mode)).thenReturn(questionSetGroup);
+		when(questionSetService.getQuestionSets(teamId, mode, null)).thenReturn(questionSetGroup);
 
 		// when & then
 		mockMvc.perform(get("/api/v1/question-sets")
@@ -221,7 +221,7 @@ class QuestionSetControllerTest {
 				jsonPath("$.data.content.questionSets.ONGOING[0].id").value(2L),
 				jsonPath("$.data.content.questionSets.ONGOING[0].subject").value("Subject 2"));
 
-		verify(questionSetService).getQuestionSets(teamId, mode);
+		verify(questionSetService).getQuestionSets(teamId, mode, null);
 	}
 
 	@Test
@@ -235,7 +235,7 @@ class QuestionSetControllerTest {
 			.subject(subject)
 			.build();
 
-		when(questionSetService.getQuestionSet(questionSetId)).thenReturn(questionSetDto);
+		when(questionSetService.getQuestionSet(questionSetId, null)).thenReturn(questionSetDto);
 
 		// when & then
 		mockMvc.perform(get("/api/v1/question-sets/{questionSetId}", questionSetId))
@@ -244,7 +244,7 @@ class QuestionSetControllerTest {
 				jsonPath("$.data.id").value(questionSetId),
 				jsonPath("$.data.subject").value(subject));
 
-		verify(questionSetService).getQuestionSet(questionSetId);
+		verify(questionSetService).getQuestionSet(questionSetId, null);
 	}
 
 	@Test

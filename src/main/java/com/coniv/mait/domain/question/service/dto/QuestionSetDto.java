@@ -10,6 +10,7 @@ import com.coniv.mait.domain.question.enums.QuestionSetCreationType;
 import com.coniv.mait.domain.question.enums.QuestionSetStatus;
 import com.coniv.mait.domain.question.enums.QuestionSetSolveMode;
 import com.coniv.mait.domain.question.enums.QuestionSetVisibility;
+import com.coniv.mait.domain.solve.enums.QuestionSetUserSolveStatus;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -28,7 +29,8 @@ public class QuestionSetDto {
 	private QuestionSetVisibility visibility;
 	private DeliveryMode deliveryMode;
 	private QuestionSetSolveMode solveMode;
-	private QuestionSetStatus ongoingStatus;
+	private QuestionSetStatus status;
+	private QuestionSetUserSolveStatus userSolveStatus;
 	private Long teamId;
 	private Long questionCount;
 	private String difficulty;
@@ -44,11 +46,18 @@ public class QuestionSetDto {
 			.visibility(questionSetEntity.getVisibility())
 			.deliveryMode(questionSetEntity.getDisplayMode())
 			.solveMode(questionSetEntity.getSolveMode())
-			.ongoingStatus(questionSetEntity.getStatus())
+			.status(questionSetEntity.getStatus())
 			.teamId(questionSetEntity.getTeamId())
 			.difficulty(questionSetEntity.getDifficulty())
 			.updatedAt(questionSetEntity.getModifiedAt())
 			.build();
+	}
+
+	public static QuestionSetDto from(final QuestionSetEntity questionSetEntity,
+		final QuestionSetUserSolveStatus userSolveStatus) {
+		QuestionSetDto dto = from(questionSetEntity);
+		dto.setUserSolveStatus(userSolveStatus);
+		return dto;
 	}
 
 	public static QuestionSetDto of(QuestionSetEntity questionSetEntity, long questionCount) {
@@ -62,9 +71,16 @@ public class QuestionSetDto {
 			.solveMode(questionSetEntity.getSolveMode())
 			.teamId(questionSetEntity.getTeamId())
 			.difficulty(questionSetEntity.getDifficulty())
-			.ongoingStatus(questionSetEntity.getStatus())
+			.status(questionSetEntity.getStatus())
 			.updatedAt(questionSetEntity.getModifiedAt())
 			.questionCount(questionCount)
 			.build();
+	}
+
+	public static QuestionSetDto of(QuestionSetEntity questionSetEntity, long questionCount,
+		QuestionSetUserSolveStatus userSolveStatus) {
+		QuestionSetDto dto = of(questionSetEntity, questionCount);
+		dto.setUserSolveStatus(userSolveStatus);
+		return dto;
 	}
 }

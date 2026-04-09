@@ -13,12 +13,12 @@ import lombok.Builder;
 @Builder
 @Schema(description = "문제 셋 그룹 (진행 상태별로 그룹화된 Map 구조)")
 public record QuestionSetGroup(
-		@Schema(description = "진행 상태별로 그룹화된 문제 셋 (BEFORE: 시작 전, ONGOING: 진행 중, AFTER: 종료)")
+		@Schema(description = "상태별로 그룹화된 문제 셋")
 		Map<QuestionSetStatus, List<QuestionSetDto>> questionSets) implements QuestionSetContainer {
 
 	public static QuestionSetGroup of(List<QuestionSetDto> questionSets) {
 		Map<QuestionSetStatus, List<QuestionSetDto>> questionSetsByStatus = questionSets.stream()
-				.collect(Collectors.groupingBy(QuestionSetDto::getOngoingStatus));
+				.collect(Collectors.groupingBy(QuestionSetDto::getStatus));
 		return QuestionSetGroup.builder()
 				.questionSets(questionSetsByStatus)
 				.build();

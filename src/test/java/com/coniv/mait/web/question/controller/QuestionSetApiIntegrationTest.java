@@ -1,5 +1,6 @@
 package com.coniv.mait.web.question.controller;
 
+import static org.hamcrest.Matchers.*;
 import static org.assertj.core.api.Assertions.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
@@ -15,13 +16,18 @@ import com.coniv.mait.domain.question.entity.MultipleQuestionEntity;
 import com.coniv.mait.domain.question.entity.QuestionSetEntity;
 import com.coniv.mait.domain.question.enums.DeliveryMode;
 import com.coniv.mait.domain.question.enums.QuestionSetCreationType;
+import com.coniv.mait.domain.question.enums.QuestionSetSolveMode;
 import com.coniv.mait.domain.question.enums.QuestionSetStatus;
 import com.coniv.mait.domain.question.enums.QuestionSetVisibility;
 import com.coniv.mait.domain.question.repository.MultipleChoiceEntityRepository;
 import com.coniv.mait.domain.question.repository.QuestionEntityRepository;
 import com.coniv.mait.domain.question.repository.QuestionSetEntityRepository;
+import com.coniv.mait.domain.solve.entity.SolvingSessionEntity;
+import com.coniv.mait.domain.solve.repository.SolvingSessionEntityRepository;
 import com.coniv.mait.domain.team.entity.TeamEntity;
 import com.coniv.mait.domain.team.repository.TeamEntityRepository;
+import com.coniv.mait.domain.user.entity.UserEntity;
+import com.coniv.mait.domain.user.repository.UserEntityRepository;
 import com.coniv.mait.login.WithCustomUser;
 import com.coniv.mait.web.integration.BaseIntegrationTest;
 import com.coniv.mait.web.question.dto.UpdateQuestionSetApiRequest;
@@ -42,8 +48,15 @@ public class QuestionSetApiIntegrationTest extends BaseIntegrationTest {
 	@Autowired
 	private MultipleChoiceEntityRepository multipleChoiceEntityRepository;
 
+	@Autowired
+	private SolvingSessionEntityRepository solvingSessionEntityRepository;
+
+	@Autowired
+	private UserEntityRepository userEntityRepository;
+
 	@BeforeEach
 	void setUp() {
+		solvingSessionEntityRepository.deleteAll();
 		questionSetEntityRepository.deleteAll();
 		questionEntityRepository.deleteAll();
 		multipleChoiceEntityRepository.deleteAll();
@@ -166,6 +179,64 @@ public class QuestionSetApiIntegrationTest extends BaseIntegrationTest {
 
 		// then
 		assertThat(questionSetEntityRepository.count()).isEqualTo(3);
+	}
+
+	@Test
+	@DisplayName("문제 셋 목록 조회 API 성공 테스트 - STUDY 모드에서 사용자별 풀이 상태 포함")
+	void getQuestionSetsApiSuccess_StudyModeWithUserSolveStatus() throws Exception {
+		// given
+		UserEntity currentUser = userEntityRepository.findByEmail("user@example.com").orElseThrow();
+		TeamEntity team = teamEntityRepository.save(TeamEntity.builder().name("코니브").creatorId(1L).build());
+		final DeliveryMode deliveryMode = DeliveryMode.STUDY;
+
+		QuestionSetEntity notStartedSet = questionSetEntityRepository.save(
+			QuestionSetEntity.builder()
+				.subject("아직 안 푼 문제")
+				.teamId(team.getId())
+				.deliveryMode(deliveryMode)
+				.solveMode(QuestionSetSolveMode.STUDY)
+				.status(QuestionSetStatus.ONGOING)
+				.build());
+
+		QuestionSetEntity progressingSet = questionSetEntityRepository.save(
+			QuestionSetEntity.builder()
+				.subject("풀고 있는 문제")
+				.teamId(team.getId())
+				.deliveryMode(deliveryMode)
+				.solveMode(QuestionSetSolveMode.STUDY)
+				.status(QuestionSetStatus.ONGOING)
+				.build());
+
+		QuestionSetEntity completedSet = questionSetEntityRepository.save(
+			QuestionSetEntity.builder()
+				.subject("채점 완료 문제")
+				.teamId(team.getId())
+				.deliveryMode(deliveryMode)
+				.solveMode(QuestionSetSolveMode.STUDY)
+				.status(QuestionSetStatus.ONGOING)
+				.build());
+
+		solvingSessionEntityRepository.save(SolvingSessionEntity.studySession(currentUser, progressingSet));
+
+		SolvingSessionEntity completedSession = SolvingSessionEntity.studySession(currentUser, completedSet);
+		completedSession.submit(3, 2);
+		solvingSessionEntityRepository.save(completedSession);
+
+		// when & then
+		mockMvc.perform(get("/api/v1/question-sets")
+				.param("teamId", String.valueOf(team.getId()))
+				.param("mode", deliveryMode.name())
+				.accept(MediaType.APPLICATION_JSON))
+			.andExpect(status().isOk())
+			.andExpect(jsonPath("$.data.mode").value("STUDY"))
+			.andExpect(jsonPath("$.data.content.questionSets.ONGOING").isArray())
+			.andExpect(jsonPath("$.data.content.questionSets.ONGOING.length()").value(3))
+			.andExpect(jsonPath("$.data.content.questionSets.ONGOING[?(@.subject=='채점 완료 문제')].userSolveStatus")
+				.value(contains("COMPLETED")))
+			.andExpect(jsonPath("$.data.content.questionSets.ONGOING[?(@.subject=='풀고 있는 문제')].userSolveStatus")
+				.value(contains("IN_PROGRESS")))
+			.andExpect(jsonPath("$.data.content.questionSets.ONGOING[?(@.subject=='아직 안 푼 문제')].userSolveStatus")
+				.value(contains("NOT_STARTED")));
 	}
 
 	@Test
