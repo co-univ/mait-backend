@@ -181,10 +181,11 @@ public class QuestionSetService {
 	}
 
 	@Transactional
-	public void restartQuestionSet(final Long questionSetId) {
+	public void restartQuestionSet(final Long questionSetId, final MaitUser user) {
 		QuestionSetEntity questionSet = questionSetEntityRepository.findById(questionSetId)
 			.orElseThrow(() -> new EntityNotFoundException("해당 문제 셋을 찾을 수 없습니다."));
 
+		teamRoleValidator.checkHasCreateQuestionSetAuthority(questionSet.getTeamId(), user.id());
 		questionSet.restartLive();
 	}
 }

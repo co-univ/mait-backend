@@ -136,7 +136,9 @@ public class QuestionSetEntity extends BaseTimeEntity {
 	}
 
 	public void openReview(QuestionSetVisibility visibility) {
-		validateAfterStatus();
+		if (status != QuestionSetStatus.AFTER) {
+			throw new QuestionSetStatusException(QuestionSetStatusExceptionCode.ONLY_AFTER);
+		}
 		this.status = QuestionSetStatus.REVIEW;
 		this.visibility = visibility;
 	}
@@ -146,7 +148,9 @@ public class QuestionSetEntity extends BaseTimeEntity {
 	}
 
 	public void restartLive() {
-		validateRestartableStatus();
+		if (status != QuestionSetStatus.AFTER) {
+			throw new QuestionSetStatusException(QuestionSetStatusExceptionCode.ONLY_AFTER);
+		}
 		if (solveMode != QuestionSetSolveMode.LIVE_TIME) {
 			throw new QuestionSetStatusException(QuestionSetStatusExceptionCode.ONLY_LIVE_TIME);
 		}
@@ -167,17 +171,5 @@ public class QuestionSetEntity extends BaseTimeEntity {
 		}
 
 		return solveMode.toDeliveryMode();
-	}
-
-	private void validateAfterStatus() {
-		if (status != QuestionSetStatus.AFTER) {
-			throw new QuestionSetStatusException(QuestionSetStatusExceptionCode.ONLY_AFTER);
-		}
-	}
-
-	private void validateRestartableStatus() {
-		if (!EnumSet.of(QuestionSetStatus.AFTER, QuestionSetStatus.REVIEW).contains(status)) {
-			throw new QuestionSetStatusException(QuestionSetStatusExceptionCode.ONLY_AFTER);
-		}
 	}
 }

@@ -480,35 +480,62 @@ class QuestionSetServiceTest {
 	void restartQuestionSet() {
 		// given
 		final Long questionSetId = 1L;
+		final Long teamId = 2L;
+		final MaitUser user = MaitUser.builder().id(USER_ID).build();
 		QuestionSetEntity questionSetEntity = QuestionSetEntity.builder()
 			.id(questionSetId)
+			.teamId(teamId)
 			.status(QuestionSetStatus.AFTER)
 			.solveMode(QuestionSetSolveMode.LIVE_TIME)
 			.build();
-		questionSetEntity.openReview(QuestionSetVisibility.GROUP);
 		when(questionSetEntityRepository.findById(questionSetId)).thenReturn(Optional.of(questionSetEntity));
 
 		// when
-		questionSetService.restartQuestionSet(questionSetId);
+		questionSetService.restartQuestionSet(questionSetId, user);
 
 		// then
+		verify(teamRoleValidator).checkHasCreateQuestionSetAuthority(teamId, USER_ID);
 		assertThat(questionSetEntity.getStatus()).isEqualTo(QuestionSetStatus.ONGOING);
 	}
 
 	@Test
-	@DisplayName("종료된 문제 셋 재시작 - 종료된 상태가 아닐때")
+	@DisplayName("복습 상태 문제 셋 재시작 - 실패")
+	void restartQuestionSet_reviewStatus_ThrowsException() {
+		// given
+		final Long questionSetId = 1L;
+		final MaitUser user = MaitUser.builder().id(USER_ID).build();
+		QuestionSetEntity questionSetEntity = QuestionSetEntity.builder()
+			.id(questionSetId)
+			.teamId(2L)
+			.status(QuestionSetStatus.REVIEW)
+			.solveMode(QuestionSetSolveMode.LIVE_TIME)
+			.build();
+		when(questionSetEntityRepository.findById(questionSetId)).thenReturn(Optional.of(questionSetEntity));
+
+		// when, then
+		assertThatThrownBy(() -> questionSetService.restartQuestionSet(questionSetId, user))
+			.isInstanceOfSatisfying(QuestionSetStatusException.class, ex -> {
+				assertThat(ex.getExceptionCode()).isEqualTo(QuestionSetStatusExceptionCode.ONLY_AFTER);
+				assertThat(ex.getMessage()).isEqualTo(QuestionSetStatusExceptionCode.ONLY_AFTER.getMessage());
+			});
+	}
+
+	@Test
+	@DisplayName("진행 중 문제 셋 재시작 - 실패")
 	void restartQuestionSet_statusIsNotAfter() {
 		// given
 		final Long questionSetId = 1L;
+		final MaitUser user = MaitUser.builder().id(USER_ID).build();
 		QuestionSetEntity questionSetEntity = QuestionSetEntity.builder()
 			.id(questionSetId)
+			.teamId(2L)
 			.status(QuestionSetStatus.ONGOING)
 			.solveMode(QuestionSetSolveMode.LIVE_TIME)
 			.build();
 		when(questionSetEntityRepository.findById(questionSetId)).thenReturn(Optional.of(questionSetEntity));
 
 		// when, then
-		assertThatThrownBy(() -> questionSetService.restartQuestionSet(questionSetId))
+		assertThatThrownBy(() -> questionSetService.restartQuestionSet(questionSetId, user))
 			.isInstanceOfSatisfying(QuestionSetStatusException.class, ex -> {
 				assertThat(ex.getExceptionCode()).isEqualTo(QuestionSetStatusExceptionCode.ONLY_AFTER);
 				assertThat(ex.getExceptionCode().getCode()).isEqualTo(
