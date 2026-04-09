@@ -13,8 +13,8 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import com.coniv.mait.domain.question.entity.QuestionSetEntity;
-import com.coniv.mait.domain.question.enums.DeliveryMode;
-import com.coniv.mait.domain.question.enums.QuestionSetOngoingStatus;
+import com.coniv.mait.domain.question.enums.QuestionSetSolveMode;
+import com.coniv.mait.domain.question.enums.QuestionSetStatus;
 import com.coniv.mait.domain.question.repository.QuestionSetEntityRepository;
 
 @ExtendWith(MockitoExtension.class)
@@ -34,8 +34,8 @@ class QuestionSetReaderTest {
 		QuestionSetEntity qs1 = mock(QuestionSetEntity.class);
 		QuestionSetEntity qs2 = mock(QuestionSetEntity.class);
 
-		when(questionSetEntityRepository.findAllByTeamIdAndDeliveryModeAndOngoingStatus(
-			teamId, DeliveryMode.LIVE_TIME, QuestionSetOngoingStatus.AFTER))
+		when(questionSetEntityRepository.findAllByTeamIdAndSolveModeAndStatusIn(
+			teamId, QuestionSetSolveMode.LIVE_TIME, List.of(QuestionSetStatus.AFTER, QuestionSetStatus.REVIEW)))
 			.thenReturn(List.of(qs1, qs2));
 
 		// when
@@ -43,8 +43,8 @@ class QuestionSetReaderTest {
 
 		// then
 		assertThat(result).hasSize(2);
-		verify(questionSetEntityRepository).findAllByTeamIdAndDeliveryModeAndOngoingStatus(
-			teamId, DeliveryMode.LIVE_TIME, QuestionSetOngoingStatus.AFTER);
+		verify(questionSetEntityRepository).findAllByTeamIdAndSolveModeAndStatusIn(
+			teamId, QuestionSetSolveMode.LIVE_TIME, List.of(QuestionSetStatus.AFTER, QuestionSetStatus.REVIEW));
 	}
 
 	@Test
@@ -53,8 +53,8 @@ class QuestionSetReaderTest {
 		// given
 		Long teamId = 1L;
 
-		when(questionSetEntityRepository.findAllByTeamIdAndDeliveryModeAndOngoingStatus(
-			teamId, DeliveryMode.LIVE_TIME, QuestionSetOngoingStatus.AFTER))
+		when(questionSetEntityRepository.findAllByTeamIdAndSolveModeAndStatusIn(
+			teamId, QuestionSetSolveMode.LIVE_TIME, List.of(QuestionSetStatus.AFTER, QuestionSetStatus.REVIEW)))
 			.thenReturn(List.of());
 
 		// when

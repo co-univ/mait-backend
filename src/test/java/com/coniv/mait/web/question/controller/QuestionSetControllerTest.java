@@ -7,6 +7,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import java.util.List;
 import java.util.stream.Stream;
 
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -18,12 +19,15 @@ import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMock
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.http.MediaType;
 import org.springframework.mock.web.MockMultipartFile;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
 import com.coniv.mait.domain.question.enums.DeliveryMode;
 import com.coniv.mait.domain.question.enums.QuestionSetCreationType;
-import com.coniv.mait.domain.question.enums.QuestionSetOngoingStatus;
+import com.coniv.mait.domain.question.enums.QuestionSetSolveMode;
+import com.coniv.mait.domain.question.enums.QuestionSetStatus;
 import com.coniv.mait.domain.question.enums.QuestionSetVisibility;
 import com.coniv.mait.domain.question.enums.QuestionValidationResult;
 import com.coniv.mait.domain.question.service.QuestionSetMaterialService;
@@ -31,6 +35,7 @@ import com.coniv.mait.domain.question.service.QuestionSetService;
 import com.coniv.mait.domain.question.service.dto.QuestionSetDto;
 import com.coniv.mait.domain.question.service.dto.QuestionSetMaterialDto;
 import com.coniv.mait.domain.question.service.dto.QuestionValidateDto;
+import com.coniv.mait.global.auth.model.MaitUser;
 import com.coniv.mait.global.filter.JwtAuthorizationFilter;
 import com.coniv.mait.global.interceptor.idempotency.IdempotencyInterceptor;
 import com.coniv.mait.web.question.dto.QuestionSetGroup;
@@ -43,6 +48,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 @WebMvcTest(controllers = QuestionSetController.class)
 @AutoConfigureMockMvc(addFilters = false)
 class QuestionSetControllerTest {
+
+	private static final Long USER_ID = 10L;
 
 	@MockitoBean
 	private QuestionSetService questionSetService;
@@ -65,6 +72,17 @@ class QuestionSetControllerTest {
 	@BeforeEach
 	void setUp() throws Exception {
 		when(idempotencyInterceptor.preHandle(any(), any(), any())).thenReturn(true);
+
+		MaitUser user = MaitUser.builder().id(USER_ID).build();
+		var authentication = new UsernamePasswordAuthenticationToken(user, null, List.of());
+		var context = SecurityContextHolder.createEmptyContext();
+		context.setAuthentication(authentication);
+		SecurityContextHolder.setContext(context);
+	}
+
+	@AfterEach
+	void tearDown() {
+		SecurityContextHolder.clearContext();
 	}
 
 	// @Test
@@ -167,7 +185,7 @@ class QuestionSetControllerTest {
 			.build();
 
 		QuestionSetList questionSetList = QuestionSetList.of(List.of(questionSet1, questionSet2));
-		when(questionSetService.getQuestionSets(teamId, mode)).thenReturn(questionSetList);
+		when(questionSetService.getQuestionSets(eq(teamId), eq(mode), any(MaitUser.class))).thenReturn(questionSetList);
 
 		// when & then
 		mockMvc.perform(get("/api/v1/question-sets")
@@ -182,7 +200,7 @@ class QuestionSetControllerTest {
 				jsonPath("$.data.content.questionSets[1].id").value(2L),
 				jsonPath("$.data.content.questionSets[1].subject").value("Subject 2"));
 
-		verify(questionSetService).getQuestionSets(teamId, mode);
+		verify(questionSetService).getQuestionSets(eq(teamId), eq(mode), any(MaitUser.class));
 	}
 
 	@Test
@@ -194,16 +212,17 @@ class QuestionSetControllerTest {
 		QuestionSetDto beforeSet = QuestionSetDto.builder()
 			.id(1L)
 			.subject("Subject 1")
-			.ongoingStatus(QuestionSetOngoingStatus.BEFORE)
+			.status(QuestionSetStatus.BEFORE)
 			.build();
 		QuestionSetDto ongoingSet = QuestionSetDto.builder()
 			.id(2L)
 			.subject("Subject 2")
-			.ongoingStatus(QuestionSetOngoingStatus.ONGOING)
+			.status(QuestionSetStatus.ONGOING)
 			.build();
 
 		QuestionSetGroup questionSetGroup = QuestionSetGroup.of(List.of(beforeSet, ongoingSet));
-		when(questionSetService.getQuestionSets(teamId, mode)).thenReturn(questionSetGroup);
+		when(questionSetService.getQuestionSets(eq(teamId), eq(mode), any(MaitUser.class)))
+			.thenReturn(questionSetGroup);
 
 		// when & then
 		mockMvc.perform(get("/api/v1/question-sets")
@@ -221,7 +240,7 @@ class QuestionSetControllerTest {
 				jsonPath("$.data.content.questionSets.ONGOING[0].id").value(2L),
 				jsonPath("$.data.content.questionSets.ONGOING[0].subject").value("Subject 2"));
 
-		verify(questionSetService).getQuestionSets(teamId, mode);
+		verify(questionSetService).getQuestionSets(eq(teamId), eq(mode), any(MaitUser.class));
 	}
 
 	@Test
@@ -235,7 +254,7 @@ class QuestionSetControllerTest {
 			.subject(subject)
 			.build();
 
-		when(questionSetService.getQuestionSet(questionSetId)).thenReturn(questionSetDto);
+		when(questionSetService.getQuestionSet(eq(questionSetId), any(MaitUser.class))).thenReturn(questionSetDto);
 
 		// when & then
 		mockMvc.perform(get("/api/v1/question-sets/{questionSetId}", questionSetId))
@@ -244,7 +263,7 @@ class QuestionSetControllerTest {
 				jsonPath("$.data.id").value(questionSetId),
 				jsonPath("$.data.subject").value(subject));
 
-		verify(questionSetService).getQuestionSet(questionSetId);
+		verify(questionSetService).getQuestionSet(eq(questionSetId), any(MaitUser.class));
 	}
 
 	@Test
@@ -254,22 +273,23 @@ class QuestionSetControllerTest {
 		final Long questionSetId = 1L;
 		final String subject = "Updated Subject";
 		final String title = "Updated Title";
-		final DeliveryMode mode = DeliveryMode.LIVE_TIME;
+		final QuestionSetSolveMode solveMode = QuestionSetSolveMode.LIVE_TIME;
 		final String difficulty = "Intermediate";
 		final QuestionSetVisibility visibility = QuestionSetVisibility.PRIVATE;
 
-		var request = new UpdateQuestionSetApiRequest(title, subject, mode, difficulty, visibility);
+		var request = new UpdateQuestionSetApiRequest(title, subject, solveMode, difficulty, visibility);
 
 		QuestionSetDto questionSetDto = QuestionSetDto.builder()
 			.id(questionSetId)
 			.subject(subject)
 			.title(title)
-			.deliveryMode(mode)
+			.solveMode(solveMode)
+			.status(QuestionSetStatus.BEFORE)
 			.difficulty(difficulty)
 			.visibility(visibility)
 			.build();
 
-		when(questionSetService.completeQuestionSet(questionSetId, title, subject, mode, difficulty, visibility))
+		when(questionSetService.completeQuestionSet(questionSetId, title, subject, solveMode, difficulty, visibility))
 			.thenReturn(questionSetDto);
 
 		// when & then
@@ -281,11 +301,11 @@ class QuestionSetControllerTest {
 				jsonPath("$.data.id").value(questionSetId),
 				jsonPath("$.data.subject").value(subject),
 				jsonPath("$.data.title").value(title),
-				jsonPath("$.data.deliveryMode").value(mode.name()),
+				jsonPath("$.data.deliveryMode").value(DeliveryMode.LIVE_TIME.name()),
 				jsonPath("$.data.difficulty").value(difficulty),
 				jsonPath("$.data.visibility").value(visibility.name()));
 
-		verify(questionSetService).completeQuestionSet(questionSetId, title, subject, mode, difficulty,
+		verify(questionSetService).completeQuestionSet(questionSetId, title, subject, solveMode, difficulty,
 			visibility);
 	}
 
@@ -319,39 +339,39 @@ class QuestionSetControllerTest {
 		return Stream.of(
 			Arguments.of(
 				"제목과 주제가 빈 문자열",
-				new UpdateQuestionSetApiRequest("", "", DeliveryMode.LIVE_TIME, "설명",
+				new UpdateQuestionSetApiRequest("", "", QuestionSetSolveMode.LIVE_TIME, "설명",
 					QuestionSetVisibility.GROUP),
 				List.of("제목을 입력해주세요", "주제를 입력해주세요")),
 			Arguments.of(
 				"제목만 빈 문자열",
-				new UpdateQuestionSetApiRequest("", "유효한 주제", DeliveryMode.LIVE_TIME, "설명",
+				new UpdateQuestionSetApiRequest("", "유효한 주제", QuestionSetSolveMode.LIVE_TIME, "설명",
 					QuestionSetVisibility.PRIVATE),
 				List.of("제목을 입력해주세요")),
 			Arguments.of(
 				"주제만 빈 문자열",
-				new UpdateQuestionSetApiRequest("유효한 제목", "", DeliveryMode.LIVE_TIME, "설명",
+				new UpdateQuestionSetApiRequest("유효한 제목", "", QuestionSetSolveMode.LIVE_TIME, "설명",
 					QuestionSetVisibility.GROUP),
 				List.of("주제를 입력해주세요")),
 			Arguments.of(
 				"제목과 주제가 null",
-				new UpdateQuestionSetApiRequest(null, null, DeliveryMode.LIVE_TIME, "설명",
+				new UpdateQuestionSetApiRequest(null, null, QuestionSetSolveMode.LIVE_TIME, "설명",
 					QuestionSetVisibility.GROUP),
 				List.of("제목을 입력해주세요", "주제를 입력해주세요")),
 			Arguments.of(
 				"제목이 공백만 포함",
-				new UpdateQuestionSetApiRequest("   ", "유효한 주제", DeliveryMode.LIVE_TIME, "설명",
+				new UpdateQuestionSetApiRequest("   ", "유효한 주제", QuestionSetSolveMode.LIVE_TIME, "설명",
 					QuestionSetVisibility.PRIVATE),
 				List.of("제목을 입력해주세요")),
 			Arguments.of(
 				"주제가 공백만 포함",
-				new UpdateQuestionSetApiRequest("유효한 제목", "   ", DeliveryMode.LIVE_TIME, "설명",
+				new UpdateQuestionSetApiRequest("유효한 제목", "   ", QuestionSetSolveMode.LIVE_TIME, "설명",
 					QuestionSetVisibility.GROUP),
 				List.of("주제를 입력해주세요")),
 			Arguments.of(
 				"허용되지 않은 문제 풀이 방식",
-				new UpdateQuestionSetApiRequest("유효한 제목", "유효한 주제", DeliveryMode.REVIEW, "설명",
+				new UpdateQuestionSetApiRequest("유효한 제목", "유효한 주제", null, "설명",
 					QuestionSetVisibility.GROUP),
-				List.of("문제 풀이 방식은 STUDY 또는 LIVE_TIME만 가능합니다")),
+				List.of("문제 풀이 방식을 입력해주세요", "문제 풀이 방식은 STUDY 또는 LIVE_TIME만 가능합니다")),
 			Arguments.of(
 				"문제 풀이 방식이 null",
 				new UpdateQuestionSetApiRequest("유효한 제목", "유효한 주제", null, "설명",

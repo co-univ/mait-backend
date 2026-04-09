@@ -4,7 +4,8 @@ import java.time.LocalDateTime;
 
 import com.coniv.mait.domain.question.enums.DeliveryMode;
 import com.coniv.mait.domain.question.enums.QuestionSetCreationType;
-import com.coniv.mait.domain.question.enums.QuestionSetOngoingStatus;
+import com.coniv.mait.domain.question.enums.QuestionSetSolveMode;
+import com.coniv.mait.domain.question.enums.QuestionSetStatus;
 import com.coniv.mait.domain.question.enums.QuestionSetVisibility;
 import com.coniv.mait.domain.question.service.dto.QuestionSetDto;
 
@@ -25,11 +26,13 @@ public record QuestionSetApiResponse(
 	QuestionSetVisibility visibility,
 	@Schema(description = "문제 모드", requiredMode = Schema.RequiredMode.REQUIRED, enumAsRef = true)
 	DeliveryMode deliveryMode,
+	@Schema(description = "원래 풀이 방식", requiredMode = Schema.RequiredMode.NOT_REQUIRED, enumAsRef = true)
+	QuestionSetSolveMode solveMode,
 	@Schema(requiredMode = Schema.RequiredMode.REQUIRED)
 	Long teamId,
 
-	@Schema(description = "문제 셋 진행 상태", requiredMode = Schema.RequiredMode.NOT_REQUIRED, enumAsRef = true)
-	QuestionSetOngoingStatus ongoingStatus,
+	@Schema(description = "문제 셋 상태", requiredMode = Schema.RequiredMode.NOT_REQUIRED, enumAsRef = true)
+	QuestionSetStatus status,
 
 	@Schema(requiredMode = Schema.RequiredMode.REQUIRED)
 	Long questionCount,
@@ -46,12 +49,26 @@ public record QuestionSetApiResponse(
 			.title(questionSetDto.getTitle())
 			.creationType(questionSetDto.getCreationType())
 			.visibility(questionSetDto.getVisibility())
-			.deliveryMode(questionSetDto.getDeliveryMode())
-			.ongoingStatus(questionSetDto.getOngoingStatus())
+			.deliveryMode(resolveDeliveryMode(questionSetDto.getStatus(), questionSetDto.getSolveMode()))
+			.solveMode(questionSetDto.getSolveMode())
+			.status(questionSetDto.getStatus())
 			.teamId(questionSetDto.getTeamId())
 			.questionCount(questionSetDto.getQuestionCount())
 			.difficulty(questionSetDto.getDifficulty())
 			.updatedAt(questionSetDto.getUpdatedAt())
 			.build();
+	}
+
+	private static DeliveryMode resolveDeliveryMode(final QuestionSetStatus status,
+		final QuestionSetSolveMode solveMode) {
+		if (status == QuestionSetStatus.REVIEW) {
+			return DeliveryMode.REVIEW;
+		}
+
+		if (solveMode == null) {
+			return DeliveryMode.MAKING;
+		}
+
+		return DeliveryMode.from(solveMode);
 	}
 }

@@ -1,6 +1,6 @@
 package com.coniv.mait.web.question.dto;
 
-import com.coniv.mait.domain.question.enums.DeliveryMode;
+import com.coniv.mait.domain.question.enums.QuestionSetSolveMode;
 import com.coniv.mait.domain.question.enums.QuestionSetVisibility;
 
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -18,7 +18,7 @@ public record UpdateQuestionSetApiRequest(
 
 	@Schema(description = "문제 풀이 방식", enumAsRef = true, examples = {"STUDY", "LIVE_TIME"})
 	@NotNull(message = "문제 풀이 방식을 입력해주세요")
-	DeliveryMode mode,
+	QuestionSetSolveMode solveMode,
 
 	@Schema(description = "문제 셋 난이도 설명")
 	String difficulty,
@@ -28,6 +28,6 @@ public record UpdateQuestionSetApiRequest(
 ) {
 	@AssertTrue(message = "문제 풀이 방식은 STUDY 또는 LIVE_TIME만 가능합니다")
 	private boolean isSupportedMode() {
-		return mode == DeliveryMode.STUDY || mode == DeliveryMode.LIVE_TIME;
+		return solveMode == QuestionSetSolveMode.STUDY || solveMode == QuestionSetSolveMode.LIVE_TIME;
 	}
 }

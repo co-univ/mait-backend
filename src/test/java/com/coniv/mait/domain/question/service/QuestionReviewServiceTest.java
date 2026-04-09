@@ -18,7 +18,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import com.coniv.mait.domain.question.entity.QuestionEntity;
 import com.coniv.mait.domain.question.entity.QuestionSetEntity;
 import com.coniv.mait.domain.question.enums.DeliveryMode;
-import com.coniv.mait.domain.question.enums.QuestionSetOngoingStatus;
+import com.coniv.mait.domain.question.enums.QuestionSetStatus;
 import com.coniv.mait.domain.question.enums.QuestionSetVisibility;
 import com.coniv.mait.domain.question.enums.QuestionType;
 import com.coniv.mait.domain.question.exception.QuestionSetStatusException;
@@ -94,7 +94,7 @@ class QuestionReviewServiceTest {
 		final QuestionType questionType = QuestionType.MULTIPLE;
 
 		QuestionSetEntity questionSet = mock(QuestionSetEntity.class);
-		when(questionSet.getOngoingStatus()).thenReturn(QuestionSetOngoingStatus.AFTER);
+		when(questionSet.getStatus()).thenReturn(QuestionSetStatus.REVIEW);
 		when(questionSet.getTeamId()).thenReturn(teamId);
 
 		QuestionEntity lastViewedQuestion = mock(QuestionEntity.class);
@@ -124,21 +124,21 @@ class QuestionReviewServiceTest {
 	}
 
 	@Test
-	@DisplayName("복습 시 마지막 문제 조회 실패 - 문제 셋이 종료 상태가 아님")
+	@DisplayName("복습 시 마지막 문제 조회 실패 - 문제 셋이 리뷰 상태가 아님")
 	void getLastViewedQuestionInReview_notAfter() {
 		// given
 		final Long questionSetId = 1L;
 		final Long userId = 2L;
 
 		QuestionSetEntity questionSet = mock(QuestionSetEntity.class);
-		when(questionSet.getOngoingStatus()).thenReturn(QuestionSetOngoingStatus.ONGOING);
+		when(questionSet.getStatus()).thenReturn(QuestionSetStatus.ONGOING);
 		when(questionSetEntityRepository.findById(questionSetId)).thenReturn(Optional.of(questionSet));
 
 		// when, then
 		QuestionSetStatusException questionSetStatusException = assertThrows(QuestionSetStatusException.class,
 			() -> questionReviewService.getLastViewedQuestionInReview(questionSetId, userId));
 
-		assertThat(questionSetStatusException.getExceptionCode()).isEqualTo(QuestionSetStatusExceptionCode.ONLY_AFTER);
+		assertThat(questionSetStatusException.getExceptionCode()).isEqualTo(QuestionSetStatusExceptionCode.ONLY_REVIEW);
 		verify(teamRoleValidator, never()).checkHasSolveQuestionAuthorityInTeam(anyLong(), anyLong());
 		verify(lastViewedQuestionRedisRepository, never()).getLastViewedQuestion(any(QuestionSetEntity.class),
 			anyLong());

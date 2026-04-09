@@ -11,7 +11,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.coniv.mait.domain.question.enums.QuestionSetOngoingStatus;
+import com.coniv.mait.domain.question.enums.QuestionSetStatus;
 import com.coniv.mait.domain.question.service.QuestionRankService;
 import com.coniv.mait.domain.question.service.QuestionService;
 import com.coniv.mait.domain.question.service.QuestionSetLiveControlService;
@@ -62,14 +62,6 @@ public class QuestionSetLiveController {
 		@PathVariable Long questionSetId) {
 		questionSetLiveControlService.endLiveQuestionSet(questionSetId);
 		return ResponseEntity.ok(ApiResponse.noContent());
-	}
-
-	@Operation(summary = "실시간 문제셋 상태 조회")
-	@GetMapping
-	public ResponseEntity<ApiResponse<QuestionSetLiveStatusResponse>> getLiveStatus(
-		@PathVariable Long questionSetId) {
-		QuestionSetOngoingStatus status = questionSetLiveControlService.getLiveStatus(questionSetId);
-		return ResponseEntity.ok(ApiResponse.ok(QuestionSetLiveStatusResponse.from(questionSetId, status)));
 	}
 
 	@Operation(summary = "상태에 따른 실시간 풀이 참여 인원 조회 API", description = "현재 풀이가 가능한 인원 및 불가능한 인원 반환")
