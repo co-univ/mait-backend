@@ -6,7 +6,7 @@ import org.springframework.stereotype.Component;
 
 import com.coniv.mait.domain.question.entity.QuestionEntity;
 import com.coniv.mait.domain.question.entity.QuestionSetEntity;
-import com.coniv.mait.domain.question.enums.QuestionSetOngoingStatus;
+import com.coniv.mait.domain.question.enums.QuestionSetStatus;
 import com.coniv.mait.domain.question.repository.QuestionEntityRepository;
 import com.coniv.mait.domain.question.repository.QuestionSetEntityRepository;
 import com.coniv.mait.domain.team.entity.TeamEntity;
@@ -48,8 +48,8 @@ public class QuestionReader {
 	}
 
 	public List<QuestionEntity> getCompletedQuestionsInTeam(final TeamEntity team) {
-		List<QuestionSetEntity> completedQuestionSets = questionSetEntityRepository.findAllByTeamIdAndOngoingStatus(
-			team.getId(), QuestionSetOngoingStatus.AFTER);
+		List<QuestionSetEntity> completedQuestionSets = questionSetEntityRepository.findAllByTeamIdAndStatusIn(
+			team.getId(), List.of(QuestionSetStatus.AFTER, QuestionSetStatus.REVIEW));
 
 		List<Long> questionSetIds = completedQuestionSets.stream()
 			.map(QuestionSetEntity::getId)

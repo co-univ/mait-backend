@@ -1,13 +1,13 @@
 package com.coniv.mait.web.question.dto;
 
-import com.coniv.mait.domain.question.enums.QuestionSetOngoingStatus;
+import com.coniv.mait.domain.question.enums.QuestionSetStatus;
 
 public record QuestionSetLiveStatusResponse(
 	Long questionSetId,
-	QuestionSetOngoingStatus liveStatus
+	QuestionSetStatus liveStatus
 ) {
 
-	public static QuestionSetLiveStatusResponse from(Long questionSetId, QuestionSetOngoingStatus liveStatus) {
+	public static QuestionSetLiveStatusResponse from(Long questionSetId, QuestionSetStatus liveStatus) {
 		return new QuestionSetLiveStatusResponse(questionSetId, liveStatus);
 	}
 }

@@ -35,4 +35,11 @@ public enum DeliveryMode {
 	public boolean isAnswerVisible() {
 		return this != DeliveryMode.LIVE_TIME;
 	}
+
+	public static DeliveryMode from(QuestionSetSolveMode solveMode) {
+		return switch (solveMode) {
+			case LIVE_TIME -> DeliveryMode.LIVE_TIME;
+			case STUDY -> DeliveryMode.STUDY;
+		};
+	}
 }

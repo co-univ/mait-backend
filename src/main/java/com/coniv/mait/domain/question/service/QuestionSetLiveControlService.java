@@ -17,10 +17,10 @@ import com.coniv.mait.domain.question.dto.QuestionStatusMessage;
 import com.coniv.mait.domain.question.entity.QuestionEntity;
 import com.coniv.mait.domain.question.entity.QuestionSetEntity;
 import com.coniv.mait.domain.question.entity.QuestionSetParticipantEntity;
-import com.coniv.mait.domain.question.enums.DeliveryMode;
 import com.coniv.mait.domain.question.enums.ParticipantStatus;
 import com.coniv.mait.domain.question.enums.QuestionSetCommandType;
-import com.coniv.mait.domain.question.enums.QuestionSetOngoingStatus;
+import com.coniv.mait.domain.question.enums.QuestionSetSolveMode;
+import com.coniv.mait.domain.question.enums.QuestionSetStatus;
 import com.coniv.mait.domain.question.enums.QuestionStatusType;
 import com.coniv.mait.domain.question.repository.QuestionEntityRepository;
 import com.coniv.mait.domain.question.repository.QuestionSetEntityRepository;
@@ -73,15 +73,6 @@ public class QuestionSetLiveControlService {
 			.build();
 		questionWebSocketSender.broadcastQuestionStatus(questionSetId, message);
 		log.info("Ended live question set with ID: {}", questionSetId);
-	}
-
-	@Transactional(readOnly = true)
-	public QuestionSetOngoingStatus getLiveStatus(Long questionSetId) {
-		QuestionSetEntity questionSet = findQuestionSetById(questionSetId);
-		if (questionSet.getDeliveryMode() == DeliveryMode.REVIEW) {
-			throw new ResourceNotBelongException("review mode can't find live status.");
-		}
-		return questionSet.getOngoingStatus();
 	}
 
 	private QuestionSetEntity findQuestionSetById(Long questionSetId) {

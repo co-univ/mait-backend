@@ -76,9 +76,9 @@ public class QuestionSetController {
 	@Operation(summary = "문제 셋 목록 조회")
 	@GetMapping
 	public ResponseEntity<ApiResponse<QuestionSetsApiResponse>> getQuestionSets(
-		@RequestParam(value = "mode") DeliveryMode mode,
-		@RequestParam("teamId") Long teamId) {
-		QuestionSetContainer questionSets = questionSetService.getQuestionSets(teamId, mode);
+		@AuthenticationPrincipal MaitUser user,
+		@RequestParam(value = "mode") DeliveryMode mode, @RequestParam("teamId") Long teamId) {
+		QuestionSetContainer questionSets = questionSetService.getQuestionSets(teamId, mode, user);
 		QuestionSetsApiResponse response = QuestionSetsApiResponse.of(mode, questionSets);
 		return ResponseEntity.ok(ApiResponse.ok(response));
 	}
@@ -86,19 +86,18 @@ public class QuestionSetController {
 	@Operation(summary = "문제 셋 단건 조회")
 	@GetMapping("/{questionSetId}")
 	public ResponseEntity<ApiResponse<QuestionSetApiResponse>> getQuestionSet(
-		@PathVariable("questionSetId") Long questionSetId) {
-		QuestionSetDto questionSetDto = questionSetService.getQuestionSet(questionSetId);
+		@AuthenticationPrincipal MaitUser user, @PathVariable Long questionSetId) {
+		QuestionSetDto questionSetDto = questionSetService.getQuestionSet(questionSetId, user);
 		return ResponseEntity.ok(ApiResponse.ok(QuestionSetApiResponse.from(questionSetDto)));
 	}
 
 	@Operation(summary = "문제 셋을 최종 저장 API", description = "문제 셋을 제작 완료 상태로 변경")
 	@PutMapping("/{questionSetId}")
 	public ResponseEntity<ApiResponse<QuestionSetApiResponse>> completeQuestionSet(
-		@PathVariable("questionSetId") Long questionSetId,
-		@Valid @RequestBody UpdateQuestionSetApiRequest request) {
+		@PathVariable Long questionSetId, @Valid @RequestBody UpdateQuestionSetApiRequest request) {
 		return ResponseEntity.ok(ApiResponse.ok(QuestionSetApiResponse.from(
 			questionSetService.completeQuestionSet(questionSetId, request.title(), request.subject(),
-				request.mode(), request.difficulty(), request.visibility()))));
+				request.solveMode(), request.difficulty(), request.visibility()))));
 	}
 
 	@Operation(summary = "문제 셋 제목 단건 수정 API", description = "연필 버튼 클릭을 통한 문제 셋 단건 수정")
@@ -139,8 +138,9 @@ public class QuestionSetController {
 
 	@Operation(summary = "종료된 문제 셋을 실시간 풀이 진행중으로 변경", description = "종료된 문제 셋을 다시 실시간 상태로 되돌린다.")
 	@PatchMapping("/{questionSetId}/restart")
-	public ResponseEntity<ApiResponse<Void>> restartQuestionSet(@PathVariable("questionSetId") Long questionSetId) {
-		questionSetService.restartQuestionSet(questionSetId);
+	public ResponseEntity<ApiResponse<Void>> restartQuestionSet(@PathVariable Long questionSetId,
+		@AuthenticationPrincipal MaitUser user) {
+		questionSetService.restartQuestionSet(questionSetId, user);
 		return ResponseEntity.ok(ApiResponse.noContent());
 	}
 }

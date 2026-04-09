@@ -13,11 +13,9 @@ import com.coniv.mait.domain.question.entity.QuestionSetEntity;
 import com.coniv.mait.domain.question.enums.AiRequestStatus;
 import com.coniv.mait.domain.question.enums.DeliveryMode;
 import com.coniv.mait.domain.question.enums.QuestionSetCreationType;
-import com.coniv.mait.domain.question.enums.QuestionSetOngoingStatus;
+import com.coniv.mait.domain.question.enums.QuestionSetSolveMode;
 import com.coniv.mait.domain.question.enums.QuestionSetVisibility;
 import com.coniv.mait.domain.question.event.AiQuestionGenerationRequestedEvent;
-import com.coniv.mait.domain.question.exception.QuestionSetStatusException;
-import com.coniv.mait.domain.question.exception.code.QuestionSetStatusExceptionCode;
 import com.coniv.mait.domain.question.repository.AiRequestStatusManager;
 import com.coniv.mait.domain.question.repository.QuestionEntityRepository;
 import com.coniv.mait.domain.question.repository.QuestionSetEntityRepository;
@@ -26,6 +24,7 @@ import com.coniv.mait.domain.question.service.dto.QuestionCount;
 import com.coniv.mait.domain.question.service.dto.QuestionSetDto;
 import com.coniv.mait.domain.question.service.dto.QuestionValidateDto;
 import com.coniv.mait.domain.user.service.component.TeamRoleValidator;
+import com.coniv.mait.global.auth.model.MaitUser;
 import com.coniv.mait.global.event.MaitEventPublisher;
 import com.coniv.mait.web.question.dto.QuestionSetContainer;
 import com.coniv.mait.web.question.dto.QuestionSetGroup;
@@ -94,10 +93,15 @@ public class QuestionSetService {
 		return QuestionSetDto.from(questionSetEntity);
 	}
 
-	public QuestionSetContainer getQuestionSets(final Long teamId, final DeliveryMode mode) {
-		// Todo: 조회하려는 유저와 팀이 일치하는지 확인
-		List<QuestionSetDto> questionSets = questionSetEntityRepository.findAllByTeamIdAndDeliveryMode(teamId, mode)
-			.stream()
+	public QuestionSetContainer getQuestionSets(final Long teamId, final DeliveryMode mode, final MaitUser user) {
+		final Long userId = user.id();
+		teamRoleValidator.checkIsTeamMember(teamId, userId);
+		if (mode == DeliveryMode.MAKING || mode == DeliveryMode.MANAGING) {
+			teamRoleValidator.checkHasCreateQuestionSetAuthority(teamId, userId);
+		}
+
+		List<QuestionSetDto> questionSets = questionSetEntityRepository.findAllByTeamId(teamId).stream()
+			.filter(questionSet -> questionSet.getDisplayMode() == mode)
 			.sorted(Comparator.comparing(
 				QuestionSetEntity::getModifiedAt,
 				Comparator.nullsLast(Comparator.naturalOrder())).reversed())
@@ -111,7 +115,7 @@ public class QuestionSetService {
 		return QuestionSetGroup.of(questionSets);
 	}
 
-	public QuestionSetDto getQuestionSet(final Long questionSetId) {
+	public QuestionSetDto getQuestionSet(final Long questionSetId, final MaitUser maitUser) {
 		final QuestionSetEntity questionSetEntity = questionSetEntityRepository.findById(questionSetId)
 			.orElseThrow(() -> new IllegalArgumentException("Question set not found"));
 
@@ -125,7 +129,7 @@ public class QuestionSetService {
 		final Long questionSetId,
 		final String title,
 		final String subject,
-		final DeliveryMode mode,
+		final QuestionSetSolveMode solveMode,
 		final String difficulty,
 		final QuestionSetVisibility visibility) {
 		QuestionSetEntity questionSet = questionSetEntityRepository.findById(questionSetId)
@@ -140,7 +144,7 @@ public class QuestionSetService {
 			question.updateNumber(number++);
 		}
 
-		questionSet.completeQuestionSet(title, subject, mode, difficulty, visibility);
+		questionSet.completeQuestionSet(title, subject, solveMode, difficulty, visibility);
 		return QuestionSetDto.from(questionSet);
 	}
 
@@ -173,28 +177,15 @@ public class QuestionSetService {
 		QuestionSetEntity questionSet = questionSetEntityRepository.findById(questionSetId)
 			.orElseThrow(() -> new EntityNotFoundException("해당 문제 셋을 찾을 수 없습니다."));
 
-		if (questionSet.getOngoingStatus() != QuestionSetOngoingStatus.AFTER) {
-			throw new QuestionSetStatusException(QuestionSetStatusExceptionCode.ONLY_AFTER);
-		}
-
-		questionSet.updateMode(DeliveryMode.REVIEW);
-		questionSet.updateVisibility(visibility);
+		questionSet.openReview(visibility);
 	}
 
 	@Transactional
-	public void restartQuestionSet(final Long questionSetId) {
-		// todo 유저 권한 확인
+	public void restartQuestionSet(final Long questionSetId, final MaitUser user) {
 		QuestionSetEntity questionSet = questionSetEntityRepository.findById(questionSetId)
 			.orElseThrow(() -> new EntityNotFoundException("해당 문제 셋을 찾을 수 없습니다."));
 
-		if (questionSet.getOngoingStatus() != QuestionSetOngoingStatus.AFTER) {
-			throw new QuestionSetStatusException(QuestionSetStatusExceptionCode.ONLY_AFTER);
-		}
-
-		if (questionSet.getDeliveryMode() != DeliveryMode.LIVE_TIME) {
-			throw new QuestionSetStatusException(QuestionSetStatusExceptionCode.ONLY_LIVE_TIME);
-		}
-
-		questionSet.updateOngoingStatus(QuestionSetOngoingStatus.ONGOING);
+		teamRoleValidator.checkHasCreateQuestionSetAuthority(questionSet.getTeamId(), user.id());
+		questionSet.restartLive();
 	}
 }
