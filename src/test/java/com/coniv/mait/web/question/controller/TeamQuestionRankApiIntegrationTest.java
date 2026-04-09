@@ -14,6 +14,7 @@ import com.coniv.mait.config.TestRedisConfig;
 import com.coniv.mait.domain.question.entity.MultipleQuestionEntity;
 import com.coniv.mait.domain.question.entity.QuestionSetEntity;
 import com.coniv.mait.domain.question.enums.DeliveryMode;
+import com.coniv.mait.domain.question.enums.QuestionSetSolveMode;
 import com.coniv.mait.domain.question.enums.QuestionSetStatus;
 import com.coniv.mait.domain.question.repository.QuestionEntityRepository;
 import com.coniv.mait.domain.question.repository.QuestionSetEntityRepository;
@@ -80,6 +81,7 @@ public class TeamQuestionRankApiIntegrationTest extends BaseIntegrationTest {
 				.subject("테스트 문제집")
 				.teamId(team.getId())
 				.deliveryMode(DeliveryMode.LIVE_TIME)
+				.solveMode(QuestionSetSolveMode.LIVE_TIME)
 				.status(QuestionSetStatus.AFTER)
 				.build());
 
@@ -135,6 +137,7 @@ public class TeamQuestionRankApiIntegrationTest extends BaseIntegrationTest {
 				.subject("테스트 문제집")
 				.teamId(team.getId())
 				.deliveryMode(DeliveryMode.LIVE_TIME)
+				.solveMode(QuestionSetSolveMode.LIVE_TIME)
 				.status(QuestionSetStatus.AFTER)
 				.build());
 
@@ -179,6 +182,7 @@ public class TeamQuestionRankApiIntegrationTest extends BaseIntegrationTest {
 				.subject("학습 문제집")
 				.teamId(team.getId())
 				.deliveryMode(DeliveryMode.STUDY)
+				.solveMode(QuestionSetSolveMode.STUDY)
 				.status(QuestionSetStatus.BEFORE)
 				.build());
 
@@ -231,6 +235,7 @@ public class TeamQuestionRankApiIntegrationTest extends BaseIntegrationTest {
 				.subject("실시간 문제집")
 				.teamId(team.getId())
 				.deliveryMode(DeliveryMode.LIVE_TIME)
+				.solveMode(QuestionSetSolveMode.LIVE_TIME)
 				.status(QuestionSetStatus.AFTER)
 				.build());
 
@@ -248,6 +253,7 @@ public class TeamQuestionRankApiIntegrationTest extends BaseIntegrationTest {
 				.subject("학습 문제집")
 				.teamId(team.getId())
 				.deliveryMode(DeliveryMode.STUDY)
+				.solveMode(QuestionSetSolveMode.STUDY)
 				.status(QuestionSetStatus.BEFORE)
 				.build());
 
@@ -312,6 +318,7 @@ public class TeamQuestionRankApiIntegrationTest extends BaseIntegrationTest {
 				.subject("랭킹 문제집")
 				.teamId(team.getId())
 				.deliveryMode(DeliveryMode.LIVE_TIME)
+				.solveMode(QuestionSetSolveMode.LIVE_TIME)
 				.status(QuestionSetStatus.AFTER)
 				.build());
 
