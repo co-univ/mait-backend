@@ -137,29 +137,47 @@ flush 보정까지 반영한 뒤, 두 버전 모두 `200`으로 성공하는 단
 
 시나리오:
 
-* `3 VU`
-* `3 iterations`
+* `1 VU`
+* `20 iterations`
 * `shared-iterations`
-
-### LIVE + AFTER
-
-| Version | avg | p95 | failed |
-| --- | ---: | ---: | ---: |
-| baseline | `25.84ms` | `25.85ms` | `100%` |
-| after | `95.07ms` | `102.37ms` | `0%` |
-
-### STUDY + ONGOING
-
-| Version | avg | p95 | failed |
-| --- | ---: | ---: | ---: |
-| baseline | `3.17ms` | `3.18ms` | `100%` |
-| after | `90.33ms` | `99.22ms` | `0%` |
+* 각 run마다 `fresh seed -> 서버 기동 -> digest reset -> k6 -> digest 수집` 순서로 독립 실행
 
 주의:
 
-* 위 baseline k6 수치는 flush 보정 전 `100% 실패` 상태에서 얻은 값이다.
-* success-to-success 부하 비교를 위해 baseline-fixed로도 다시 시도했지만, 로컬 MySQL에서 `Table definition has changed, please retry transaction`가 간헐적으로 발생해 비교군이 오염됐다.
-* 따라서 현재 문서에서 성능 비교 기준은 `success-to-success 단건 삭제`와 `after 성공 k6`로 보는 것이 맞다.
+* `p99`는 표본 `20건` 기준이므로 경향 확인용으로 해석해야 한다.
+* 전후 비교의 핵심 지표는 `avg`, `p95`, `Digest count sum`이며, `p99`는 보조 지표로 본다.
+
+### LIVE + AFTER
+
+| Version | avg | p95 | p99 | failed | Digest count sum | Per delete |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: |
+| baseline-fixed | `200.92ms` | `236.89ms` | `497.89ms` | `0%` | `12202` | about `610.1` |
+| after-fixed | `37.91ms` | `63.58ms` | `226.73ms` | `0%` | `402` | about `20.1` |
+
+해석:
+
+* avg 기준 약 `81.1%` 감소 (`200.92ms -> 37.91ms`)
+* p95 기준 약 `73.2%` 감소 (`236.89ms -> 63.58ms`)
+* p99 기준 약 `54.5%` 감소 (`497.89ms -> 226.73ms`)
+* digest count sum 기준 약 `96.7%` 감소 (`12202 -> 402`)
+* 상위 digest는 baseline-fixed에서 `DELETE FROM short_answers WHERE id = ?` `10000회`, `DELETE FROM question_set_participants WHERE id = ?` `1000회`가 집중됐다.
+* after-fixed에서는 row-by-row delete가 사라지고 요청당 약 `20`개 수준의 statement로 수렴했다.
+
+### STUDY + ONGOING
+
+| Version | avg | p95 | p99 | failed | Digest count sum | Per delete |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: |
+| baseline-fixed | `193.50ms` | `224.38ms` | `499.74ms` | `0%` | `11202` | about `560.1` |
+| after-fixed | `42.77ms` | `57.62ms` | `235.70ms` | `0%` | `422` | about `21.1` |
+
+해석:
+
+* avg 기준 약 `77.9%` 감소 (`193.50ms -> 42.77ms`)
+* p95 기준 약 `74.3%` 감소 (`224.38ms -> 57.62ms`)
+* p99 기준 약 `52.8%` 감소 (`499.74ms -> 235.70ms`)
+* digest count sum 기준 약 `96.2%` 감소 (`11202 -> 422`)
+* baseline-fixed에서는 `DELETE FROM short_answers WHERE id = ?` `10000회`가 가장 큰 병목이었다.
+* after-fixed에서는 subtype delete가 bulk query 한 번으로 줄고, session/draft 정리까지 포함해도 요청당 약 `21`개 수준의 statement로 정리됐다.
 
 ## Blocker Found During Measurement
 
@@ -224,8 +242,8 @@ persistent instance references an unsaved transient instance of
 * subtype delete를 문제별 파생 delete에서 bulk delete로 바꾸면 쿼리 수가 극적으로 감소한다.
 * participant delete를 bulk delete로 바꾸면 LIVE 케이스의 per-row delete가 제거된다.
 * flush/clear + parent bulk delete를 추가한 뒤 삭제 API는 정상적으로 `200`을 반환했다.
-* success-to-success 단건 비교 기준으로는 STUDY에서 after-fixed가 더 빨랐고, LIVE는 로컬 편차가 있었지만 SQL 수는 크게 감소했다.
-* 성공 기준 k6에서는 current(after) 쪽 `failed=0%`를 확인했다.
+* success-to-success k6 기준으로도 LIVE/STUDY 모두 `avg`, `p95`, `p99`, `Digest count sum`이 일관되게 개선됐다.
+* 최종 비교는 실패 요청과의 비교가 아니라, `baseline-fixed`와 `after-fixed`의 성공 기준 비교로 해석해야 한다.
 * 성능 최적화 자체는 유효했고, bulk delete를 쓸 때는 persistence context 정리가 같이 필요했다.
 
 현재 기준 권장 해석:

@@ -31,6 +31,7 @@ import com.coniv.mait.domain.solve.repository.StudyAnswerDraftEntityRepository;
 import com.coniv.mait.domain.user.service.component.TeamRoleValidator;
 import com.coniv.mait.global.event.MaitEventPublisher;
 
+import jakarta.persistence.EntityManager;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.extern.slf4j.Slf4j;
 
@@ -51,6 +52,7 @@ public class QuestionSetDeleteService {
 	private final FillBlankAnswerEntityRepository fillBlankAnswerEntityRepository;
 	private final TeamRoleValidator teamRoleValidator;
 	private final MaitEventPublisher maitEventPublisher;
+	private final EntityManager entityManager;
 
 	public QuestionSetDeleteService(
 		QuestionSetEntityRepository questionSetEntityRepository,
@@ -65,7 +67,8 @@ public class QuestionSetDeleteService {
 		ShortAnswerEntityRepository shortAnswerEntityRepository,
 		FillBlankAnswerEntityRepository fillBlankAnswerEntityRepository,
 		TeamRoleValidator teamRoleValidator,
-		MaitEventPublisher maitEventPublisher
+		MaitEventPublisher maitEventPublisher,
+		EntityManager entityManager
 	) {
 		this.questionSetEntityRepository = questionSetEntityRepository;
 		this.questionEntityRepository = questionEntityRepository;
@@ -80,6 +83,7 @@ public class QuestionSetDeleteService {
 		this.fillBlankAnswerEntityRepository = fillBlankAnswerEntityRepository;
 		this.teamRoleValidator = teamRoleValidator;
 		this.maitEventPublisher = maitEventPublisher;
+		this.entityManager = entityManager;
 	}
 
 	@Transactional
@@ -122,7 +126,11 @@ public class QuestionSetDeleteService {
 		// 문제 삭제
 		deleteQuestionSubEntities(questions);
 		questionEntityRepository.deleteAllByQuestionSetId(questionSetId);
-		questionSetEntityRepository.delete(questionSet);
+
+		// Bulk delete 이후 managed association이 flush에 개입하지 않도록 컨텍스트를 비운다.
+		entityManager.flush();
+		entityManager.clear();
+		questionSetEntityRepository.deleteByIdInBulk(questionSetId);
 
 		maitEventPublisher.publishEvent(QuestionSetDeletedEvent.builder()
 			.questionSetId(questionSetId)

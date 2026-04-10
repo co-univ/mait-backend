@@ -38,6 +38,8 @@ import com.coniv.mait.domain.solve.repository.StudyAnswerDraftEntityRepository;
 import com.coniv.mait.domain.user.service.component.TeamRoleValidator;
 import com.coniv.mait.global.event.MaitEventPublisher;
 
+import jakarta.persistence.EntityManager;
+
 @ExtendWith(MockitoExtension.class)
 class QuestionSetDeleteServiceTest {
 
@@ -67,6 +69,8 @@ class QuestionSetDeleteServiceTest {
 	private TeamRoleValidator teamRoleValidator;
 	@Mock
 	private MaitEventPublisher maitEventPublisher;
+	@Mock
+	private EntityManager entityManager;
 
 	@InjectMocks
 	private QuestionSetDeleteService questionSetDeleteService;
@@ -101,7 +105,9 @@ class QuestionSetDeleteServiceTest {
 		verify(shortAnswerEntityRepository).deleteAllByShortQuestionIdIn(List.of(3L));
 		verify(fillBlankAnswerEntityRepository).deleteAllByFillBlankQuestionIdIn(List.of(4L));
 		verify(questionEntityRepository).deleteAllByQuestionSetId(questionSetId);
-		verify(questionSetEntityRepository).delete(questionSet);
+		verify(entityManager).flush();
+		verify(entityManager).clear();
+		verify(questionSetEntityRepository).deleteByIdInBulk(questionSetId);
 		verify(maitEventPublisher).publishEvent(QuestionSetDeletedEvent.builder()
 			.questionSetId(questionSetId)
 			.questionIds(List.of(1L, 2L, 3L, 4L))
