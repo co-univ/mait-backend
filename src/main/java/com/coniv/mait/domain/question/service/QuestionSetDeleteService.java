@@ -84,38 +84,44 @@ public class QuestionSetDeleteService {
 
 		List<QuestionEntity> questions = questionEntityRepository.findAllByQuestionSetId(questionSetId);
 		List<Long> questionIds = questions.stream().map(QuestionEntity::getId).toList();
-		List<Long> sessionIds = solvingSessionEntityRepository.findSessionIdsByQuestionSetId(questionSetId);
-
 		List<Long> imageIds = questions.stream()
 			.map(QuestionEntity::getImageId)
 			.filter(Objects::nonNull)
 			.toList();
 
-		if (!sessionIds.isEmpty()) {
-			studyAnswerDraftEntityRepository.deleteAllBySolvingSessionIdIn(sessionIds);
-		}
-		if (!questionIds.isEmpty()) {
+		if (questionSet.getStatus() != QuestionSetStatus.BEFORE) {
 			answerSubmitRecordEntityRepository.deleteAllByQuestionIdIn(questionIds);
+		}
+
+		// 참가자 삭제
+		if (questionSet.getSolveMode() == QuestionSetSolveMode.LIVE_TIME
+			&& questionSet.getStatus() == QuestionSetStatus.AFTER) {
+			questionSetParticipantRepository.deleteAllByQuestionSet(questionSet);
 			questionScorerEntityRepository.deleteAllByQuestionIdIn(questionIds);
 		}
 
-		questionSetParticipantRepository.deleteAllByQuestionSet(questionSet);
-		solvingSessionEntityRepository.deleteAllByQuestionSetId(questionSetId);
+		// 풀이 기록 삭제
+		if (questionSet.getSolveMode() == QuestionSetSolveMode.STUDY
+			&& questionSet.getStatus() != QuestionSetStatus.BEFORE) {
+			List<Long> sessionIds = solvingSessionEntityRepository.findSessionIdsByQuestionSetId(questionSetId);
+			studyAnswerDraftEntityRepository.deleteAllBySolvingSessionIdIn(sessionIds);
+			solvingSessionEntityRepository.deleteAllByQuestionSetId(questionSetId);
+		}
 
+		// 문제 삭제
 		for (QuestionEntity question : questions) {
 			questionFactories.get(question.getType()).deleteSubEntities(question);
 		}
 		questionEntityRepository.deleteAllByQuestionSetId(questionSetId);
-
 		questionSetEntityRepository.delete(questionSet);
-
-		log.info("[문제셋 삭제] questionSetId={}, teamId={}, questionCount={}, sessionCount={}, deletedBy={}",
-			questionSetId, questionSet.getTeamId(), questionIds.size(), sessionIds.size(), userId);
 
 		maitEventPublisher.publishEvent(QuestionSetDeletedEvent.builder()
 			.questionSetId(questionSetId)
 			.questionIds(questionIds)
 			.imageIds(imageIds)
 			.build());
+
+		log.info("[문제셋 삭제] questionSetId={}, teamId={}, questionCount={},  deletedBy={}",
+			questionSetId, questionSet.getTeamId(), questionIds.size(), userId);
 	}
 }
