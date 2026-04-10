@@ -2,6 +2,7 @@ package com.coniv.mait.domain.question.event;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
 
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.core.ScanOptions;
@@ -63,7 +64,7 @@ public class QuestionSetDeletedEventListener {
 			try {
 				questionImageService.unUseExistImage(imageId);
 			} catch (Exception e) {
-				log.error("[이미지 미사용 처리 실패] imageId={}", imageId, e);
+				log.error("[문제 셋 삭제 시 이미지 삭제 실패] imageId={}", imageId, e);
 			}
 		}
 	}
