@@ -14,8 +14,6 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class LastViewedQuestionRedisRepository {
 
-	private static final String LAST_VIEW_QUESTION_PREFIX = "review:last_viewed:question_set:";
-	private static final String USER_ID = "user:";
 	private static final long CACHE_HOURS = 24;
 
 	private final QuestionReader questionReader;
@@ -40,6 +38,6 @@ public class LastViewedQuestionRedisRepository {
 	}
 
 	private String getKey(final QuestionSetEntity questionSet, final Long userId) {
-		return LAST_VIEW_QUESTION_PREFIX + questionSet.getId() + USER_ID + userId;
+		return QuestionRedisKeys.reviewLastViewed(questionSet.getId(), userId);
 	}
 }

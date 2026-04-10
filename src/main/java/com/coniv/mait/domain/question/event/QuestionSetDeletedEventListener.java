@@ -11,6 +11,7 @@ import org.springframework.transaction.event.TransactionPhase;
 import org.springframework.transaction.event.TransactionalEventListener;
 
 import com.coniv.mait.domain.question.service.QuestionImageService;
+import com.coniv.mait.domain.question.service.component.QuestionRedisKeys;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -19,11 +20,6 @@ import lombok.extern.slf4j.Slf4j;
 @Component
 @RequiredArgsConstructor
 public class QuestionSetDeletedEventListener {
-
-	private static final String SUBMIT_ORDER_PREFIX = "$submit:order:questionId:";
-	private static final String SCORER_PREFIX = "$scorer:questionId:";
-	private static final String AI_STATUS_PREFIX = "question_set_ai_status:";
-	private static final String REVIEW_PREFIX = "review:last_viewed:question_set:";
 
 	private final RedisTemplate<String, String> redisTemplate;
 	private final QuestionImageService questionImageService;
@@ -40,13 +36,13 @@ public class QuestionSetDeletedEventListener {
 			List<String> keys = new ArrayList<>();
 
 			for (Long questionId : event.questionIds()) {
-				keys.add(SUBMIT_ORDER_PREFIX + questionId);
-				keys.add(SCORER_PREFIX + questionId);
+				keys.add(QuestionRedisKeys.submitOrder(questionId));
+				keys.add(QuestionRedisKeys.scorer(questionId));
 			}
 
-			keys.add(AI_STATUS_PREFIX + event.questionSetId());
+			keys.add(QuestionRedisKeys.aiStatus(event.questionSetId()));
 
-			String reviewPattern = REVIEW_PREFIX + event.questionSetId() + ":*";
+			String reviewPattern = QuestionRedisKeys.reviewLastViewedPattern(event.questionSetId());
 			ScanOptions scanOptions = ScanOptions.scanOptions()
 				.match(reviewPattern).count(100).build();
 			try (var cursor = redisTemplate.scan(scanOptions)) {
