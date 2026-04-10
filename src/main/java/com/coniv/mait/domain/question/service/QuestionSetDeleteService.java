@@ -112,12 +112,10 @@ public class QuestionSetDeleteService {
 		log.info("[문제셋 삭제] questionSetId={}, teamId={}, questionCount={}, sessionCount={}, deletedBy={}",
 			questionSetId, questionSet.getTeamId(), questionIds.size(), sessionIds.size(), userId);
 
-		maitEventPublisher.publishEvent(new QuestionSetDeletedEvent(questionSetId, questionIds, imageIds));
-	}
-
-	private void validateDeletableStatus(QuestionSetEntity questionSet) {
-		if (questionSet.getStatus() == QuestionSetStatus.ONGOING) {
-			throw new QuestionSetStatusException(QuestionSetStatusExceptionCode.CANNOT_DELETE_ONGOING);
-		}
+		maitEventPublisher.publishEvent(QuestionSetDeletedEvent.builder()
+			.questionSetId(questionSetId)
+			.questionIds(questionIds)
+			.imageIds(imageIds)
+			.build());
 	}
 }
