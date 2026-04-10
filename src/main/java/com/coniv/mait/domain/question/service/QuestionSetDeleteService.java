@@ -3,7 +3,7 @@ package com.coniv.mait.domain.question.service;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.function.Function;
+import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Service;
@@ -20,7 +20,10 @@ import com.coniv.mait.domain.question.exception.code.QuestionSetStatusExceptionC
 import com.coniv.mait.domain.question.repository.QuestionEntityRepository;
 import com.coniv.mait.domain.question.repository.QuestionSetEntityRepository;
 import com.coniv.mait.domain.question.repository.QuestionSetParticipantRepository;
-import com.coniv.mait.domain.question.service.component.QuestionFactory;
+import com.coniv.mait.domain.question.repository.FillBlankAnswerEntityRepository;
+import com.coniv.mait.domain.question.repository.MultipleChoiceEntityRepository;
+import com.coniv.mait.domain.question.repository.OrderingOptionEntityRepository;
+import com.coniv.mait.domain.question.repository.ShortAnswerEntityRepository;
 import com.coniv.mait.domain.solve.repository.AnswerSubmitRecordEntityRepository;
 import com.coniv.mait.domain.solve.repository.QuestionScorerEntityRepository;
 import com.coniv.mait.domain.solve.repository.SolvingSessionEntityRepository;
@@ -42,7 +45,10 @@ public class QuestionSetDeleteService {
 	private final AnswerSubmitRecordEntityRepository answerSubmitRecordEntityRepository;
 	private final QuestionScorerEntityRepository questionScorerEntityRepository;
 	private final StudyAnswerDraftEntityRepository studyAnswerDraftEntityRepository;
-	private final Map<QuestionType, QuestionFactory<?>> questionFactories;
+	private final MultipleChoiceEntityRepository multipleChoiceEntityRepository;
+	private final OrderingOptionEntityRepository orderingOptionEntityRepository;
+	private final ShortAnswerEntityRepository shortAnswerEntityRepository;
+	private final FillBlankAnswerEntityRepository fillBlankAnswerEntityRepository;
 	private final TeamRoleValidator teamRoleValidator;
 	private final MaitEventPublisher maitEventPublisher;
 
@@ -54,7 +60,10 @@ public class QuestionSetDeleteService {
 		AnswerSubmitRecordEntityRepository answerSubmitRecordEntityRepository,
 		QuestionScorerEntityRepository questionScorerEntityRepository,
 		StudyAnswerDraftEntityRepository studyAnswerDraftEntityRepository,
-		List<QuestionFactory<?>> factories,
+		MultipleChoiceEntityRepository multipleChoiceEntityRepository,
+		OrderingOptionEntityRepository orderingOptionEntityRepository,
+		ShortAnswerEntityRepository shortAnswerEntityRepository,
+		FillBlankAnswerEntityRepository fillBlankAnswerEntityRepository,
 		TeamRoleValidator teamRoleValidator,
 		MaitEventPublisher maitEventPublisher
 	) {
@@ -65,8 +74,10 @@ public class QuestionSetDeleteService {
 		this.answerSubmitRecordEntityRepository = answerSubmitRecordEntityRepository;
 		this.questionScorerEntityRepository = questionScorerEntityRepository;
 		this.studyAnswerDraftEntityRepository = studyAnswerDraftEntityRepository;
-		this.questionFactories = factories.stream()
-			.collect(Collectors.toUnmodifiableMap(QuestionFactory::getQuestionType, Function.identity()));
+		this.multipleChoiceEntityRepository = multipleChoiceEntityRepository;
+		this.orderingOptionEntityRepository = orderingOptionEntityRepository;
+		this.shortAnswerEntityRepository = shortAnswerEntityRepository;
+		this.fillBlankAnswerEntityRepository = fillBlankAnswerEntityRepository;
 		this.teamRoleValidator = teamRoleValidator;
 		this.maitEventPublisher = maitEventPublisher;
 	}
@@ -96,7 +107,7 @@ public class QuestionSetDeleteService {
 		// 참가자 삭제
 		if (questionSet.getSolveMode() == QuestionSetSolveMode.LIVE_TIME
 			&& questionSet.getStatus() == QuestionSetStatus.AFTER) {
-			questionSetParticipantRepository.deleteAllByQuestionSet(questionSet);
+			questionSetParticipantRepository.deleteAllByQuestionSetId(questionSetId);
 			questionScorerEntityRepository.deleteAllByQuestionIdIn(questionIds);
 		}
 
@@ -109,9 +120,7 @@ public class QuestionSetDeleteService {
 		}
 
 		// 문제 삭제
-		for (QuestionEntity question : questions) {
-			questionFactories.get(question.getType()).deleteSubEntities(question);
-		}
+		deleteQuestionSubEntities(questions);
 		questionEntityRepository.deleteAllByQuestionSetId(questionSetId);
 		questionSetEntityRepository.delete(questionSet);
 
@@ -123,5 +132,30 @@ public class QuestionSetDeleteService {
 
 		log.info("[문제셋 삭제] questionSetId={}, teamId={}, questionCount={},  deletedBy={}",
 			questionSetId, questionSet.getTeamId(), questionIds.size(), userId);
+	}
+
+	private void deleteQuestionSubEntities(final List<QuestionEntity> questions) {
+		Map<QuestionType, List<Long>> questionIdsByType = questions.stream()
+			.collect(Collectors.groupingBy(QuestionEntity::getType,
+				Collectors.mapping(QuestionEntity::getId, Collectors.toList())));
+
+		deleteByType(questionIdsByType, QuestionType.MULTIPLE, multipleChoiceEntityRepository::deleteAllByQuestionIdIn);
+		deleteByType(questionIdsByType, QuestionType.ORDERING,
+			orderingOptionEntityRepository::deleteAllByOrderingQuestionIdIn);
+		deleteByType(questionIdsByType, QuestionType.SHORT, shortAnswerEntityRepository::deleteAllByShortQuestionIdIn);
+		deleteByType(questionIdsByType, QuestionType.FILL_BLANK,
+			fillBlankAnswerEntityRepository::deleteAllByFillBlankQuestionIdIn);
+	}
+
+	private void deleteByType(
+		final Map<QuestionType, List<Long>> questionIdsByType,
+		final QuestionType questionType,
+		final Consumer<List<Long>> deleteAction
+	) {
+		List<Long> questionIds = questionIdsByType.get(questionType);
+		if (questionIds == null || questionIds.isEmpty()) {
+			return;
+		}
+		deleteAction.accept(questionIds);
 	}
 }

@@ -4,6 +4,7 @@ import java.util.List;
 import java.util.Optional;
 
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
@@ -13,6 +14,10 @@ import com.coniv.mait.domain.question.enums.ParticipantStatus;
 
 public interface QuestionSetParticipantRepository extends JpaRepository<QuestionSetParticipantEntity, Long> {
 	void deleteAllByQuestionSet(QuestionSetEntity questionSet);
+
+	@Modifying
+	@Query("DELETE FROM QuestionSetParticipantEntity p WHERE p.questionSet.id = :questionSetId")
+	void deleteAllByQuestionSetId(@Param("questionSetId") Long questionSetId);
 
 	@Query("SELECT p FROM QuestionSetParticipantEntity p join fetch p.user WHERE p.questionSet = :questionSet")
 	List<QuestionSetParticipantEntity> findAllByQuestionSetWithFetchJoinUser(
