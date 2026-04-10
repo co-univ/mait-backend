@@ -150,8 +150,7 @@ public class QuestionSetController {
 
 	@Operation(summary = "문제 셋 삭제", description = "문제 셋과 관련된 모든 데이터를 삭제합니다.")
 	@DeleteMapping("/{questionSetId}")
-	public ResponseEntity<ApiResponse<Void>> deleteQuestionSet(
-		@PathVariable Long questionSetId,
+	public ResponseEntity<ApiResponse<Void>> deleteQuestionSet(@PathVariable Long questionSetId,
 		@AuthenticationPrincipal MaitUser user) {
 		questionSetDeleteService.deleteQuestionSet(questionSetId, user.id());
 		return ResponseEntity.ok(ApiResponse.noContent());
