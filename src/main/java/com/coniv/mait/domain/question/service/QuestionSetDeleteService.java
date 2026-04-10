@@ -11,6 +11,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.coniv.mait.domain.question.entity.QuestionEntity;
 import com.coniv.mait.domain.question.entity.QuestionSetEntity;
+import com.coniv.mait.domain.question.enums.QuestionSetSolveMode;
 import com.coniv.mait.domain.question.enums.QuestionSetStatus;
 import com.coniv.mait.domain.question.enums.QuestionType;
 import com.coniv.mait.domain.question.event.QuestionSetDeletedEvent;
@@ -76,7 +77,10 @@ public class QuestionSetDeleteService {
 			.orElseThrow(() -> new EntityNotFoundException("QuestionSet not found with id: " + questionSetId));
 
 		teamRoleValidator.checkHasCreateQuestionSetAuthority(questionSet.getTeamId(), userId);
-		validateDeletableStatus(questionSet);
+		if (questionSet.getStatus() == QuestionSetStatus.ONGOING
+			&& questionSet.getSolveMode() == QuestionSetSolveMode.LIVE_TIME) {
+			throw new QuestionSetStatusException(QuestionSetStatusExceptionCode.CANNOT_DELETE_ONGOING);
+		}
 
 		List<QuestionEntity> questions = questionEntityRepository.findAllByQuestionSetId(questionSetId);
 		List<Long> questionIds = questions.stream().map(QuestionEntity::getId).toList();
