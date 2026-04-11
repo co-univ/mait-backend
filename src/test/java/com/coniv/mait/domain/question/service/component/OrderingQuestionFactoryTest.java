@@ -182,7 +182,7 @@ class OrderingQuestionFactoryTest {
 		orderingQuestionFactory.deleteSubEntities(question);
 
 		// then
-		verify(orderingOptionEntityRepository).deleteAllByOrderingQuestionId(1L);
+		verify(orderingOptionEntityRepository).deleteBulkAllByQuestionId(1L);
 	}
 
 	@Test

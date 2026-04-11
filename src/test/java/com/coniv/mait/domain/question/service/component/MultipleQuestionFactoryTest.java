@@ -164,7 +164,7 @@ class MultipleQuestionFactoryTest {
 		multipleQuestionFactory.deleteSubEntities(question);
 
 		// then
-		verify(multipleChoiceEntityRepository).deleteAllByQuestionId(1L);
+		verify(multipleChoiceEntityRepository).deleteBulkAllByQuestionId(1L);
 	}
 
 	@Test

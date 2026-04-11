@@ -6,6 +6,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -20,6 +21,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import com.coniv.mait.domain.question.enums.AiRequestStatus;
 import com.coniv.mait.domain.question.enums.DeliveryMode;
+import com.coniv.mait.domain.question.service.QuestionSetDeleteService;
 import com.coniv.mait.domain.question.service.QuestionSetMaterialService;
 import com.coniv.mait.domain.question.service.QuestionSetService;
 import com.coniv.mait.domain.question.service.dto.QuestionSetDto;
@@ -50,6 +52,8 @@ import lombok.RequiredArgsConstructor;
 public class QuestionSetController {
 
 	private final QuestionSetService questionSetService;
+
+	private final QuestionSetDeleteService questionSetDeleteService;
 
 	private final QuestionSetMaterialService questionSetMaterialService;
 
@@ -141,6 +145,14 @@ public class QuestionSetController {
 	public ResponseEntity<ApiResponse<Void>> restartQuestionSet(@PathVariable Long questionSetId,
 		@AuthenticationPrincipal MaitUser user) {
 		questionSetService.restartQuestionSet(questionSetId, user);
+		return ResponseEntity.ok(ApiResponse.noContent());
+	}
+
+	@Operation(summary = "문제 셋 삭제", description = "문제 셋과 관련된 모든 데이터를 삭제합니다.")
+	@DeleteMapping("/{questionSetId}")
+	public ResponseEntity<ApiResponse<Void>> deleteQuestionSet(@PathVariable Long questionSetId,
+		@AuthenticationPrincipal MaitUser user) {
+		questionSetDeleteService.deleteQuestionSet(questionSetId, user.id());
 		return ResponseEntity.ok(ApiResponse.noContent());
 	}
 }

@@ -30,6 +30,7 @@ import com.coniv.mait.domain.question.enums.QuestionSetSolveMode;
 import com.coniv.mait.domain.question.enums.QuestionSetStatus;
 import com.coniv.mait.domain.question.enums.QuestionSetVisibility;
 import com.coniv.mait.domain.question.enums.QuestionValidationResult;
+import com.coniv.mait.domain.question.service.QuestionSetDeleteService;
 import com.coniv.mait.domain.question.service.QuestionSetMaterialService;
 import com.coniv.mait.domain.question.service.QuestionSetService;
 import com.coniv.mait.domain.question.service.dto.QuestionSetDto;
@@ -53,6 +54,9 @@ class QuestionSetControllerTest {
 
 	@MockitoBean
 	private QuestionSetService questionSetService;
+
+	@MockitoBean
+	private QuestionSetDeleteService questionSetDeleteService;
 
 	@MockitoBean
 	private QuestionSetMaterialService questionSetMaterialService;
@@ -549,5 +553,21 @@ class QuestionSetControllerTest {
 				jsonPath("$.isSuccess").value(false),
 				jsonPath("$.code").value("C-001")
 			);
+	}
+
+	@Test
+	@DisplayName("문제 셋 삭제 성공 테스트")
+	void deleteQuestionSet_Success() throws Exception {
+		// given
+		final Long questionSetId = 1L;
+
+		// when & then
+		mockMvc.perform(delete("/api/v1/question-sets/{questionSetId}", questionSetId))
+			.andExpectAll(
+				status().isOk(),
+				jsonPath("$.isSuccess").value(true),
+				jsonPath("$.data").doesNotExist());
+
+		verify(questionSetDeleteService).deleteQuestionSet(questionSetId, USER_ID);
 	}
 }

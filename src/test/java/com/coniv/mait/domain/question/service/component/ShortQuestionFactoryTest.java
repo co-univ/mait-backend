@@ -183,7 +183,7 @@ class ShortQuestionFactoryTest {
 		shortQuestionFactory.deleteSubEntities(question);
 
 		// then
-		verify(shortAnswerEntityRepository).deleteAllByShortQuestionId(1L);
+		verify(shortAnswerEntityRepository).deleteBulkAllByQuestionId(1L);
 	}
 
 	@Test
