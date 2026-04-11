@@ -12,6 +12,8 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
+import org.springframework.transaction.annotation.Propagation;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.coniv.mait.domain.question.entity.FillBlankAnswerEntity;
 import com.coniv.mait.domain.question.entity.FillBlankQuestionEntity;
@@ -758,6 +760,7 @@ public class QuestionApiIntegrationTest extends BaseIntegrationTest {
 
 	@Test
 	@DisplayName("문제 단건 삭제 API 성공 테스트")
+	@Transactional(propagation = Propagation.NOT_SUPPORTED)
 	void deleteQuestionApiSuccess() throws Exception {
 		// given - 문제셋과 기존 문제 생성
 		QuestionSetEntity questionSet = QuestionSetEntity.of("Sample Subject", QuestionSetCreationType.MANUAL);

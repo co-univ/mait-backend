@@ -184,7 +184,7 @@ class FillBlankQuestionFactoryTest {
 		fillBlankQuestionFactory.deleteSubEntities(question);
 
 		// then
-		verify(fillBlankAnswerEntityRepository).deleteAllByFillBlankQuestionId(1L);
+		verify(fillBlankAnswerEntityRepository).deleteBulkAllByQuestionId(1L);
 	}
 
 	@Test

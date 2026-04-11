@@ -53,7 +53,7 @@ public class MultipleQuestionFactory implements QuestionFactory<MultipleQuestion
 
 	@Override
 	public void deleteSubEntities(QuestionEntity question) {
-		multipleChoiceEntityRepository.deleteAllByQuestionId(question.getId());
+		multipleChoiceEntityRepository.deleteBulkAllByQuestionId(question.getId());
 	}
 
 	@Override
