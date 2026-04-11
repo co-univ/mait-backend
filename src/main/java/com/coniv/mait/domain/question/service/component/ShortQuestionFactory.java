@@ -53,7 +53,7 @@ public class ShortQuestionFactory implements QuestionFactory<ShortQuestionDto> {
 
 	@Override
 	public void deleteSubEntities(QuestionEntity question) {
-		shortAnswerEntityRepository.deleteAllByShortQuestionId(question.getId());
+		shortAnswerEntityRepository.deleteBulkAllByQuestionId(question.getId());
 	}
 
 	@Transactional
