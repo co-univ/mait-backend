@@ -138,6 +138,91 @@ class QuestionAnswerSubmitControllerTest {
 				jsonPath("$.data.isCorrect").value(false));
 	}
 
+	@Test
+	@DisplayName("빈칸 문제 정답 제출 성공")
+	void submitFillBlankQuestionAnswer_Success() throws Exception {
+		// Given
+		Long questionSetId = 1L;
+		Long questionId = 3L;
+		Long userId = 1L;
+
+		String requestJson = """
+			{
+				"type": "FILL_BLANK",
+				"userId": %d,
+				"submitAnswers": [
+					{
+						"number": 1,
+						"answer": "정답"
+					}
+				]
+			}
+			""".formatted(userId);
+
+		AnswerSubmitDto mockResponse = AnswerSubmitDto.builder()
+			.id(3L)
+			.userId(userId)
+			.questionId(questionId)
+			.isCorrect(true)
+			.build();
+
+		when(questionAnswerSubmitService.submitAnswer(eq(questionSetId), eq(questionId), eq(userId), any()))
+			.thenReturn(mockResponse);
+
+		// When & Then
+		mockMvc.perform(
+				post("/api/v1/question-sets/{questionSetId}/questions/{questionId}/submit", questionSetId, questionId)
+					.contentType(MediaType.APPLICATION_JSON)
+					.content(requestJson))
+			.andExpectAll(
+				status().isOk(),
+				jsonPath("$.isSuccess").value(true),
+				jsonPath("$.data.id").value(3),
+				jsonPath("$.data.userId").value(userId),
+				jsonPath("$.data.questionId").value(questionId),
+				jsonPath("$.data.isCorrect").value(true));
+	}
+
+	@Test
+	@DisplayName("순서 문제 정답 제출 성공")
+	void submitOrderingQuestionAnswer_Success() throws Exception {
+		// Given
+		Long questionSetId = 1L;
+		Long questionId = 4L;
+		Long userId = 1L;
+
+		String requestJson = """
+			{
+				"type": "ORDERING",
+				"userId": %d,
+				"submitAnswers": [3, 1, 2]
+			}
+			""".formatted(userId);
+
+		AnswerSubmitDto mockResponse = AnswerSubmitDto.builder()
+			.id(4L)
+			.userId(userId)
+			.questionId(questionId)
+			.isCorrect(false)
+			.build();
+
+		when(questionAnswerSubmitService.submitAnswer(eq(questionSetId), eq(questionId), eq(userId), any()))
+			.thenReturn(mockResponse);
+
+		// When & Then
+		mockMvc.perform(
+				post("/api/v1/question-sets/{questionSetId}/questions/{questionId}/submit", questionSetId, questionId)
+					.contentType(MediaType.APPLICATION_JSON)
+					.content(requestJson))
+			.andExpectAll(
+				status().isOk(),
+				jsonPath("$.isSuccess").value(true),
+				jsonPath("$.data.id").value(4),
+				jsonPath("$.data.userId").value(userId),
+				jsonPath("$.data.questionId").value(questionId),
+				jsonPath("$.data.isCorrect").value(false));
+	}
+
 	static Stream<Arguments> validationFailureCases() {
 		return Stream.of(
 			Arguments.of(
