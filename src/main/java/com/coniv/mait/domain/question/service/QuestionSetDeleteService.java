@@ -29,7 +29,6 @@ import com.coniv.mait.domain.solve.repository.StudyAnswerDraftEntityRepository;
 import com.coniv.mait.domain.user.service.component.TeamRoleValidator;
 import com.coniv.mait.global.event.MaitEventPublisher;
 
-import jakarta.persistence.EntityManager;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.extern.slf4j.Slf4j;
 
@@ -47,7 +46,6 @@ public class QuestionSetDeleteService {
 	private final Map<QuestionType, QuestionFactory<?>> questionFactories;
 	private final TeamRoleValidator teamRoleValidator;
 	private final MaitEventPublisher maitEventPublisher;
-	private final EntityManager entityManager;
 
 	@Autowired
 	public QuestionSetDeleteService(
@@ -60,8 +58,7 @@ public class QuestionSetDeleteService {
 		QuestionScorerEntityRepository questionScorerEntityRepository,
 		StudyAnswerDraftEntityRepository studyAnswerDraftEntityRepository,
 		TeamRoleValidator teamRoleValidator,
-		MaitEventPublisher maitEventPublisher,
-		EntityManager entityManager
+		MaitEventPublisher maitEventPublisher
 	) {
 		this.questionFactories = factories.stream()
 			.collect(Collectors.toUnmodifiableMap(QuestionFactory::getQuestionType, Function.identity()));
@@ -74,7 +71,6 @@ public class QuestionSetDeleteService {
 		this.studyAnswerDraftEntityRepository = studyAnswerDraftEntityRepository;
 		this.teamRoleValidator = teamRoleValidator;
 		this.maitEventPublisher = maitEventPublisher;
-		this.entityManager = entityManager;
 	}
 
 	@Transactional
@@ -118,11 +114,7 @@ public class QuestionSetDeleteService {
 		questions.forEach(question ->
 			questionFactories.get(question.getType()).deleteSubEntities(question));
 		questionEntityRepository.deleteAllByQuestionSetId(questionSetId);
-
-		// Bulk delete 이후 managed association이 flush에 개입하지 않도록 컨텍스트를 비운다.
-		entityManager.flush();
-		entityManager.clear();
-		questionSetEntityRepository.deleteByIdInBulk(questionSetId);
+		questionSetEntityRepository.deleteById(questionSetId);
 
 		maitEventPublisher.publishEvent(QuestionSetDeletedEvent.builder()
 			.questionSetId(questionSetId)
