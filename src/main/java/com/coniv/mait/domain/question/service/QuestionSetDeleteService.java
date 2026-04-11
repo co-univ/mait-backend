@@ -96,8 +96,7 @@ public class QuestionSetDeleteService {
 		}
 
 		// 참가자 삭제
-		if (questionSet.getSolveMode() == QuestionSetSolveMode.LIVE_TIME
-			&& questionSet.getStatus() == QuestionSetStatus.AFTER) {
+		if (questionSet.getSolveMode() == QuestionSetSolveMode.LIVE_TIME && questionSet.getStatus().isCompleted()) {
 			questionSetParticipantRepository.deleteAllByQuestionSetId(questionSetId);
 			questionScorerEntityRepository.deleteAllByQuestionIdIn(questionIds);
 		}
