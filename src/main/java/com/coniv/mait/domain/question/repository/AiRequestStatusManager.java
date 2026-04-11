@@ -14,13 +14,13 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class AiRequestStatusManager {
 
-	private static final long STATUS_TTL_MINUTES = 60;
+	private static final long STATUS_TTL_HOURS = 3;
 
 	private final RedisTemplate<String, String> redisTemplate;
 
 	public void updateStatus(Long questionSetId, AiRequestStatus status) {
 		String key = QuestionRedisKeys.aiStatus(questionSetId);
-		redisTemplate.opsForValue().set(key, status.name(), STATUS_TTL_MINUTES, TimeUnit.MINUTES);
+		redisTemplate.opsForValue().set(key, status.name(), STATUS_TTL_HOURS, TimeUnit.HOURS);
 	}
 
 	public AiRequestStatus getStatus(Long questionSetId) {
