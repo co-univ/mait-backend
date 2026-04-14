@@ -24,6 +24,7 @@ import com.coniv.mait.domain.question.enums.DeliveryMode;
 import com.coniv.mait.domain.question.service.QuestionSetDeleteService;
 import com.coniv.mait.domain.question.service.QuestionSetMaterialService;
 import com.coniv.mait.domain.question.service.QuestionSetService;
+import com.coniv.mait.domain.question.service.StudyQuestionSetQueryService;
 import com.coniv.mait.domain.question.service.dto.QuestionSetDto;
 import com.coniv.mait.domain.question.service.dto.QuestionSetMaterialDto;
 import com.coniv.mait.global.auth.model.MaitUser;
@@ -53,6 +54,8 @@ public class QuestionSetController {
 
 	private final QuestionSetService questionSetService;
 
+	private final StudyQuestionSetQueryService studyQuestionSetQueryService;
+
 	private final QuestionSetDeleteService questionSetDeleteService;
 
 	private final QuestionSetMaterialService questionSetMaterialService;
@@ -78,13 +81,21 @@ public class QuestionSetController {
 	}
 
 	@Operation(summary = "문제 셋 목록 조회")
-	@GetMapping
+	@GetMapping(params = {"mode", "mode!=STUDY"})
 	public ResponseEntity<ApiResponse<QuestionSetsApiResponse>> getQuestionSets(
 		@AuthenticationPrincipal MaitUser user,
 		@RequestParam(value = "mode") DeliveryMode mode, @RequestParam("teamId") Long teamId) {
 		QuestionSetContainer questionSets = questionSetService.getQuestionSets(teamId, mode, user);
-		QuestionSetsApiResponse response = QuestionSetsApiResponse.of(mode, questionSets);
-		return ResponseEntity.ok(ApiResponse.ok(response));
+		return ResponseEntity.ok(ApiResponse.ok(QuestionSetsApiResponse.of(mode, questionSets)));
+	}
+
+	@Operation(summary = "학습 모드 유저 풀이 여부에 따른 문제 셋 목록 조회")
+	@GetMapping(params = "mode=STUDY")
+	public ResponseEntity<ApiResponse<QuestionSetsApiResponse>> getStudyQuestionSets(
+		@AuthenticationPrincipal MaitUser user,
+		@RequestParam(value = "mode") DeliveryMode mode, @RequestParam("teamId") Long teamId) {
+		return ResponseEntity.ok(ApiResponse.ok(
+			QuestionSetsApiResponse.of(mode, studyQuestionSetQueryService.getStudyQuestionSets(teamId, user))));
 	}
 
 	@Operation(summary = "문제 셋 단건 조회")

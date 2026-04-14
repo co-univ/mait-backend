@@ -23,7 +23,6 @@ import com.coniv.mait.domain.question.repository.MultipleChoiceEntityRepository;
 import com.coniv.mait.domain.question.repository.QuestionEntityRepository;
 import com.coniv.mait.domain.question.repository.QuestionSetEntityRepository;
 import com.coniv.mait.domain.solve.entity.SolvingSessionEntity;
-import com.coniv.mait.domain.solve.enums.SolvingStatus;
 import com.coniv.mait.domain.solve.repository.SolvingSessionEntityRepository;
 import com.coniv.mait.domain.team.entity.TeamEntity;
 import com.coniv.mait.domain.team.entity.TeamUserEntity;
@@ -200,9 +199,8 @@ public class QuestionSetApiIntegrationTest extends BaseIntegrationTest {
 		UserEntity currentUser = userEntityRepository.findByEmail("user@example.com").orElseThrow();
 		TeamEntity team = teamEntityRepository.save(TeamEntity.builder().name("코니브").creatorId(1L).build());
 		teamUserEntityRepository.save(TeamUserEntity.createPlayerUser(currentUser, team));
-		final DeliveryMode deliveryMode = DeliveryMode.STUDY;
 
-		QuestionSetEntity notStartedSet = questionSetEntityRepository.save(
+		questionSetEntityRepository.save(
 			QuestionSetEntity.builder()
 				.subject("아직 안 푼 문제")
 				.teamId(team.getId())
@@ -235,19 +233,25 @@ public class QuestionSetApiIntegrationTest extends BaseIntegrationTest {
 		// when & then
 		mockMvc.perform(get("/api/v1/question-sets")
 				.param("teamId", String.valueOf(team.getId()))
-				.param("mode", deliveryMode.name())
+				.param("mode", DeliveryMode.STUDY.name())
 				.accept(MediaType.APPLICATION_JSON))
 			.andExpectAll(
 				status().isOk(),
 				jsonPath("$.data.mode").value("STUDY"),
 				jsonPath("$.data.content.questionSets.BEFORE").isArray(),
 				jsonPath("$.data.content.questionSets.BEFORE.length()").value(1),
+				jsonPath("$.data.content.questionSets.BEFORE[0].userStudyStatus").value("BEFORE"),
+				jsonPath("$.data.content.questionSets.BEFORE[0].solvingSessionId").doesNotExist(),
 				jsonPath("$.data.content.questionSets.BEFORE[0].subject").value("아직 안 푼 문제"),
 				jsonPath("$.data.content.questionSets.ONGOING").isArray(),
 				jsonPath("$.data.content.questionSets.ONGOING.length()").value(1),
+				jsonPath("$.data.content.questionSets.ONGOING[0].userStudyStatus").value("ONGOING"),
+				jsonPath("$.data.content.questionSets.ONGOING[0].solvingSessionId").exists(),
 				jsonPath("$.data.content.questionSets.ONGOING[0].subject").value("풀고 있는 문제"),
 				jsonPath("$.data.content.questionSets.AFTER").isArray(),
 				jsonPath("$.data.content.questionSets.AFTER.length()").value(1),
+				jsonPath("$.data.content.questionSets.AFTER[0].userStudyStatus").value("AFTER"),
+				jsonPath("$.data.content.questionSets.AFTER[0].solvingSessionId").exists(),
 				jsonPath("$.data.content.questionSets.AFTER[0].subject").value("채점 완료 문제"));
 	}
 

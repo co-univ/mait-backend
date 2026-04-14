@@ -12,7 +12,7 @@ public record QuestionSetsApiResponse(
 	DeliveryMode mode,
 
 	@Schema(description = "문제 셋 컨테이너 (모드에 따라 List 또는 Map 구조)",
-		oneOf = {QuestionSetList.class, QuestionSetGroup.class})
+		oneOf = {QuestionSetList.class, QuestionSetGroup.class, StudyQuestionSetGroup.class})
 	QuestionSetContainer content
 ) {
 

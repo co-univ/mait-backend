@@ -21,7 +21,6 @@ import com.coniv.mait.domain.question.enums.QuestionSetSolveMode;
 import com.coniv.mait.domain.question.enums.QuestionSetStatus;
 import com.coniv.mait.domain.question.enums.QuestionSetVisibility;
 import com.coniv.mait.domain.question.enums.QuestionValidationResult;
-import com.coniv.mait.domain.question.enums.UserStudyStatus;
 import com.coniv.mait.domain.question.exception.QuestionSetStatusException;
 import com.coniv.mait.domain.question.exception.code.QuestionSetStatusExceptionCode;
 import com.coniv.mait.domain.question.repository.AiRequestStatusManager;
@@ -29,15 +28,11 @@ import com.coniv.mait.domain.question.repository.QuestionEntityRepository;
 import com.coniv.mait.domain.question.repository.QuestionSetEntityRepository;
 import com.coniv.mait.domain.question.service.dto.QuestionSetDto;
 import com.coniv.mait.domain.question.service.dto.QuestionValidateDto;
-import com.coniv.mait.domain.solve.entity.SolvingSessionEntity;
-import com.coniv.mait.domain.solve.enums.SolvingStatus;
-import com.coniv.mait.domain.solve.repository.SolvingSessionEntityRepository;
 import com.coniv.mait.domain.user.service.component.TeamRoleValidator;
 import com.coniv.mait.global.auth.model.MaitUser;
 import com.coniv.mait.web.question.dto.QuestionSetContainer;
 import com.coniv.mait.web.question.dto.QuestionSetGroup;
 import com.coniv.mait.web.question.dto.QuestionSetList;
-import com.coniv.mait.web.question.dto.StudyQuestionSetGroup;
 
 import jakarta.persistence.EntityNotFoundException;
 
@@ -66,9 +61,6 @@ class QuestionSetServiceTest {
 
 	@Mock
 	private AiRequestStatusManager aiRequestStatusManager;
-
-	@Mock
-	private SolvingSessionEntityRepository solvingSessionEntityRepository;
 
 	// Todo: 생성 관련 feature가 최종 완성 시에 수정
 	// @Test
@@ -209,112 +201,6 @@ class QuestionSetServiceTest {
 		verify(teamRoleValidator).checkIsTeamMember(teamId, USER_ID);
 		verify(teamRoleValidator).checkHasCreateQuestionSetAuthority(teamId, USER_ID);
 		verify(questionSetEntityRepository).findAllByTeamId(teamId);
-	}
-
-	@Test
-	@DisplayName("문제 셋 목록 조회 테스트 - STUDY 모드는 유저 풀이 세션 기준으로 상태를 그룹화한다")
-	void getQuestionSets_StudyMode_GroupsByUserSolvingSession() {
-		// given
-		final Long teamId = 1L;
-		final LocalDateTime now = LocalDateTime.now();
-		final DeliveryMode mode = DeliveryMode.STUDY;
-		final MaitUser user = MaitUser.builder().id(USER_ID).build();
-
-		QuestionSetEntity notStartedEntity = mock(QuestionSetEntity.class);
-		QuestionSetEntity progressingEntity = mock(QuestionSetEntity.class);
-		QuestionSetEntity completedEntity = mock(QuestionSetEntity.class);
-
-		when(notStartedEntity.getId()).thenReturn(1L);
-		when(notStartedEntity.getDisplayMode()).thenReturn(mode);
-		when(notStartedEntity.getStatus()).thenReturn(QuestionSetStatus.BEFORE);
-		when(notStartedEntity.getTeamId()).thenReturn(teamId);
-		when(notStartedEntity.getModifiedAt()).thenReturn(now.minusDays(2));
-
-		when(progressingEntity.getId()).thenReturn(2L);
-		when(progressingEntity.getDisplayMode()).thenReturn(mode);
-		when(progressingEntity.getStatus()).thenReturn(QuestionSetStatus.BEFORE);
-		when(progressingEntity.getTeamId()).thenReturn(teamId);
-		when(progressingEntity.getModifiedAt()).thenReturn(now.minusDays(1));
-
-		when(completedEntity.getId()).thenReturn(3L);
-		when(completedEntity.getDisplayMode()).thenReturn(mode);
-		when(completedEntity.getStatus()).thenReturn(QuestionSetStatus.BEFORE);
-		when(completedEntity.getTeamId()).thenReturn(teamId);
-		when(completedEntity.getModifiedAt()).thenReturn(now);
-
-		when(questionSetEntityRepository.findAllByTeamId(teamId))
-			.thenReturn(List.of(notStartedEntity, progressingEntity, completedEntity));
-
-		SolvingSessionEntity progressingSession = mock(SolvingSessionEntity.class);
-		SolvingSessionEntity completedSession = mock(SolvingSessionEntity.class);
-		QuestionSetEntity progressingRef = mock(QuestionSetEntity.class);
-		QuestionSetEntity completedRef = mock(QuestionSetEntity.class);
-
-		when(progressingSession.getStatus()).thenReturn(SolvingStatus.PROGRESSING);
-		when(progressingSession.getQuestionSet()).thenReturn(progressingRef);
-		when(progressingRef.getId()).thenReturn(2L);
-
-		when(completedSession.getStatus()).thenReturn(SolvingStatus.COMPLETE);
-		when(completedSession.getQuestionSet()).thenReturn(completedRef);
-		when(completedRef.getId()).thenReturn(3L);
-
-		when(solvingSessionEntityRepository.findAllByUserIdAndModeAndQuestionSetTeamId(
-			USER_ID, DeliveryMode.STUDY, teamId))
-			.thenReturn(List.of(progressingSession, completedSession));
-
-		// when
-		QuestionSetContainer result = questionSetService.getQuestionSets(teamId, mode, user);
-
-		// then
-		assertThat(result).isInstanceOf(StudyQuestionSetGroup.class);
-		StudyQuestionSetGroup group = (StudyQuestionSetGroup)result;
-
-		assertThat(group.questionSets().get(UserStudyStatus.BEFORE)).hasSize(1);
-		assertThat(group.questionSets().get(UserStudyStatus.BEFORE).get(0).getId()).isEqualTo(1L);
-
-		assertThat(group.questionSets().get(UserStudyStatus.ONGOING)).hasSize(1);
-		assertThat(group.questionSets().get(UserStudyStatus.ONGOING).get(0).getId()).isEqualTo(2L);
-
-		assertThat(group.questionSets().get(UserStudyStatus.AFTER)).hasSize(1);
-		assertThat(group.questionSets().get(UserStudyStatus.AFTER).get(0).getId()).isEqualTo(3L);
-
-		verify(teamRoleValidator).checkIsTeamMember(teamId, USER_ID);
-		verify(teamRoleValidator, never()).checkHasCreateQuestionSetAuthority(anyLong(), anyLong());
-		verify(solvingSessionEntityRepository)
-			.findAllByUserIdAndModeAndQuestionSetTeamId(USER_ID, DeliveryMode.STUDY, teamId);
-	}
-
-	@Test
-	@DisplayName("문제 셋 목록 조회 테스트 - STUDY 모드에서 전역 상태와 무관하게 유저 세션이 없으면 BEFORE로 표시된다")
-	void getQuestionSets_StudyMode_NoSession_DisplaysAsBefore() {
-		// given
-		final Long teamId = 1L;
-		final DeliveryMode mode = DeliveryMode.STUDY;
-		final MaitUser user = MaitUser.builder().id(USER_ID).build();
-
-		QuestionSetEntity entity = mock(QuestionSetEntity.class);
-		when(entity.getId()).thenReturn(1L);
-		when(entity.getDisplayMode()).thenReturn(mode);
-		when(entity.getStatus()).thenReturn(QuestionSetStatus.ONGOING); // 전역 상태는 ONGOING이지만
-		when(entity.getTeamId()).thenReturn(teamId);
-		when(entity.getModifiedAt()).thenReturn(LocalDateTime.now());
-
-		when(questionSetEntityRepository.findAllByTeamId(teamId)).thenReturn(List.of(entity));
-		when(solvingSessionEntityRepository.findAllByUserIdAndModeAndQuestionSetTeamId(
-			USER_ID, DeliveryMode.STUDY, teamId))
-			.thenReturn(List.of()); // 유저 세션 없음
-
-		// when
-		QuestionSetContainer result = questionSetService.getQuestionSets(teamId, mode, user);
-
-		// then
-		assertThat(result).isInstanceOf(StudyQuestionSetGroup.class);
-		StudyQuestionSetGroup group = (StudyQuestionSetGroup)result;
-
-		assertThat(group.questionSets()).containsKey(UserStudyStatus.BEFORE);
-		assertThat(group.questionSets().get(UserStudyStatus.BEFORE)).hasSize(1);
-		assertThat(group.questionSets().get(UserStudyStatus.BEFORE).get(0).getId()).isEqualTo(1L);
-		assertThat(group.questionSets()).doesNotContainKey(UserStudyStatus.ONGOING);
 	}
 
 	@Test

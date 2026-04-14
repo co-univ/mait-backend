@@ -2,8 +2,6 @@ package com.coniv.mait.domain.question.service;
 
 import java.util.Comparator;
 import java.util.List;
-import java.util.Map;
-import java.util.stream.Collectors;
 
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
@@ -17,7 +15,6 @@ import com.coniv.mait.domain.question.enums.DeliveryMode;
 import com.coniv.mait.domain.question.enums.QuestionSetCreationType;
 import com.coniv.mait.domain.question.enums.QuestionSetSolveMode;
 import com.coniv.mait.domain.question.enums.QuestionSetVisibility;
-import com.coniv.mait.domain.question.enums.UserStudyStatus;
 import com.coniv.mait.domain.question.event.AiQuestionGenerationRequestedEvent;
 import com.coniv.mait.domain.question.repository.AiRequestStatusManager;
 import com.coniv.mait.domain.question.repository.QuestionEntityRepository;
@@ -26,16 +23,12 @@ import com.coniv.mait.domain.question.service.component.QuestionChecker;
 import com.coniv.mait.domain.question.service.dto.QuestionCount;
 import com.coniv.mait.domain.question.service.dto.QuestionSetDto;
 import com.coniv.mait.domain.question.service.dto.QuestionValidateDto;
-import com.coniv.mait.domain.solve.entity.SolvingSessionEntity;
-import com.coniv.mait.domain.solve.enums.SolvingStatus;
-import com.coniv.mait.domain.solve.repository.SolvingSessionEntityRepository;
 import com.coniv.mait.domain.user.service.component.TeamRoleValidator;
 import com.coniv.mait.global.auth.model.MaitUser;
 import com.coniv.mait.global.event.MaitEventPublisher;
 import com.coniv.mait.web.question.dto.QuestionSetContainer;
 import com.coniv.mait.web.question.dto.QuestionSetGroup;
 import com.coniv.mait.web.question.dto.QuestionSetList;
-import com.coniv.mait.web.question.dto.StudyQuestionSetGroup;
 
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
@@ -64,8 +57,6 @@ public class QuestionSetService {
 	private final QuestionSetMaterialService questionSetMaterialService;
 
 	private final AiRequestStatusManager aiRequestStatusManager;
-
-	private final SolvingSessionEntityRepository solvingSessionEntityRepository;
 
 	private final RedisTemplate<String, String> redisTemplate;
 
@@ -121,39 +112,7 @@ public class QuestionSetService {
 			return QuestionSetList.of(questionSets);
 		}
 
-		if (mode == DeliveryMode.STUDY) {
-			return buildStudyQuestionSetGroup(questionSets, userId, teamId);
-		}
-
 		return QuestionSetGroup.of(questionSets);
-	}
-
-	private StudyQuestionSetGroup buildStudyQuestionSetGroup(final List<QuestionSetDto> questionSets,
-		final Long userId, final Long teamId) {
-		Map<Long, SolvingStatus> sessionStatusByQuestionSetId =
-			solvingSessionEntityRepository.findAllByUserIdAndModeAndQuestionSetTeamId(userId, DeliveryMode.STUDY,
-					teamId)
-				.stream()
-				.collect(Collectors.toMap(
-					session -> session.getQuestionSet().getId(),
-					SolvingSessionEntity::getStatus
-				));
-
-		List<QuestionSetDto> withUserStatus = questionSets.stream()
-			.peek(dto -> dto.setUserStudyStatus(resolveUserStudyStatus(sessionStatusByQuestionSetId.get(dto.getId()))))
-			.toList();
-
-		return StudyQuestionSetGroup.from(withUserStatus);
-	}
-
-	private UserStudyStatus resolveUserStudyStatus(final SolvingStatus solvingStatus) {
-		if (solvingStatus == null) {
-			return UserStudyStatus.BEFORE;
-		}
-		return switch (solvingStatus) {
-			case PROGRESSING -> UserStudyStatus.ONGOING;
-			case COMPLETE -> UserStudyStatus.AFTER;
-		};
 	}
 
 	public QuestionSetDto getQuestionSet(final Long questionSetId, final MaitUser maitUser) {
