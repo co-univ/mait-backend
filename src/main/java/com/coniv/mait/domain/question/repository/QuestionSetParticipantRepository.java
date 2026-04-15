@@ -23,6 +23,12 @@ public interface QuestionSetParticipantRepository extends JpaRepository<Question
 	List<QuestionSetParticipantEntity> findAllByQuestionSetWithFetchJoinUser(
 		@Param("questionSet") QuestionSetEntity questionSet);
 
+	@Query("SELECT p FROM QuestionSetParticipantEntity p JOIN FETCH p.questionSet "
+		+ "WHERE p.user.id = :userId AND p.questionSet.teamId = :teamId")
+	List<QuestionSetParticipantEntity> findAllByUserIdAndQuestionSetTeamId(
+		@Param("userId") Long userId,
+		@Param("teamId") Long teamId);
+
 	List<QuestionSetParticipantEntity> findAllByQuestionSetId(Long questionSetId);
 
 	boolean existsByQuestionSetIdAndUserIdAndStatus(Long questionSetId, Long userId, ParticipantStatus status);
