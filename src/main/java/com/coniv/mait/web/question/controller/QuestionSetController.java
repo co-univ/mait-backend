@@ -26,6 +26,7 @@ import com.coniv.mait.domain.question.service.QuestionSetMaterialService;
 import com.coniv.mait.domain.question.service.QuestionSetService;
 import com.coniv.mait.domain.question.service.dto.QuestionSetDto;
 import com.coniv.mait.domain.question.service.dto.QuestionSetMaterialDto;
+import com.coniv.mait.domain.solve.service.StudyModeService;
 import com.coniv.mait.global.auth.model.MaitUser;
 import com.coniv.mait.global.response.ApiResponse;
 import com.coniv.mait.web.question.dto.AiRequestStatusApiResponse;
@@ -33,9 +34,11 @@ import com.coniv.mait.web.question.dto.CreateQuestionSetApiRequest;
 import com.coniv.mait.web.question.dto.CreateQuestionSetApiResponse;
 import com.coniv.mait.web.question.dto.QuestionSetApiResponse;
 import com.coniv.mait.web.question.dto.QuestionSetContainer;
+import com.coniv.mait.web.question.dto.QuestionSetGroup;
 import com.coniv.mait.web.question.dto.QuestionSetMaterialApiResponse;
 import com.coniv.mait.web.question.dto.QuestionSetsApiResponse;
 import com.coniv.mait.web.question.dto.QuestionValidationApiResponse;
+import com.coniv.mait.web.question.dto.StudyQuestionSetGroup;
 import com.coniv.mait.web.question.dto.UpdateQuestionSetApiRequest;
 import com.coniv.mait.web.question.dto.UpdateQuestionSetFieldApiRequest;
 import com.coniv.mait.web.question.dto.UpdateQuestionSetReviewApiRequest;
@@ -52,6 +55,8 @@ import lombok.RequiredArgsConstructor;
 public class QuestionSetController {
 
 	private final QuestionSetService questionSetService;
+
+	private final StudyModeService studyModeService;
 
 	private final QuestionSetDeleteService questionSetDeleteService;
 
@@ -78,13 +83,26 @@ public class QuestionSetController {
 	}
 
 	@Operation(summary = "문제 셋 목록 조회")
-	@GetMapping
+	@GetMapping(params = {"mode", "mode!=STUDY", "mode!=MANAGING"})
 	public ResponseEntity<ApiResponse<QuestionSetsApiResponse>> getQuestionSets(
-		@AuthenticationPrincipal MaitUser user,
-		@RequestParam(value = "mode") DeliveryMode mode, @RequestParam("teamId") Long teamId) {
+		@AuthenticationPrincipal MaitUser user, @RequestParam(value = "mode") DeliveryMode mode,
+		@RequestParam("teamId") Long teamId) {
 		QuestionSetContainer questionSets = questionSetService.getQuestionSets(teamId, mode, user);
-		QuestionSetsApiResponse response = QuestionSetsApiResponse.of(mode, questionSets);
-		return ResponseEntity.ok(ApiResponse.ok(response));
+		return ResponseEntity.ok(ApiResponse.ok(QuestionSetsApiResponse.of(mode, questionSets)));
+	}
+
+	@Operation(summary = "학습 모드 관리 - 문제 셋 상태별 목록 조회")
+	@GetMapping("/study/management")
+	public ResponseEntity<ApiResponse<QuestionSetGroup>> getStudyManagementQuestionSets(
+		@AuthenticationPrincipal MaitUser user, @RequestParam("teamId") Long teamId) {
+		return ResponseEntity.ok(ApiResponse.ok(questionSetService.getStudyManagementQuestionSets(teamId, user)));
+	}
+
+	@Operation(summary = "학습 모드 풀이 - 유저 풀이 상태별 문제 셋 목록 조회")
+	@GetMapping("/study/progress")
+	public ResponseEntity<ApiResponse<StudyQuestionSetGroup>> getStudyProgressQuestionSets(
+		@AuthenticationPrincipal MaitUser user, @RequestParam("teamId") Long teamId) {
+		return ResponseEntity.ok(ApiResponse.ok(studyModeService.getStudyQuestionSets(teamId, user)));
 	}
 
 	@Operation(summary = "문제 셋 단건 조회")

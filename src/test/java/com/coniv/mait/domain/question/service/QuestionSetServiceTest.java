@@ -184,8 +184,8 @@ class QuestionSetServiceTest {
 	}
 
 	@Test
-	@DisplayName("문제 셋 목록 조회 테스트 - MANAGING 모드는 생성 권한을 검증한다")
-	void getQuestionSets_ManagingMode_ChecksCreateAuthority() {
+	@DisplayName("문제 셋 목록 조회 테스트 - MANAGING 모드는 생성 권한을 검증하지 않는다")
+	void getQuestionSets_ManagingMode_DoesNotCheckCreateAuthority() {
 		// given
 		final Long teamId = 1L;
 		final DeliveryMode mode = DeliveryMode.MANAGING;
@@ -199,6 +199,47 @@ class QuestionSetServiceTest {
 		// then
 		assertThat(result).isInstanceOf(QuestionSetGroup.class);
 		verify(teamRoleValidator).checkIsTeamMember(teamId, USER_ID);
+		verify(teamRoleValidator, never()).checkHasCreateQuestionSetAuthority(anyLong(), anyLong());
+		verify(questionSetEntityRepository).findAllByTeamId(teamId);
+	}
+
+	@Test
+	@DisplayName("학습 모드 관리 문제 셋 목록 조회 테스트 - STUDY 문제 셋만 상태별로 그룹화한다")
+	void getStudyManagementQuestionSets_ReturnsStudyQuestionSetGroup() {
+		// given
+		final Long teamId = 1L;
+		final LocalDateTime now = LocalDateTime.now();
+		final MaitUser user = MaitUser.builder().id(USER_ID).build();
+		QuestionSetEntity olderStudySet = mock(QuestionSetEntity.class);
+		QuestionSetEntity newerStudySet = mock(QuestionSetEntity.class);
+		QuestionSetEntity liveSet = mock(QuestionSetEntity.class);
+
+		when(olderStudySet.getId()).thenReturn(1L);
+		when(olderStudySet.getDisplayMode()).thenReturn(DeliveryMode.STUDY);
+		when(olderStudySet.getStatus()).thenReturn(QuestionSetStatus.BEFORE);
+		when(olderStudySet.getTeamId()).thenReturn(teamId);
+		when(olderStudySet.getModifiedAt()).thenReturn(now.minusDays(1));
+
+		when(newerStudySet.getId()).thenReturn(2L);
+		when(newerStudySet.getDisplayMode()).thenReturn(DeliveryMode.STUDY);
+		when(newerStudySet.getStatus()).thenReturn(QuestionSetStatus.BEFORE);
+		when(newerStudySet.getTeamId()).thenReturn(teamId);
+		when(newerStudySet.getModifiedAt()).thenReturn(now);
+
+		when(liveSet.getDisplayMode()).thenReturn(DeliveryMode.LIVE_TIME);
+
+		when(questionSetEntityRepository.findAllByTeamId(teamId))
+			.thenReturn(List.of(olderStudySet, newerStudySet, liveSet));
+
+		// when
+		QuestionSetGroup result = questionSetService.getStudyManagementQuestionSets(teamId, user);
+
+		// then
+		assertThat(result.questionSets()).containsOnlyKeys(QuestionSetStatus.BEFORE);
+		assertThat(result.questionSets().get(QuestionSetStatus.BEFORE)).hasSize(2);
+		assertThat(result.questionSets().get(QuestionSetStatus.BEFORE).get(0).getId()).isEqualTo(2L);
+		assertThat(result.questionSets().get(QuestionSetStatus.BEFORE).get(1).getId()).isEqualTo(1L);
+
 		verify(teamRoleValidator).checkHasCreateQuestionSetAuthority(teamId, USER_ID);
 		verify(questionSetEntityRepository).findAllByTeamId(teamId);
 	}

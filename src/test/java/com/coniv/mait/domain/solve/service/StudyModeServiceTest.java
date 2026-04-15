@@ -3,6 +3,7 @@ package com.coniv.mait.domain.solve.service;
 import static org.assertj.core.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -16,6 +17,9 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import com.coniv.mait.domain.question.entity.QuestionEntity;
 import com.coniv.mait.domain.question.entity.QuestionSetEntity;
 import com.coniv.mait.domain.question.enums.DeliveryMode;
+import com.coniv.mait.domain.question.enums.QuestionSetSolveMode;
+import com.coniv.mait.domain.question.enums.QuestionSetStatus;
+import com.coniv.mait.domain.question.enums.UserStudyStatus;
 import com.coniv.mait.domain.question.repository.QuestionSetEntityRepository;
 import com.coniv.mait.domain.question.service.component.QuestionReader;
 import com.coniv.mait.domain.solve.entity.SolvingSessionEntity;
@@ -38,6 +42,7 @@ import com.coniv.mait.domain.user.exception.UserRoleException;
 import com.coniv.mait.domain.user.service.component.TeamRoleValidator;
 import com.coniv.mait.domain.user.service.component.UserReader;
 import com.coniv.mait.global.auth.model.MaitUser;
+import com.coniv.mait.web.question.dto.StudyQuestionSetGroup;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
@@ -83,6 +88,74 @@ class StudyModeServiceTest {
 
 	@Mock
 	private ObjectMapper objectMapper;
+
+	@Test
+	@DisplayName("getStudyQuestionSets - 유저 풀이 세션 기준으로 학습 문제 셋을 그룹화한다")
+	void getStudyQuestionSets_GroupsByUserSolvingSession() {
+		// given
+		LocalDateTime now = LocalDateTime.now();
+		QuestionSetEntity notStartedSet = mockStudyQuestionSet(1L, "아직 안 푼 문제", QuestionSetStatus.BEFORE,
+			now.minusDays(2));
+		QuestionSetEntity progressingSet = mockStudyQuestionSet(2L, "풀고 있는 문제", QuestionSetStatus.ONGOING,
+			now.minusDays(1));
+		QuestionSetEntity completedSet = mockStudyQuestionSet(3L, "채점 완료 문제", QuestionSetStatus.AFTER, now);
+
+		SolvingSessionEntity progressingSession = mockStudySession(100L, 2L, SolvingStatus.PROGRESSING);
+		SolvingSessionEntity completedSession = mockStudySession(101L, 3L, SolvingStatus.COMPLETE);
+
+		when(solvingSessionEntityRepository.findAllByUserIdAndModeAndQuestionSetTeamId(
+			USER_ID, DeliveryMode.STUDY, TEAM_ID))
+			.thenReturn(List.of(progressingSession, completedSession));
+		when(questionSetEntityRepository.findAllByTeamIdAndSolveModeAndStatusIn(
+			eq(TEAM_ID), eq(QuestionSetSolveMode.STUDY), anyList()))
+			.thenReturn(List.of(notStartedSet, progressingSet, completedSet));
+
+		// when
+		StudyQuestionSetGroup result = studyModeService.getStudyQuestionSets(TEAM_ID, MAIT_USER);
+
+		// then
+		assertThat(result.questionSets().get(UserStudyStatus.BEFORE)).hasSize(1);
+		assertThat(result.questionSets().get(UserStudyStatus.BEFORE).get(0).getId()).isEqualTo(1L);
+		assertThat(result.questionSets().get(UserStudyStatus.BEFORE).get(0).getSolvingSessionId()).isNull();
+
+		assertThat(result.questionSets().get(UserStudyStatus.ONGOING)).hasSize(1);
+		assertThat(result.questionSets().get(UserStudyStatus.ONGOING).get(0).getId()).isEqualTo(2L);
+		assertThat(result.questionSets().get(UserStudyStatus.ONGOING).get(0).getSolvingSessionId()).isEqualTo(100L);
+
+		assertThat(result.questionSets().get(UserStudyStatus.AFTER)).hasSize(1);
+		assertThat(result.questionSets().get(UserStudyStatus.AFTER).get(0).getId()).isEqualTo(3L);
+		assertThat(result.questionSets().get(UserStudyStatus.AFTER).get(0).getSolvingSessionId()).isEqualTo(101L);
+
+		verify(teamRoleValidator).checkIsTeamMember(TEAM_ID, USER_ID);
+		verify(solvingSessionEntityRepository)
+			.findAllByUserIdAndModeAndQuestionSetTeamId(USER_ID, DeliveryMode.STUDY, TEAM_ID);
+		verify(questionSetEntityRepository)
+			.findAllByTeamIdAndSolveModeAndStatusIn(eq(TEAM_ID), eq(QuestionSetSolveMode.STUDY), anyList());
+	}
+
+	@Test
+	@DisplayName("getStudyQuestionSets - 유저 세션이 없으면 BEFORE로 표시한다")
+	void getStudyQuestionSets_NoSession_DisplaysAsBefore() {
+		// given
+		QuestionSetEntity questionSet = mockStudyQuestionSet(1L, "아직 안 푼 문제", QuestionSetStatus.ONGOING,
+			LocalDateTime.now());
+
+		when(solvingSessionEntityRepository.findAllByUserIdAndModeAndQuestionSetTeamId(
+			USER_ID, DeliveryMode.STUDY, TEAM_ID))
+			.thenReturn(List.of());
+		when(questionSetEntityRepository.findAllByTeamIdAndSolveModeAndStatusIn(
+			eq(TEAM_ID), eq(QuestionSetSolveMode.STUDY), anyList()))
+			.thenReturn(List.of(questionSet));
+
+		// when
+		StudyQuestionSetGroup result = studyModeService.getStudyQuestionSets(TEAM_ID, MAIT_USER);
+
+		// then
+		assertThat(result.questionSets().get(UserStudyStatus.BEFORE)).hasSize(1);
+		assertThat(result.questionSets().get(UserStudyStatus.BEFORE).get(0).getId()).isEqualTo(1L);
+		assertThat(result.questionSets().get(UserStudyStatus.ONGOING)).isEmpty();
+		assertThat(result.questionSets().get(UserStudyStatus.AFTER)).isEmpty();
+	}
 
 	@Test
 	@DisplayName("startStudyMode - 기존 세션이 없으면 새 세션을 생성하고 draft를 생성한다")
@@ -487,5 +560,26 @@ class StudyModeServiceTest {
 			() -> studyModeService.updateStudyAnswerDraft(MAIT_USER, QUESTION_SET_ID, questionId, submitAnswer))
 			.isInstanceOf(EntityNotFoundException.class)
 			.hasMessage("존재하지 않는 답안 초안 입니다.");
+	}
+
+	private QuestionSetEntity mockStudyQuestionSet(final Long id, final String subject,
+		final QuestionSetStatus status, final LocalDateTime modifiedAt) {
+		QuestionSetEntity questionSet = mock(QuestionSetEntity.class);
+		when(questionSet.getId()).thenReturn(id);
+		when(questionSet.getSubject()).thenReturn(subject);
+		when(questionSet.getStatus()).thenReturn(status);
+		when(questionSet.getModifiedAt()).thenReturn(modifiedAt);
+		return questionSet;
+	}
+
+	private SolvingSessionEntity mockStudySession(final Long id, final Long questionSetId,
+		final SolvingStatus status) {
+		SolvingSessionEntity session = mock(SolvingSessionEntity.class);
+		QuestionSetEntity questionSet = mock(QuestionSetEntity.class);
+		when(session.getId()).thenReturn(id);
+		when(session.getStatus()).thenReturn(status);
+		when(session.getQuestionSet()).thenReturn(questionSet);
+		when(questionSet.getId()).thenReturn(questionSetId);
+		return session;
 	}
 }
