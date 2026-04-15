@@ -1,8 +1,12 @@
 package com.coniv.mait.domain.solve.service;
 
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -10,6 +14,8 @@ import org.springframework.transaction.annotation.Transactional;
 import com.coniv.mait.domain.question.entity.QuestionEntity;
 import com.coniv.mait.domain.question.entity.QuestionSetEntity;
 import com.coniv.mait.domain.question.enums.DeliveryMode;
+import com.coniv.mait.domain.question.enums.QuestionSetSolveMode;
+import com.coniv.mait.domain.question.enums.QuestionSetStatus;
 import com.coniv.mait.domain.question.repository.QuestionSetEntityRepository;
 import com.coniv.mait.domain.question.service.component.QuestionReader;
 import com.coniv.mait.domain.solve.entity.AnswerSubmitRecordEntity;
@@ -32,6 +38,8 @@ import com.coniv.mait.domain.user.entity.UserEntity;
 import com.coniv.mait.domain.user.service.component.TeamRoleValidator;
 import com.coniv.mait.domain.user.service.component.UserReader;
 import com.coniv.mait.global.auth.model.MaitUser;
+import com.coniv.mait.web.question.dto.StudyQuestionSetDto;
+import com.coniv.mait.web.question.dto.StudyQuestionSetGroup;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
@@ -44,6 +52,9 @@ import lombok.extern.slf4j.Slf4j;
 @RequiredArgsConstructor
 public class StudyModeService {
 
+	private static final List<QuestionSetStatus> STUDY_DISPLAY_STATUSES =
+		List.of(QuestionSetStatus.BEFORE, QuestionSetStatus.ONGOING, QuestionSetStatus.AFTER);
+
 	private final ObjectMapper objectMapper;
 	private final UserReader userReader;
 	private final TeamRoleValidator teamRoleValidator;
@@ -55,6 +66,26 @@ public class StudyModeService {
 	private final SolvingSessionEntityRepository solvingSessionEntityRepository;
 	private final StudyAnswerDraftEntityRepository studyAnswerDraftEntityRepository;
 	private final AnswerSubmitRecordEntityRepository answerSubmitRecordEntityRepository;
+
+	@Transactional(readOnly = true)
+	public StudyQuestionSetGroup getStudyQuestionSets(final Long teamId, final MaitUser user) {
+		teamRoleValidator.checkIsTeamMember(teamId, user.id());
+
+		Map<Long, SolvingSessionEntity> sessionByQuestionSetId = solvingSessionEntityRepository.findAllByUserIdAndModeAndQuestionSetTeamId(
+				user.id(), DeliveryMode.STUDY, teamId).stream()
+			.collect(Collectors.toUnmodifiableMap(session ->
+				session.getQuestionSet().getId(), Function.identity()));
+
+		List<StudyQuestionSetDto> questionSets = questionSetEntityRepository.findAllByTeamIdAndSolveModeAndStatusIn(
+				teamId, QuestionSetSolveMode.STUDY, STUDY_DISPLAY_STATUSES).stream()
+			.sorted(Comparator.comparing(
+				QuestionSetEntity::getModifiedAt,
+				Comparator.nullsLast(Comparator.naturalOrder())).reversed())
+			.map(questionSet -> StudyQuestionSetDto.of(questionSet, sessionByQuestionSetId.get(questionSet.getId())))
+			.toList();
+
+		return StudyQuestionSetGroup.from(questionSets);
+	}
 
 	@Transactional
 	public SolvingSessionDto startStudyMode(final MaitUser maitUser, final Long questionSetId) {
@@ -144,7 +175,7 @@ public class StudyModeService {
 		answerSubmitRecordEntityRepository.saveAll(records);
 
 		int totalCount = drafts.size();
-		int correctCount = (int) records.stream()
+		int correctCount = (int)records.stream()
 			.filter(AnswerSubmitRecordEntity::isCorrect)
 			.count();
 

@@ -96,7 +96,8 @@ public class QuestionSetService {
 	public QuestionSetContainer getQuestionSets(final Long teamId, final DeliveryMode mode, final MaitUser user) {
 		final Long userId = user.id();
 		teamRoleValidator.checkIsTeamMember(teamId, userId);
-		if (mode == DeliveryMode.MAKING || mode == DeliveryMode.MANAGING) {
+
+		if (mode == DeliveryMode.MAKING) {
 			teamRoleValidator.checkHasCreateQuestionSetAuthority(teamId, userId);
 		}
 
@@ -111,6 +112,20 @@ public class QuestionSetService {
 		if (mode == DeliveryMode.MAKING || mode == DeliveryMode.REVIEW) {
 			return QuestionSetList.of(questionSets);
 		}
+
+		return QuestionSetGroup.of(questionSets);
+	}
+
+	public QuestionSetGroup getStudyManagementQuestionSets(final Long teamId, final MaitUser user) {
+		teamRoleValidator.checkHasCreateQuestionSetAuthority(teamId, user.id());
+
+		List<QuestionSetDto> questionSets = questionSetEntityRepository.findAllByTeamId(teamId).stream()
+			.filter(questionSet -> questionSet.getDisplayMode() == DeliveryMode.STUDY)
+			.sorted(Comparator.comparing(
+				QuestionSetEntity::getModifiedAt,
+				Comparator.nullsLast(Comparator.naturalOrder())).reversed())
+			.map(QuestionSetDto::from)
+			.toList();
 
 		return QuestionSetGroup.of(questionSets);
 	}

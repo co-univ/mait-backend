@@ -1,5 +1,7 @@
 package com.coniv.mait.domain.question.enums;
 
+import com.coniv.mait.domain.solve.entity.SolvingSessionEntity;
+
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 
@@ -11,4 +13,15 @@ public enum UserStudyStatus {
 	AFTER("풀이 완료");
 
 	private final String description;
+
+	public static UserStudyStatus from(SolvingSessionEntity solvingSession) {
+		if (solvingSession == null) {
+			return BEFORE;
+		}
+
+		return switch (solvingSession.getStatus()) {
+			case PROGRESSING -> UserStudyStatus.ONGOING;
+			case COMPLETE -> UserStudyStatus.AFTER;
+		};
+	}
 }
