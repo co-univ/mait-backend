@@ -94,11 +94,10 @@ public class QuestionSetService {
 	}
 
 	public QuestionSetContainer getQuestionSets(final Long teamId, final DeliveryMode mode, final MaitUser user) {
-		final Long userId = user.id();
-		teamRoleValidator.checkIsTeamMember(teamId, userId);
+		teamRoleValidator.checkIsTeamMember(teamId, user.id());
 
 		if (mode == DeliveryMode.MAKING) {
-			teamRoleValidator.checkHasCreateQuestionSetAuthority(teamId, userId);
+			teamRoleValidator.checkHasCreateQuestionSetAuthority(teamId, user.id());
 		}
 
 		List<QuestionSetDto> questionSets = questionSetEntityRepository.findAllByTeamId(teamId).stream()

@@ -83,7 +83,7 @@ public class QuestionSetController {
 	}
 
 	@Operation(summary = "문제 셋 목록 조회")
-	@GetMapping
+	@GetMapping(params = {"mode", "mode!=STUDY", "mode!=MANAGING"})
 	public ResponseEntity<ApiResponse<QuestionSetsApiResponse>> getQuestionSets(
 		@AuthenticationPrincipal MaitUser user, @RequestParam(value = "mode") DeliveryMode mode,
 		@RequestParam("teamId") Long teamId) {

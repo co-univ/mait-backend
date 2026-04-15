@@ -342,24 +342,33 @@ class QuestionSetControllerTest {
 	}
 
 	@Test
-	@DisplayName("문제 셋 목록 조회 테스트 - MANAGING 모드는 일반 목록 서비스에 위임한다")
-	void getManagingModeQuestionSets_DelegatesToQuestionSetService() throws Exception {
+	@DisplayName("문제 셋 목록 조회 테스트 - MANAGING 모드는 일반 목록 API로 조회하지 않는다")
+	void getManagingModeQuestionSets_DoesNotRouteToQuestionSetService() throws Exception {
 		// given
 		Long teamId = 1L;
-		QuestionSetGroup questionSetGroup = QuestionSetGroup.of(List.of());
-		when(questionSetService.getQuestionSets(eq(teamId), eq(DeliveryMode.MANAGING), any(MaitUser.class)))
-			.thenReturn(questionSetGroup);
 
 		// when & then
 		mockMvc.perform(get("/api/v1/question-sets")
 				.param("teamId", String.valueOf(teamId))
 				.param("mode", DeliveryMode.MANAGING.name()))
-			.andExpectAll(
-				status().isOk(),
-				jsonPath("$.data.mode").value("MANAGING"),
-				jsonPath("$.data.content.questionSets").isMap());
+			.andExpect(status().isBadRequest());
 
-		verify(questionSetService).getQuestionSets(eq(teamId), eq(DeliveryMode.MANAGING), any(MaitUser.class));
+		verify(questionSetService, never()).getQuestionSets(anyLong(), any(), any(MaitUser.class));
+	}
+
+	@Test
+	@DisplayName("문제 셋 목록 조회 테스트 - STUDY 모드는 일반 목록 API로 조회하지 않는다")
+	void getStudyModeQuestionSets_DoesNotRouteToQuestionSetService() throws Exception {
+		// given
+		Long teamId = 1L;
+
+		// when & then
+		mockMvc.perform(get("/api/v1/question-sets")
+				.param("teamId", String.valueOf(teamId))
+				.param("mode", DeliveryMode.STUDY.name()))
+			.andExpect(status().isBadRequest());
+
+		verify(questionSetService, never()).getQuestionSets(anyLong(), any(), any(MaitUser.class));
 	}
 
 	@Test
