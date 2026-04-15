@@ -71,17 +71,19 @@ public class StudyModeService {
 	public StudyQuestionSetGroup getStudyQuestionSets(final Long teamId, final MaitUser user) {
 		teamRoleValidator.checkIsTeamMember(teamId, user.id());
 
-		Map<Long, SolvingSessionEntity> sessionByQuestionSetId = solvingSessionEntityRepository.findAllByUserIdAndModeAndQuestionSetTeamId(
-				user.id(), DeliveryMode.STUDY, teamId).stream()
-			.collect(Collectors.toUnmodifiableMap(session ->
-				session.getQuestionSet().getId(), Function.identity()));
+		Map<Long, SolvingSessionEntity> sessionByQuestionSetId =
+			solvingSessionEntityRepository.findAllByUserIdAndModeAndQuestionSetTeamId(user.id(), DeliveryMode.STUDY,
+					teamId).stream()
+				.collect(Collectors.toUnmodifiableMap(session ->
+					session.getQuestionSet().getId(), Function.identity()));
 
 		List<StudyQuestionSetDto> questionSets = questionSetEntityRepository.findAllByTeamIdAndSolveModeAndStatusIn(
 				teamId, QuestionSetSolveMode.STUDY, STUDY_DISPLAY_STATUSES).stream()
 			.sorted(Comparator.comparing(
 				QuestionSetEntity::getModifiedAt,
 				Comparator.nullsLast(Comparator.naturalOrder())).reversed())
-			.map(questionSet -> StudyQuestionSetDto.of(questionSet, sessionByQuestionSetId.get(questionSet.getId())))
+			.map(questionSet ->
+				StudyQuestionSetDto.of(questionSet, sessionByQuestionSetId.get(questionSet.getId())))
 			.toList();
 
 		return StudyQuestionSetGroup.from(questionSets);
