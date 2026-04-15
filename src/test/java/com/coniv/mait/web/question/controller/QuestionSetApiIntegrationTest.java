@@ -193,8 +193,8 @@ public class QuestionSetApiIntegrationTest extends BaseIntegrationTest {
 	}
 
 	@Test
-	@DisplayName("문제 셋 목록 조회 API 성공 테스트 - STUDY 모드에서 사용자별 풀이 상태 포함")
-	void getQuestionSetsApiSuccess_StudyModeWithUserSolveStatus() throws Exception {
+	@DisplayName("학습 모드 풀이 문제 셋 목록 조회 API 성공 테스트 - 사용자별 풀이 상태 포함")
+	void getStudyProgressQuestionSetsApiSuccess_WithUserSolveStatus() throws Exception {
 		// given
 		UserEntity currentUser = userEntityRepository.findByEmail("user@example.com").orElseThrow();
 		TeamEntity team = teamEntityRepository.save(TeamEntity.builder().name("코니브").creatorId(1L).build());
@@ -231,28 +231,63 @@ public class QuestionSetApiIntegrationTest extends BaseIntegrationTest {
 		solvingSessionEntityRepository.save(completedSession);
 
 		// when & then
-		mockMvc.perform(get("/api/v1/question-sets")
+		mockMvc.perform(get("/api/v1/question-sets/study/progress")
 				.param("teamId", String.valueOf(team.getId()))
-				.param("mode", DeliveryMode.STUDY.name())
 				.accept(MediaType.APPLICATION_JSON))
 			.andExpectAll(
 				status().isOk(),
-				jsonPath("$.data.mode").value("STUDY"),
-				jsonPath("$.data.content.questionSets.BEFORE").isArray(),
-				jsonPath("$.data.content.questionSets.BEFORE.length()").value(1),
-				jsonPath("$.data.content.questionSets.BEFORE[0].userStudyStatus").value("BEFORE"),
-				jsonPath("$.data.content.questionSets.BEFORE[0].solvingSessionId").doesNotExist(),
-				jsonPath("$.data.content.questionSets.BEFORE[0].subject").value("아직 안 푼 문제"),
-				jsonPath("$.data.content.questionSets.ONGOING").isArray(),
-				jsonPath("$.data.content.questionSets.ONGOING.length()").value(1),
-				jsonPath("$.data.content.questionSets.ONGOING[0].userStudyStatus").value("ONGOING"),
-				jsonPath("$.data.content.questionSets.ONGOING[0].solvingSessionId").exists(),
-				jsonPath("$.data.content.questionSets.ONGOING[0].subject").value("풀고 있는 문제"),
-				jsonPath("$.data.content.questionSets.AFTER").isArray(),
-				jsonPath("$.data.content.questionSets.AFTER.length()").value(1),
-				jsonPath("$.data.content.questionSets.AFTER[0].userStudyStatus").value("AFTER"),
-				jsonPath("$.data.content.questionSets.AFTER[0].solvingSessionId").exists(),
-				jsonPath("$.data.content.questionSets.AFTER[0].subject").value("채점 완료 문제"));
+				jsonPath("$.data.questionSets.BEFORE").isArray(),
+				jsonPath("$.data.questionSets.BEFORE.length()").value(1),
+				jsonPath("$.data.questionSets.BEFORE[0].userStudyStatus").value("BEFORE"),
+				jsonPath("$.data.questionSets.BEFORE[0].subject").value("아직 안 푼 문제"),
+				jsonPath("$.data.questionSets.ONGOING").isArray(),
+				jsonPath("$.data.questionSets.ONGOING.length()").value(1),
+				jsonPath("$.data.questionSets.ONGOING[0].userStudyStatus").value("ONGOING"),
+				jsonPath("$.data.questionSets.ONGOING[0].solvingSessionId").exists(),
+				jsonPath("$.data.questionSets.ONGOING[0].subject").value("풀고 있는 문제"),
+				jsonPath("$.data.questionSets.AFTER").isArray(),
+				jsonPath("$.data.questionSets.AFTER.length()").value(1),
+				jsonPath("$.data.questionSets.AFTER[0].userStudyStatus").value("AFTER"),
+				jsonPath("$.data.questionSets.AFTER[0].solvingSessionId").exists(),
+				jsonPath("$.data.questionSets.AFTER[0].subject").value("채점 완료 문제"));
+	}
+
+	@Test
+	@DisplayName("학습 모드 관리 문제 셋 목록 조회 API 성공 테스트 - 상태별 목록")
+	void getStudyManagementQuestionSetsApiSuccess() throws Exception {
+		// given
+		UserEntity currentUser = userEntityRepository.findByEmail("user@example.com").orElseThrow();
+		TeamEntity team = teamEntityRepository.save(TeamEntity.builder().name("코니브").creatorId(1L).build());
+		teamUserEntityRepository.save(TeamUserEntity.createTeamUser(currentUser, team, TeamUserRole.MAKER));
+
+		questionSetEntityRepository.save(
+			QuestionSetEntity.builder()
+				.subject("시작 전 학습")
+				.teamId(team.getId())
+				.solveMode(QuestionSetSolveMode.STUDY)
+				.status(QuestionSetStatus.BEFORE)
+				.build());
+
+		questionSetEntityRepository.save(
+			QuestionSetEntity.builder()
+				.subject("진행 중 학습")
+				.teamId(team.getId())
+				.solveMode(QuestionSetSolveMode.STUDY)
+				.status(QuestionSetStatus.ONGOING)
+				.build());
+
+		// when & then
+		mockMvc.perform(get("/api/v1/question-sets/study/management")
+				.param("teamId", String.valueOf(team.getId()))
+				.accept(MediaType.APPLICATION_JSON))
+			.andExpectAll(
+				status().isOk(),
+				jsonPath("$.data.questionSets.BEFORE").isArray(),
+				jsonPath("$.data.questionSets.BEFORE.length()").value(1),
+				jsonPath("$.data.questionSets.BEFORE[0].subject").value("시작 전 학습"),
+				jsonPath("$.data.questionSets.ONGOING").isArray(),
+				jsonPath("$.data.questionSets.ONGOING.length()").value(1),
+				jsonPath("$.data.questionSets.ONGOING[0].subject").value("진행 중 학습"));
 	}
 
 	@Test

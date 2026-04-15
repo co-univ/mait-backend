@@ -34,15 +34,16 @@ import com.coniv.mait.domain.question.enums.UserStudyStatus;
 import com.coniv.mait.domain.question.service.QuestionSetDeleteService;
 import com.coniv.mait.domain.question.service.QuestionSetMaterialService;
 import com.coniv.mait.domain.question.service.QuestionSetService;
-import com.coniv.mait.domain.question.service.StudyQuestionSetQueryService;
 import com.coniv.mait.domain.question.service.dto.QuestionSetDto;
 import com.coniv.mait.domain.question.service.dto.QuestionSetMaterialDto;
 import com.coniv.mait.domain.question.service.dto.QuestionValidateDto;
+import com.coniv.mait.domain.solve.service.StudyModeService;
 import com.coniv.mait.global.auth.model.MaitUser;
 import com.coniv.mait.global.filter.JwtAuthorizationFilter;
 import com.coniv.mait.global.interceptor.idempotency.IdempotencyInterceptor;
 import com.coniv.mait.web.question.dto.QuestionSetGroup;
 import com.coniv.mait.web.question.dto.QuestionSetList;
+import com.coniv.mait.web.question.dto.StudyQuestionSetDto;
 import com.coniv.mait.web.question.dto.StudyQuestionSetGroup;
 import com.coniv.mait.web.question.dto.UpdateQuestionSetApiRequest;
 import com.coniv.mait.web.question.dto.UpdateQuestionSetFieldApiRequest;
@@ -59,7 +60,7 @@ class QuestionSetControllerTest {
 	private QuestionSetService questionSetService;
 
 	@MockitoBean
-	private StudyQuestionSetQueryService studyQuestionSetQueryService;
+	private StudyModeService studyModeService;
 
 	@MockitoBean
 	private QuestionSetDeleteService questionSetDeleteService;
@@ -254,23 +255,57 @@ class QuestionSetControllerTest {
 	}
 
 	@Test
-	@DisplayName("문제 셋 목록 조회 테스트 - STUDY 모드는 유저별 상태로 그룹화된 Map 구조 반환")
-	void getStudyModeQuestionSets__ReturnsGroupedMapByUserStatus() throws Exception {
+	@DisplayName("학습 모드 관리 문제 셋 목록 조회 테스트 - 상태별 Map 구조 반환")
+	void getStudyManagementQuestionSets_ReturnsGroupedMap() throws Exception {
 		// given
 		Long teamId = 1L;
-		final DeliveryMode mode = DeliveryMode.STUDY;
 		QuestionSetDto beforeSet = QuestionSetDto.builder()
+			.id(1L)
+			.subject("시작 전 학습")
+			.status(QuestionSetStatus.BEFORE)
+			.build();
+		QuestionSetDto afterSet = QuestionSetDto.builder()
+			.id(2L)
+			.subject("종료된 학습")
+			.status(QuestionSetStatus.AFTER)
+			.build();
+
+		QuestionSetGroup questionSetGroup = QuestionSetGroup.of(List.of(beforeSet, afterSet));
+		when(questionSetService.getStudyManagementQuestionSets(eq(teamId), any(MaitUser.class)))
+			.thenReturn(questionSetGroup);
+
+		// when & then
+		mockMvc.perform(get("/api/v1/question-sets/study/management")
+				.param("teamId", String.valueOf(teamId)))
+			.andExpectAll(
+				status().isOk(),
+				jsonPath("$.data.questionSets.BEFORE").isArray(),
+				jsonPath("$.data.questionSets.BEFORE.length()").value(1),
+				jsonPath("$.data.questionSets.BEFORE[0].subject").value("시작 전 학습"),
+				jsonPath("$.data.questionSets.AFTER").isArray(),
+				jsonPath("$.data.questionSets.AFTER.length()").value(1),
+				jsonPath("$.data.questionSets.AFTER[0].subject").value("종료된 학습"));
+
+		verify(questionSetService).getStudyManagementQuestionSets(eq(teamId), any(MaitUser.class));
+	}
+
+	@Test
+	@DisplayName("학습 모드 풀이 문제 셋 목록 조회 테스트 - 유저별 상태 Map 구조 반환")
+	void getStudyProgressQuestionSets_ReturnsGroupedMapByUserStatus() throws Exception {
+		// given
+		Long teamId = 1L;
+		StudyQuestionSetDto beforeSet = StudyQuestionSetDto.builder()
 			.id(1L)
 			.subject("아직 안 푼 문제")
 			.userStudyStatus(UserStudyStatus.BEFORE)
 			.build();
-		QuestionSetDto ongoingSet = QuestionSetDto.builder()
+		StudyQuestionSetDto ongoingSet = StudyQuestionSetDto.builder()
 			.id(2L)
 			.subject("풀고 있는 문제")
 			.userStudyStatus(UserStudyStatus.ONGOING)
 			.solvingSessionId(100L)
 			.build();
-		QuestionSetDto afterSet = QuestionSetDto.builder()
+		StudyQuestionSetDto afterSet = StudyQuestionSetDto.builder()
 			.id(3L)
 			.subject("채점 완료 문제")
 			.userStudyStatus(UserStudyStatus.AFTER)
@@ -278,34 +313,53 @@ class QuestionSetControllerTest {
 			.build();
 
 		StudyQuestionSetGroup studyGroup = StudyQuestionSetGroup.from(List.of(beforeSet, ongoingSet, afterSet));
-		when(studyQuestionSetQueryService.getStudyQuestionSets(eq(teamId), any(MaitUser.class)))
+		when(studyModeService.getStudyQuestionSets(eq(teamId), any(MaitUser.class)))
 			.thenReturn(studyGroup);
+
+		// when & then
+		mockMvc.perform(get("/api/v1/question-sets/study/progress")
+				.param("teamId", String.valueOf(teamId)))
+			.andExpectAll(
+				status().isOk(),
+				jsonPath("$.data.questionSets.BEFORE").isArray(),
+				jsonPath("$.data.questionSets.BEFORE.length()").value(1),
+				jsonPath("$.data.questionSets.BEFORE[0].subject").value("아직 안 푼 문제"),
+				jsonPath("$.data.questionSets.BEFORE[0].userStudyStatus").value("BEFORE"),
+				jsonPath("$.data.questionSets.BEFORE[0].solvingSessionId").doesNotExist(),
+				jsonPath("$.data.questionSets.ONGOING").isArray(),
+				jsonPath("$.data.questionSets.ONGOING.length()").value(1),
+				jsonPath("$.data.questionSets.ONGOING[0].subject").value("풀고 있는 문제"),
+				jsonPath("$.data.questionSets.ONGOING[0].userStudyStatus").value("ONGOING"),
+				jsonPath("$.data.questionSets.ONGOING[0].solvingSessionId").value(100L),
+				jsonPath("$.data.questionSets.AFTER").isArray(),
+				jsonPath("$.data.questionSets.AFTER.length()").value(1),
+				jsonPath("$.data.questionSets.AFTER[0].subject").value("채점 완료 문제"),
+				jsonPath("$.data.questionSets.AFTER[0].userStudyStatus").value("AFTER"),
+				jsonPath("$.data.questionSets.AFTER[0].solvingSessionId").value(101L));
+
+		verify(studyModeService).getStudyQuestionSets(eq(teamId), any(MaitUser.class));
+		verify(questionSetService, never()).getQuestionSets(anyLong(), any(), any(MaitUser.class));
+	}
+
+	@Test
+	@DisplayName("문제 셋 목록 조회 테스트 - MANAGING 모드는 일반 목록 서비스에 위임한다")
+	void getManagingModeQuestionSets_DelegatesToQuestionSetService() throws Exception {
+		// given
+		Long teamId = 1L;
+		QuestionSetGroup questionSetGroup = QuestionSetGroup.of(List.of());
+		when(questionSetService.getQuestionSets(eq(teamId), eq(DeliveryMode.MANAGING), any(MaitUser.class)))
+			.thenReturn(questionSetGroup);
 
 		// when & then
 		mockMvc.perform(get("/api/v1/question-sets")
 				.param("teamId", String.valueOf(teamId))
-				.param("mode", mode.name()))
+				.param("mode", DeliveryMode.MANAGING.name()))
 			.andExpectAll(
 				status().isOk(),
-				jsonPath("$.data.mode").value("STUDY"),
-				jsonPath("$.data.content.questionSets.BEFORE").isArray(),
-				jsonPath("$.data.content.questionSets.BEFORE.length()").value(1),
-				jsonPath("$.data.content.questionSets.BEFORE[0].subject").value("아직 안 푼 문제"),
-				jsonPath("$.data.content.questionSets.BEFORE[0].userStudyStatus").value("BEFORE"),
-				jsonPath("$.data.content.questionSets.BEFORE[0].solvingSessionId").doesNotExist(),
-				jsonPath("$.data.content.questionSets.ONGOING").isArray(),
-				jsonPath("$.data.content.questionSets.ONGOING.length()").value(1),
-				jsonPath("$.data.content.questionSets.ONGOING[0].subject").value("풀고 있는 문제"),
-				jsonPath("$.data.content.questionSets.ONGOING[0].userStudyStatus").value("ONGOING"),
-				jsonPath("$.data.content.questionSets.ONGOING[0].solvingSessionId").value(100L),
-				jsonPath("$.data.content.questionSets.AFTER").isArray(),
-				jsonPath("$.data.content.questionSets.AFTER.length()").value(1),
-				jsonPath("$.data.content.questionSets.AFTER[0].subject").value("채점 완료 문제"),
-				jsonPath("$.data.content.questionSets.AFTER[0].userStudyStatus").value("AFTER"),
-				jsonPath("$.data.content.questionSets.AFTER[0].solvingSessionId").value(101L));
+				jsonPath("$.data.mode").value("MANAGING"),
+				jsonPath("$.data.content.questionSets").isMap());
 
-		verify(studyQuestionSetQueryService).getStudyQuestionSets(eq(teamId), any(MaitUser.class));
-		verify(questionSetService, never()).getQuestionSets(anyLong(), any(), any(MaitUser.class));
+		verify(questionSetService).getQuestionSets(eq(teamId), eq(DeliveryMode.MANAGING), any(MaitUser.class));
 	}
 
 	@Test
