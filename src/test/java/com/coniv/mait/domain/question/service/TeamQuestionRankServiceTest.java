@@ -16,7 +16,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import com.coniv.mait.domain.question.entity.QuestionEntity;
 import com.coniv.mait.domain.question.entity.QuestionSetEntity;
-import com.coniv.mait.domain.question.enums.DeliveryMode;
+import com.coniv.mait.domain.question.enums.QuestionSetSolveMode;
 import com.coniv.mait.domain.question.repository.QuestionEntityRepository;
 import com.coniv.mait.domain.question.service.component.QuestionReader;
 import com.coniv.mait.domain.question.service.component.QuestionSetReader;
@@ -551,8 +551,8 @@ class TeamQuestionRankServiceTest {
 			when(liveQs.getId()).thenReturn(100L);
 			when(questionSetReader.getFinishedLiveQuestionSetsInTeam(teamId)).thenReturn(List.of(liveQs));
 
-			when(solvingSessionEntityRepository.findAllByUserIdAndStatusAndModeAndQuestionSetTeamId(
-				userId, SolvingStatus.COMPLETE, DeliveryMode.STUDY, teamId)).thenReturn(List.of());
+			when(solvingSessionEntityRepository.findAllByUserIdAndStatusAndSolveModeAndQuestionSetTeamId(
+				userId, SolvingStatus.COMPLETE, QuestionSetSolveMode.STUDY, teamId)).thenReturn(List.of());
 
 			QuestionEntity q1 = mock(QuestionEntity.class);
 			QuestionEntity q2 = mock(QuestionEntity.class);
@@ -605,8 +605,8 @@ class TeamQuestionRankServiceTest {
 			SolvingSessionEntity session = mock(SolvingSessionEntity.class);
 			when(session.getQuestionSet()).thenReturn(studyQs);
 
-			when(solvingSessionEntityRepository.findAllByUserIdAndStatusAndModeAndQuestionSetTeamId(
-				userId, SolvingStatus.COMPLETE, DeliveryMode.STUDY, teamId)).thenReturn(List.of(session));
+			when(solvingSessionEntityRepository.findAllByUserIdAndStatusAndSolveModeAndQuestionSetTeamId(
+				userId, SolvingStatus.COMPLETE, QuestionSetSolveMode.STUDY, teamId)).thenReturn(List.of(session));
 
 			QuestionEntity liveQ1 = mock(QuestionEntity.class);
 			when(liveQ1.getId()).thenReturn(1L);
@@ -657,8 +657,8 @@ class TeamQuestionRankServiceTest {
 			SolvingSessionEntity session = mock(SolvingSessionEntity.class);
 			when(session.getQuestionSet()).thenReturn(studyQs);
 
-			when(solvingSessionEntityRepository.findAllByUserIdAndStatusAndModeAndQuestionSetTeamId(
-				userId, SolvingStatus.COMPLETE, DeliveryMode.STUDY, teamId)).thenReturn(List.of(session));
+			when(solvingSessionEntityRepository.findAllByUserIdAndStatusAndSolveModeAndQuestionSetTeamId(
+				userId, SolvingStatus.COMPLETE, QuestionSetSolveMode.STUDY, teamId)).thenReturn(List.of(session));
 
 			QuestionEntity studyQ1 = mock(QuestionEntity.class);
 			when(studyQ1.getId()).thenReturn(1L);
@@ -693,8 +693,8 @@ class TeamQuestionRankServiceTest {
 			when(teamReader.getTeam(teamId)).thenReturn(team);
 
 			when(questionSetReader.getFinishedLiveQuestionSetsInTeam(teamId)).thenReturn(List.of());
-			when(solvingSessionEntityRepository.findAllByUserIdAndStatusAndModeAndQuestionSetTeamId(
-				userId, SolvingStatus.COMPLETE, DeliveryMode.STUDY, teamId)).thenReturn(List.of());
+			when(solvingSessionEntityRepository.findAllByUserIdAndStatusAndSolveModeAndQuestionSetTeamId(
+				userId, SolvingStatus.COMPLETE, QuestionSetSolveMode.STUDY, teamId)).thenReturn(List.of());
 			when(questionEntityRepository.findAllByQuestionSetIdIn(anyList())).thenReturn(List.of());
 
 			// when
@@ -720,8 +720,8 @@ class TeamQuestionRankServiceTest {
 			QuestionSetEntity liveQs = mock(QuestionSetEntity.class);
 			when(liveQs.getId()).thenReturn(100L);
 			when(questionSetReader.getFinishedLiveQuestionSetsInTeam(teamId)).thenReturn(List.of(liveQs));
-			when(solvingSessionEntityRepository.findAllByUserIdAndStatusAndModeAndQuestionSetTeamId(
-				userId, SolvingStatus.COMPLETE, DeliveryMode.STUDY, teamId)).thenReturn(List.of());
+			when(solvingSessionEntityRepository.findAllByUserIdAndStatusAndSolveModeAndQuestionSetTeamId(
+				userId, SolvingStatus.COMPLETE, QuestionSetSolveMode.STUDY, teamId)).thenReturn(List.of());
 
 			QuestionEntity q1 = mock(QuestionEntity.class);
 			when(q1.getId()).thenReturn(1L);
@@ -752,8 +752,8 @@ class TeamQuestionRankServiceTest {
 			QuestionSetEntity liveQs = mock(QuestionSetEntity.class);
 			when(liveQs.getId()).thenReturn(100L);
 			when(questionSetReader.getFinishedLiveQuestionSetsInTeam(teamId)).thenReturn(List.of(liveQs));
-			when(solvingSessionEntityRepository.findAllByUserIdAndStatusAndModeAndQuestionSetTeamId(
-				userId, SolvingStatus.COMPLETE, DeliveryMode.STUDY, teamId)).thenReturn(List.of());
+			when(solvingSessionEntityRepository.findAllByUserIdAndStatusAndSolveModeAndQuestionSetTeamId(
+				userId, SolvingStatus.COMPLETE, QuestionSetSolveMode.STUDY, teamId)).thenReturn(List.of());
 
 			QuestionEntity q1 = mock(QuestionEntity.class);
 			when(q1.getId()).thenReturn(1L);
@@ -794,8 +794,8 @@ class TeamQuestionRankServiceTest {
 			QuestionSetEntity liveQs = mock(QuestionSetEntity.class);
 			when(liveQs.getId()).thenReturn(100L);
 			when(questionSetReader.getFinishedLiveQuestionSetsInTeam(teamId)).thenReturn(List.of(liveQs));
-			when(solvingSessionEntityRepository.findAllByUserIdAndStatusAndModeAndQuestionSetTeamId(
-				userId, SolvingStatus.COMPLETE, DeliveryMode.STUDY, teamId)).thenReturn(List.of());
+			when(solvingSessionEntityRepository.findAllByUserIdAndStatusAndSolveModeAndQuestionSetTeamId(
+				userId, SolvingStatus.COMPLETE, QuestionSetSolveMode.STUDY, teamId)).thenReturn(List.of());
 
 			QuestionEntity q1 = mock(QuestionEntity.class);
 			QuestionEntity q2 = mock(QuestionEntity.class);
@@ -839,8 +839,8 @@ class TeamQuestionRankServiceTest {
 			QuestionSetEntity liveQs = mock(QuestionSetEntity.class);
 			when(liveQs.getId()).thenReturn(100L);
 			when(questionSetReader.getFinishedLiveQuestionSetsInTeam(teamId)).thenReturn(List.of(liveQs));
-			when(solvingSessionEntityRepository.findAllByUserIdAndStatusAndModeAndQuestionSetTeamId(
-				userId, SolvingStatus.COMPLETE, DeliveryMode.STUDY, teamId)).thenReturn(List.of());
+			when(solvingSessionEntityRepository.findAllByUserIdAndStatusAndSolveModeAndQuestionSetTeamId(
+				userId, SolvingStatus.COMPLETE, QuestionSetSolveMode.STUDY, teamId)).thenReturn(List.of());
 
 			QuestionEntity q1 = mock(QuestionEntity.class);
 			QuestionEntity q2 = mock(QuestionEntity.class);

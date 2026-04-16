@@ -9,7 +9,7 @@ import org.springframework.stereotype.Service;
 
 import com.coniv.mait.domain.question.entity.QuestionEntity;
 import com.coniv.mait.domain.question.entity.QuestionSetEntity;
-import com.coniv.mait.domain.question.enums.DeliveryMode;
+import com.coniv.mait.domain.question.enums.QuestionSetSolveMode;
 import com.coniv.mait.domain.question.repository.QuestionEntityRepository;
 import com.coniv.mait.domain.question.service.component.QuestionReader;
 import com.coniv.mait.domain.question.service.component.QuestionSetReader;
@@ -129,8 +129,8 @@ public class TeamQuestionRankService {
 			team.getId()).stream().map(QuestionSetEntity::getId).toList();
 
 		List<Long> userCompletedQuestionSetIds = solvingSessionEntityRepository
-			.findAllByUserIdAndStatusAndModeAndQuestionSetTeamId(userId, SolvingStatus.COMPLETE, DeliveryMode.STUDY,
-				teamId).stream()
+			.findAllByUserIdAndStatusAndSolveModeAndQuestionSetTeamId(userId, SolvingStatus.COMPLETE,
+				QuestionSetSolveMode.STUDY, teamId).stream()
 			.map(session -> session.getQuestionSet().getId())
 			.toList();
 

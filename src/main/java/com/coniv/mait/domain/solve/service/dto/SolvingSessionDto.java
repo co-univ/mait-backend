@@ -2,7 +2,7 @@ package com.coniv.mait.domain.solve.service.dto;
 
 import java.time.LocalDateTime;
 
-import com.coniv.mait.domain.question.enums.DeliveryMode;
+import com.coniv.mait.domain.question.enums.QuestionSetSolveMode;
 import com.coniv.mait.domain.solve.entity.SolvingSessionEntity;
 import com.coniv.mait.domain.solve.enums.SolvingStatus;
 
@@ -20,7 +20,7 @@ public class SolvingSessionDto {
 	private Long userId;
 	private Long questionSetId;
 	private SolvingStatus status;
-	private DeliveryMode mode;
+	private QuestionSetSolveMode solveMode;
 	private LocalDateTime startedAt;
 	private LocalDateTime submittedAt;
 
@@ -30,7 +30,7 @@ public class SolvingSessionDto {
 			.userId(entity.getUser().getId())
 			.questionSetId(entity.getQuestionSet().getId())
 			.status(entity.getStatus())
-			.mode(entity.getMode())
+			.solveMode(entity.getSolveMode())
 			.startedAt(entity.getStartedAt())
 			.submittedAt(entity.getSubmittedAt())
 			.build();
