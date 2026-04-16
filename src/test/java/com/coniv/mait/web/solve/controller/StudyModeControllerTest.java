@@ -17,7 +17,7 @@ import org.springframework.http.MediaType;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
-import com.coniv.mait.domain.question.enums.DeliveryMode;
+import com.coniv.mait.domain.question.enums.QuestionSetSolveMode;
 import com.coniv.mait.domain.solve.enums.SolvingStatus;
 import com.coniv.mait.domain.solve.service.StudyModeService;
 import com.coniv.mait.domain.solve.service.dto.AnswerSubmitDto;
@@ -59,7 +59,7 @@ class StudyModeControllerTest {
 			.questionSetId(questionSetId)
 			.userId(1L)
 			.status(SolvingStatus.PROGRESSING)
-			.mode(DeliveryMode.STUDY)
+			.solveMode(QuestionSetSolveMode.STUDY)
 			.startedAt(startedAt)
 			.build();
 
