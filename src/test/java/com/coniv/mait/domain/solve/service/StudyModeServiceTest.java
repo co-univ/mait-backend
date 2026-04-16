@@ -16,7 +16,6 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import com.coniv.mait.domain.question.entity.QuestionEntity;
 import com.coniv.mait.domain.question.entity.QuestionSetEntity;
-import com.coniv.mait.domain.question.enums.DeliveryMode;
 import com.coniv.mait.domain.question.enums.QuestionSetSolveMode;
 import com.coniv.mait.domain.question.enums.QuestionSetStatus;
 import com.coniv.mait.domain.question.enums.UserStudyStatus;
@@ -103,8 +102,8 @@ class StudyModeServiceTest {
 		SolvingSessionEntity progressingSession = mockStudySession(100L, 2L, SolvingStatus.PROGRESSING);
 		SolvingSessionEntity completedSession = mockStudySession(101L, 3L, SolvingStatus.COMPLETE);
 
-		when(solvingSessionEntityRepository.findAllByUserIdAndModeAndQuestionSetTeamId(
-			USER_ID, DeliveryMode.STUDY, TEAM_ID))
+		when(solvingSessionEntityRepository.findAllByUserIdAndSolveModeAndQuestionSetTeamId(
+			USER_ID, QuestionSetSolveMode.STUDY, TEAM_ID))
 			.thenReturn(List.of(progressingSession, completedSession));
 		when(questionSetEntityRepository.findAllByTeamIdAndSolveModeAndStatusIn(
 			eq(TEAM_ID), eq(QuestionSetSolveMode.STUDY), anyList()))
@@ -128,7 +127,7 @@ class StudyModeServiceTest {
 
 		verify(teamRoleValidator).checkIsTeamMember(TEAM_ID, USER_ID);
 		verify(solvingSessionEntityRepository)
-			.findAllByUserIdAndModeAndQuestionSetTeamId(USER_ID, DeliveryMode.STUDY, TEAM_ID);
+			.findAllByUserIdAndSolveModeAndQuestionSetTeamId(USER_ID, QuestionSetSolveMode.STUDY, TEAM_ID);
 		verify(questionSetEntityRepository)
 			.findAllByTeamIdAndSolveModeAndStatusIn(eq(TEAM_ID), eq(QuestionSetSolveMode.STUDY), anyList());
 	}
@@ -140,8 +139,8 @@ class StudyModeServiceTest {
 		QuestionSetEntity questionSet = mockStudyQuestionSet(1L, "아직 안 푼 문제", QuestionSetStatus.ONGOING,
 			LocalDateTime.now());
 
-		when(solvingSessionEntityRepository.findAllByUserIdAndModeAndQuestionSetTeamId(
-			USER_ID, DeliveryMode.STUDY, TEAM_ID))
+		when(solvingSessionEntityRepository.findAllByUserIdAndSolveModeAndQuestionSetTeamId(
+			USER_ID, QuestionSetSolveMode.STUDY, TEAM_ID))
 			.thenReturn(List.of());
 		when(questionSetEntityRepository.findAllByTeamIdAndSolveModeAndStatusIn(
 			eq(TEAM_ID), eq(QuestionSetSolveMode.STUDY), anyList()))
@@ -171,8 +170,8 @@ class StudyModeServiceTest {
 		when(mockUser.getId()).thenReturn(USER_ID);
 		when(mockQuestionSet.getId()).thenReturn(QUESTION_SET_ID);
 		doNothing().when(teamRoleValidator).checkHasSolveQuestionAuthorityInTeam(TEAM_ID, USER_ID);
-		when(solvingSessionEntityRepository.findByUserIdAndQuestionSetIdAndMode(USER_ID, QUESTION_SET_ID,
-			DeliveryMode.STUDY)).thenReturn(Optional.empty());
+		when(solvingSessionEntityRepository.findByUserIdAndQuestionSetIdAndSolveMode(USER_ID, QUESTION_SET_ID,
+			QuestionSetSolveMode.STUDY)).thenReturn(Optional.empty());
 		when(solvingSessionEntityRepository.save(any(SolvingSessionEntity.class))).thenReturn(savedSession);
 		when(savedSession.getUser()).thenReturn(mockUser);
 		when(savedSession.getQuestionSet()).thenReturn(mockQuestionSet);
@@ -199,8 +198,8 @@ class StudyModeServiceTest {
 		when(mockUser.getId()).thenReturn(USER_ID);
 		when(mockQuestionSet.getId()).thenReturn(QUESTION_SET_ID);
 		doNothing().when(teamRoleValidator).checkHasSolveQuestionAuthorityInTeam(TEAM_ID, USER_ID);
-		when(solvingSessionEntityRepository.findByUserIdAndQuestionSetIdAndMode(USER_ID, QUESTION_SET_ID,
-			DeliveryMode.STUDY)).thenReturn(Optional.of(existingSession));
+		when(solvingSessionEntityRepository.findByUserIdAndQuestionSetIdAndSolveMode(USER_ID, QUESTION_SET_ID,
+			QuestionSetSolveMode.STUDY)).thenReturn(Optional.of(existingSession));
 		when(existingSession.getUser()).thenReturn(mockUser);
 		when(existingSession.getQuestionSet()).thenReturn(mockQuestionSet);
 
@@ -287,8 +286,8 @@ class StudyModeServiceTest {
 		when(mockQuestionSet.getTeamId()).thenReturn(TEAM_ID);
 		when(mockUser.getId()).thenReturn(USER_ID);
 		when(mockQuestionSet.getId()).thenReturn(QUESTION_SET_ID);
-		when(solvingSessionEntityRepository.findByUserIdAndQuestionSetIdAndMode(USER_ID, QUESTION_SET_ID,
-			DeliveryMode.STUDY)).thenReturn(Optional.of(existingSession));
+		when(solvingSessionEntityRepository.findByUserIdAndQuestionSetIdAndSolveMode(USER_ID, QUESTION_SET_ID,
+			QuestionSetSolveMode.STUDY)).thenReturn(Optional.of(existingSession));
 		when(existingSession.getId()).thenReturn(solvingSessionId);
 		when(studyAnswerDraftFactory.getDraftsBySolvingSessionId(solvingSessionId)).thenReturn(List.of(draft1, draft2));
 
@@ -318,8 +317,8 @@ class StudyModeServiceTest {
 		when(mockQuestionSet.getTeamId()).thenReturn(TEAM_ID);
 		when(mockUser.getId()).thenReturn(USER_ID);
 		when(mockQuestionSet.getId()).thenReturn(QUESTION_SET_ID);
-		when(solvingSessionEntityRepository.findByUserIdAndQuestionSetIdAndMode(USER_ID, QUESTION_SET_ID,
-			DeliveryMode.STUDY)).thenReturn(Optional.empty());
+		when(solvingSessionEntityRepository.findByUserIdAndQuestionSetIdAndSolveMode(USER_ID, QUESTION_SET_ID,
+			QuestionSetSolveMode.STUDY)).thenReturn(Optional.empty());
 
 		// when & then
 		assertThatThrownBy(() -> studyModeService.getStudyAnswerDrafts(MAIT_USER, QUESTION_SET_ID))
@@ -360,8 +359,8 @@ class StudyModeServiceTest {
 		when(mockUser.getId()).thenReturn(USER_ID);
 		when(mockQuestionSet.getId()).thenReturn(QUESTION_SET_ID);
 		doNothing().when(teamRoleValidator).checkHasSolveQuestionAuthorityInTeam(TEAM_ID, USER_ID);
-		when(solvingSessionEntityRepository.findByUserIdAndQuestionSetIdAndMode(USER_ID, QUESTION_SET_ID,
-			DeliveryMode.STUDY)).thenReturn(Optional.of(mockSession));
+		when(solvingSessionEntityRepository.findByUserIdAndQuestionSetIdAndSolveMode(USER_ID, QUESTION_SET_ID,
+			QuestionSetSolveMode.STUDY)).thenReturn(Optional.of(mockSession));
 		when(mockSession.getId()).thenReturn(solvingSessionId);
 		when(mockSession.getStatus()).thenReturn(SolvingStatus.PROGRESSING);
 		when(mockSession.getQuestionSet()).thenReturn(mockQuestionSet);
@@ -414,8 +413,8 @@ class StudyModeServiceTest {
 		when(mockUser.getId()).thenReturn(USER_ID);
 		when(mockQuestionSet.getId()).thenReturn(QUESTION_SET_ID);
 		doNothing().when(teamRoleValidator).checkHasSolveQuestionAuthorityInTeam(TEAM_ID, USER_ID);
-		when(solvingSessionEntityRepository.findByUserIdAndQuestionSetIdAndMode(USER_ID, QUESTION_SET_ID,
-			DeliveryMode.STUDY)).thenReturn(Optional.empty());
+		when(solvingSessionEntityRepository.findByUserIdAndQuestionSetIdAndSolveMode(USER_ID, QUESTION_SET_ID,
+			QuestionSetSolveMode.STUDY)).thenReturn(Optional.empty());
 
 		// when & then
 		assertThatThrownBy(() -> studyModeService.gradeStudySession(MAIT_USER, QUESTION_SET_ID))
@@ -437,8 +436,8 @@ class StudyModeServiceTest {
 		when(mockUser.getId()).thenReturn(USER_ID);
 		when(mockQuestionSet.getId()).thenReturn(QUESTION_SET_ID);
 		doNothing().when(teamRoleValidator).checkHasSolveQuestionAuthorityInTeam(TEAM_ID, USER_ID);
-		when(solvingSessionEntityRepository.findByUserIdAndQuestionSetIdAndMode(USER_ID, QUESTION_SET_ID,
-			DeliveryMode.STUDY)).thenReturn(Optional.of(mockSession));
+		when(solvingSessionEntityRepository.findByUserIdAndQuestionSetIdAndSolveMode(USER_ID, QUESTION_SET_ID,
+			QuestionSetSolveMode.STUDY)).thenReturn(Optional.of(mockSession));
 		when(mockSession.getStatus()).thenReturn(SolvingStatus.COMPLETE);
 
 		// when & then
@@ -475,8 +474,8 @@ class StudyModeServiceTest {
 		when(mockUser.getId()).thenReturn(USER_ID);
 		when(mockQuestionSet.getId()).thenReturn(QUESTION_SET_ID);
 		doNothing().when(teamRoleValidator).checkHasSolveQuestionAuthorityInTeam(TEAM_ID, USER_ID);
-		when(solvingSessionEntityRepository.findByUserIdAndQuestionSetIdAndMode(USER_ID, QUESTION_SET_ID,
-			DeliveryMode.STUDY)).thenReturn(Optional.of(mockSession));
+		when(solvingSessionEntityRepository.findByUserIdAndQuestionSetIdAndSolveMode(USER_ID, QUESTION_SET_ID,
+			QuestionSetSolveMode.STUDY)).thenReturn(Optional.of(mockSession));
 		when(mockSession.getId()).thenReturn(solvingSessionId);
 		when(studyAnswerDraftEntityRepository.findById(draftId)).thenReturn(Optional.of(draft));
 		when(objectMapper.writeValueAsString(submitAnswer)).thenReturn(serializedAnswer);
@@ -520,8 +519,8 @@ class StudyModeServiceTest {
 		when(mockUser.getId()).thenReturn(USER_ID);
 		when(mockQuestionSet.getId()).thenReturn(QUESTION_SET_ID);
 		doNothing().when(teamRoleValidator).checkHasSolveQuestionAuthorityInTeam(TEAM_ID, USER_ID);
-		when(solvingSessionEntityRepository.findByUserIdAndQuestionSetIdAndMode(USER_ID, QUESTION_SET_ID,
-			DeliveryMode.STUDY)).thenReturn(Optional.empty());
+		when(solvingSessionEntityRepository.findByUserIdAndQuestionSetIdAndSolveMode(USER_ID, QUESTION_SET_ID,
+			QuestionSetSolveMode.STUDY)).thenReturn(Optional.empty());
 
 		// when & then
 		assertThatThrownBy(
@@ -548,8 +547,8 @@ class StudyModeServiceTest {
 		when(mockUser.getId()).thenReturn(USER_ID);
 		when(mockQuestionSet.getId()).thenReturn(QUESTION_SET_ID);
 		doNothing().when(teamRoleValidator).checkHasSolveQuestionAuthorityInTeam(TEAM_ID, USER_ID);
-		when(solvingSessionEntityRepository.findByUserIdAndQuestionSetIdAndMode(USER_ID, QUESTION_SET_ID,
-			DeliveryMode.STUDY)).thenReturn(Optional.of(mockSession));
+		when(solvingSessionEntityRepository.findByUserIdAndQuestionSetIdAndSolveMode(USER_ID, QUESTION_SET_ID,
+			QuestionSetSolveMode.STUDY)).thenReturn(Optional.of(mockSession));
 		when(mockSession.getId()).thenReturn(solvingSessionId);
 
 		StudyAnswerDraftId draftId = new StudyAnswerDraftId(solvingSessionId, questionId);
