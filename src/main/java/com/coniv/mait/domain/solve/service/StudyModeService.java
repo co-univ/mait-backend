@@ -13,7 +13,6 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.coniv.mait.domain.question.entity.QuestionEntity;
 import com.coniv.mait.domain.question.entity.QuestionSetEntity;
-import com.coniv.mait.domain.question.enums.DeliveryMode;
 import com.coniv.mait.domain.question.enums.QuestionSetSolveMode;
 import com.coniv.mait.domain.question.enums.QuestionSetStatus;
 import com.coniv.mait.domain.question.repository.QuestionSetEntityRepository;
@@ -72,8 +71,8 @@ public class StudyModeService {
 		teamRoleValidator.checkIsTeamMember(teamId, user.id());
 
 		Map<Long, SolvingSessionEntity> sessionByQuestionSetId =
-			solvingSessionEntityRepository.findAllByUserIdAndModeAndQuestionSetTeamId(user.id(), DeliveryMode.STUDY,
-					teamId).stream()
+			solvingSessionEntityRepository.findAllByUserIdAndSolveModeAndQuestionSetTeamId(user.id(),
+					QuestionSetSolveMode.STUDY, teamId).stream()
 				.collect(Collectors.toUnmodifiableMap(session ->
 					session.getQuestionSet().getId(), Function.identity()));
 
@@ -99,7 +98,7 @@ public class StudyModeService {
 		teamRoleValidator.checkHasSolveQuestionAuthorityInTeam(questionSet.getTeamId(), user.getId());
 
 		Optional<SolvingSessionEntity> maybeSession = solvingSessionEntityRepository
-			.findByUserIdAndQuestionSetIdAndMode(user.getId(), questionSet.getId(), DeliveryMode.STUDY);
+			.findByUserIdAndQuestionSetIdAndSolveMode(user.getId(), questionSet.getId(), QuestionSetSolveMode.STUDY);
 
 		if (maybeSession.isPresent()) {
 			return SolvingSessionDto.from(maybeSession.get());
@@ -122,7 +121,7 @@ public class StudyModeService {
 		teamRoleValidator.checkHasSolveQuestionAuthorityInTeam(questionSet.getTeamId(), user.getId());
 
 		SolvingSessionEntity solvingSession = solvingSessionEntityRepository
-			.findByUserIdAndQuestionSetIdAndMode(user.getId(), questionSet.getId(), DeliveryMode.STUDY)
+			.findByUserIdAndQuestionSetIdAndSolveMode(user.getId(), questionSet.getId(), QuestionSetSolveMode.STUDY)
 			.orElseThrow(() -> new EntityNotFoundException("존재하지 않는 학습 세션 입니다."));
 
 		return studyAnswerDraftFactory.getDraftsBySolvingSessionId(solvingSession.getId()).stream()
@@ -140,7 +139,7 @@ public class StudyModeService {
 		teamRoleValidator.checkHasSolveQuestionAuthorityInTeam(questionSet.getTeamId(), user.getId());
 
 		SolvingSessionEntity solvingSession = solvingSessionEntityRepository
-			.findByUserIdAndQuestionSetIdAndMode(user.getId(), questionSet.getId(), DeliveryMode.STUDY)
+			.findByUserIdAndQuestionSetIdAndSolveMode(user.getId(), questionSet.getId(), QuestionSetSolveMode.STUDY)
 			.orElseThrow(() -> new EntityNotFoundException("존재하지 않는 학습 세션 입니다."));
 
 		if (solvingSession.getStatus() == SolvingStatus.COMPLETE) {
@@ -197,7 +196,7 @@ public class StudyModeService {
 		teamRoleValidator.checkHasSolveQuestionAuthorityInTeam(questionSet.getTeamId(), user.getId());
 
 		SolvingSessionEntity solvingSession = solvingSessionEntityRepository
-			.findByUserIdAndQuestionSetIdAndMode(user.getId(), questionSet.getId(), DeliveryMode.STUDY)
+			.findByUserIdAndQuestionSetIdAndSolveMode(user.getId(), questionSet.getId(), QuestionSetSolveMode.STUDY)
 			.orElseThrow(() -> new EntityNotFoundException("존재하지 않는 학습 세션 입니다."));
 
 		StudyAnswerDraftId draftId = StudyAnswerDraftId.builder()

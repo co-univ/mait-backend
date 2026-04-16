@@ -3,7 +3,7 @@ package com.coniv.mait.domain.solve.entity;
 import java.time.LocalDateTime;
 
 import com.coniv.mait.domain.question.entity.QuestionSetEntity;
-import com.coniv.mait.domain.question.enums.DeliveryMode;
+import com.coniv.mait.domain.question.enums.QuestionSetSolveMode;
 import com.coniv.mait.domain.solve.enums.SolvingStatus;
 import com.coniv.mait.domain.user.entity.UserEntity;
 import com.coniv.mait.global.entity.BaseTimeEntity;
@@ -53,7 +53,7 @@ public class SolvingSessionEntity extends BaseTimeEntity {
 	@Enumerated(EnumType.STRING)
 	@Column(nullable = false)
 	@Builder.Default
-	private DeliveryMode mode = DeliveryMode.STUDY;
+	private QuestionSetSolveMode solveMode = QuestionSetSolveMode.STUDY;
 
 	private LocalDateTime startedAt;
 
@@ -74,7 +74,7 @@ public class SolvingSessionEntity extends BaseTimeEntity {
 		return SolvingSessionEntity.builder()
 			.user(user)
 			.questionSet(questionSet)
-			.mode(DeliveryMode.STUDY)
+			.solveMode(QuestionSetSolveMode.STUDY)
 			.status(SolvingStatus.PROGRESSING)
 			.startedAt(LocalDateTime.now())
 			.build();
