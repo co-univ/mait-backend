@@ -13,6 +13,7 @@ import com.coniv.mait.domain.team.exception.TeamInvitationFailException;
 import com.coniv.mait.domain.team.exception.TeamManagerException;
 import com.coniv.mait.domain.user.exception.UserRoleException;
 import com.coniv.mait.global.exception.CommonExceptionCode;
+import com.coniv.mait.global.exception.custom.EmailSendException;
 import com.coniv.mait.global.exception.custom.LoginFailException;
 import com.coniv.mait.global.exception.custom.PolicyException;
 import com.coniv.mait.global.exception.custom.QuestionSetLiveException;
@@ -102,6 +103,15 @@ public class CustomExceptionHandler {
 			exception.getMessage(), exception.getBucket(), exception.getKey(), request.getRequestURI());
 		return ResponseEntity.status(CommonExceptionCode.S3_FILE_EXCEPTION.getStatus())
 			.body(ErrorResponse.of(CommonExceptionCode.S3_FILE_EXCEPTION, List.of(exception.getMessage())));
+	}
+
+	@ExceptionHandler(EmailSendException.class)
+	public ResponseEntity<ErrorResponse> handleEmailSendException(EmailSendException exception,
+		HttpServletRequest request) {
+		log.error("EmailSendException 발생: {}, provider: {}, URI: {}",
+			exception.getMessage(), exception.getProvider(), request.getRequestURI());
+		return ResponseEntity.status(CommonExceptionCode.EMAIL_SEND_EXCEPTION.getStatus())
+			.body(ErrorResponse.of(CommonExceptionCode.EMAIL_SEND_EXCEPTION, List.of(exception.getMessage())));
 	}
 
 	@ExceptionHandler(UserRoleException.class)

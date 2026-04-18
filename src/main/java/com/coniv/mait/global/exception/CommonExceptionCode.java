@@ -30,6 +30,7 @@ public enum CommonExceptionCode implements ExceptionCode {
 	TEAM_MANAGER_EXCEPTION(HttpStatus.BAD_REQUEST, "T-001", "팀 관리 처리 중 오류가 발생했습니다."),
 
 	S3_FILE_EXCEPTION(HttpStatus.INTERNAL_SERVER_ERROR, "F-001", "S3 파일 처리 중 오류가 발생했습니다."),
+	EMAIL_SEND_EXCEPTION(HttpStatus.INTERNAL_SERVER_ERROR, "E-001", "이메일 발송 중 오류가 발생했습니다."),
 
 	UNEXPECTED_EXCEPTION(HttpStatus.INTERNAL_SERVER_ERROR, "S-000", "예기치 못한 오류가 발생했습니다."),
 	DATABASE_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "S-001", "데이터베이스 처리 중 오류가 발생했습니다.");
