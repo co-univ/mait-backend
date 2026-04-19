@@ -16,6 +16,7 @@ import com.coniv.mait.domain.team.entity.TeamUserEntity;
 import com.coniv.mait.domain.team.enums.InvitationApplicationStatus;
 import com.coniv.mait.domain.team.enums.JoinedImmediate;
 import com.coniv.mait.domain.team.enums.TeamUserRole;
+import com.coniv.mait.domain.team.event.TeamMemberLeftEvent;
 import com.coniv.mait.domain.team.exception.InvitationErrorCode;
 import com.coniv.mait.domain.team.exception.TeamInvitationFailException;
 import com.coniv.mait.domain.team.exception.TeamManagerException;
@@ -33,6 +34,7 @@ import com.coniv.mait.domain.user.entity.UserEntity;
 import com.coniv.mait.domain.user.repository.UserEntityRepository;
 import com.coniv.mait.global.auth.model.MaitUser;
 import com.coniv.mait.global.enums.InviteTokenDuration;
+import com.coniv.mait.global.event.MaitEventPublisher;
 
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
@@ -47,6 +49,7 @@ public class TeamService {
 	private final TeamInvitationEntityRepository teamInvitationEntityRepository;
 	private final UserEntityRepository userEntityRepository;
 	private final TeamInvitationApplicationEntityRepository teamInvitationApplicationEntityRepository;
+	private final MaitEventPublisher maitEventPublisher;
 
 	@Transactional
 	public void createTeam(final String teamName, final Long ownerId) {
@@ -303,6 +306,36 @@ public class TeamService {
 			.orElseThrow(() -> new EntityNotFoundException("Team user not found with id: " + teamUserId));
 
 		teamUserEntityRepository.delete(teamUser);
+	}
+
+	@Transactional
+	public void leaveTeam(final Long teamId, final Long userId) {
+		TeamEntity team = teamEntityRepository.findById(teamId)
+			.orElseThrow(() -> new EntityNotFoundException("Team not found with id: " + teamId));
+		UserEntity user = userEntityRepository.findById(userId)
+			.orElseThrow(() -> new EntityNotFoundException("User not found with id: " + userId));
+
+		TeamUserEntity teamUser = teamUserEntityRepository.findByTeamAndUser(team, user)
+			.orElseThrow(() -> new EntityNotFoundException(
+				"Team user not found with teamId: " + teamId + ", userId: " + userId));
+
+		if (teamUser.getUserRole() == TeamUserRole.OWNER) {
+			throw new TeamManagerException("Owner cannot leave the team.");
+		}
+
+		List<String> managerEmails = teamUserEntityRepository.findAllByTeamIdFetchJoinUser(team.getId()).stream()
+			.filter(tu -> !tu.getId().equals(teamUser.getId()))
+			.filter(tu -> tu.getUserRole() == TeamUserRole.OWNER || tu.getUserRole() == TeamUserRole.MAKER)
+			.map(tu -> tu.getUser().getEmail())
+			.toList();
+
+		teamUserEntityRepository.delete(teamUser);
+
+		maitEventPublisher.publishEvent(TeamMemberLeftEvent.builder()
+			.memberName(user.getName())
+			.teamName(team.getName())
+			.recipientEmails(managerEmails)
+			.build());
 	}
 
 	@Transactional

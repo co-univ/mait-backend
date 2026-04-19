@@ -11,6 +11,7 @@ import java.util.Optional;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -21,8 +22,10 @@ import com.coniv.mait.domain.team.entity.TeamInvitationLinkEntity;
 import com.coniv.mait.domain.team.entity.TeamUserEntity;
 import com.coniv.mait.domain.team.enums.InvitationApplicationStatus;
 import com.coniv.mait.domain.team.enums.TeamUserRole;
+import com.coniv.mait.domain.team.event.TeamMemberLeftEvent;
 import com.coniv.mait.domain.team.exception.InvitationErrorCode;
 import com.coniv.mait.domain.team.exception.TeamInvitationFailException;
+import com.coniv.mait.domain.team.exception.TeamManagerException;
 import com.coniv.mait.domain.team.repository.TeamEntityRepository;
 import com.coniv.mait.domain.team.repository.TeamInvitationApplicationEntityRepository;
 import com.coniv.mait.domain.team.repository.TeamInvitationEntityRepository;
@@ -34,6 +37,7 @@ import com.coniv.mait.domain.user.enums.LoginProvider;
 import com.coniv.mait.domain.user.repository.UserEntityRepository;
 import com.coniv.mait.global.auth.model.MaitUser;
 import com.coniv.mait.global.enums.InviteTokenDuration;
+import com.coniv.mait.global.event.MaitEventPublisher;
 
 import jakarta.persistence.EntityNotFoundException;
 
@@ -57,6 +61,9 @@ class TeamServiceTest {
 
 	@Mock
 	private TeamInvitationApplicationEntityRepository teamInvitationApplicationEntityRepository;
+
+	@Mock
+	private MaitEventPublisher maitEventPublisher;
 
 	@InjectMocks
 	private TeamService teamService;
@@ -283,5 +290,99 @@ class TeamServiceTest {
 		Throwable thrown = catchThrowable(() -> teamService.getTeamInviteInfo(maitUser, token));
 		assertThat(thrown).isInstanceOf(TeamInvitationFailException.class);
 		assertThat(((TeamInvitationFailException)thrown).getErrorCode()).isEqualTo(InvitationErrorCode.ALREADY_MEMBER);
+	}
+
+	@Test
+	@DisplayName("팀 탈퇴 성공 - 본인 삭제 후 OWNER/MAKER 이메일을 담은 탈퇴 이벤트를 발행한다")
+	void leaveTeam_Success() {
+		// given
+		Long teamId = 1L;
+		Long userId = 2L;
+		TeamEntity team = TeamEntity.of("테스트 팀", 1L);
+		UserEntity leaver = mock(UserEntity.class);
+		when(leaver.getName()).thenReturn("홍길동");
+		TeamUserEntity leaverTeamUser = spy(TeamUserEntity.createPlayerUser(leaver, team));
+		when(leaverTeamUser.getId()).thenReturn(10L);
+
+		UserEntity owner = mock(UserEntity.class);
+		when(owner.getEmail()).thenReturn("owner@example.com");
+		TeamUserEntity ownerTeamUser = spy(TeamUserEntity.createOwnerUser(owner, team));
+		when(ownerTeamUser.getId()).thenReturn(20L);
+
+		UserEntity maker = mock(UserEntity.class);
+		when(maker.getEmail()).thenReturn("maker@example.com");
+		TeamUserEntity makerTeamUser = spy(
+			TeamUserEntity.createTeamUser(maker, team, TeamUserRole.MAKER));
+		when(makerTeamUser.getId()).thenReturn(30L);
+
+		UserEntity otherPlayer = mock(UserEntity.class);
+		TeamUserEntity otherPlayerTeamUser = spy(TeamUserEntity.createPlayerUser(otherPlayer, team));
+		when(otherPlayerTeamUser.getId()).thenReturn(40L);
+
+		when(teamEntityRepository.findById(teamId)).thenReturn(Optional.of(team));
+		when(userEntityRepository.findById(userId)).thenReturn(Optional.of(leaver));
+		when(teamUserEntityRepository.findByTeamAndUser(team, leaver))
+			.thenReturn(Optional.of(leaverTeamUser));
+		when(teamUserEntityRepository.findAllByTeamIdFetchJoinUser(any()))
+			.thenReturn(List.of(leaverTeamUser, ownerTeamUser, makerTeamUser, otherPlayerTeamUser));
+
+		// when
+		teamService.leaveTeam(teamId, userId);
+
+		// then
+		verify(teamUserEntityRepository).delete(leaverTeamUser);
+
+		ArgumentCaptor<TeamMemberLeftEvent> eventCaptor = ArgumentCaptor.forClass(TeamMemberLeftEvent.class);
+		verify(maitEventPublisher).publishEvent(eventCaptor.capture());
+		TeamMemberLeftEvent event = eventCaptor.getValue();
+		assertThat(event.memberName()).isEqualTo("홍길동");
+		assertThat(event.teamName()).isEqualTo("테스트 팀");
+		assertThat(event.recipientEmails())
+			.containsExactlyInAnyOrder("owner@example.com", "maker@example.com");
+	}
+
+	@Test
+	@DisplayName("팀 탈퇴 실패 - 팀 멤버가 아니면 예외가 발생하고 이벤트도 발행되지 않는다")
+	void leaveTeam_Failure_NotTeamMember() {
+		// given
+		Long teamId = 1L;
+		Long userId = 2L;
+		TeamEntity team = TeamEntity.of("테스트 팀", 1L);
+		UserEntity user = mock(UserEntity.class);
+
+		when(teamEntityRepository.findById(teamId)).thenReturn(Optional.of(team));
+		when(userEntityRepository.findById(userId)).thenReturn(Optional.of(user));
+		when(teamUserEntityRepository.findByTeamAndUser(team, user)).thenReturn(Optional.empty());
+
+		// when & then
+		assertThatThrownBy(() -> teamService.leaveTeam(teamId, userId))
+			.isInstanceOf(EntityNotFoundException.class)
+			.hasMessageContaining("Team user not found with teamId: " + teamId + ", userId: " + userId);
+
+		verify(teamUserEntityRepository, never()).delete(any());
+		verify(maitEventPublisher, never()).publishEvent(any());
+	}
+
+	@Test
+	@DisplayName("팀 탈퇴 실패 - OWNER는 팀을 탈퇴할 수 없고 이벤트도 발행되지 않는다")
+	void leaveTeam_Failure_OwnerCannotLeave() {
+		// given
+		Long teamId = 1L;
+		Long userId = 2L;
+		TeamEntity team = TeamEntity.of("테스트 팀", userId);
+		UserEntity owner = mock(UserEntity.class);
+		TeamUserEntity teamUser = TeamUserEntity.createOwnerUser(owner, team);
+
+		when(teamEntityRepository.findById(teamId)).thenReturn(Optional.of(team));
+		when(userEntityRepository.findById(userId)).thenReturn(Optional.of(owner));
+		when(teamUserEntityRepository.findByTeamAndUser(team, owner)).thenReturn(Optional.of(teamUser));
+
+		// when & then
+		assertThatThrownBy(() -> teamService.leaveTeam(teamId, userId))
+			.isInstanceOf(TeamManagerException.class)
+			.hasMessageContaining("Owner cannot leave the team.");
+
+		verify(teamUserEntityRepository, never()).delete(any());
+		verify(maitEventPublisher, never()).publishEvent(any());
 	}
 }
