@@ -19,7 +19,7 @@ import com.coniv.mait.global.component.dto.EmailSendResult;
 
 @SpringBootTest(properties = {
 	"mait.email.provider=ses",
-	"mait.email.from-address=no-reply@mait.kr"
+	"mait.email.from-address=MAIT <no-reply@mait.kr>"
 })
 @ActiveProfiles("test")
 @EnabledIfEnvironmentVariable(named = "SES_TEST_TO_ADDRESS", matches = ".+")
@@ -52,7 +52,7 @@ class SesEmailSenderManualTest {
 	@Test
 	@DisplayName("팀 탈퇴 알림 이메일을 실제 AWS SES로 발송한다 (수동 실행용)")
 	void sendTeamMemberLeftEmail() {
-		String toAddress = "boysoeng@naver.com";
+		String toAddress = "boysoeng@g.hongik.ac.kr";
 
 		TeamMemberLeftEvent event = TeamMemberLeftEvent.builder()
 			.memberName("홍길동")
