@@ -48,6 +48,10 @@ public final class EmailLayoutTemplate {
 	private EmailLayoutTemplate() {
 	}
 
+	public static String subject(final String content) {
+		return "[MAIT] " + content;
+	}
+
 	public static String wrap(final String contentHtml) {
 		return HEADER + contentHtml + FOOTER;
 	}

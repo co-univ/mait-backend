@@ -3,23 +3,25 @@ package com.coniv.mait.domain.team.event;
 import com.coniv.mait.global.email.template.EmailLayoutTemplate;
 import com.coniv.mait.global.email.util.HtmlEscapeUtils;
 
-final class TeamMemberLeftEmailTemplate {
+public final class TeamMemberLeftEmailTemplate {
 
 	private TeamMemberLeftEmailTemplate() {
 	}
 
-	static String subject(final TeamMemberLeftEvent event) {
-		return String.format("%s님이 %s 팀을 탈퇴하였습니다", event.memberName(), event.teamName());
+	public static String subject(final TeamMemberLeftEvent event) {
+		return EmailLayoutTemplate.subject(
+			String.format("%s님이 %s 팀을 탈퇴하였습니다", event.memberName(), event.teamName())
+		);
 	}
 
-	static String textBody(final TeamMemberLeftEvent event) {
+	public static String textBody(final TeamMemberLeftEvent event) {
 		return String.format(
 			"안녕하세요.%n%s님이 %s 팀을 탈퇴하였습니다.%n%n%s팀에 대한 접근 권한 및 데이터는 모두 삭제됩니다.%n%n감사합니다.",
 			event.memberName(), event.teamName(), event.teamName()
 		);
 	}
 
-	static String htmlBody(final TeamMemberLeftEvent event) {
+	public static String htmlBody(final TeamMemberLeftEvent event) {
 		return EmailLayoutTemplate.wrap(contentHtml(event));
 	}
 
