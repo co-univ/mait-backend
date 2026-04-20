@@ -141,6 +141,14 @@ public class TeamController {
 		return ResponseEntity.ok(ApiResponse.noContent());
 	}
 
+	@Operation(summary = "팀 탈퇴 API")
+	@DeleteMapping("/{teamId}/users/me")
+	public ResponseEntity<ApiResponse<Void>> leaveTeam(@PathVariable Long teamId,
+		@AuthenticationPrincipal MaitUser userPrincipal) {
+		teamService.leaveTeam(teamId, userPrincipal.id());
+		return ResponseEntity.ok(ApiResponse.noContent());
+	}
+
 	@Operation(summary = "팀 유저 역할 변경 API")
 	@PatchMapping("/team-users/{teamUserId}/role")
 	public ResponseEntity<ApiResponse<Void>> updateTeamUserRole(@PathVariable("teamUserId") Long teamUserId,

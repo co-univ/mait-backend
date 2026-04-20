@@ -227,6 +227,78 @@ public class TeamApiIntegrationTest extends BaseIntegrationTest {
 			.andExpect(jsonPath("$.data.applicationStatus").value("PENDING"));
 	}
 
+	@Test
+	@Transactional
+	@WithCustomUser(email = "player@example.com", name = "플레이어")
+	@DisplayName("팀 탈퇴 API 통합 테스트 - 성공")
+	void leaveTeam_Success() throws Exception {
+		// given
+		UserEntity owner = UserEntity.socialLoginUser("owner-leave@example.com", "오너", "provider", null);
+		userEntityRepository.save(owner);
+		UserEntity player = userEntityRepository.findByEmail("player@example.com").orElseThrow();
+
+		TeamEntity team = createTeamWithOwner("탈퇴팀", owner);
+		teamUserEntityRepository.save(TeamUserEntity.createPlayerUser(player, team));
+
+		// when & then
+		mockMvc.perform(delete("/api/v1/teams/{teamId}/users/me", team.getId())
+				.with(csrf()))
+			.andExpectAll(
+				status().isOk(),
+				jsonPath("$.isSuccess").value(true),
+				jsonPath("$.data").doesNotExist()
+			);
+
+		assertThat(teamUserEntityRepository.existsByTeamAndUser(team, player)).isFalse();
+		assertThat(teamUserEntityRepository.existsByTeamAndUser(team, owner)).isTrue();
+	}
+
+	@Test
+	@Transactional
+	@WithCustomUser(email = "maker@example.com", name = "메이커")
+	@DisplayName("팀 탈퇴 API 통합 테스트 - MAKER 탈퇴 성공")
+	void leaveTeam_Success_Maker() throws Exception {
+		// given
+		UserEntity owner = UserEntity.socialLoginUser("owner-maker-leave@example.com", "오너", "provider", null);
+		userEntityRepository.save(owner);
+		UserEntity maker = userEntityRepository.findByEmail("maker@example.com").orElseThrow();
+
+		TeamEntity team = createTeamWithOwner("메이커탈퇴팀", owner);
+		teamUserEntityRepository.save(TeamUserEntity.createTeamUser(maker, team, TeamUserRole.MAKER));
+
+		// when & then
+		mockMvc.perform(delete("/api/v1/teams/{teamId}/users/me", team.getId())
+				.with(csrf()))
+			.andExpectAll(
+				status().isOk(),
+				jsonPath("$.isSuccess").value(true),
+				jsonPath("$.data").doesNotExist()
+			);
+
+		assertThat(teamUserEntityRepository.existsByTeamAndUser(team, maker)).isFalse();
+	}
+
+	@Test
+	@Transactional
+	@WithCustomUser(email = "owner-cannot-leave@example.com", name = "오너")
+	@DisplayName("팀 탈퇴 API 통합 테스트 - OWNER 탈퇴 실패")
+	void leaveTeam_Failure_OwnerCannotLeave() throws Exception {
+		// given
+		UserEntity owner = userEntityRepository.findByEmail("owner-cannot-leave@example.com").orElseThrow();
+		TeamEntity team = createTeamWithOwner("오너탈퇴불가팀", owner);
+
+		// when & then
+		mockMvc.perform(delete("/api/v1/teams/{teamId}/users/me", team.getId())
+				.with(csrf()))
+			.andExpectAll(
+				status().isBadRequest(),
+				jsonPath("$.isSuccess").value(false),
+				jsonPath("$.code").value("T-001")
+			);
+
+		assertThat(teamUserEntityRepository.existsByTeamAndUser(team, owner)).isTrue();
+	}
+
 	private TeamEntity createTeamWithOwner(String teamName, UserEntity owner) {
 		TeamEntity team = TeamEntity.of(teamName, owner.getId());
 		team = teamEntityRepository.save(team);

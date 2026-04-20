@@ -1,7 +1,19 @@
 <?xml version="1.0"?>
 <!DOCTYPE suppressions PUBLIC
-        "-//Puppy Crawl//DTD Suppressions 1.1//EN"
-        "http://www.puppycrawl.com/dtds/suppressions_1_1.dtd">
+        "-//Checkstyle//DTD SuppressionFilter Configuration 1.2//EN"
+        "https://checkstyle.org/dtds/suppressions_1_2.dtd">
 
 <suppressions>
+    <!-- HTML template: text block content uses HTML indentation (spaces) and long inline styles -->
+    <suppress checks="RegexpSinglelineJava"
+              message="indentation-tab"
+              files="EmailLayoutTemplate\.java"/>
+    <suppress checks="LineLength"
+              files="EmailLayoutTemplate\.java"/>
+    <!-- HTML content inside text block uses HTML indentation (spaces) and long inline styles -->
+    <suppress checks="RegexpSinglelineJava"
+              message="indentation-tab"
+              files="TeamMemberLeftEmailTemplate\.java"/>
+    <suppress checks="LineLength"
+              files="TeamMemberLeftEmailTemplate\.java"/>
 </suppressions>
