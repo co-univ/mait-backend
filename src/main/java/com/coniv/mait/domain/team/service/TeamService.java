@@ -323,18 +323,15 @@ public class TeamService {
 			throw new TeamManagerException("Owner cannot leave the team.");
 		}
 
-		List<String> managerEmails = teamUserEntityRepository.findAllByTeamIdFetchJoinUser(team.getId()).stream()
-			.filter(tu -> !tu.getId().equals(teamUser.getId()))
-			.filter(tu -> tu.getUserRole() == TeamUserRole.OWNER || tu.getUserRole() == TeamUserRole.MAKER)
-			.map(tu -> tu.getUser().getEmail())
-			.toList();
-
 		teamUserEntityRepository.delete(teamUser);
+		TeamUserEntity owner = teamUserEntityRepository.findByTeamIdAndUserRole(teamId, TeamUserRole.OWNER)
+			.orElseThrow(() -> new EntityNotFoundException("owner가 존재하지 않습니다."));
 
 		maitEventPublisher.publishEvent(TeamMemberLeftEvent.builder()
 			.memberName(user.getName())
 			.teamName(team.getName())
-			.recipientEmails(managerEmails)
+			.memberEmail(user.getEmail())
+			.ownerEmail(owner.getUser().getEmail())
 			.build());
 	}
 

@@ -1,7 +1,5 @@
 package com.coniv.mait.domain.team.event;
 
-import java.util.List;
-
 import com.coniv.mait.global.event.MaitEvent;
 
 import lombok.Builder;
@@ -10,6 +8,7 @@ import lombok.Builder;
 public record TeamMemberLeftEvent(
 	String memberName,
 	String teamName,
-	List<String> recipientEmails
+	String memberEmail,
+	String ownerEmail
 ) implements MaitEvent {
 }

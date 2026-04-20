@@ -23,27 +23,29 @@ public class TeamMemberLeftEventListener {
 	@Async("maitThreadPoolExecutor")
 	@TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
 	public void handleTeamMemberLeft(final TeamMemberLeftEvent event) {
-		if (event.recipientEmails().isEmpty()) {
-			log.info("[팀 탈퇴 메일] 수신할 관리자 없음. teamName={}", event.teamName());
-			return;
-		}
+		sendEmail(event.memberEmail(),
+			TeamMemberLeftEmailTemplate.memberSubject(event),
+			TeamMemberLeftEmailTemplate.memberTextBody(event),
+			TeamMemberLeftEmailTemplate.memberHtmlBody(event),
+			event.teamName());
+		sendEmail(event.ownerEmail(),
+			TeamMemberLeftEmailTemplate.ownerSubject(event),
+			TeamMemberLeftEmailTemplate.ownerTextBody(event),
+			TeamMemberLeftEmailTemplate.ownerHtmlBody(event),
+			event.teamName());
+	}
 
-		String subject = TeamMemberLeftEmailTemplate.subject(event);
-		String textBody = TeamMemberLeftEmailTemplate.textBody(event);
-		String htmlBody = TeamMemberLeftEmailTemplate.htmlBody(event);
-
-		for (String recipientEmail : event.recipientEmails()) {
-			try {
-				emailSender.send(EmailMessage.builder()
-					.toAddresses(List.of(recipientEmail))
-					.subject(subject)
-					.textBody(textBody)
-					.htmlBody(htmlBody)
-					.build());
-			} catch (Exception exception) {
-				log.error("[팀 탈퇴 메일 발송 실패] recipientEmail={}, teamName={}",
-					recipientEmail, event.teamName(), exception);
-			}
+	private void sendEmail(final String recipient, final String subject, final String textBody, final String htmlBody,
+		final String teamName) {
+		try {
+			emailSender.send(EmailMessage.builder()
+				.toAddresses(List.of(recipient))
+				.subject(subject)
+				.textBody(textBody)
+				.htmlBody(htmlBody)
+				.build());
+		} catch (Exception exception) {
+			log.warn("[팀 탈퇴 메일 발송 실패] recipient={}, teamName={}", recipient, teamName, exception);
 		}
 	}
 }
