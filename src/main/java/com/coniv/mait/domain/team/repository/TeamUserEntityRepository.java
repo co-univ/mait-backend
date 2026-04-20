@@ -19,8 +19,8 @@ public interface TeamUserEntityRepository extends JpaRepository<TeamUserEntity, 
 
 	boolean existsByTeamAndUser(TeamEntity team, UserEntity user);
 
-	@Query("select tu from TeamUserEntity tu join fetch tu.team where tu.user = :user")
-	List<TeamUserEntity> findAllByUserFetchJoinTeam(@Param("user") final UserEntity user);
+	@Query("select tu from TeamUserEntity tu join fetch tu.team t where tu.user = :user and t.deletedAt is null")
+	List<TeamUserEntity> findAllByUserFetchJoinActiveTeam(@Param("user") final UserEntity user);
 
 	@Query("select tu from TeamUserEntity tu join fetch tu.user where tu.team.id = :teamId")
 	List<TeamUserEntity> findAllByTeamIdFetchJoinUser(@Param("teamId") Long teamId);

@@ -25,6 +25,7 @@ import com.coniv.mait.domain.team.repository.TeamInvitationApplicationEntityRepo
 import com.coniv.mait.domain.team.repository.TeamInvitationEntityRepository;
 import com.coniv.mait.domain.team.repository.TeamUserEntityRepository;
 import com.coniv.mait.domain.team.service.component.InviteTokenGenerator;
+import com.coniv.mait.domain.team.service.component.TeamReader;
 import com.coniv.mait.domain.team.service.dto.TeamApplicantDto;
 import com.coniv.mait.domain.team.service.dto.TeamInvitationDto;
 import com.coniv.mait.domain.team.service.dto.TeamInvitationLinkDto;
@@ -50,6 +51,7 @@ public class TeamService {
 	private final UserEntityRepository userEntityRepository;
 	private final TeamInvitationApplicationEntityRepository teamInvitationApplicationEntityRepository;
 	private final MaitEventPublisher maitEventPublisher;
+	private final TeamReader teamReader;
 
 	@Transactional
 	public void createTeam(final String teamName, final Long ownerId) {
@@ -106,8 +108,7 @@ public class TeamService {
 		if (role == TeamUserRole.OWNER) {
 			throw new TeamInvitationFailException(InvitationErrorCode.CANNOT_CREATE_WITH_OWNER_ROLE);
 		}
-		TeamEntity team = teamEntityRepository.findById(teamId)
-			.orElseThrow(() -> new EntityNotFoundException("Team not found with id: " + teamId));
+		TeamEntity team = teamReader.getActiveTeam(teamId);
 		UserEntity invitor = userEntityRepository.findById(invitorId)
 			.orElseThrow(
 				() -> new EntityNotFoundException("Owner user not found with id: " + invitorId));
@@ -128,8 +129,7 @@ public class TeamService {
 		if (role == TeamUserRole.OWNER) {
 			throw new TeamManagerException("Cannot add team user with OWNER role.");
 		}
-		TeamEntity team = teamEntityRepository.findById(teamId)
-			.orElseThrow(() -> new EntityNotFoundException("Team not found with id: " + teamId));
+		TeamEntity team = teamReader.getActiveTeam(teamId);
 		UserEntity user = userEntityRepository.findById(userId)
 			.orElseThrow(() -> new EntityNotFoundException("User not found with id: " + userId));
 
@@ -148,8 +148,7 @@ public class TeamService {
 			throw new TeamInvitationFailException(InvitationErrorCode.CANNOT_SET_TO_PENDING);
 		}
 
-		TeamEntity team = teamEntityRepository.findById(teamId)
-			.orElseThrow(() -> new EntityNotFoundException("Team not found with id: " + teamId));
+		TeamEntity team = teamReader.getActiveTeam(teamId);
 
 		validateApplicationApprover(team, approverId);
 
@@ -259,7 +258,7 @@ public class TeamService {
 		UserEntity user = userEntityRepository.findById(userId)
 			.orElseThrow(() -> new EntityNotFoundException("User not found with id: " + userId));
 
-		return teamUserEntityRepository.findAllByUserFetchJoinTeam(user).stream()
+		return teamUserEntityRepository.findAllByUserFetchJoinActiveTeam(user).stream()
 			.map(TeamUserDto::from)
 			.toList();
 	}
@@ -310,8 +309,7 @@ public class TeamService {
 
 	@Transactional
 	public void leaveTeam(final Long teamId, final Long userId) {
-		TeamEntity team = teamEntityRepository.findById(teamId)
-			.orElseThrow(() -> new EntityNotFoundException("Team not found with id: " + teamId));
+		TeamEntity team = teamReader.getActiveTeam(teamId);
 		UserEntity user = userEntityRepository.findById(userId)
 			.orElseThrow(() -> new EntityNotFoundException("User not found with id: " + userId));
 
@@ -352,8 +350,7 @@ public class TeamService {
 
 	@Transactional(readOnly = true)
 	public List<TeamInvitationLinkDto> getTeamInvitations(Long teamId) {
-		TeamEntity team = teamEntityRepository.findById(teamId)
-			.orElseThrow(() -> new EntityNotFoundException("Team not found with id: " + teamId));
+		TeamEntity team = teamReader.getTeam(teamId);
 
 		return teamInvitationEntityRepository.findActiveLinksByTeam(team, LocalDateTime.now()).stream()
 			.map(TeamInvitationLinkDto::from)
