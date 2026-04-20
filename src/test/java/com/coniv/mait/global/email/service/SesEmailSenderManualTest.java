@@ -33,7 +33,7 @@ class SesEmailSenderManualTest {
 	@Disabled
 	@DisplayName("실제 AWS SES로 이메일을 발송한다 (수동 실행용)")
 	void sendRealEmail() {
-		String toAddress = System.getenv("SES_TEST_TO_ADDRESS");
+		String toAddress = "boysoeng@g.hongik.ac.kr";
 
 		EmailMessage message = EmailMessage.html(
 			toAddress,
@@ -48,7 +48,6 @@ class SesEmailSenderManualTest {
 		EmailSendResult result = emailSender.send(message);
 
 		assertThat(result.messageId()).isNotBlank();
-		System.out.println("[SES] 발송 성공 — messageId: " + result.messageId());
 	}
 
 	@Test
@@ -74,10 +73,10 @@ class SesEmailSenderManualTest {
 		EmailSendResult result = emailSender.send(message);
 
 		assertThat(result.messageId()).isNotBlank();
-		System.out.println("[SES] 팀 탈퇴 메일(OWNER) 발송 성공 — messageId: " + result.messageId());
 	}
 
 	@Test
+	@Disabled
 	@DisplayName("팀 탈퇴 완료 이메일(본인용)을 실제 AWS SES로 발송한다 (수동 실행용)")
 	void sendTeamMemberLeftSelfEmail() {
 		String toAddress = "boysoeng@g.hongik.ac.kr";
@@ -99,6 +98,5 @@ class SesEmailSenderManualTest {
 		EmailSendResult result = emailSender.send(message);
 
 		assertThat(result.messageId()).isNotBlank();
-		System.out.println("[SES] 팀 탈퇴 메일(본인) 발송 성공 — messageId: " + result.messageId());
 	}
 }
