@@ -293,7 +293,7 @@ class TeamServiceTest {
 	}
 
 	@Test
-	@DisplayName("팀 탈퇴 성공 - 본인 삭제 후 OWNER/MAKER 이메일을 담은 탈퇴 이벤트를 발행한다")
+	@DisplayName("팀 탈퇴 성공 - 본인 삭제 후 본인 이메일과 OWNER 이메일을 담은 탈퇴 이벤트를 발행한다")
 	void leaveTeam_Success() {
 		// given
 		Long teamId = 1L;
@@ -301,30 +301,19 @@ class TeamServiceTest {
 		TeamEntity team = TeamEntity.of("테스트 팀", 1L);
 		UserEntity leaver = mock(UserEntity.class);
 		when(leaver.getName()).thenReturn("홍길동");
-		TeamUserEntity leaverTeamUser = spy(TeamUserEntity.createPlayerUser(leaver, team));
-		when(leaverTeamUser.getId()).thenReturn(10L);
+		when(leaver.getEmail()).thenReturn("leaver@example.com");
+		TeamUserEntity leaverTeamUser = TeamUserEntity.createPlayerUser(leaver, team);
 
 		UserEntity owner = mock(UserEntity.class);
 		when(owner.getEmail()).thenReturn("owner@example.com");
-		TeamUserEntity ownerTeamUser = spy(TeamUserEntity.createOwnerUser(owner, team));
-		when(ownerTeamUser.getId()).thenReturn(20L);
-
-		UserEntity maker = mock(UserEntity.class);
-		when(maker.getEmail()).thenReturn("maker@example.com");
-		TeamUserEntity makerTeamUser = spy(
-			TeamUserEntity.createTeamUser(maker, team, TeamUserRole.MAKER));
-		when(makerTeamUser.getId()).thenReturn(30L);
-
-		UserEntity otherPlayer = mock(UserEntity.class);
-		TeamUserEntity otherPlayerTeamUser = spy(TeamUserEntity.createPlayerUser(otherPlayer, team));
-		when(otherPlayerTeamUser.getId()).thenReturn(40L);
+		TeamUserEntity ownerTeamUser = TeamUserEntity.createOwnerUser(owner, team);
 
 		when(teamEntityRepository.findById(teamId)).thenReturn(Optional.of(team));
 		when(userEntityRepository.findById(userId)).thenReturn(Optional.of(leaver));
 		when(teamUserEntityRepository.findByTeamAndUser(team, leaver))
 			.thenReturn(Optional.of(leaverTeamUser));
-		when(teamUserEntityRepository.findAllByTeamIdFetchJoinUser(any()))
-			.thenReturn(List.of(leaverTeamUser, ownerTeamUser, makerTeamUser, otherPlayerTeamUser));
+		when(teamUserEntityRepository.findByTeamIdAndUserRole(teamId, TeamUserRole.OWNER))
+			.thenReturn(Optional.of(ownerTeamUser));
 
 		// when
 		teamService.leaveTeam(teamId, userId);
@@ -337,8 +326,8 @@ class TeamServiceTest {
 		TeamMemberLeftEvent event = eventCaptor.getValue();
 		assertThat(event.memberName()).isEqualTo("홍길동");
 		assertThat(event.teamName()).isEqualTo("테스트 팀");
-		assertThat(event.recipientEmails())
-			.containsExactlyInAnyOrder("owner@example.com", "maker@example.com");
+		assertThat(event.memberEmail()).isEqualTo("leaver@example.com");
+		assertThat(event.ownerEmail()).isEqualTo("owner@example.com");
 	}
 
 	@Test

@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.*;
 
 import java.util.List;
 
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable;
@@ -29,6 +30,7 @@ class SesEmailSenderManualTest {
 	private EmailSender emailSender;
 
 	@Test
+	@Disabled
 	@DisplayName("실제 AWS SES로 이메일을 발송한다 (수동 실행용)")
 	void sendRealEmail() {
 		String toAddress = System.getenv("SES_TEST_TO_ADDRESS");
@@ -50,26 +52,53 @@ class SesEmailSenderManualTest {
 	}
 
 	@Test
-	@DisplayName("팀 탈퇴 알림 이메일을 실제 AWS SES로 발송한다 (수동 실행용)")
-	void sendTeamMemberLeftEmail() {
+	@Disabled
+	@DisplayName("팀 탈퇴 알림 이메일(OWNER용)을 실제 AWS SES로 발송한다 (수동 실행용)")
+	void sendTeamMemberLeftOwnerEmail() {
 		String toAddress = "boysoeng@g.hongik.ac.kr";
 
 		TeamMemberLeftEvent event = TeamMemberLeftEvent.builder()
 			.memberName("홍길동")
 			.teamName("MAIT 개발팀")
-			.recipientEmails(List.of(toAddress))
+			.memberEmail("leaver@example.com")
+			.ownerEmail(toAddress)
 			.build();
 
 		EmailMessage message = EmailMessage.builder()
 			.toAddresses(List.of(toAddress))
-			.subject(TeamMemberLeftEmailTemplate.subject(event))
-			.textBody(TeamMemberLeftEmailTemplate.textBody(event))
-			.htmlBody(TeamMemberLeftEmailTemplate.htmlBody(event))
+			.subject(TeamMemberLeftEmailTemplate.ownerSubject(event))
+			.textBody(TeamMemberLeftEmailTemplate.ownerTextBody(event))
+			.htmlBody(TeamMemberLeftEmailTemplate.ownerHtmlBody(event))
 			.build();
 
 		EmailSendResult result = emailSender.send(message);
 
 		assertThat(result.messageId()).isNotBlank();
-		System.out.println("[SES] 팀 탈퇴 메일 발송 성공 — messageId: " + result.messageId());
+		System.out.println("[SES] 팀 탈퇴 메일(OWNER) 발송 성공 — messageId: " + result.messageId());
+	}
+
+	@Test
+	@DisplayName("팀 탈퇴 완료 이메일(본인용)을 실제 AWS SES로 발송한다 (수동 실행용)")
+	void sendTeamMemberLeftSelfEmail() {
+		String toAddress = "boysoeng@g.hongik.ac.kr";
+
+		TeamMemberLeftEvent event = TeamMemberLeftEvent.builder()
+			.memberName("홍길동")
+			.teamName("MAIT 개발팀")
+			.memberEmail(toAddress)
+			.ownerEmail(null)
+			.build();
+
+		EmailMessage message = EmailMessage.builder()
+			.toAddresses(List.of(toAddress))
+			.subject(TeamMemberLeftEmailTemplate.memberSubject(event))
+			.textBody(TeamMemberLeftEmailTemplate.memberTextBody(event))
+			.htmlBody(TeamMemberLeftEmailTemplate.memberHtmlBody(event))
+			.build();
+
+		EmailSendResult result = emailSender.send(message);
+
+		assertThat(result.messageId()).isNotBlank();
+		System.out.println("[SES] 팀 탈퇴 메일(본인) 발송 성공 — messageId: " + result.messageId());
 	}
 }
