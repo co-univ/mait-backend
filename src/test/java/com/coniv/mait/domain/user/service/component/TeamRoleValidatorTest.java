@@ -15,8 +15,8 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import com.coniv.mait.domain.team.entity.TeamEntity;
 import com.coniv.mait.domain.team.entity.TeamUserEntity;
 import com.coniv.mait.domain.team.enums.TeamUserRole;
-import com.coniv.mait.domain.team.repository.TeamEntityRepository;
 import com.coniv.mait.domain.team.repository.TeamUserEntityRepository;
+import com.coniv.mait.domain.team.service.component.TeamReader;
 import com.coniv.mait.domain.user.entity.UserEntity;
 import com.coniv.mait.domain.user.exception.UserRoleException;
 import com.coniv.mait.domain.user.repository.UserEntityRepository;
@@ -33,7 +33,7 @@ class TeamRoleValidatorTest {
 	private UserEntityRepository userEntityRepository;
 
 	@Mock
-	private TeamEntityRepository teamEntityRepository;
+	private TeamReader teamReader;
 
 	@Mock
 	private TeamUserEntityRepository teamUserEntityRepository;
@@ -49,7 +49,7 @@ class TeamRoleValidatorTest {
 		UserEntity user = mock(UserEntity.class);
 		TeamUserEntity teamUser = mock(TeamUserEntity.class);
 
-		when(teamEntityRepository.findById(teamId)).thenReturn(Optional.of(team));
+		when(teamReader.getTeam(teamId)).thenReturn(team);
 		when(userEntityRepository.findById(userId)).thenReturn(Optional.of(user));
 		when(teamUserEntityRepository.findByTeamAndUser(team, user)).thenReturn(Optional.of(teamUser));
 		when(teamUser.getUserRole()).thenReturn(TeamUserRole.OWNER);
@@ -58,7 +58,7 @@ class TeamRoleValidatorTest {
 		assertThatCode(() -> teamRoleValidator.checkHasCreateQuestionSetAuthority(teamId, userId))
 			.doesNotThrowAnyException();
 
-		verify(teamEntityRepository).findById(teamId);
+		verify(teamReader).getTeam(teamId);
 		verify(userEntityRepository).findById(userId);
 		verify(teamUserEntityRepository).findByTeamAndUser(team, user);
 		verify(teamUser).getUserRole();
@@ -75,7 +75,7 @@ class TeamRoleValidatorTest {
 		UserEntity user = mock(UserEntity.class);
 		TeamUserEntity teamUser = mock(TeamUserEntity.class);
 
-		when(teamEntityRepository.findById(teamId)).thenReturn(Optional.of(team));
+		when(teamReader.getTeam(teamId)).thenReturn(team);
 		when(userEntityRepository.findById(userId)).thenReturn(Optional.of(user));
 		when(teamUserEntityRepository.findByTeamAndUser(team, user)).thenReturn(Optional.of(teamUser));
 		when(teamUser.getUserRole()).thenReturn(TeamUserRole.MAKER);
@@ -84,7 +84,7 @@ class TeamRoleValidatorTest {
 		assertThatCode(() -> teamRoleValidator.checkHasCreateQuestionSetAuthority(teamId, userId))
 			.doesNotThrowAnyException();
 
-		verify(teamEntityRepository).findById(teamId);
+		verify(teamReader).getTeam(teamId);
 		verify(userEntityRepository).findById(userId);
 		verify(teamUserEntityRepository).findByTeamAndUser(team, user);
 		verify(teamUser).getUserRole();
@@ -97,14 +97,14 @@ class TeamRoleValidatorTest {
 		Long teamId = 999L;
 		Long userId = 100L;
 
-		when(teamEntityRepository.findById(teamId)).thenReturn(Optional.empty());
+		when(teamReader.getTeam(teamId)).thenThrow(new EntityNotFoundException(teamId + " : 해당 팀을 찾을 수 없습니다."));
 
 		// when & then
 		assertThatThrownBy(() -> teamRoleValidator.checkHasCreateQuestionSetAuthority(teamId, userId))
 			.isInstanceOf(EntityNotFoundException.class)
-			.hasMessage("존재하지 않는 팀입니다.");
+			.hasMessageContaining("해당 팀을 찾을 수 없습니다.");
 
-		verify(teamEntityRepository).findById(teamId);
+		verify(teamReader).getTeam(teamId);
 		verify(userEntityRepository, never()).findById(anyLong());
 		verify(teamUserEntityRepository, never()).findByTeamAndUser(any(), any());
 	}
@@ -118,7 +118,7 @@ class TeamRoleValidatorTest {
 
 		TeamEntity team = mock(TeamEntity.class);
 
-		when(teamEntityRepository.findById(teamId)).thenReturn(Optional.of(team));
+		when(teamReader.getTeam(teamId)).thenReturn(team);
 		when(userEntityRepository.findById(userId)).thenReturn(Optional.empty());
 
 		// when & then
@@ -126,7 +126,7 @@ class TeamRoleValidatorTest {
 			.isInstanceOf(EntityNotFoundException.class)
 			.hasMessage("존재하지 않는 사용자입니다.");
 
-		verify(teamEntityRepository).findById(teamId);
+		verify(teamReader).getTeam(teamId);
 		verify(userEntityRepository).findById(userId);
 		verify(teamUserEntityRepository, never()).findByTeamAndUser(any(), any());
 	}
@@ -141,7 +141,7 @@ class TeamRoleValidatorTest {
 		TeamEntity team = mock(TeamEntity.class);
 		UserEntity user = mock(UserEntity.class);
 
-		when(teamEntityRepository.findById(teamId)).thenReturn(Optional.of(team));
+		when(teamReader.getTeam(teamId)).thenReturn(team);
 		when(userEntityRepository.findById(userId)).thenReturn(Optional.of(user));
 		when(teamUserEntityRepository.findByTeamAndUser(team, user)).thenReturn(Optional.empty());
 
@@ -150,7 +150,7 @@ class TeamRoleValidatorTest {
 			.isInstanceOf(EntityNotFoundException.class)
 			.hasMessage("해당 팀의 멤버가 아닙니다.");
 
-		verify(teamEntityRepository).findById(teamId);
+		verify(teamReader).getTeam(teamId);
 		verify(userEntityRepository).findById(userId);
 		verify(teamUserEntityRepository).findByTeamAndUser(team, user);
 	}
@@ -165,7 +165,7 @@ class TeamRoleValidatorTest {
 		TeamEntity team = mock(TeamEntity.class);
 		UserEntity user = mock(UserEntity.class);
 
-		when(teamEntityRepository.findById(teamId)).thenReturn(Optional.of(team));
+		when(teamReader.getTeam(teamId)).thenReturn(team);
 		when(userEntityRepository.findById(userId)).thenReturn(Optional.of(user));
 		when(teamUserEntityRepository.existsByTeamAndUser(team, user)).thenReturn(true);
 
@@ -181,12 +181,12 @@ class TeamRoleValidatorTest {
 		Long teamId = 999L;
 		Long userId = 100L;
 
-		when(teamEntityRepository.findById(teamId)).thenReturn(Optional.empty());
+		when(teamReader.getTeam(teamId)).thenThrow(new EntityNotFoundException(teamId + " : 해당 팀을 찾을 수 없습니다."));
 
 		// when & then
 		assertThatThrownBy(() -> teamRoleValidator.checkIsTeamMember(teamId, userId))
 			.isInstanceOf(EntityNotFoundException.class)
-			.hasMessage("존재하지 않는 팀입니다.");
+			.hasMessageContaining("해당 팀을 찾을 수 없습니다.");
 
 		verify(userEntityRepository, never()).findById(anyLong());
 	}
@@ -200,7 +200,7 @@ class TeamRoleValidatorTest {
 
 		TeamEntity team = mock(TeamEntity.class);
 
-		when(teamEntityRepository.findById(teamId)).thenReturn(Optional.of(team));
+		when(teamReader.getTeam(teamId)).thenReturn(team);
 		when(userEntityRepository.findById(userId)).thenReturn(Optional.empty());
 
 		// when & then
@@ -219,7 +219,7 @@ class TeamRoleValidatorTest {
 		TeamEntity team = mock(TeamEntity.class);
 		UserEntity user = mock(UserEntity.class);
 
-		when(teamEntityRepository.findById(teamId)).thenReturn(Optional.of(team));
+		when(teamReader.getTeam(teamId)).thenReturn(team);
 		when(userEntityRepository.findById(userId)).thenReturn(Optional.of(user));
 		when(teamUserEntityRepository.existsByTeamAndUser(team, user)).thenReturn(false);
 
@@ -240,7 +240,7 @@ class TeamRoleValidatorTest {
 		UserEntity user = mock(UserEntity.class);
 		TeamUserEntity teamUser = mock(TeamUserEntity.class);
 
-		when(teamEntityRepository.findById(teamId)).thenReturn(Optional.of(team));
+		when(teamReader.getTeam(teamId)).thenReturn(team);
 		when(userEntityRepository.findById(userId)).thenReturn(Optional.of(user));
 		when(teamUserEntityRepository.findByTeamAndUser(team, user)).thenReturn(Optional.of(teamUser));
 		when(teamUser.getUserRole()).thenReturn(TeamUserRole.PLAYER);
@@ -250,7 +250,7 @@ class TeamRoleValidatorTest {
 			.isInstanceOf(UserRoleException.class)
 			.hasMessage("문제 세트 생성 권한이 없습니다.");
 
-		verify(teamEntityRepository).findById(teamId);
+		verify(teamReader).getTeam(teamId);
 		verify(userEntityRepository).findById(userId);
 		verify(teamUserEntityRepository).findByTeamAndUser(team, user);
 		verify(teamUser).getUserRole();

@@ -18,4 +18,9 @@ public class TeamReader {
 		return teamEntityRepository.findById(teamId)
 			.orElseThrow(() -> new EntityNotFoundException(teamId + " : 해당 팀을 찾을 수 없습니다."));
 	}
+
+	public TeamEntity getActiveTeam(final Long teamId) {
+		return teamEntityRepository.findByIdAndDeletedAtIsNull(teamId)
+			.orElseThrow(() -> new EntityNotFoundException(teamId + " : 해당 팀을 찾을 수 없습니다."));
+	}
 }
