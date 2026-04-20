@@ -1,5 +1,7 @@
 package com.coniv.mait.domain.team.entity;
 
+import java.time.LocalDateTime;
+
 import com.coniv.mait.global.entity.BaseTimeEntity;
 
 import jakarta.persistence.Column;
@@ -32,6 +34,9 @@ public class TeamEntity extends BaseTimeEntity {
 	@Column(nullable = false)
 	private Long creatorId;
 
+	@Column(name = "deleted_at")
+	private LocalDateTime deletedAt;
+
 	private TeamEntity(String name, Long creatorId) {
 		this.name = name;
 		this.creatorId = creatorId;
@@ -39,5 +44,13 @@ public class TeamEntity extends BaseTimeEntity {
 
 	public static TeamEntity of(String name, Long creatorId) {
 		return new TeamEntity(name, creatorId);
+	}
+
+	public void updateDeletedAt(final LocalDateTime deletedAt) {
+		this.deletedAt = deletedAt;
+	}
+
+	public boolean deleted() {
+		return deletedAt != null;
 	}
 }
