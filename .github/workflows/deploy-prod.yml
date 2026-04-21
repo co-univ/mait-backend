@@ -86,6 +86,7 @@ jobs:
             GOOGLE_CLIENT_SECRET=${{ secrets.PROD_GOOGLE_CLIENT_SECRET }}
             LOGSTASH_HOST=${{ secrets.LOGSTASH_HOST }}
             LOGSTASH_PORT=${{ secrets.LOGSTASH_PORT }}
+            EMAIL_PROVIDER=ses
             # Compose Variables
             APP_IMAGE_NAME=mait-prod-app
             PORT=8080
@@ -108,4 +109,3 @@ jobs:
             docker image prune -f
             
             echo "Production Application is running on port 8080 (Project: mait-prod)"
-
