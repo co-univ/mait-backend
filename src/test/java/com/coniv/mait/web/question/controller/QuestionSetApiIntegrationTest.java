@@ -1,6 +1,7 @@
 package com.coniv.mait.web.question.controller;
 
 import static org.assertj.core.api.Assertions.*;
+import static org.hamcrest.Matchers.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
@@ -15,13 +16,20 @@ import com.coniv.mait.domain.question.entity.MultipleQuestionEntity;
 import com.coniv.mait.domain.question.entity.QuestionSetEntity;
 import com.coniv.mait.domain.question.enums.DeliveryMode;
 import com.coniv.mait.domain.question.enums.QuestionSetCreationType;
-import com.coniv.mait.domain.question.enums.QuestionSetOngoingStatus;
+import com.coniv.mait.domain.question.enums.QuestionSetSolveMode;
+import com.coniv.mait.domain.question.enums.QuestionSetStatus;
 import com.coniv.mait.domain.question.enums.QuestionSetVisibility;
 import com.coniv.mait.domain.question.repository.MultipleChoiceEntityRepository;
 import com.coniv.mait.domain.question.repository.QuestionEntityRepository;
 import com.coniv.mait.domain.question.repository.QuestionSetEntityRepository;
+import com.coniv.mait.domain.solve.repository.SolvingSessionEntityRepository;
 import com.coniv.mait.domain.team.entity.TeamEntity;
+import com.coniv.mait.domain.team.entity.TeamUserEntity;
+import com.coniv.mait.domain.team.enums.TeamUserRole;
 import com.coniv.mait.domain.team.repository.TeamEntityRepository;
+import com.coniv.mait.domain.team.repository.TeamUserEntityRepository;
+import com.coniv.mait.domain.user.entity.UserEntity;
+import com.coniv.mait.domain.user.repository.UserEntityRepository;
 import com.coniv.mait.login.WithCustomUser;
 import com.coniv.mait.web.integration.BaseIntegrationTest;
 import com.coniv.mait.web.question.dto.UpdateQuestionSetApiRequest;
@@ -37,13 +45,24 @@ public class QuestionSetApiIntegrationTest extends BaseIntegrationTest {
 	private TeamEntityRepository teamEntityRepository;
 
 	@Autowired
+	private TeamUserEntityRepository teamUserEntityRepository;
+
+	@Autowired
 	private QuestionEntityRepository questionEntityRepository;
 
 	@Autowired
 	private MultipleChoiceEntityRepository multipleChoiceEntityRepository;
 
+	@Autowired
+	private SolvingSessionEntityRepository solvingSessionEntityRepository;
+
+	@Autowired
+	private UserEntityRepository userEntityRepository;
+
 	@BeforeEach
 	void setUp() {
+		solvingSessionEntityRepository.deleteAll();
+		teamUserEntityRepository.deleteAll();
 		questionSetEntityRepository.deleteAll();
 		questionEntityRepository.deleteAll();
 		multipleChoiceEntityRepository.deleteAll();
@@ -76,7 +95,9 @@ public class QuestionSetApiIntegrationTest extends BaseIntegrationTest {
 	@DisplayName("문제 셋 목록 조회 API 성공 테스트 - MAKING 모드 (List 구조)")
 	void getQuestionSetsApiSuccess_MakingMode() throws Exception {
 		// given
+		UserEntity currentUser = userEntityRepository.findByEmail("user@example.com").orElseThrow();
 		TeamEntity team = teamEntityRepository.save(TeamEntity.builder().name("코니브").creatorId(1L).build());
+		teamUserEntityRepository.save(TeamUserEntity.createTeamUser(currentUser, team, TeamUserRole.MAKER));
 		String subject1 = "Subject 1";
 		String subject2 = "Subject 2";
 		final DeliveryMode deliveryMode = DeliveryMode.MAKING;
@@ -84,12 +105,10 @@ public class QuestionSetApiIntegrationTest extends BaseIntegrationTest {
 		QuestionSetEntity questionSet1 = QuestionSetEntity.builder()
 			.subject(subject1)
 			.teamId(team.getId())
-			.deliveryMode(deliveryMode)
 			.build();
 		QuestionSetEntity questionSet2 = QuestionSetEntity.builder()
 			.subject(subject2)
 			.teamId(team.getId())
-			.deliveryMode(deliveryMode)
 			.build();
 
 		questionSetEntityRepository.save(questionSet1);
@@ -115,31 +134,33 @@ public class QuestionSetApiIntegrationTest extends BaseIntegrationTest {
 	@DisplayName("문제 셋 목록 조회 API 성공 테스트 - LIVE_TIME 모드 (Map 구조)")
 	void getQuestionSetsApiSuccess_LiveTimeMode() throws Exception {
 		// given
+		UserEntity currentUser = userEntityRepository.findByEmail("user@example.com").orElseThrow();
 		TeamEntity team = teamEntityRepository.save(TeamEntity.builder().name("코니브").creatorId(1L).build());
+		teamUserEntityRepository.save(TeamUserEntity.createPlayerUser(currentUser, team));
 		final DeliveryMode deliveryMode = DeliveryMode.LIVE_TIME;
 
 		// BEFORE 상태 문제 셋
 		QuestionSetEntity beforeSet = QuestionSetEntity.builder()
 			.subject("시작 전 문제")
 			.teamId(team.getId())
-			.deliveryMode(deliveryMode)
-			.ongoingStatus(QuestionSetOngoingStatus.BEFORE)
+			.status(QuestionSetStatus.BEFORE)
+			.solveMode(QuestionSetSolveMode.LIVE_TIME)
 			.build();
 
 		// ONGOING 상태 문제 셋
 		QuestionSetEntity ongoingSet = QuestionSetEntity.builder()
 			.subject("진행 중 문제")
 			.teamId(team.getId())
-			.deliveryMode(deliveryMode)
-			.ongoingStatus(QuestionSetOngoingStatus.ONGOING)
+			.status(QuestionSetStatus.ONGOING)
+			.solveMode(QuestionSetSolveMode.LIVE_TIME)
 			.build();
 
 		// AFTER 상태 문제 셋
 		QuestionSetEntity afterSet = QuestionSetEntity.builder()
 			.subject("종료된 문제")
 			.teamId(team.getId())
-			.deliveryMode(deliveryMode)
-			.ongoingStatus(QuestionSetOngoingStatus.AFTER)
+			.status(QuestionSetStatus.AFTER)
+			.solveMode(QuestionSetSolveMode.LIVE_TIME)
 			.build();
 
 		questionSetEntityRepository.save(beforeSet);
@@ -169,6 +190,50 @@ public class QuestionSetApiIntegrationTest extends BaseIntegrationTest {
 	}
 
 	@Test
+	@DisplayName("문제 셋 목록 조회 API 성공 테스트 - STUDY 모드에서 사용자별 풀이 상태 포함")
+	void getQuestionSetsApiSuccess_StudyModeWithUserSolveStatus() throws Exception {
+		// given
+		UserEntity currentUser = userEntityRepository.findByEmail("user@example.com").orElseThrow();
+		TeamEntity team = teamEntityRepository.save(TeamEntity.builder().name("코니브").creatorId(1L).build());
+		teamUserEntityRepository.save(TeamUserEntity.createPlayerUser(currentUser, team));
+		final DeliveryMode deliveryMode = DeliveryMode.STUDY;
+
+		QuestionSetEntity notStartedSet = questionSetEntityRepository.save(
+			QuestionSetEntity.builder()
+				.subject("아직 안 푼 문제")
+				.teamId(team.getId())
+				.solveMode(QuestionSetSolveMode.STUDY)
+				.status(QuestionSetStatus.ONGOING)
+				.build());
+
+		QuestionSetEntity progressingSet = questionSetEntityRepository.save(
+			QuestionSetEntity.builder()
+				.subject("풀고 있는 문제")
+				.teamId(team.getId())
+				.solveMode(QuestionSetSolveMode.STUDY)
+				.status(QuestionSetStatus.ONGOING)
+				.build());
+
+		QuestionSetEntity completedSet = questionSetEntityRepository.save(
+			QuestionSetEntity.builder()
+				.subject("채점 완료 문제")
+				.teamId(team.getId())
+				.solveMode(QuestionSetSolveMode.STUDY)
+				.status(QuestionSetStatus.ONGOING)
+				.build());
+
+		// when & then
+		mockMvc.perform(get("/api/v1/question-sets")
+				.param("teamId", String.valueOf(team.getId()))
+				.param("mode", deliveryMode.name())
+				.accept(MediaType.APPLICATION_JSON))
+			.andExpect(status().isOk())
+			.andExpect(jsonPath("$.data.mode").value("STUDY"))
+			.andExpect(jsonPath("$.data.content.questionSets.ONGOING").isArray())
+			.andExpect(jsonPath("$.data.content.questionSets.ONGOING.length()").value(3));
+	}
+
+	@Test
 	@DisplayName("문제 셋 단건 조회 API 성공 테스트")
 	void getQuestionSetApiSuccess() throws Exception {
 		// given
@@ -191,7 +256,7 @@ public class QuestionSetApiIntegrationTest extends BaseIntegrationTest {
 		UpdateQuestionSetApiRequest request = new UpdateQuestionSetApiRequest(
 			"Updated Title",
 			"Updated Subject",
-			DeliveryMode.LIVE_TIME,
+			QuestionSetSolveMode.LIVE_TIME,
 			"중급",
 			QuestionSetVisibility.GROUP);
 
