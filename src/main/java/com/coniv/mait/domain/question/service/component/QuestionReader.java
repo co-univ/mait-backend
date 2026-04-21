@@ -26,9 +26,9 @@ public class QuestionReader {
 	public QuestionEntity getQuestion(final Long questionId, final Long questionSetId) {
 		QuestionEntity question = questionEntityRepository.findById(questionId)
 			.orElseThrow(() -> new EntityNotFoundException("문제를 찾을 수 없습니다."));
-		QuestionSetEntity questionSet = questionSetReader.getActiveQuestionSet(questionSetId);
+		questionSetReader.validateActiveQuestionSet(questionSetId);
 
-		if (!question.getQuestionSet().getId().equals(questionSet.getId())) {
+		if (!question.getQuestionSet().getId().equals(questionSetId)) {
 			throw new ResourceNotBelongException("문제가 해당 문제 세트에 속하지 않습니다.");
 		}
 

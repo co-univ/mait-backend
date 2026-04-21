@@ -28,7 +28,7 @@ public class QuestionImageService {
 
 	@Transactional
 	public QuestionImageDto uploadImage(final Long questionSetId, final MultipartFile image) {
-		questionSetReader.getActiveQuestionSet(questionSetId);
+		questionSetReader.validateActiveQuestionSet(questionSetId);
 
 		FileInfo imageInfo = imageUploader.uploadFile(image, FileType.QUESTION_IMAGE);
 

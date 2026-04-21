@@ -130,7 +130,7 @@ public class QuestionService {
 	}
 
 	public QuestionDto getQuestion(final Long questionSetId, final Long questionId, final DeliveryMode mode) {
-		questionSetReader.getActiveQuestionSet(questionSetId);
+		questionSetReader.validateActiveQuestionSet(questionSetId);
 
 		QuestionEntity question = questionEntityRepository.findById(questionId)
 			.orElseThrow(() -> new EntityNotFoundException("Question not found with id: " + questionId));
@@ -146,7 +146,7 @@ public class QuestionService {
 
 	// Todo: 조회 성능 개선
 	public List<QuestionDto> getQuestions(final Long questionSetId, final DeliveryMode mode) {
-		questionSetReader.getActiveQuestionSet(questionSetId);
+		questionSetReader.validateActiveQuestionSet(questionSetId);
 
 		List<QuestionEntity> questions = questionEntityRepository.findAllByQuestionSetId(questionSetId);
 		return questions.stream()
@@ -182,7 +182,7 @@ public class QuestionService {
 
 	@Transactional
 	public QuestionDto updateQuestion(final Long questionSetId, final Long questionId, final QuestionDto questionDto) {
-		questionSetReader.getActiveQuestionSet(questionSetId);
+		questionSetReader.validateActiveQuestionSet(questionSetId);
 
 		QuestionEntity question = questionEntityRepository.findById(questionId)
 			.orElseThrow(() -> new EntityNotFoundException("Question not found with id: " + questionId));
@@ -223,7 +223,7 @@ public class QuestionService {
 
 	@Transactional
 	public void deleteQuestion(final Long questionSetId, final Long questionId) {
-		questionSetReader.getActiveQuestionSet(questionSetId);
+		questionSetReader.validateActiveQuestionSet(questionSetId);
 
 		QuestionEntity question = questionEntityRepository.findById(questionId)
 			.orElseThrow(() -> new EntityNotFoundException("Question not found with id: " + questionId));
@@ -240,7 +240,7 @@ public class QuestionService {
 	@Transactional
 	public void changeQuestionOrder(final Long questionSetId, final Long sourceQuestionId, final Long prevQuestionId,
 		final Long nextQuestionId) {
-		questionSetReader.getActiveQuestionSet(questionSetId);
+		questionSetReader.validateActiveQuestionSet(questionSetId);
 
 		QuestionEntity sourceQuestion = questionEntityRepository.findById(sourceQuestionId)
 			.orElseThrow(() -> new EntityNotFoundException("Question not found with id: " + sourceQuestionId));

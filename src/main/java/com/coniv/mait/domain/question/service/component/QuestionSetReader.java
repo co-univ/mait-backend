@@ -29,10 +29,21 @@ public class QuestionSetReader {
 		QuestionSetEntity questionSet = questionSetEntityRepository.findById(questionSetId)
 			.orElseThrow(() -> new EntityNotFoundException("해당 문제 셋을 찾을 수 없습니다."));
 
+		validateActiveQuestionSet(questionSet);
+
+		return questionSet;
+	}
+
+	public void validateActiveQuestionSet(final Long questionSetId) {
+		QuestionSetEntity questionSet = questionSetEntityRepository.findById(questionSetId)
+			.orElseThrow(() -> new EntityNotFoundException("해당 문제 셋을 찾을 수 없습니다."));
+
+		validateActiveQuestionSet(questionSet);
+	}
+
+	private void validateActiveQuestionSet(final QuestionSetEntity questionSet) {
 		if (questionSet.getTeamId() != null) {
 			teamReader.getActiveTeam(questionSet.getTeamId());
 		}
-
-		return questionSet;
 	}
 }

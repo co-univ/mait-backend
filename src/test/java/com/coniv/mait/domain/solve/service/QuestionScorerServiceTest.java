@@ -78,7 +78,6 @@ class QuestionScorerServiceTest {
 
 		when(questionEntityRepository.findById(questionId))
 			.thenReturn(Optional.of(question));
-		when(questionSetReader.getActiveQuestionSet(questionSetId)).thenReturn(questionSet);
 		when(questionScorerEntityRepository.findByQuestionId(questionId))
 			.thenReturn(Optional.of(scorer));
 		when(userEntityRepository.findById(userId))
@@ -95,6 +94,7 @@ class QuestionScorerServiceTest {
 		assertThat(result.getUserName()).isEqualTo("테스트사용자");
 		assertThat(result.getSubmitOrder()).isEqualTo(submitOrder);
 
+		verify(questionSetReader).validateActiveQuestionSet(questionSetId);
 		verify(questionEntityRepository).findById(questionId);
 		verify(questionScorerEntityRepository).findByQuestionId(questionId);
 		verify(userEntityRepository).findById(userId);
@@ -107,7 +107,6 @@ class QuestionScorerServiceTest {
 		Long questionSetId = 1L;
 		Long questionId = 999L;
 
-		when(questionSetReader.getActiveQuestionSet(questionSetId)).thenReturn(mock(QuestionSetEntity.class));
 		when(questionEntityRepository.findById(questionId))
 			.thenReturn(Optional.empty());
 
@@ -116,6 +115,7 @@ class QuestionScorerServiceTest {
 			.isInstanceOf(EntityNotFoundException.class)
 			.hasMessage("문제 ID에 해당하는 문제가 없습니다.");
 
+		verify(questionSetReader).validateActiveQuestionSet(questionSetId);
 		verify(questionEntityRepository).findById(questionId);
 		verify(questionScorerEntityRepository, never()).findByQuestionId(any());
 		verify(userEntityRepository, never()).findById(any());
@@ -142,13 +142,12 @@ class QuestionScorerServiceTest {
 
 		when(questionEntityRepository.findById(questionId))
 			.thenReturn(Optional.of(question));
-		when(questionSetReader.getActiveQuestionSet(questionSetId)).thenReturn(mock(QuestionSetEntity.class));
-
 		// When & Then
 		assertThatThrownBy(() -> questionScorerService.getScorer(questionSetId, questionId))
 			.isInstanceOf(ResourceNotBelongException.class)
 			.hasMessage("문제 세트 ID와 문제 ID가 일치하지 않습니다.");
 
+		verify(questionSetReader).validateActiveQuestionSet(questionSetId);
 		verify(questionEntityRepository).findById(questionId);
 		verify(questionScorerEntityRepository, never()).findByQuestionId(any());
 		verify(userEntityRepository, never()).findById(any());
@@ -174,7 +173,6 @@ class QuestionScorerServiceTest {
 
 		when(questionEntityRepository.findById(questionId))
 			.thenReturn(Optional.of(question));
-		when(questionSetReader.getActiveQuestionSet(questionSetId)).thenReturn(questionSet);
 		when(questionScorerEntityRepository.findByQuestionId(questionId))
 			.thenReturn(Optional.empty());
 
@@ -183,6 +181,7 @@ class QuestionScorerServiceTest {
 			.isInstanceOf(EntityNotFoundException.class)
 			.hasMessage("해당 문제에 대한 득점자가 없습니다.");
 
+		verify(questionSetReader).validateActiveQuestionSet(questionSetId);
 		verify(questionEntityRepository).findById(questionId);
 		verify(questionScorerEntityRepository).findByQuestionId(questionId);
 		verify(userEntityRepository, never()).findById(any());
@@ -216,7 +215,6 @@ class QuestionScorerServiceTest {
 
 		when(questionEntityRepository.findById(questionId))
 			.thenReturn(Optional.of(question));
-		when(questionSetReader.getActiveQuestionSet(questionSetId)).thenReturn(questionSet);
 		when(questionScorerEntityRepository.findByQuestionId(questionId))
 			.thenReturn(Optional.of(scorer));
 		when(userEntityRepository.findById(userId))
@@ -227,6 +225,7 @@ class QuestionScorerServiceTest {
 			.isInstanceOf(EntityNotFoundException.class)
 			.hasMessage("득점자에 해당하는 사용자가 없습니다.");
 
+		verify(questionSetReader).validateActiveQuestionSet(questionSetId);
 		verify(questionEntityRepository).findById(questionId);
 		verify(questionScorerEntityRepository).findByQuestionId(questionId);
 		verify(userEntityRepository).findById(userId);

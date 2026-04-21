@@ -181,7 +181,7 @@ public class QuestionSetService {
 	}
 
 	public AiRequestStatus getAiRequestStatus(Long questionSetId) {
-		questionSetReader.getActiveQuestionSet(questionSetId);
+		questionSetReader.validateActiveQuestionSet(questionSetId);
 		return aiRequestStatusManager.getStatus(questionSetId);
 	}
 

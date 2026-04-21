@@ -43,7 +43,7 @@ public class QuestionScorerService {
 
 	@Transactional(readOnly = true)
 	public QuestionScorerDto getScorer(final Long questionSetId, final Long questionId) {
-		questionSetReader.getActiveQuestionSet(questionSetId);
+		questionSetReader.validateActiveQuestionSet(questionSetId);
 
 		QuestionEntity question = questionEntityRepository.findById(questionId)
 			.orElseThrow(() -> new EntityNotFoundException("문제 ID에 해당하는 문제가 없습니다."));

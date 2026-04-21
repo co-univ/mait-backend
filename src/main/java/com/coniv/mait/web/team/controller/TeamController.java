@@ -57,7 +57,7 @@ public class TeamController {
 	@Operation(summary = "팀 초대 링크 생성 API")
 	@PostMapping("/{teamId}/invitation")
 	public ResponseEntity<ApiResponse<CreateTeamInviteApiResponse>> createTeamInviteCode(
-		@PathVariable("teamId") Long teamId, @RequestBody @Valid CreateTeamInviteApiRequest request,
+		@PathVariable Long teamId, @RequestBody @Valid CreateTeamInviteApiRequest request,
 		@AuthenticationPrincipal MaitUser ownerUser,
 		@RequestParam(value = "requiresApproval", defaultValue = "false") boolean requiresApproval) {
 		String inviteCode = teamService.createTeamInviteCode(teamId, ownerUser.id(), request.duration(), request.role(),
