@@ -20,6 +20,7 @@ import com.coniv.mait.domain.question.entity.QuestionSetParticipantEntity;
 import com.coniv.mait.domain.question.enums.ParticipantStatus;
 import com.coniv.mait.domain.question.repository.QuestionSetEntityRepository;
 import com.coniv.mait.domain.question.repository.QuestionSetParticipantRepository;
+import com.coniv.mait.domain.question.service.component.QuestionSetReader;
 import com.coniv.mait.domain.question.service.component.QuestionWebSocketSender;
 import com.coniv.mait.domain.team.repository.TeamUserEntityRepository;
 import com.coniv.mait.domain.user.entity.UserEntity;
@@ -40,6 +41,9 @@ class QuestionSetLiveControlServiceTest {
 
 	@Mock
 	private QuestionSetParticipantRepository questionSetParticipantRepository;
+
+	@Mock
+	private QuestionSetReader questionSetReader;
 
 	@InjectMocks
 	private QuestionSetLiveControlService questionSetLiveControlService;
@@ -71,8 +75,7 @@ class QuestionSetLiveControlServiceTest {
 		// given
 		Long questionSetId = 1L;
 
-		when(questionSetEntityRepository.findById(questionSetId))
-			.thenReturn(Optional.of(questionSetEntity));
+		when(questionSetReader.getActiveQuestionSet(questionSetId)).thenReturn(questionSetEntity);
 
 		// 참가자 목록 설정 (활성 2명, 탈락 1명)
 		List<QuestionSetParticipantEntity> participants = Arrays.asList(
@@ -113,7 +116,7 @@ class QuestionSetLiveControlServiceTest {
 		assertEquals(2L, participant2.getUserId());
 		assertEquals("이영희", participant2.getParticipantName());
 
-		verify(questionSetEntityRepository).findById(questionSetId);
+		verify(questionSetReader).getActiveQuestionSet(questionSetId);
 		verify(questionSetParticipantRepository).findAllByQuestionSetWithFetchJoinUser(questionSetEntity);
 	}
 
@@ -123,13 +126,14 @@ class QuestionSetLiveControlServiceTest {
 		// given
 		Long questionSetId = 999L;
 
-		when(questionSetEntityRepository.findById(questionSetId)).thenReturn(Optional.empty());
+		when(questionSetReader.getActiveQuestionSet(questionSetId))
+			.thenThrow(new EntityNotFoundException("해당 문제 셋을 찾을 수 없습니다."));
 
 		// when & then
 		assertThrows(EntityNotFoundException.class, () ->
 			questionSetLiveControlService.getActiveParticipants(questionSetId));
 
-		verify(questionSetEntityRepository).findById(questionSetId);
+		verify(questionSetReader).getActiveQuestionSet(questionSetId);
 		verify(questionSetParticipantRepository, never()).findAllByQuestionSetWithFetchJoinUser(any());
 	}
 
@@ -139,7 +143,7 @@ class QuestionSetLiveControlServiceTest {
 		// given
 		Long questionSetId = 1L;
 
-		when(questionSetEntityRepository.findById(questionSetId)).thenReturn(Optional.of(questionSetEntity));
+		when(questionSetReader.getActiveQuestionSet(questionSetId)).thenReturn(questionSetEntity);
 		when(questionSetParticipantRepository.findAllByQuestionSetWithFetchJoinUser(questionSetEntity))
 			.thenReturn(List.of());
 
@@ -149,7 +153,7 @@ class QuestionSetLiveControlServiceTest {
 		// then
 		assertTrue(result.isEmpty());
 
-		verify(questionSetEntityRepository).findById(questionSetId);
+		verify(questionSetReader).getActiveQuestionSet(questionSetId);
 		verify(questionSetParticipantRepository).findAllByQuestionSetWithFetchJoinUser(questionSetEntity);
 	}
 
@@ -159,7 +163,7 @@ class QuestionSetLiveControlServiceTest {
 		// given
 		Long questionSetId = 1L;
 
-		when(questionSetEntityRepository.findById(questionSetId)).thenReturn(Optional.of(questionSetEntity));
+		when(questionSetReader.getActiveQuestionSet(questionSetId)).thenReturn(questionSetEntity);
 
 		List<QuestionSetParticipantEntity> participants = Arrays.asList(eliminatedParticipant);
 		when(questionSetParticipantRepository.findAllByQuestionSetWithFetchJoinUser(questionSetEntity))
@@ -173,7 +177,7 @@ class QuestionSetLiveControlServiceTest {
 		// then
 		assertTrue(result.isEmpty());
 
-		verify(questionSetEntityRepository).findById(questionSetId);
+		verify(questionSetReader).getActiveQuestionSet(questionSetId);
 		verify(questionSetParticipantRepository).findAllByQuestionSetWithFetchJoinUser(questionSetEntity);
 	}
 
@@ -184,8 +188,7 @@ class QuestionSetLiveControlServiceTest {
 		Long questionSetId = 1L;
 		List<Long> activeUserIds = Arrays.asList(1L, 2L);
 
-		when(questionSetEntityRepository.findById(questionSetId))
-			.thenReturn(Optional.of(questionSetEntity));
+		when(questionSetReader.getActiveQuestionSet(questionSetId)).thenReturn(questionSetEntity);
 
 		// 참가자 목록 설정 (3명 전체, 그 중 2명만 활성화)
 		List<QuestionSetParticipantEntity> allParticipants = Arrays.asList(
@@ -208,7 +211,7 @@ class QuestionSetLiveControlServiceTest {
 		questionSetLiveControlService.updateActiveParticipants(questionSetId, activeUserIds);
 
 		// then
-		verify(questionSetEntityRepository).findById(questionSetId);
+		verify(questionSetReader).getActiveQuestionSet(questionSetId);
 		verify(questionSetParticipantRepository).findAllByQuestionSetWithFetchJoinUser(questionSetEntity);
 
 		// 상태 업데이트 검증
@@ -224,13 +227,14 @@ class QuestionSetLiveControlServiceTest {
 		Long questionSetId = 999L;
 		List<Long> activeUserIds = Arrays.asList(1L, 2L);
 
-		when(questionSetEntityRepository.findById(questionSetId)).thenReturn(Optional.empty());
+		when(questionSetReader.getActiveQuestionSet(questionSetId))
+			.thenThrow(new EntityNotFoundException("해당 문제 셋을 찾을 수 없습니다."));
 
 		// when & then
 		assertThrows(EntityNotFoundException.class, () ->
 			questionSetLiveControlService.updateActiveParticipants(questionSetId, activeUserIds));
 
-		verify(questionSetEntityRepository).findById(questionSetId);
+		verify(questionSetReader).getActiveQuestionSet(questionSetId);
 		verify(questionSetParticipantRepository, never()).findAllByQuestionSetWithFetchJoinUser(any());
 	}
 
@@ -241,8 +245,7 @@ class QuestionSetLiveControlServiceTest {
 		Long questionSetId = 1L;
 		List<Long> activeUserIds = List.of(); // 빈 목록
 
-		when(questionSetEntityRepository.findById(questionSetId))
-			.thenReturn(Optional.of(questionSetEntity));
+		when(questionSetReader.getActiveQuestionSet(questionSetId)).thenReturn(questionSetEntity);
 
 		List<QuestionSetParticipantEntity> allParticipants = Arrays.asList(
 			activeParticipant1, activeParticipant2
@@ -272,8 +275,7 @@ class QuestionSetLiveControlServiceTest {
 		Long questionSetId = 1L;
 		List<Long> activeUserIds = Arrays.asList(1L, 2L, 3L); // 모든 사용자 활성화
 
-		when(questionSetEntityRepository.findById(questionSetId))
-			.thenReturn(Optional.of(questionSetEntity));
+		when(questionSetReader.getActiveQuestionSet(questionSetId)).thenReturn(questionSetEntity);
 
 		List<QuestionSetParticipantEntity> allParticipants = Arrays.asList(
 			activeParticipant1, activeParticipant2, eliminatedParticipant
@@ -307,8 +309,7 @@ class QuestionSetLiveControlServiceTest {
 		Long questionSetId = 1L;
 		List<Long> winnerIds = Arrays.asList(1L, 2L);
 
-		when(questionSetEntityRepository.findById(questionSetId))
-			.thenReturn(Optional.of(questionSetEntity));
+		when(questionSetReader.getActiveQuestionSet(questionSetId)).thenReturn(questionSetEntity);
 
 		// 참가자 목록 설정 (우승자 2명, 기타 1명)
 		List<QuestionSetParticipantEntity> allParticipants = Arrays.asList(
@@ -336,7 +337,7 @@ class QuestionSetLiveControlServiceTest {
 		questionSetLiveControlService.sendWinner(questionSetId, winnerIds);
 
 		// then
-		verify(questionSetEntityRepository).findById(questionSetId);
+		verify(questionSetReader).getActiveQuestionSet(questionSetId);
 		verify(questionSetParticipantRepository).findAllByQuestionSetWithFetchJoinUser(questionSetEntity);
 	}
 
@@ -347,8 +348,7 @@ class QuestionSetLiveControlServiceTest {
 		Long questionSetId = 1L;
 		List<Long> winnerIds = List.of(); // 빈 목록
 
-		when(questionSetEntityRepository.findById(questionSetId))
-			.thenReturn(Optional.of(questionSetEntity));
+		when(questionSetReader.getActiveQuestionSet(questionSetId)).thenReturn(questionSetEntity);
 
 		List<QuestionSetParticipantEntity> allParticipants = Arrays.asList(
 			activeParticipant1, activeParticipant2
@@ -367,7 +367,7 @@ class QuestionSetLiveControlServiceTest {
 
 		// then
 		// 빈 우승자 목록으로도 메시지가 전송되어야 함
-		verify(questionSetEntityRepository).findById(questionSetId);
+		verify(questionSetReader).getActiveQuestionSet(questionSetId);
 		verify(questionSetParticipantRepository).findAllByQuestionSetWithFetchJoinUser(questionSetEntity);
 	}
 }

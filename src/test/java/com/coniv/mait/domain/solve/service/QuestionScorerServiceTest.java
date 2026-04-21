@@ -17,6 +17,7 @@ import com.coniv.mait.domain.question.entity.MultipleQuestionEntity;
 import com.coniv.mait.domain.question.entity.QuestionEntity;
 import com.coniv.mait.domain.question.entity.QuestionSetEntity;
 import com.coniv.mait.domain.question.repository.QuestionEntityRepository;
+import com.coniv.mait.domain.question.service.component.QuestionSetReader;
 import com.coniv.mait.domain.solve.entity.QuestionScorerEntity;
 import com.coniv.mait.domain.solve.repository.QuestionScorerEntityRepository;
 import com.coniv.mait.domain.solve.service.dto.QuestionScorerDto;
@@ -37,6 +38,9 @@ class QuestionScorerServiceTest {
 
 	@Mock
 	private QuestionScorerEntityRepository questionScorerEntityRepository;
+
+	@Mock
+	private QuestionSetReader questionSetReader;
 
 	@InjectMocks
 	private QuestionScorerService questionScorerService;
@@ -74,6 +78,7 @@ class QuestionScorerServiceTest {
 
 		when(questionEntityRepository.findById(questionId))
 			.thenReturn(Optional.of(question));
+		when(questionSetReader.getActiveQuestionSet(questionSetId)).thenReturn(questionSet);
 		when(questionScorerEntityRepository.findByQuestionId(questionId))
 			.thenReturn(Optional.of(scorer));
 		when(userEntityRepository.findById(userId))
@@ -102,6 +107,7 @@ class QuestionScorerServiceTest {
 		Long questionSetId = 1L;
 		Long questionId = 999L;
 
+		when(questionSetReader.getActiveQuestionSet(questionSetId)).thenReturn(mock(QuestionSetEntity.class));
 		when(questionEntityRepository.findById(questionId))
 			.thenReturn(Optional.empty());
 
@@ -136,6 +142,7 @@ class QuestionScorerServiceTest {
 
 		when(questionEntityRepository.findById(questionId))
 			.thenReturn(Optional.of(question));
+		when(questionSetReader.getActiveQuestionSet(questionSetId)).thenReturn(mock(QuestionSetEntity.class));
 
 		// When & Then
 		assertThatThrownBy(() -> questionScorerService.getScorer(questionSetId, questionId))
@@ -167,6 +174,7 @@ class QuestionScorerServiceTest {
 
 		when(questionEntityRepository.findById(questionId))
 			.thenReturn(Optional.of(question));
+		when(questionSetReader.getActiveQuestionSet(questionSetId)).thenReturn(questionSet);
 		when(questionScorerEntityRepository.findByQuestionId(questionId))
 			.thenReturn(Optional.empty());
 
@@ -208,6 +216,7 @@ class QuestionScorerServiceTest {
 
 		when(questionEntityRepository.findById(questionId))
 			.thenReturn(Optional.of(question));
+		when(questionSetReader.getActiveQuestionSet(questionSetId)).thenReturn(questionSet);
 		when(questionScorerEntityRepository.findByQuestionId(questionId))
 			.thenReturn(Optional.of(scorer));
 		when(userEntityRepository.findById(userId))

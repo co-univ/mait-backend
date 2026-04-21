@@ -32,6 +32,7 @@ import com.coniv.mait.domain.question.service.component.FillBlankQuestionFactory
 import com.coniv.mait.domain.question.service.component.MultipleQuestionFactory;
 import com.coniv.mait.domain.question.service.component.OrderingQuestionFactory;
 import com.coniv.mait.domain.question.service.component.QuestionFactory;
+import com.coniv.mait.domain.question.service.component.QuestionSetReader;
 import com.coniv.mait.domain.question.service.component.ShortQuestionFactory;
 import com.coniv.mait.domain.question.service.dto.FillBlankQuestionDto;
 import com.coniv.mait.domain.question.service.dto.MultipleQuestionDto;
@@ -78,6 +79,9 @@ class QuestionServiceTest {
 	@Mock
 	private AiRequestStatusManager aiRequestStatusManager;
 
+	@Mock
+	private QuestionSetReader questionSetReader;
+
 	@BeforeEach
 	void setUp() {
 		// QuestionFactory들의 getQuestionType() 메서드 모킹 (QuestionService 생성자에서 호출됨)
@@ -101,7 +105,8 @@ class QuestionServiceTest {
 			multipleChoiceEntityRepository,
 			questionImageService,
 			aiCreateApiService,
-			aiRequestStatusManager);
+			aiRequestStatusManager,
+			questionSetReader);
 	}
 
 	@Test
@@ -205,7 +210,7 @@ class QuestionServiceTest {
 		// given
 		final Long questionSetId = 1L;
 		QuestionSetEntity questionSetEntity = mock(QuestionSetEntity.class);
-		when(questionSetEntityRepository.findById(questionSetId)).thenReturn(Optional.of(questionSetEntity));
+		when(questionSetReader.getActiveQuestionSet(questionSetId)).thenReturn(questionSetEntity);
 
 		MultipleQuestionDto questionDto = mock(MultipleQuestionDto.class);
 
@@ -213,7 +218,7 @@ class QuestionServiceTest {
 		questionService.createQuestion(questionSetId, QuestionType.MULTIPLE, questionDto);
 
 		// then
-		verify(questionSetEntityRepository).findById(questionSetId);
+		verify(questionSetReader).getActiveQuestionSet(questionSetId);
 		verify(multipleQuestionFactory).save(questionDto, questionSetEntity);
 
 		// 다른 팩토리는 호출되지 않아야 함
@@ -227,7 +232,8 @@ class QuestionServiceTest {
 	void createQuestion_QuestionSetNotFound() {
 		// given
 		final Long questionSetId = 1L;
-		when(questionSetEntityRepository.findById(questionSetId)).thenReturn(Optional.empty());
+		when(questionSetReader.getActiveQuestionSet(questionSetId))
+			.thenThrow(new EntityNotFoundException("해당 문제 셋을 찾을 수 없습니다."));
 
 		MultipleQuestionDto questionDto = mock(MultipleQuestionDto.class);
 
@@ -235,7 +241,7 @@ class QuestionServiceTest {
 		assertThrows(EntityNotFoundException.class,
 			() -> questionService.createQuestion(questionSetId, QuestionType.MULTIPLE, questionDto));
 
-		verify(questionSetEntityRepository).findById(questionSetId);
+		verify(questionSetReader).getActiveQuestionSet(questionSetId);
 		// 어떤 팩토리도 호출되지 않아야 함
 		verify(multipleQuestionFactory, never()).save(any(), any());
 		verify(shortQuestionFactory, never()).save(any(), any());
@@ -629,7 +635,7 @@ class QuestionServiceTest {
 		final Long questionSetId = 1L;
 
 		QuestionSetEntity questionSetEntity = mock(QuestionSetEntity.class);
-		when(questionSetEntityRepository.findById(questionSetId)).thenReturn(Optional.of(questionSetEntity));
+		when(questionSetReader.getActiveQuestionSet(questionSetId)).thenReturn(questionSetEntity);
 
 		// ArgumentCaptor로 save된 QuestionEntity 캡처
 		ArgumentCaptor<QuestionEntity> questionCaptor = ArgumentCaptor.forClass(QuestionEntity.class);
@@ -654,7 +660,7 @@ class QuestionServiceTest {
 		assertNotNull(savedQuestion.getLexoRank());
 		assertEquals(questionSetEntity, savedQuestion.getQuestionSet());
 
-		verify(questionSetEntityRepository).findById(questionSetId);
+		verify(questionSetReader).getActiveQuestionSet(questionSetId);
 		verify(questionEntityRepository).save(any(QuestionEntity.class));
 		verify(multipleQuestionFactory).getQuestion(any(QuestionEntity.class), eq(true));
 	}

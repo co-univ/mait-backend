@@ -41,6 +41,7 @@ import com.coniv.mait.login.WithCustomUser;
 import com.coniv.mait.web.integration.BaseIntegrationTest;
 import com.coniv.mait.web.team.dto.CreateTeamApiRequest;
 import com.coniv.mait.web.team.dto.CreateTeamInviteApiRequest;
+import com.coniv.mait.web.team.dto.UpdateTeamUserRoleApiRequest;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import jakarta.servlet.FilterChain;
@@ -375,6 +376,114 @@ public class TeamApiIntegrationTest extends BaseIntegrationTest {
 
 		// when & then
 		mockMvc.perform(delete("/api/v1/teams/{teamId}", team.getId())
+				.with(csrf()))
+			.andExpectAll(
+				status().isBadRequest(),
+				jsonPath("$.isSuccess").value(false),
+				jsonPath("$.code").value("T-001"),
+				jsonPath("$.reasons[0]").value("삭제된 팀입니다.")
+			);
+	}
+
+	@Test
+	@Transactional
+	@WithCustomUser(email = "deleted-team-invitation-delete-owner@example.com", name = "오너")
+	@DisplayName("팀 초대 링크 삭제 API 통합 테스트 - 삭제된 팀의 초대 링크면 실패한다")
+	void deleteTeamInvitation_Failure_DeletedTeam() throws Exception {
+		// given
+		UserEntity owner = userEntityRepository.findByEmail("deleted-team-invitation-delete-owner@example.com")
+			.orElseThrow();
+		TeamEntity team = createTeamWithOwner("삭제된초대삭제팀", owner);
+		TeamInvitationLinkEntity invite = teamInvitationEntityRepository.save(TeamInvitationLinkEntity.createInvite(
+			owner, team, "DELETE" + System.currentTimeMillis(), InviteTokenDuration.ONE_DAY, TeamUserRole.PLAYER,
+			false));
+		team.updateDeletedAt(LocalDateTime.now());
+
+		// when & then
+		mockMvc.perform(delete("/api/v1/teams/invitations/{invitationId}", invite.getId())
+				.with(csrf()))
+			.andExpectAll(
+				status().isBadRequest(),
+				jsonPath("$.isSuccess").value(false),
+				jsonPath("$.code").value("T-001"),
+				jsonPath("$.reasons[0]").value("삭제된 팀입니다.")
+			);
+	}
+
+	@Test
+	@Transactional
+	@WithCustomUser(email = "deleted-team-role-owner@example.com", name = "오너")
+	@DisplayName("팀 유저 역할 변경 API 통합 테스트 - 삭제된 팀의 멤버면 실패한다")
+	void updateTeamUserRole_Failure_DeletedTeam() throws Exception {
+		// given
+		UserEntity owner = userEntityRepository.findByEmail("deleted-team-role-owner@example.com").orElseThrow();
+		UserEntity player = UserEntity.socialLoginUser("deleted-team-role-player@example.com", "플레이어",
+			"provider-role", null);
+		userEntityRepository.save(player);
+		TeamEntity team = createTeamWithOwner("삭제된역할변경팀", owner);
+		TeamUserEntity teamUser = teamUserEntityRepository.save(TeamUserEntity.createPlayerUser(player, team));
+		team.updateDeletedAt(LocalDateTime.now());
+		UpdateTeamUserRoleApiRequest request = new UpdateTeamUserRoleApiRequest(TeamUserRole.MAKER);
+
+		// when & then
+		mockMvc.perform(patch("/api/v1/teams/team-users/{teamUserId}/role", teamUser.getId())
+				.contentType(MediaType.APPLICATION_JSON)
+				.content(objectMapper.writeValueAsString(request))
+				.with(csrf()))
+			.andExpectAll(
+				status().isBadRequest(),
+				jsonPath("$.isSuccess").value(false),
+				jsonPath("$.code").value("T-001"),
+				jsonPath("$.reasons[0]").value("삭제된 팀입니다.")
+			);
+
+		TeamUserEntity unchangedTeamUser = teamUserEntityRepository.findById(teamUser.getId()).orElseThrow();
+		assertThat(unchangedTeamUser.getUserRole()).isEqualTo(TeamUserRole.PLAYER);
+	}
+
+	@Test
+	@Transactional
+	@WithCustomUser(email = "deleted-team-live-owner@example.com", name = "오너")
+	@DisplayName("실시간 문제셋 시작 API 통합 테스트 - 삭제된 팀의 문제셋이면 실패한다")
+	void startLiveQuestionSet_Failure_DeletedTeam() throws Exception {
+		// given
+		UserEntity owner = userEntityRepository.findByEmail("deleted-team-live-owner@example.com").orElseThrow();
+		TeamEntity team = createTeamWithOwner("삭제된라이브팀", owner);
+		QuestionSetEntity questionSet = questionSetEntityRepository.save(QuestionSetEntity.builder()
+			.subject("삭제된 팀의 라이브 문제셋")
+			.teamId(team.getId())
+			.solveMode(QuestionSetSolveMode.LIVE_TIME)
+			.status(QuestionSetStatus.BEFORE)
+			.build());
+		team.updateDeletedAt(LocalDateTime.now());
+
+		// when & then
+		mockMvc.perform(patch("/api/v1/question-sets/{questionSetId}/live-status/start", questionSet.getId())
+				.with(csrf()))
+			.andExpectAll(
+				status().isBadRequest(),
+				jsonPath("$.isSuccess").value(false),
+				jsonPath("$.code").value("T-001"),
+				jsonPath("$.reasons[0]").value("삭제된 팀입니다.")
+			);
+
+		QuestionSetEntity unchangedQuestionSet = questionSetEntityRepository.findById(questionSet.getId()).orElseThrow();
+		assertThat(unchangedQuestionSet.getStatus()).isEqualTo(QuestionSetStatus.BEFORE);
+	}
+
+	@Test
+	@Transactional
+	@WithCustomUser(email = "deleted-team-rank-user@example.com", name = "유저")
+	@DisplayName("팀 랭킹 조회 API 통합 테스트 - 삭제된 팀이면 실패한다")
+	void getTeamQuestionRank_Failure_DeletedTeam() throws Exception {
+		// given
+		UserEntity user = userEntityRepository.findByEmail("deleted-team-rank-user@example.com").orElseThrow();
+		TeamEntity team = createTeamWithOwner("삭제된랭킹팀", user);
+		team.updateDeletedAt(LocalDateTime.now());
+
+		// when & then
+		mockMvc.perform(get("/api/v1/teams/{teamId}/question-ranks", team.getId())
+				.param("type", "CORRECT")
 				.with(csrf()))
 			.andExpectAll(
 				status().isBadRequest(),

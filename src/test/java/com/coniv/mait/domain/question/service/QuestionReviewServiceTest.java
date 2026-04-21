@@ -27,6 +27,7 @@ import com.coniv.mait.domain.question.repository.QuestionSetEntityRepository;
 import com.coniv.mait.domain.question.service.component.LastViewedQuestionRedisRepository;
 import com.coniv.mait.domain.question.service.component.QuestionFactory;
 import com.coniv.mait.domain.question.service.component.QuestionReader;
+import com.coniv.mait.domain.question.service.component.QuestionSetReader;
 import com.coniv.mait.domain.question.service.component.ReviewAnswerGrader;
 import com.coniv.mait.domain.question.service.dto.QuestionDto;
 import com.coniv.mait.domain.question.service.dto.ReviewAnswerCheckResult;
@@ -45,6 +46,9 @@ class QuestionReviewServiceTest {
 
 	@Mock
 	private QuestionReader questionReader;
+
+	@Mock
+	private QuestionSetReader questionSetReader;
 
 	@Mock
 	private ReviewAnswerGrader reviewAnswerGrader;
@@ -79,6 +83,7 @@ class QuestionReviewServiceTest {
 			lastViewedQuestionRedisRepository,
 			reviewAnswerGrader,
 			questionReader,
+			questionSetReader,
 			List.of(shortQuestionFactory, multipleQuestionFactory, orderingQuestionFactory,
 				fillBlankQuestionFactory));
 	}
@@ -102,7 +107,7 @@ class QuestionReviewServiceTest {
 
 		QuestionDto expected = mock(QuestionDto.class);
 
-		when(questionSetEntityRepository.findById(questionSetId)).thenReturn(Optional.of(questionSet));
+		when(questionSetReader.getActiveQuestionSet(questionSetId)).thenReturn(questionSet);
 		when(lastViewedQuestionRedisRepository.getLastViewedQuestion(questionSet, userId)).thenReturn(
 			lastViewedQuestion);
 		when(multipleQuestionFactory.getQuestion(lastViewedQuestion, answerVisible)).thenReturn(expected);
@@ -112,7 +117,7 @@ class QuestionReviewServiceTest {
 
 		// then
 		assertThat(result).isSameAs(expected);
-		verify(questionSetEntityRepository).findById(questionSetId);
+		verify(questionSetReader).getActiveQuestionSet(questionSetId);
 		verify(teamRoleValidator).checkHasSolveQuestionAuthorityInTeam(teamId, userId);
 		verify(lastViewedQuestionRedisRepository).getLastViewedQuestion(questionSet, userId);
 		verify(multipleQuestionFactory).getQuestion(lastViewedQuestion, answerVisible);
@@ -132,7 +137,7 @@ class QuestionReviewServiceTest {
 
 		QuestionSetEntity questionSet = mock(QuestionSetEntity.class);
 		when(questionSet.getStatus()).thenReturn(QuestionSetStatus.ONGOING);
-		when(questionSetEntityRepository.findById(questionSetId)).thenReturn(Optional.of(questionSet));
+		when(questionSetReader.getActiveQuestionSet(questionSetId)).thenReturn(questionSet);
 
 		// when, then
 		QuestionSetStatusException questionSetStatusException = assertThrows(QuestionSetStatusException.class,
@@ -164,7 +169,7 @@ class QuestionReviewServiceTest {
 			.build();
 
 		when(questionReader.getQuestion(questionId, questionSetId)).thenReturn(question);
-		when(questionSetEntityRepository.findById(questionSetId)).thenReturn(Optional.of(questionSet));
+		when(questionSetReader.getActiveQuestionSet(questionSetId)).thenReturn(questionSet);
 		when(questionSet.getVisibility()).thenReturn(QuestionSetVisibility.PUBLIC);
 		when(questionSet.canReview()).thenReturn(true);
 		when(reviewAnswerGrader.gradeAnswer(questionId, question, submitAnswer)).thenReturn(expectedResult);
@@ -177,7 +182,7 @@ class QuestionReviewServiceTest {
 		assertThat(result.questionId()).isEqualTo(questionId);
 		assertThat(result.isCorrect()).isTrue();
 		verify(teamRoleValidator, never()).checkHasSolveQuestionAuthorityInTeam(anyLong(), anyLong());
-		verify(questionSetEntityRepository).findById(questionSetId);
+		verify(questionSetReader).getActiveQuestionSet(questionSetId);
 		verify(reviewAnswerGrader).gradeAnswer(questionId, question, submitAnswer);
 	}
 
@@ -193,7 +198,7 @@ class QuestionReviewServiceTest {
 		QuestionEntity question = mock(QuestionEntity.class);
 		QuestionSetEntity questionSet = mock(QuestionSetEntity.class);
 		when(questionReader.getQuestion(questionId, questionSetId)).thenReturn(question);
-		when(questionSetEntityRepository.findById(questionSetId)).thenReturn(Optional.of(questionSet));
+		when(questionSetReader.getActiveQuestionSet(questionSetId)).thenReturn(questionSet);
 		when(questionSet.getVisibility()).thenReturn(QuestionSetVisibility.PUBLIC);
 
 		when(questionSet.canReview()).thenReturn(false);
@@ -204,7 +209,7 @@ class QuestionReviewServiceTest {
 
 		// then
 		assertThat(exception.getExceptionCode()).isEqualTo(QuestionSetStatusExceptionCode.ONLY_REVIEW);
-		verify(questionSetEntityRepository).findById(questionSetId);
+		verify(questionSetReader).getActiveQuestionSet(questionSetId);
 		verify(reviewAnswerGrader, never()).gradeAnswer(anyLong(), any(), any());
 	}
 
@@ -225,7 +230,7 @@ class QuestionReviewServiceTest {
 			submitAnswer))
 			.isInstanceOf(ResourceNotBelongException.class);
 
-		verify(questionSetEntityRepository, never()).findById(anyLong());
+		verify(questionSetReader, never()).getActiveQuestionSet(anyLong());
 		verify(teamRoleValidator, never()).checkHasSolveQuestionAuthorityInTeam(anyLong(), anyLong());
 		verify(reviewAnswerGrader, never()).gradeAnswer(anyLong(), any(), any());
 	}
@@ -243,7 +248,7 @@ class QuestionReviewServiceTest {
 		QuestionSetEntity questionSet = mock(QuestionSetEntity.class);
 
 		when(questionReader.getQuestion(questionId, questionSetId)).thenReturn(question);
-		when(questionSetEntityRepository.findById(questionSetId)).thenReturn(Optional.of(questionSet));
+		when(questionSetReader.getActiveQuestionSet(questionSetId)).thenReturn(questionSet);
 		when(questionSet.getVisibility()).thenReturn(QuestionSetVisibility.PRIVATE);
 
 		// when, then
@@ -253,7 +258,7 @@ class QuestionReviewServiceTest {
 		assertThat(exception.getExceptionCode()).isEqualTo(QuestionSetStatusExceptionCode.NEED_OPEN);
 		verify(teamRoleValidator, never()).checkHasSolveQuestionAuthorityInTeam(anyLong(), anyLong());
 		verify(reviewAnswerGrader, never()).gradeAnswer(anyLong(), any(), any());
-		verify(questionSetEntityRepository).findById(questionSetId);
+		verify(questionSetReader).getActiveQuestionSet(questionSetId);
 	}
 
 	@Test
@@ -277,7 +282,7 @@ class QuestionReviewServiceTest {
 			.build();
 
 		when(questionReader.getQuestion(questionId, questionSetId)).thenReturn(question);
-		when(questionSetEntityRepository.findById(questionSetId)).thenReturn(Optional.of(questionSet));
+		when(questionSetReader.getActiveQuestionSet(questionSetId)).thenReturn(questionSet);
 		when(questionSet.getVisibility()).thenReturn(QuestionSetVisibility.GROUP);
 		when(questionSet.getTeamId()).thenReturn(teamId);
 		doNothing().when(teamRoleValidator).checkHasSolveQuestionAuthorityInTeam(teamId, userId);
@@ -292,7 +297,7 @@ class QuestionReviewServiceTest {
 		assertThat(result.questionId()).isEqualTo(questionId);
 		assertThat(result.isCorrect()).isTrue();
 		verify(teamRoleValidator).checkHasSolveQuestionAuthorityInTeam(teamId, userId);
-		verify(questionSetEntityRepository).findById(questionSetId);
+		verify(questionSetReader).getActiveQuestionSet(questionSetId);
 		verify(reviewAnswerGrader).gradeAnswer(questionId, question, submitAnswer);
 	}
 }

@@ -27,6 +27,7 @@ import com.coniv.mait.domain.question.event.NewParticipantEvent;
 import com.coniv.mait.domain.question.exception.QuestionSetStatusException;
 import com.coniv.mait.domain.question.repository.QuestionSetEntityRepository;
 import com.coniv.mait.domain.question.repository.QuestionSetParticipantRepository;
+import com.coniv.mait.domain.question.service.component.QuestionSetReader;
 import com.coniv.mait.domain.question.service.component.QuestionWebSocketSender;
 import com.coniv.mait.domain.user.entity.UserEntity;
 import com.coniv.mait.domain.user.repository.UserEntityRepository;
@@ -42,6 +43,9 @@ class QuestionSetParticipantServiceTest {
 
 	@Mock
 	private QuestionSetEntityRepository questionSetEntityRepository;
+
+	@Mock
+	private QuestionSetReader questionSetReader;
 
 	@Mock
 	private QuestionSetParticipantRepository questionSetParticipantRepository;
@@ -70,7 +74,7 @@ class QuestionSetParticipantServiceTest {
 		UserEntity user = mock(UserEntity.class);
 		given(user.getId()).willReturn(userId);
 
-		given(questionSetEntityRepository.findById(questionSetId)).willReturn(Optional.of(questionSet));
+		given(questionSetReader.getActiveQuestionSet(questionSetId)).willReturn(questionSet);
 		given(questionSetParticipantRepository.findByQuestionSetAndUserId(questionSet, userId))
 			.willReturn(Optional.empty());
 		given(userEntityRepository.findById(userId)).willReturn(Optional.of(user));
@@ -103,7 +107,7 @@ class QuestionSetParticipantServiceTest {
 		UserEntity user = mock(UserEntity.class);
 		given(user.getId()).willReturn(userId);
 
-		given(questionSetEntityRepository.findById(questionSetId)).willReturn(Optional.of(questionSet));
+		given(questionSetReader.getActiveQuestionSet(questionSetId)).willReturn(questionSet);
 		given(questionSetParticipantRepository.findByQuestionSetAndUserId(questionSet, userId))
 			.willReturn(Optional.empty());
 		given(userEntityRepository.findById(userId)).willReturn(Optional.of(user));
@@ -132,7 +136,7 @@ class QuestionSetParticipantServiceTest {
 			.status(QuestionSetStatus.ONGOING)
 			.build();
 
-		given(questionSetEntityRepository.findById(questionSetId)).willReturn(Optional.of(questionSet));
+		given(questionSetReader.getActiveQuestionSet(questionSetId)).willReturn(questionSet);
 
 		// when & then
 		assertThatThrownBy(
@@ -155,7 +159,7 @@ class QuestionSetParticipantServiceTest {
 		UserEntity user = mock(UserEntity.class);
 		given(user.getId()).willReturn(userId);
 
-		given(questionSetEntityRepository.findById(questionSetId)).willReturn(Optional.of(questionSet));
+		given(questionSetReader.getActiveQuestionSet(questionSetId)).willReturn(questionSet);
 		given(questionSetParticipantRepository.findByQuestionSetAndUserId(questionSet, userId))
 			.willReturn(Optional.empty());
 		given(userEntityRepository.findById(userId)).willReturn(Optional.of(user));
@@ -192,7 +196,7 @@ class QuestionSetParticipantServiceTest {
 			.status(ParticipantStatus.ELIMINATED)
 			.build();
 
-		given(questionSetEntityRepository.findById(questionSetId)).willReturn(Optional.of(questionSet));
+		given(questionSetReader.getActiveQuestionSet(questionSetId)).willReturn(questionSet);
 		given(questionSetParticipantRepository.findByQuestionSetAndUserId(questionSet, userId))
 			.willReturn(Optional.of(existingParticipant));
 
@@ -212,7 +216,8 @@ class QuestionSetParticipantServiceTest {
 		Long questionSetId = 999L;
 		Long userId = 1L;
 
-		given(questionSetEntityRepository.findById(questionSetId)).willReturn(Optional.empty());
+		given(questionSetReader.getActiveQuestionSet(questionSetId))
+			.willThrow(new EntityNotFoundException("해당 문제 셋을 찾을 수 없습니다."));
 
 		// when & then
 		assertThatThrownBy(
@@ -231,7 +236,7 @@ class QuestionSetParticipantServiceTest {
 			.status(QuestionSetStatus.ONGOING)
 			.build();
 
-		given(questionSetEntityRepository.findById(questionSetId)).willReturn(Optional.of(questionSet));
+		given(questionSetReader.getActiveQuestionSet(questionSetId)).willReturn(questionSet);
 		given(questionSetParticipantRepository.findAllByQuestionSetWithFetchJoinUser(questionSet))
 			.willReturn(List.of());
 
@@ -267,7 +272,7 @@ class QuestionSetParticipantServiceTest {
 		QuestionSetParticipantEntity participant3 = QuestionSetParticipantEntity.builder()
 			.questionSet(questionSet).user(user3).status(ParticipantStatus.ACTIVE).build();
 
-		given(questionSetEntityRepository.findById(questionSetId)).willReturn(Optional.of(questionSet));
+		given(questionSetReader.getActiveQuestionSet(questionSetId)).willReturn(questionSet);
 		given(questionSetParticipantRepository.findAllByQuestionSetWithFetchJoinUser(questionSet))
 			.willReturn(List.of(participant1, participant2, participant3));
 

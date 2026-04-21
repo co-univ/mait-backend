@@ -3,7 +3,7 @@ package com.coniv.mait.domain.question.service;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
-import java.util.Optional;
+import java.util.List;
 
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -17,6 +17,7 @@ import com.coniv.mait.domain.question.entity.QuestionEntity;
 import com.coniv.mait.domain.question.entity.QuestionSetEntity;
 import com.coniv.mait.domain.question.enums.QuestionStatusType;
 import com.coniv.mait.domain.question.repository.QuestionEntityRepository;
+import com.coniv.mait.domain.question.service.component.QuestionReader;
 import com.coniv.mait.domain.question.service.component.QuestionWebSocketSender;
 import com.coniv.mait.global.exception.custom.QuestionSetLiveException;
 import com.coniv.mait.global.exception.custom.ResourceNotBelongException;
@@ -31,6 +32,9 @@ class QuestionControlServiceTest {
 
 	@Mock
 	private QuestionEntityRepository questionEntityRepository;
+
+	@Mock
+	private QuestionReader questionReader;
 
 	@InjectMocks
 	private QuestionControlService questionControlService;
@@ -48,9 +52,9 @@ class QuestionControlServiceTest {
 		Long questionSetId = 1L;
 		Long questionId = 1L;
 
-		when(questionEntityRepository.findById(questionId)).thenReturn(Optional.of(questionEntity));
+		when(questionReader.getQuestion(questionId, questionSetId)).thenReturn(questionEntity);
+		when(questionEntityRepository.findAllByQuestionSetId(questionSetId)).thenReturn(List.of(questionEntity));
 		when(questionEntity.getQuestionSet()).thenReturn(questionSetEntity);
-		when(questionSetEntity.getId()).thenReturn(questionSetId);
 		when(questionSetEntity.isOnLive()).thenReturn(true);
 
 		// when
@@ -69,9 +73,9 @@ class QuestionControlServiceTest {
 		Long questionSetId = 1L;
 		Long questionId = 1L;
 
-		when(questionEntityRepository.findById(questionId)).thenReturn(Optional.of(questionEntity));
+		when(questionReader.getQuestion(questionId, questionSetId)).thenReturn(questionEntity);
+		when(questionEntityRepository.findAllByQuestionSetId(questionSetId)).thenReturn(List.of(questionEntity));
 		when(questionEntity.getQuestionSet()).thenReturn(questionSetEntity);
-		when(questionSetEntity.getId()).thenReturn(questionSetId);
 		when(questionSetEntity.isOnLive()).thenReturn(true);
 		when(questionEntity.getQuestionStatus()).thenReturn(QuestionStatusType.ACCESS_PERMISSION);
 
@@ -91,7 +95,8 @@ class QuestionControlServiceTest {
 		Long questionSetId = 1L;
 		Long questionId = 999L;
 
-		when(questionEntityRepository.findById(questionId)).thenReturn(Optional.empty());
+		when(questionReader.getQuestion(questionId, questionSetId))
+			.thenThrow(new EntityNotFoundException("문제를 찾을 수 없습니다."));
 
 		// when & then
 		assertThrows(EntityNotFoundException.class, () ->
@@ -105,7 +110,8 @@ class QuestionControlServiceTest {
 		Long questionSetId = 1L;
 		Long questionId = 999L;
 
-		when(questionEntityRepository.findById(questionId)).thenReturn(Optional.empty());
+		when(questionReader.getQuestion(questionId, questionSetId))
+			.thenThrow(new EntityNotFoundException("문제를 찾을 수 없습니다."));
 
 		// when & then
 		assertThrows(EntityNotFoundException.class, () ->
@@ -118,12 +124,9 @@ class QuestionControlServiceTest {
 		// given
 		Long questionSetId = 1L;
 		Long questionId = 1L;
-		Long differentQuestionSetId = 2L;
 
-		when(questionEntityRepository.findById(questionId)).thenReturn(Optional.of(questionEntity));
-		when(questionEntity.getQuestionSet()).thenReturn(questionSetEntity);
-		when(questionSetEntity.isOnLive()).thenReturn(true);
-		when(questionSetEntity.getId()).thenReturn(differentQuestionSetId);
+		when(questionReader.getQuestion(questionId, questionSetId))
+			.thenThrow(new ResourceNotBelongException("문제가 해당 문제 세트에 속하지 않습니다."));
 
 		// when & then
 		assertThrows(ResourceNotBelongException.class, () ->
@@ -136,12 +139,9 @@ class QuestionControlServiceTest {
 		// given
 		Long questionSetId = 1L;
 		Long questionId = 1L;
-		Long differentQuestionSetId = 2L;
 
-		when(questionEntityRepository.findById(questionId)).thenReturn(Optional.of(questionEntity));
-		when(questionEntity.getQuestionSet()).thenReturn(questionSetEntity);
-		when(questionSetEntity.isOnLive()).thenReturn(true);
-		when(questionSetEntity.getId()).thenReturn(differentQuestionSetId);
+		when(questionReader.getQuestion(questionId, questionSetId))
+			.thenThrow(new ResourceNotBelongException("문제가 해당 문제 세트에 속하지 않습니다."));
 
 		// when & then
 		assertThrows(ResourceNotBelongException.class, () ->
@@ -155,9 +155,8 @@ class QuestionControlServiceTest {
 		Long questionSetId = 1L;
 		Long questionId = 1L;
 
-		when(questionEntityRepository.findById(questionId)).thenReturn(Optional.of(questionEntity));
+		when(questionReader.getQuestion(questionId, questionSetId)).thenReturn(questionEntity);
 		when(questionEntity.getQuestionSet()).thenReturn(questionSetEntity);
-		when(questionSetEntity.getId()).thenReturn(questionSetId);
 		when(questionSetEntity.isOnLive()).thenReturn(false);
 
 		// when & then
@@ -172,9 +171,8 @@ class QuestionControlServiceTest {
 		Long questionSetId = 1L;
 		Long questionId = 1L;
 
-		when(questionEntityRepository.findById(questionId)).thenReturn(Optional.of(questionEntity));
+		when(questionReader.getQuestion(questionId, questionSetId)).thenReturn(questionEntity);
 		when(questionEntity.getQuestionSet()).thenReturn(questionSetEntity);
-		when(questionSetEntity.getId()).thenReturn(questionSetId);
 		when(questionSetEntity.isOnLive()).thenReturn(false);
 
 		// when & then
@@ -189,12 +187,11 @@ class QuestionControlServiceTest {
 		Long questionSetId = 1L;
 		Long questionId = 1L;
 
-		when(questionEntityRepository.findById(questionId)).thenReturn(Optional.of(questionEntity));
+		when(questionReader.getQuestion(questionId, questionSetId)).thenReturn(questionEntity);
 		when(questionEntity.getQuestionSet()).thenReturn(questionSetEntity);
-		when(questionSetEntity.getId()).thenReturn(questionSetId);
 		when(questionSetEntity.isOnLive()).thenReturn(true);
 		when(questionEntity.getQuestionStatus()).thenReturn(QuestionStatusType.NOT_OPEN);
-
+		
 		// when & then
 		assertThrows(QuestionSetLiveException.class, () ->
 			questionControlService.allowQuestionSolve(questionSetId, questionId));

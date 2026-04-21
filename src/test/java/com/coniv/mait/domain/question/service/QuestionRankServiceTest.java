@@ -23,6 +23,7 @@ import com.coniv.mait.domain.question.repository.QuestionEntityRepository;
 import com.coniv.mait.domain.question.repository.QuestionSetEntityRepository;
 import com.coniv.mait.domain.question.repository.QuestionSetParticipantRepository;
 import com.coniv.mait.domain.question.service.component.QuestionReader;
+import com.coniv.mait.domain.question.service.component.QuestionSetReader;
 import com.coniv.mait.domain.question.service.dto.ParticipantCorrectAnswerRankDto;
 import com.coniv.mait.domain.solve.entity.AnswerSubmitRecordEntity;
 import com.coniv.mait.domain.solve.entity.QuestionScorerEntity;
@@ -64,6 +65,9 @@ class QuestionRankServiceTest {
 
 	@Mock
 	private QuestionReader questionReader;
+
+	@Mock
+	private QuestionSetReader questionSetReader;
 
 	@Test
 	@DisplayName("참가자 정답 랭킹 조회 성공 - 활성/탈락 참가자 분류 및 정답 수 기준 정렬")
@@ -127,7 +131,7 @@ class QuestionRankServiceTest {
 		when(answer6.getUserId()).thenReturn(3L);
 		when(answer6.getQuestionId()).thenReturn(2L);
 
-		when(questionSetEntityRepository.findById(questionSetId)).thenReturn(Optional.of(questionSet));
+		when(questionSetReader.getActiveQuestionSet(questionSetId)).thenReturn(questionSet);
 		when(questionSetParticipantRepository.findAllByQuestionSetWithFetchJoinUser(questionSet))
 			.thenReturn(List.of(participant1, participant2, participant3));
 		when(questionEntityRepository.findAllByQuestionSetId(questionSetId))
@@ -154,7 +158,7 @@ class QuestionRankServiceTest {
 		assertThat(result.getEliminatedParticipants().get(0).getParticipantDto().getUserId()).isEqualTo(3L);
 		assertThat(result.getEliminatedParticipants().get(0).getCorrectAnswerCount()).isEqualTo(2L);
 
-		verify(questionSetEntityRepository).findById(questionSetId);
+		verify(questionSetReader).getActiveQuestionSet(questionSetId);
 		verify(questionSetParticipantRepository).findAllByQuestionSetWithFetchJoinUser(questionSet);
 		verify(questionEntityRepository).findAllByQuestionSetId(questionSetId);
 		verify(answerSubmitRecordEntityRepository).findAllByQuestionIdInAndIsCorrect(List.of(1L, 2L, 3L), true);
@@ -170,7 +174,7 @@ class QuestionRankServiceTest {
 
 		when(question1.getId()).thenReturn(1L);
 
-		when(questionSetEntityRepository.findById(questionSetId)).thenReturn(Optional.of(questionSet));
+		when(questionSetReader.getActiveQuestionSet(questionSetId)).thenReturn(questionSet);
 		when(questionSetParticipantRepository.findAllByQuestionSetWithFetchJoinUser(questionSet))
 			.thenReturn(List.of());
 		when(questionEntityRepository.findAllByQuestionSetId(questionSetId))
@@ -186,7 +190,7 @@ class QuestionRankServiceTest {
 		assertThat(result.getActiveParticipants()).isEmpty();
 		assertThat(result.getEliminatedParticipants()).isEmpty();
 
-		verify(questionSetEntityRepository).findById(questionSetId);
+		verify(questionSetReader).getActiveQuestionSet(questionSetId);
 		verify(questionSetParticipantRepository).findAllByQuestionSetWithFetchJoinUser(questionSet);
 		verify(questionEntityRepository).findAllByQuestionSetId(questionSetId);
 		verify(answerSubmitRecordEntityRepository).findAllByQuestionIdInAndIsCorrect(List.of(1L), true);
@@ -220,7 +224,7 @@ class QuestionRankServiceTest {
 		QuestionEntity question1 = mock(QuestionEntity.class);
 		when(question1.getId()).thenReturn(1L);
 
-		when(questionSetEntityRepository.findById(questionSetId)).thenReturn(Optional.of(questionSet));
+		when(questionSetReader.getActiveQuestionSet(questionSetId)).thenReturn(questionSet);
 		when(questionSetParticipantRepository.findAllByQuestionSetWithFetchJoinUser(questionSet))
 			.thenReturn(List.of(participant1, participant2));
 		when(questionEntityRepository.findAllByQuestionSetId(questionSetId))
@@ -238,7 +242,7 @@ class QuestionRankServiceTest {
 		assertThat(result.getActiveParticipants().get(1).getCorrectAnswerCount()).isEqualTo(0L);
 		assertThat(result.getEliminatedParticipants()).isEmpty();
 
-		verify(questionSetEntityRepository).findById(questionSetId);
+		verify(questionSetReader).getActiveQuestionSet(questionSetId);
 		verify(questionSetParticipantRepository).findAllByQuestionSetWithFetchJoinUser(questionSet);
 		verify(questionEntityRepository).findAllByQuestionSetId(questionSetId);
 		verify(answerSubmitRecordEntityRepository).findAllByQuestionIdInAndIsCorrect(List.of(1L), true);
@@ -284,7 +288,7 @@ class QuestionRankServiceTest {
 		when(answer2.getUserId()).thenReturn(2L);
 		when(answer2.getQuestionId()).thenReturn(2L);
 
-		when(questionSetEntityRepository.findById(questionSetId)).thenReturn(Optional.of(questionSet));
+		when(questionSetReader.getActiveQuestionSet(questionSetId)).thenReturn(questionSet);
 		when(questionSetParticipantRepository.findAllByQuestionSetWithFetchJoinUser(questionSet))
 			.thenReturn(List.of(participant1, participant2));
 		when(questionEntityRepository.findAllByQuestionSetId(questionSetId))
@@ -302,7 +306,7 @@ class QuestionRankServiceTest {
 		assertThat(result.getActiveParticipants().get(1).getCorrectAnswerCount()).isEqualTo(1L);
 		assertThat(result.getEliminatedParticipants()).isEmpty();
 
-		verify(questionSetEntityRepository).findById(questionSetId);
+		verify(questionSetReader).getActiveQuestionSet(questionSetId);
 		verify(questionSetParticipantRepository).findAllByQuestionSetWithFetchJoinUser(questionSet);
 		verify(questionEntityRepository).findAllByQuestionSetId(questionSetId);
 		verify(answerSubmitRecordEntityRepository).findAllByQuestionIdInAndIsCorrect(List.of(1L, 2L), true);
@@ -332,7 +336,7 @@ class QuestionRankServiceTest {
 		when(answer1.getUserId()).thenReturn(1L);
 		when(answer1.getQuestionId()).thenReturn(1L);
 
-		when(questionSetEntityRepository.findById(questionSetId)).thenReturn(Optional.of(questionSet));
+		when(questionSetReader.getActiveQuestionSet(questionSetId)).thenReturn(questionSet);
 		when(questionSetParticipantRepository.findAllByQuestionSetWithFetchJoinUser(questionSet))
 			.thenReturn(List.of(participant1));
 		when(questionEntityRepository.findAllByQuestionSetId(questionSetId))
@@ -349,7 +353,7 @@ class QuestionRankServiceTest {
 		assertThat(result.getEliminatedParticipants()).hasSize(1);
 		assertThat(result.getEliminatedParticipants().get(0).getCorrectAnswerCount()).isEqualTo(1L);
 
-		verify(questionSetEntityRepository).findById(questionSetId);
+		verify(questionSetReader).getActiveQuestionSet(questionSetId);
 		verify(questionSetParticipantRepository).findAllByQuestionSetWithFetchJoinUser(questionSet);
 		verify(questionEntityRepository).findAllByQuestionSetId(questionSetId);
 		verify(answerSubmitRecordEntityRepository).findAllByQuestionIdInAndIsCorrect(List.of(1L), true);
@@ -417,7 +421,7 @@ class QuestionRankServiceTest {
 		when(answer5.getUserId()).thenReturn(3L);
 		when(answer6.getUserId()).thenReturn(3L);
 
-		when(questionSetEntityRepository.findById(questionSetId)).thenReturn(Optional.of(questionSet));
+		when(questionSetReader.getActiveQuestionSet(questionSetId)).thenReturn(questionSet);
 		when(questionReader.getQuestionsByQuestionSet(questionSet))
 			.thenReturn(List.of(question1, question2, question3));
 		when(answerSubmitRecordEntityRepository.findAllByQuestionIdInAndIsCorrect(
@@ -447,7 +451,7 @@ class QuestionRankServiceTest {
 		assertThat(result.get(2).getUsers()).hasSize(1);
 		assertThat(result.get(2).getUsers().get(0).getId()).isEqualTo(2L);
 
-		verify(questionSetEntityRepository).findById(questionSetId);
+		verify(questionSetReader).getActiveQuestionSet(questionSetId);
 		verify(questionReader).getQuestionsByQuestionSet(questionSet);
 		verify(answerSubmitRecordEntityRepository).findAllByQuestionIdInAndIsCorrect(List.of(1L, 2L, 3L), true);
 		verify(questionSetParticipantRepository).findAllByQuestionSetWithFetchJoinUser(questionSet);
@@ -490,7 +494,7 @@ class QuestionRankServiceTest {
 		AnswerSubmitRecordEntity answer1 = mock(AnswerSubmitRecordEntity.class);
 		when(answer1.getUserId()).thenReturn(1L);
 
-		when(questionSetEntityRepository.findById(questionSetId)).thenReturn(Optional.of(questionSet));
+		when(questionSetReader.getActiveQuestionSet(questionSetId)).thenReturn(questionSet);
 		when(questionReader.getQuestionsByQuestionSet(questionSet))
 			.thenReturn(List.of(question1));
 		when(answerSubmitRecordEntityRepository.findAllByQuestionIdInAndIsCorrect(
@@ -516,7 +520,7 @@ class QuestionRankServiceTest {
 		assertThat(result.get(1).getUsers()).hasSize(1);
 		assertThat(result.get(1).getUsers().get(0).getId()).isEqualTo(2L);
 
-		verify(questionSetEntityRepository).findById(questionSetId);
+		verify(questionSetReader).getActiveQuestionSet(questionSetId);
 		verify(questionReader).getQuestionsByQuestionSet(questionSet);
 		verify(answerSubmitRecordEntityRepository).findAllByQuestionIdInAndIsCorrect(List.of(1L), true);
 		verify(questionSetParticipantRepository).findAllByQuestionSetWithFetchJoinUser(questionSet);
@@ -574,7 +578,7 @@ class QuestionRankServiceTest {
 		when(answer1.getUserId()).thenReturn(1L);
 		when(answer2.getUserId()).thenReturn(2L);
 
-		when(questionSetEntityRepository.findById(questionSetId)).thenReturn(Optional.of(questionSet));
+		when(questionSetReader.getActiveQuestionSet(questionSetId)).thenReturn(questionSet);
 		when(questionReader.getQuestionsByQuestionSet(questionSet))
 			.thenReturn(List.of(question1, question2));
 		when(answerSubmitRecordEntityRepository.findAllByQuestionIdInAndIsCorrect(
@@ -601,7 +605,7 @@ class QuestionRankServiceTest {
 		assertThat(result.get(1).getUsers()).hasSize(1);
 		assertThat(result.get(1).getUsers().get(0).getId()).isEqualTo(3L);
 
-		verify(questionSetEntityRepository).findById(questionSetId);
+		verify(questionSetReader).getActiveQuestionSet(questionSetId);
 		verify(questionReader).getQuestionsByQuestionSet(questionSet);
 		verify(answerSubmitRecordEntityRepository).findAllByQuestionIdInAndIsCorrect(List.of(1L, 2L), true);
 		verify(questionSetParticipantRepository).findAllByQuestionSetWithFetchJoinUser(questionSet);
@@ -613,14 +617,15 @@ class QuestionRankServiceTest {
 		// given
 		final Long questionSetId = 999L;
 
-		when(questionSetEntityRepository.findById(questionSetId)).thenReturn(Optional.empty());
+		when(questionSetReader.getActiveQuestionSet(questionSetId))
+			.thenThrow(new EntityNotFoundException("해당 문제 셋을 찾을 수 없습니다."));
 
 		// when & then
 		assertThatThrownBy(() -> questionRankService.getCorrectorsByQuestionSetId(questionSetId))
 			.isInstanceOf(EntityNotFoundException.class)
-			.hasMessageContaining("해당 문제 세트가 존재하지 않습니다.");
+			.hasMessageContaining("해당 문제 셋을 찾을 수 없습니다.");
 
-		verify(questionSetEntityRepository).findById(questionSetId);
+		verify(questionSetReader).getActiveQuestionSet(questionSetId);
 		verifyNoInteractions(questionReader);
 		verifyNoInteractions(answerSubmitRecordEntityRepository);
 		verifyNoInteractions(questionSetParticipantRepository);
@@ -636,7 +641,7 @@ class QuestionRankServiceTest {
 
 		when(question1.getId()).thenReturn(1L);
 
-		when(questionSetEntityRepository.findById(questionSetId)).thenReturn(Optional.of(questionSet));
+		when(questionSetReader.getActiveQuestionSet(questionSetId)).thenReturn(questionSet);
 		when(questionReader.getQuestionsByQuestionSet(questionSet))
 			.thenReturn(List.of(question1));
 		when(answerSubmitRecordEntityRepository.findAllByQuestionIdInAndIsCorrect(
@@ -653,7 +658,7 @@ class QuestionRankServiceTest {
 		assertNotNull(result);
 		assertThat(result).isEmpty();
 
-		verify(questionSetEntityRepository).findById(questionSetId);
+		verify(questionSetReader).getActiveQuestionSet(questionSetId);
 		verify(questionReader).getQuestionsByQuestionSet(questionSet);
 		verify(answerSubmitRecordEntityRepository).findAllByQuestionIdInAndIsCorrect(List.of(1L), true);
 		verify(questionSetParticipantRepository).findAllByQuestionSetWithFetchJoinUser(questionSet);
@@ -722,7 +727,7 @@ class QuestionRankServiceTest {
 		when(score5.getUserId()).thenReturn(3L);
 		when(score6.getUserId()).thenReturn(3L);
 
-		when(questionSetEntityRepository.findById(questionSetId)).thenReturn(Optional.of(questionSet));
+		when(questionSetReader.getActiveQuestionSet(questionSetId)).thenReturn(questionSet);
 		when(questionReader.getQuestionsByQuestionSet(questionSet))
 			.thenReturn(List.of(question1, question2, question3));
 		when(questionScorerEntityRepository.findAllByQuestionIdIn(List.of(1L, 2L, 3L)))
@@ -751,7 +756,7 @@ class QuestionRankServiceTest {
 		assertThat(result.get(2).getUsers()).hasSize(1);
 		assertThat(result.get(2).getUsers().get(0).getId()).isEqualTo(2L);
 
-		verify(questionSetEntityRepository).findById(questionSetId);
+		verify(questionSetReader).getActiveQuestionSet(questionSetId);
 		verify(questionReader).getQuestionsByQuestionSet(questionSet);
 		verify(questionScorerEntityRepository).findAllByQuestionIdIn(List.of(1L, 2L, 3L));
 		verify(questionSetParticipantRepository).findAllByQuestionSetWithFetchJoinUser(questionSet);
@@ -794,7 +799,7 @@ class QuestionRankServiceTest {
 		QuestionScorerEntity score1 = mock(QuestionScorerEntity.class);
 		when(score1.getUserId()).thenReturn(1L);
 
-		when(questionSetEntityRepository.findById(questionSetId)).thenReturn(Optional.of(questionSet));
+		when(questionSetReader.getActiveQuestionSet(questionSetId)).thenReturn(questionSet);
 		when(questionReader.getQuestionsByQuestionSet(questionSet))
 			.thenReturn(List.of(question1));
 		when(questionScorerEntityRepository.findAllByQuestionIdIn(List.of(1L)))
@@ -819,7 +824,7 @@ class QuestionRankServiceTest {
 		assertThat(result.get(1).getUsers()).hasSize(1);
 		assertThat(result.get(1).getUsers().get(0).getId()).isEqualTo(2L);
 
-		verify(questionSetEntityRepository).findById(questionSetId);
+		verify(questionSetReader).getActiveQuestionSet(questionSetId);
 		verify(questionReader).getQuestionsByQuestionSet(questionSet);
 		verify(questionScorerEntityRepository).findAllByQuestionIdIn(List.of(1L));
 		verify(questionSetParticipantRepository).findAllByQuestionSetWithFetchJoinUser(questionSet);
@@ -877,7 +882,7 @@ class QuestionRankServiceTest {
 		when(score1.getUserId()).thenReturn(1L);
 		when(score2.getUserId()).thenReturn(2L);
 
-		when(questionSetEntityRepository.findById(questionSetId)).thenReturn(Optional.of(questionSet));
+		when(questionSetReader.getActiveQuestionSet(questionSetId)).thenReturn(questionSet);
 		when(questionReader.getQuestionsByQuestionSet(questionSet))
 			.thenReturn(List.of(question1, question2));
 		when(questionScorerEntityRepository.findAllByQuestionIdIn(List.of(1L, 2L)))
@@ -903,7 +908,7 @@ class QuestionRankServiceTest {
 		assertThat(result.get(1).getUsers()).hasSize(1);
 		assertThat(result.get(1).getUsers().get(0).getId()).isEqualTo(3L);
 
-		verify(questionSetEntityRepository).findById(questionSetId);
+		verify(questionSetReader).getActiveQuestionSet(questionSetId);
 		verify(questionReader).getQuestionsByQuestionSet(questionSet);
 		verify(questionScorerEntityRepository).findAllByQuestionIdIn(List.of(1L, 2L));
 		verify(questionSetParticipantRepository).findAllByQuestionSetWithFetchJoinUser(questionSet);
@@ -915,14 +920,15 @@ class QuestionRankServiceTest {
 		// given
 		final Long questionSetId = 999L;
 
-		when(questionSetEntityRepository.findById(questionSetId)).thenReturn(Optional.empty());
+		when(questionSetReader.getActiveQuestionSet(questionSetId))
+			.thenThrow(new EntityNotFoundException("해당 문제 셋을 찾을 수 없습니다."));
 
 		// when & then
 		assertThatThrownBy(() -> questionRankService.getScorersByQuestionSetId(questionSetId))
 			.isInstanceOf(EntityNotFoundException.class)
-			.hasMessageContaining("해당 문제 세트가 존재하지 않습니다.");
+			.hasMessageContaining("해당 문제 셋을 찾을 수 없습니다.");
 
-		verify(questionSetEntityRepository).findById(questionSetId);
+		verify(questionSetReader).getActiveQuestionSet(questionSetId);
 		verifyNoInteractions(questionReader);
 		verifyNoInteractions(questionScorerEntityRepository);
 		verifyNoInteractions(questionSetParticipantRepository);
@@ -938,7 +944,7 @@ class QuestionRankServiceTest {
 
 		when(question1.getId()).thenReturn(1L);
 
-		when(questionSetEntityRepository.findById(questionSetId)).thenReturn(Optional.of(questionSet));
+		when(questionSetReader.getActiveQuestionSet(questionSetId)).thenReturn(questionSet);
 		when(questionReader.getQuestionsByQuestionSet(questionSet))
 			.thenReturn(List.of(question1));
 		when(questionScorerEntityRepository.findAllByQuestionIdIn(List.of(1L)))
@@ -954,7 +960,7 @@ class QuestionRankServiceTest {
 		assertNotNull(result);
 		assertThat(result).isEmpty();
 
-		verify(questionSetEntityRepository).findById(questionSetId);
+		verify(questionSetReader).getActiveQuestionSet(questionSetId);
 		verify(questionReader).getQuestionsByQuestionSet(questionSet);
 		verify(questionScorerEntityRepository).findAllByQuestionIdIn(List.of(1L));
 		verify(questionSetParticipantRepository).findAllByQuestionSetWithFetchJoinUser(questionSet);

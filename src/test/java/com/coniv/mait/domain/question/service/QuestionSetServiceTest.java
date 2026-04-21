@@ -26,6 +26,7 @@ import com.coniv.mait.domain.question.exception.code.QuestionSetStatusExceptionC
 import com.coniv.mait.domain.question.repository.AiRequestStatusManager;
 import com.coniv.mait.domain.question.repository.QuestionEntityRepository;
 import com.coniv.mait.domain.question.repository.QuestionSetEntityRepository;
+import com.coniv.mait.domain.question.service.component.QuestionSetReader;
 import com.coniv.mait.domain.question.service.dto.QuestionSetDto;
 import com.coniv.mait.domain.question.service.dto.QuestionValidateDto;
 import com.coniv.mait.domain.user.service.component.TeamRoleValidator;
@@ -61,6 +62,9 @@ class QuestionSetServiceTest {
 
 	@Mock
 	private AiRequestStatusManager aiRequestStatusManager;
+
+	@Mock
+	private QuestionSetReader questionSetReader;
 
 	// Todo: 생성 관련 feature가 최종 완성 시에 수정
 	// @Test
@@ -254,8 +258,7 @@ class QuestionSetServiceTest {
 		when(questionSetEntity.getId()).thenReturn(questionSetId);
 		when(questionSetEntity.getSubject()).thenReturn("Test Subject");
 
-		when(questionSetEntityRepository.findById(questionSetId))
-			.thenReturn(Optional.of(questionSetEntity));
+		when(questionSetReader.getActiveQuestionSet(questionSetId)).thenReturn(questionSetEntity);
 		when(questionEntityRepository.countByQuestionSetId(questionSetId))
 			.thenReturn(5L); // 예시로 5개의 문제를 가진다고 가정
 
@@ -267,7 +270,7 @@ class QuestionSetServiceTest {
 		assertThat(result.getId()).isEqualTo(questionSetId);
 		assertThat(result.getSubject()).isEqualTo("Test Subject");
 
-		verify(questionSetEntityRepository, times(1)).findById(questionSetId);
+		verify(questionSetReader, times(1)).getActiveQuestionSet(questionSetId);
 	}
 
 	@Test
@@ -276,15 +279,15 @@ class QuestionSetServiceTest {
 		// given
 		final Long questionSetId = 1L;
 		final MaitUser user = MaitUser.builder().id(USER_ID).build();
-		when(questionSetEntityRepository.findById(questionSetId))
-			.thenReturn(Optional.empty());
+		when(questionSetReader.getActiveQuestionSet(questionSetId))
+			.thenThrow(new EntityNotFoundException("해당 문제 셋을 찾을 수 없습니다."));
 
 		// when & then
 		assertThatThrownBy(() -> questionSetService.getQuestionSet(questionSetId, user))
-			.isInstanceOf(IllegalArgumentException.class)
-			.hasMessage("Question set not found");
+			.isInstanceOf(EntityNotFoundException.class)
+			.hasMessage("해당 문제 셋을 찾을 수 없습니다.");
 
-		verify(questionSetEntityRepository, times(1)).findById(questionSetId);
+		verify(questionSetReader, times(1)).getActiveQuestionSet(questionSetId);
 	}
 
 	@Test
@@ -305,7 +308,7 @@ class QuestionSetServiceTest {
 			.visibility(QuestionSetVisibility.GROUP)
 			.build();
 
-		when(questionSetEntityRepository.findById(questionSetId)).thenReturn(Optional.of(questionSetEntity));
+		when(questionSetReader.getActiveQuestionSet(questionSetId)).thenReturn(questionSetEntity);
 
 		// when
 		QuestionSetDto result = questionSetService.completeQuestionSet(
@@ -317,7 +320,7 @@ class QuestionSetServiceTest {
 			newVisibility);
 
 		// then
-		verify(questionSetEntityRepository, times(1)).findById(questionSetId);
+		verify(questionSetReader, times(1)).getActiveQuestionSet(questionSetId);
 
 		assertThat(questionSetEntity.getTitle()).isEqualTo(newTitle);
 		assertThat(questionSetEntity.getSubject()).isEqualTo(newSubject);
@@ -340,8 +343,8 @@ class QuestionSetServiceTest {
 	void completeQuestionSetTest_Fail_NotFound() {
 		// given
 		final Long questionSetId = 999L;
-		when(questionSetEntityRepository.findById(questionSetId))
-			.thenReturn(Optional.empty());
+		when(questionSetReader.getActiveQuestionSet(questionSetId))
+			.thenThrow(new EntityNotFoundException("해당 문제 셋을 찾을 수 없습니다."));
 
 		// when & then
 		assertThatThrownBy(() -> questionSetService.completeQuestionSet(
@@ -352,9 +355,9 @@ class QuestionSetServiceTest {
 			"설명",
 			QuestionSetVisibility.GROUP))
 			.isInstanceOf(EntityNotFoundException.class)
-			.hasMessage("Question set not found");
+			.hasMessage("해당 문제 셋을 찾을 수 없습니다.");
 
-		verify(questionSetEntityRepository, times(1)).findById(questionSetId);
+		verify(questionSetReader, times(1)).getActiveQuestionSet(questionSetId);
 	}
 
 	@Test
@@ -371,13 +374,13 @@ class QuestionSetServiceTest {
 			.visibility(QuestionSetVisibility.GROUP)
 			.build();
 
-		when(questionSetEntityRepository.findById(questionSetId)).thenReturn(Optional.of(questionSetEntity));
+		when(questionSetReader.getActiveQuestionSet(questionSetId)).thenReturn(questionSetEntity);
 
 		// when
 		questionSetService.updateQuestionSetField(questionSetId, newTitle);
 
 		// then
-		verify(questionSetEntityRepository, times(1)).findById(questionSetId);
+		verify(questionSetReader, times(1)).getActiveQuestionSet(questionSetId);
 		assertThat(questionSetEntity.getTitle()).isEqualTo(newTitle);
 	}
 
@@ -406,7 +409,7 @@ class QuestionSetServiceTest {
 			.valid(true)
 			.build();
 
-		when(questionSetEntityRepository.findById(questionSetId)).thenReturn(Optional.of(questionSetEntity));
+		when(questionSetReader.getActiveQuestionSet(questionSetId)).thenReturn(questionSetEntity);
 		when(questionEntityRepository.findAllByQuestionSetId(questionSetId)).thenReturn(questions);
 		when(questionChecker.validateQuestion(question1)).thenReturn(validDto1);
 		when(questionChecker.validateQuestion(question2)).thenReturn(validDto2);
@@ -416,7 +419,7 @@ class QuestionSetServiceTest {
 
 		// then
 		assertThat(result).isEmpty();
-		verify(questionSetEntityRepository).findById(questionSetId);
+		verify(questionSetReader).getActiveQuestionSet(questionSetId);
 		verify(questionEntityRepository).findAllByQuestionSetId(questionSetId);
 		verify(questionChecker).validateQuestion(question1);
 		verify(questionChecker).validateQuestion(question2);
@@ -456,7 +459,7 @@ class QuestionSetServiceTest {
 			.reason(QuestionValidationResult.INVALID_CHOICE_COUNT)
 			.build();
 
-		when(questionSetEntityRepository.findById(questionSetId)).thenReturn(Optional.of(questionSetEntity));
+		when(questionSetReader.getActiveQuestionSet(questionSetId)).thenReturn(questionSetEntity);
 		when(questionEntityRepository.findAllByQuestionSetId(questionSetId)).thenReturn(questions);
 		when(questionChecker.validateQuestion(question1)).thenReturn(validDto);
 		when(questionChecker.validateQuestion(question2)).thenReturn(invalidDto1);
@@ -474,7 +477,7 @@ class QuestionSetServiceTest {
 		assertThat(result.get(1).isValid()).isFalse();
 		assertThat(result.get(1).getReason()).isEqualTo(QuestionValidationResult.INVALID_CHOICE_COUNT);
 
-		verify(questionSetEntityRepository).findById(questionSetId);
+		verify(questionSetReader).getActiveQuestionSet(questionSetId);
 		verify(questionEntityRepository).findAllByQuestionSetId(questionSetId);
 		verify(questionChecker).validateQuestion(question1);
 		verify(questionChecker).validateQuestion(question2);
@@ -488,7 +491,7 @@ class QuestionSetServiceTest {
 		final Long questionSetId = 1L;
 		final QuestionSetVisibility visibility = QuestionSetVisibility.GROUP;
 		QuestionSetEntity questionSetEntity = mock(QuestionSetEntity.class);
-		when(questionSetEntityRepository.findById(questionSetId)).thenReturn(Optional.of(questionSetEntity));
+		when(questionSetReader.getActiveQuestionSet(questionSetId)).thenReturn(questionSetEntity);
 		when(questionSetEntity.getVisibility()).thenReturn(visibility);
 
 		// when
@@ -506,7 +509,7 @@ class QuestionSetServiceTest {
 		final Long questionSetId = 1L;
 		final QuestionSetVisibility visibility = QuestionSetVisibility.GROUP;
 		QuestionSetEntity questionSetEntity = mock(QuestionSetEntity.class);
-		when(questionSetEntityRepository.findById(questionSetId)).thenReturn(Optional.of(questionSetEntity));
+		when(questionSetReader.getActiveQuestionSet(questionSetId)).thenReturn(questionSetEntity);
 		doThrow(new QuestionSetStatusException(QuestionSetStatusExceptionCode.ONLY_AFTER))
 			.when(questionSetEntity)
 			.openReview(visibility);
@@ -529,7 +532,7 @@ class QuestionSetServiceTest {
 			.status(QuestionSetStatus.AFTER)
 			.solveMode(QuestionSetSolveMode.LIVE_TIME)
 			.build();
-		when(questionSetEntityRepository.findById(questionSetId)).thenReturn(Optional.of(questionSetEntity));
+		when(questionSetReader.getActiveQuestionSet(questionSetId)).thenReturn(questionSetEntity);
 
 		// when
 		questionSetService.restartQuestionSet(questionSetId, user);
@@ -551,7 +554,7 @@ class QuestionSetServiceTest {
 			.status(QuestionSetStatus.REVIEW)
 			.solveMode(QuestionSetSolveMode.LIVE_TIME)
 			.build();
-		when(questionSetEntityRepository.findById(questionSetId)).thenReturn(Optional.of(questionSetEntity));
+		when(questionSetReader.getActiveQuestionSet(questionSetId)).thenReturn(questionSetEntity);
 
 		// when, then
 		assertThatThrownBy(() -> questionSetService.restartQuestionSet(questionSetId, user))
@@ -573,7 +576,7 @@ class QuestionSetServiceTest {
 			.status(QuestionSetStatus.ONGOING)
 			.solveMode(QuestionSetSolveMode.LIVE_TIME)
 			.build();
-		when(questionSetEntityRepository.findById(questionSetId)).thenReturn(Optional.of(questionSetEntity));
+		when(questionSetReader.getActiveQuestionSet(questionSetId)).thenReturn(questionSetEntity);
 
 		// when, then
 		assertThatThrownBy(() -> questionSetService.restartQuestionSet(questionSetId, user))

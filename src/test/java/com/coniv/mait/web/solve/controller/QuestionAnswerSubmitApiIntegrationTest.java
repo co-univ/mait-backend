@@ -231,13 +231,18 @@ public class QuestionAnswerSubmitApiIntegrationTest extends BaseIntegrationTest 
 	@DisplayName("문제별 득점자 조회 성공 API 테스트")
 	void getScorer_Success() throws Exception {
 		// Given
-		final Long teamId = 1L;
 		UserEntity user = userEntityRepository.save(
 			UserEntity.localLoginUser("email", "testUser", "테스트사용자", "singsing"));
+		TeamEntity team = teamEntityRepository.save(
+			TeamEntity.builder()
+				.name("coniv")
+				.creatorId(user.getId())
+				.build()
+		);
 
 		QuestionSetEntity questionSet = questionSetEntityRepository.save(
 			QuestionSetEntity.builder()
-				.teamId(teamId)
+				.teamId(team.getId())
 				.build()
 		);
 

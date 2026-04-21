@@ -30,6 +30,7 @@ import com.coniv.mait.domain.question.repository.QuestionEntityRepository;
 import com.coniv.mait.domain.question.repository.QuestionSetEntityRepository;
 import com.coniv.mait.domain.question.repository.QuestionSetParticipantRepository;
 import com.coniv.mait.domain.question.service.component.QuestionFactory;
+import com.coniv.mait.domain.question.service.component.QuestionSetReader;
 import com.coniv.mait.domain.solve.repository.AnswerSubmitRecordEntityRepository;
 import com.coniv.mait.domain.solve.repository.QuestionScorerEntityRepository;
 import com.coniv.mait.domain.solve.repository.SolvingSessionEntityRepository;
@@ -58,6 +59,8 @@ class QuestionSetDeleteServiceTest {
 	private TeamRoleValidator teamRoleValidator;
 	@Mock
 	private MaitEventPublisher maitEventPublisher;
+	@Mock
+	private QuestionSetReader questionSetReader;
 
 	private QuestionFactory<?>  multipleFactory;
 	private QuestionFactory<?> orderingFactory;
@@ -88,7 +91,8 @@ class QuestionSetDeleteServiceTest {
 			questionScorerEntityRepository,
 			studyAnswerDraftEntityRepository,
 			teamRoleValidator,
-			maitEventPublisher
+			maitEventPublisher,
+			questionSetReader
 		);
 	}
 
@@ -114,7 +118,7 @@ class QuestionSetDeleteServiceTest {
 		List<QuestionEntity> questions = List.of(
 			multipleQuestion, orderingQuestion, shortQuestion, fillBlankQuestion);
 
-		when(questionSetEntityRepository.findById(questionSetId)).thenReturn(Optional.of(questionSet));
+		when(questionSetReader.getActiveQuestionSet(questionSetId)).thenReturn(questionSet);
 		when(questionEntityRepository.findAllByQuestionSetId(questionSetId)).thenReturn(questions);
 
 		questionSetDeleteService.deleteQuestionSet(questionSetId, userId);
@@ -149,7 +153,7 @@ class QuestionSetDeleteServiceTest {
 			.id(5L).questionSet(questionSet).lexoRank("e").imageId(100L).build();
 		List<QuestionEntity> questions = List.of(shortQuestion);
 
-		when(questionSetEntityRepository.findById(questionSetId)).thenReturn(Optional.of(questionSet));
+		when(questionSetReader.getActiveQuestionSet(questionSetId)).thenReturn(questionSet);
 		when(questionEntityRepository.findAllByQuestionSetId(questionSetId)).thenReturn(questions);
 		when(solvingSessionEntityRepository.findSessionIdsByQuestionSetId(questionSetId))
 			.thenReturn(List.of(101L, 102L));

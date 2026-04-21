@@ -96,7 +96,7 @@ class TeamQuestionRankServiceTest {
 			when(q1.getId()).thenReturn(1L);
 			when(q2.getId()).thenReturn(2L);
 
-			when(teamReader.getTeam(teamId)).thenReturn(team);
+			when(teamReader.getActiveTeam(teamId)).thenReturn(team);
 			when(questionReader.getCompletedQuestionsInTeam(team)).thenReturn(List.of(q1, q2));
 
 			QuestionScorerEntity s1 = mock(QuestionScorerEntity.class);
@@ -136,7 +136,7 @@ class TeamQuestionRankServiceTest {
 			Long teamId = 1L;
 			TeamEntity team = mock(TeamEntity.class);
 
-			when(teamReader.getTeam(teamId)).thenReturn(team);
+			when(teamReader.getActiveTeam(teamId)).thenReturn(team);
 			when(questionReader.getCompletedQuestionsInTeam(team)).thenReturn(List.of());
 
 			// when
@@ -162,7 +162,7 @@ class TeamQuestionRankServiceTest {
 			when(q2.getId()).thenReturn(2L);
 			when(q3.getId()).thenReturn(3L);
 
-			when(teamReader.getTeam(teamId)).thenReturn(team);
+			when(teamReader.getActiveTeam(teamId)).thenReturn(team);
 			when(questionReader.getCompletedQuestionsInTeam(team)).thenReturn(List.of(q1, q2, q3));
 
 			// user1: 3점, user2: 3점, user3: 1점
@@ -216,7 +216,7 @@ class TeamQuestionRankServiceTest {
 
 			when(q1.getId()).thenReturn(1L);
 
-			when(teamReader.getTeam(teamId)).thenReturn(team);
+			when(teamReader.getActiveTeam(teamId)).thenReturn(team);
 			when(questionReader.getCompletedQuestionsInTeam(team)).thenReturn(List.of(q1));
 
 			// user1,2,3: 3점 / user4,5: 2점 / user6: 1점
@@ -298,7 +298,7 @@ class TeamQuestionRankServiceTest {
 			when(q1.getId()).thenReturn(1L);
 			when(q2.getId()).thenReturn(2L);
 
-			when(teamReader.getTeam(teamId)).thenReturn(team);
+			when(teamReader.getActiveTeam(teamId)).thenReturn(team);
 			when(questionReader.getCompletedQuestionsInTeam(team)).thenReturn(List.of(q1, q2));
 
 			AnswerSubmitRecordEntity a1 = mockRecord(1L, 1L, true);
@@ -335,7 +335,7 @@ class TeamQuestionRankServiceTest {
 			when(q1.getId()).thenReturn(1L);
 			when(q2.getId()).thenReturn(2L);
 
-			when(teamReader.getTeam(teamId)).thenReturn(team);
+			when(teamReader.getActiveTeam(teamId)).thenReturn(team);
 			when(questionReader.getCompletedQuestionsInTeam(team)).thenReturn(List.of(q1, q2));
 
 			List<AnswerSubmitRecordEntity> records = List.of(
@@ -372,7 +372,7 @@ class TeamQuestionRankServiceTest {
 			Long teamId = 1L;
 			TeamEntity team = mock(TeamEntity.class);
 
-			when(teamReader.getTeam(teamId)).thenReturn(team);
+			when(teamReader.getActiveTeam(teamId)).thenReturn(team);
 			when(questionReader.getCompletedQuestionsInTeam(team)).thenReturn(List.of());
 
 			// when
@@ -396,7 +396,7 @@ class TeamQuestionRankServiceTest {
 			when(q1.getId()).thenReturn(1L);
 			when(q2.getId()).thenReturn(2L);
 
-			when(teamReader.getTeam(teamId)).thenReturn(team);
+			when(teamReader.getActiveTeam(teamId)).thenReturn(team);
 			when(questionReader.getCompletedQuestionsInTeam(team)).thenReturn(List.of(q1, q2));
 
 			// user1: 2개, user2: 2개, user3: 1개
@@ -447,7 +447,7 @@ class TeamQuestionRankServiceTest {
 				questionIds.add(questionId);
 			}
 
-			when(teamReader.getTeam(teamId)).thenReturn(team);
+			when(teamReader.getActiveTeam(teamId)).thenReturn(team);
 			when(questionReader.getCompletedQuestionsInTeam(team)).thenReturn(questions);
 
 			// 1등(10개): user1~3, 2등(8개): user4~8, 3등(5개): user9~14
@@ -507,7 +507,7 @@ class TeamQuestionRankServiceTest {
 
 			when(q1.getId()).thenReturn(1L);
 
-			when(teamReader.getTeam(teamId)).thenReturn(team);
+			when(teamReader.getActiveTeam(teamId)).thenReturn(team);
 			when(questionReader.getCompletedQuestionsInTeam(team)).thenReturn(List.of(q1));
 
 			AnswerSubmitRecordEntity a1 = mockRecord(1L, 1L, true);
@@ -545,7 +545,7 @@ class TeamQuestionRankServiceTest {
 			Long userId = 1L;
 			TeamEntity team = mock(TeamEntity.class);
 			when(team.getId()).thenReturn(teamId);
-			when(teamReader.getTeam(teamId)).thenReturn(team);
+			when(teamReader.getActiveTeam(teamId)).thenReturn(team);
 
 			QuestionSetEntity liveQs = mock(QuestionSetEntity.class);
 			when(liveQs.getId()).thenReturn(100L);
@@ -594,7 +594,7 @@ class TeamQuestionRankServiceTest {
 			Long userId = 1L;
 			TeamEntity team = mock(TeamEntity.class);
 			when(team.getId()).thenReturn(teamId);
-			when(teamReader.getTeam(teamId)).thenReturn(team);
+			when(teamReader.getActiveTeam(teamId)).thenReturn(team);
 
 			QuestionSetEntity liveQs = mock(QuestionSetEntity.class);
 			when(liveQs.getId()).thenReturn(100L);
@@ -648,7 +648,7 @@ class TeamQuestionRankServiceTest {
 			Long userId = 1L;
 			TeamEntity team = mock(TeamEntity.class);
 			when(team.getId()).thenReturn(teamId);
-			when(teamReader.getTeam(teamId)).thenReturn(team);
+			when(teamReader.getActiveTeam(teamId)).thenReturn(team);
 
 			when(questionSetReader.getFinishedLiveQuestionSetsInTeam(teamId)).thenReturn(List.of());
 
@@ -690,7 +690,7 @@ class TeamQuestionRankServiceTest {
 			Long userId = 1L;
 			TeamEntity team = mock(TeamEntity.class);
 			when(team.getId()).thenReturn(teamId);
-			when(teamReader.getTeam(teamId)).thenReturn(team);
+			when(teamReader.getActiveTeam(teamId)).thenReturn(team);
 
 			when(questionSetReader.getFinishedLiveQuestionSetsInTeam(teamId)).thenReturn(List.of());
 			when(solvingSessionEntityRepository.findAllByUserIdAndStatusAndSolveModeAndQuestionSetTeamId(
@@ -715,7 +715,7 @@ class TeamQuestionRankServiceTest {
 			Long userId = 1L;
 			TeamEntity team = mock(TeamEntity.class);
 			when(team.getId()).thenReturn(teamId);
-			when(teamReader.getTeam(teamId)).thenReturn(team);
+			when(teamReader.getActiveTeam(teamId)).thenReturn(team);
 
 			QuestionSetEntity liveQs = mock(QuestionSetEntity.class);
 			when(liveQs.getId()).thenReturn(100L);
@@ -747,7 +747,7 @@ class TeamQuestionRankServiceTest {
 			Long userId = 1L;
 			TeamEntity team = mock(TeamEntity.class);
 			when(team.getId()).thenReturn(teamId);
-			when(teamReader.getTeam(teamId)).thenReturn(team);
+			when(teamReader.getActiveTeam(teamId)).thenReturn(team);
 
 			QuestionSetEntity liveQs = mock(QuestionSetEntity.class);
 			when(liveQs.getId()).thenReturn(100L);
@@ -789,7 +789,7 @@ class TeamQuestionRankServiceTest {
 			Long userId = 1L;
 			TeamEntity team = mock(TeamEntity.class);
 			when(team.getId()).thenReturn(teamId);
-			when(teamReader.getTeam(teamId)).thenReturn(team);
+			when(teamReader.getActiveTeam(teamId)).thenReturn(team);
 
 			QuestionSetEntity liveQs = mock(QuestionSetEntity.class);
 			when(liveQs.getId()).thenReturn(100L);
@@ -834,7 +834,7 @@ class TeamQuestionRankServiceTest {
 			Long userId = 1L;
 			TeamEntity team = mock(TeamEntity.class);
 			when(team.getId()).thenReturn(teamId);
-			when(teamReader.getTeam(teamId)).thenReturn(team);
+			when(teamReader.getActiveTeam(teamId)).thenReturn(team);
 
 			QuestionSetEntity liveQs = mock(QuestionSetEntity.class);
 			when(liveQs.getId()).thenReturn(100L);
