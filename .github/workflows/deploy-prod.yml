@@ -87,6 +87,9 @@ jobs:
             LOGSTASH_HOST=${{ secrets.LOGSTASH_HOST }}
             LOGSTASH_PORT=${{ secrets.LOGSTASH_PORT }}
             EMAIL_PROVIDER=ses
+            EMAIL_FROM_ADDRESS=no-reply@mait.kr
+            MAIT_SES_ACCESS_KEY_ID=${{ secrets.MAIT_SES_ACCESS_KEY_ID }}
+            MAIT_SES_SECRET_ACCESS_KEY=${{ secrets.MAIT_SES_SECRET_ACCESS_KEY }}
             # Compose Variables
             APP_IMAGE_NAME=mait-prod-app
             PORT=8080
