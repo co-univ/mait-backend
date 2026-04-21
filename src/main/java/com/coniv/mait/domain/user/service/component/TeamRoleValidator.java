@@ -4,6 +4,7 @@ import org.springframework.stereotype.Component;
 
 import com.coniv.mait.domain.team.entity.TeamEntity;
 import com.coniv.mait.domain.team.entity.TeamUserEntity;
+import com.coniv.mait.domain.team.enums.TeamUserRole;
 import com.coniv.mait.domain.team.repository.TeamUserEntityRepository;
 import com.coniv.mait.domain.team.service.component.TeamReader;
 import com.coniv.mait.domain.user.entity.UserEntity;
@@ -24,7 +25,7 @@ public class TeamRoleValidator {
 	private final TeamUserEntityRepository teamUserEntityRepository;
 
 	public void checkHasCreateQuestionSetAuthority(final Long teamId, final Long userId) {
-		TeamEntity team = teamReader.getTeam(teamId);
+		TeamEntity team = teamReader.getActiveTeam(teamId);
 
 		UserEntity user = userEntityRepository.findById(userId)
 			.orElseThrow(() -> new EntityNotFoundException("존재하지 않는 사용자입니다."));
@@ -38,7 +39,7 @@ public class TeamRoleValidator {
 	}
 
 	public void checkHasSolveQuestionAuthorityInTeam(final Long teamId, final Long userId) {
-		TeamEntity team = teamReader.getTeam(teamId);
+		TeamEntity team = teamReader.getActiveTeam(teamId);
 
 		UserEntity user = userEntityRepository.findById(userId)
 			.orElseThrow(() -> new EntityNotFoundException("존재하지 않는 사용자입니다."));
@@ -49,13 +50,27 @@ public class TeamRoleValidator {
 	}
 
 	public void checkIsTeamMember(final Long teamId, final Long userId) {
-		TeamEntity team = teamReader.getTeam(teamId);
+		TeamEntity team = teamReader.getActiveTeam(teamId);
 
 		UserEntity user = userEntityRepository.findById(userId)
 			.orElseThrow(() -> new EntityNotFoundException("존재하지 않는 사용자입니다."));
 
 		if (!teamUserEntityRepository.existsByTeamAndUser(team, user)) {
 			throw new UserRoleException("해당 팀의 멤버가 아닙니다.");
+		}
+	}
+
+	public void checkIsTeamOwner(final Long teamId, final Long userId) {
+		TeamEntity team = teamReader.getActiveTeam(teamId);
+
+		UserEntity user = userEntityRepository.findById(userId)
+			.orElseThrow(() -> new EntityNotFoundException("존재하지 않는 사용자입니다."));
+
+		TeamUserEntity teamUser = teamUserEntityRepository.findByTeamAndUser(team, user)
+			.orElseThrow(() -> new EntityNotFoundException("해당 팀의 멤버가 아닙니다."));
+
+		if (teamUser.getUserRole() != TeamUserRole.OWNER) {
+			throw new UserRoleException("해당 팀의 OWNER가 아닙니다.");
 		}
 	}
 }
