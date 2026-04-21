@@ -9,6 +9,10 @@ import java.util.stream.Collectors;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.coniv.mait.domain.question.entity.QuestionSetEntity;
+import com.coniv.mait.domain.question.enums.QuestionSetSolveMode;
+import com.coniv.mait.domain.question.enums.QuestionSetStatus;
+import com.coniv.mait.domain.question.repository.QuestionSetEntityRepository;
 import com.coniv.mait.domain.team.entity.TeamEntity;
 import com.coniv.mait.domain.team.entity.TeamInvitationApplicantEntity;
 import com.coniv.mait.domain.team.entity.TeamInvitationLinkEntity;
@@ -33,6 +37,7 @@ import com.coniv.mait.domain.team.service.dto.TeamInvitationResultDto;
 import com.coniv.mait.domain.team.service.dto.TeamUserDto;
 import com.coniv.mait.domain.user.entity.UserEntity;
 import com.coniv.mait.domain.user.repository.UserEntityRepository;
+import com.coniv.mait.domain.user.service.component.TeamRoleValidator;
 import com.coniv.mait.global.auth.model.MaitUser;
 import com.coniv.mait.global.enums.InviteTokenDuration;
 import com.coniv.mait.global.event.MaitEventPublisher;
@@ -52,6 +57,8 @@ public class TeamService {
 	private final TeamInvitationApplicationEntityRepository teamInvitationApplicationEntityRepository;
 	private final MaitEventPublisher maitEventPublisher;
 	private final TeamReader teamReader;
+	private final QuestionSetEntityRepository questionSetEntityRepository;
+	private final TeamRoleValidator teamRoleValidator;
 
 	@Transactional
 	public void createTeam(final String teamName, final Long ownerId) {
@@ -68,6 +75,7 @@ public class TeamService {
 				invitationToken)
 			.orElseThrow(() -> new TeamInvitationFailException(InvitationErrorCode.NOT_FOUND_CODE));
 		TeamEntity team = teamInvitationLink.getTeam();
+		teamReader.validateActiveTeam(team);
 
 		if (teamInvitationLink.isExpired(applicationTime)) {
 			throw new TeamInvitationFailException(InvitationErrorCode.EXPIRED_CODE);
@@ -201,6 +209,7 @@ public class TeamService {
 		TeamInvitationLinkEntity invitationLink = teamInvitationEntityRepository.findByTokenFetchJoinTeam(code)
 			.orElseThrow(() -> new TeamInvitationFailException(InvitationErrorCode.NOT_FOUND_CODE));
 		TeamEntity team = invitationLink.getTeam();
+		teamReader.validateActiveTeam(team);
 		if (!teamId.equals(team.getId())) {
 			throw new TeamInvitationFailException(InvitationErrorCode.TOKEN_NOT_BELONG_TEAM);
 		}
@@ -265,6 +274,7 @@ public class TeamService {
 
 	@Transactional(readOnly = true)
 	public List<TeamUserDto> getTeamUsers(final Long teamId) {
+		teamReader.getActiveTeam(teamId);
 		List<TeamUserEntity> teamUsers = teamUserEntityRepository.findAllByTeamIdFetchJoinUser(teamId);
 
 		return teamUsers.stream()
@@ -275,6 +285,7 @@ public class TeamService {
 
 	@Transactional(readOnly = true)
 	public List<TeamApplicantDto> getApplicants(Long teamId) {
+		teamReader.getActiveTeam(teamId);
 		List<TeamInvitationApplicantEntity> pendingApplicants = teamInvitationApplicationEntityRepository
 			.findAllByTeamIdAndApplicationStatus(teamId, InvitationApplicationStatus.PENDING);
 
@@ -300,9 +311,24 @@ public class TeamService {
 	}
 
 	@Transactional
+	public void deleteTeam(final Long teamId, final Long userId) {
+		TeamEntity team = teamReader.getActiveTeam(teamId);
+		teamRoleValidator.checkIsTeamOwner(teamId, userId);
+
+		List<QuestionSetEntity> ongoingLiveQuestionSets =
+			questionSetEntityRepository.findAllByTeamIdAndSolveModeAndStatusIn(teamId, QuestionSetSolveMode.LIVE_TIME,
+				List.of(QuestionSetStatus.ONGOING)
+			);
+		ongoingLiveQuestionSets.forEach(QuestionSetEntity::endLiveQuestionSet);
+
+		team.markDeleted();
+	}
+
+	@Transactional
 	public void deleteTeamUser(Long teamUserId) {
 		TeamUserEntity teamUser = teamUserEntityRepository.findById(teamUserId)
 			.orElseThrow(() -> new EntityNotFoundException("Team user not found with id: " + teamUserId));
+		teamReader.validateActiveTeam(teamUser.getTeam());
 
 		teamUserEntityRepository.delete(teamUser);
 	}
@@ -340,6 +366,7 @@ public class TeamService {
 		}
 		TeamUserEntity teamUser = teamUserEntityRepository.findById(teamUserId)
 			.orElseThrow(() -> new EntityNotFoundException("Team user not found with id: " + teamUserId));
+		teamReader.validateActiveTeam(teamUser.getTeam());
 
 		if (teamUser.getUserRole() == TeamUserRole.OWNER) {
 			throw new TeamManagerException("Cannot change role of OWNER.");
@@ -350,7 +377,7 @@ public class TeamService {
 
 	@Transactional(readOnly = true)
 	public List<TeamInvitationLinkDto> getTeamInvitations(Long teamId) {
-		TeamEntity team = teamReader.getTeam(teamId);
+		TeamEntity team = teamReader.getActiveTeam(teamId);
 
 		return teamInvitationEntityRepository.findActiveLinksByTeam(team, LocalDateTime.now()).stream()
 			.map(TeamInvitationLinkDto::from)
@@ -362,6 +389,7 @@ public class TeamService {
 	public void deleteTeamInvitation(Long invitationId) {
 		TeamInvitationLinkEntity invitationLink = teamInvitationEntityRepository.findById(invitationId)
 			.orElseThrow(() -> new EntityNotFoundException("Team invitation not found with id: " + invitationId));
+		teamReader.validateActiveTeam(invitationLink.getTeam());
 
 		invitationLink.changeToExpired();
 	}
