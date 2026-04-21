@@ -52,7 +52,7 @@ public class FillBlankQuestionFactory implements QuestionFactory<FillBlankQuesti
 
 	@Override
 	public void deleteSubEntities(QuestionEntity question) {
-		fillBlankAnswerEntityRepository.deleteAllByFillBlankQuestionId(question.getId());
+		fillBlankAnswerEntityRepository.deleteBulkAllByQuestionId(question.getId());
 	}
 
 	@Override

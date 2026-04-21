@@ -69,6 +69,8 @@ logging:
 
 mait:
   base-url: http://localhost:3000
+  email:
+    provider: console
 
 # AI API 설정
 api:

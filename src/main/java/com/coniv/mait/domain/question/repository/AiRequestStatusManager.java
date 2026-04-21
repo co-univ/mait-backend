@@ -1,9 +1,12 @@
 package com.coniv.mait.domain.question.repository;
 
+import java.util.concurrent.TimeUnit;
+
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Component;
 
 import com.coniv.mait.domain.question.enums.AiRequestStatus;
+import com.coniv.mait.domain.question.service.component.QuestionRedisKeys;
 
 import lombok.RequiredArgsConstructor;
 
@@ -11,17 +14,17 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class AiRequestStatusManager {
 
-	private static final String KEY_PREFIX = "question_set_ai_status:";
+	private static final long STATUS_TTL_HOURS = 3;
 
 	private final RedisTemplate<String, String> redisTemplate;
 
 	public void updateStatus(Long questionSetId, AiRequestStatus status) {
-		String key = KEY_PREFIX + questionSetId;
-		redisTemplate.opsForValue().set(key, status.name());
+		String key = QuestionRedisKeys.aiStatus(questionSetId);
+		redisTemplate.opsForValue().set(key, status.name(), STATUS_TTL_HOURS, TimeUnit.HOURS);
 	}
 
 	public AiRequestStatus getStatus(Long questionSetId) {
-		String key = KEY_PREFIX + questionSetId;
+		String key = QuestionRedisKeys.aiStatus(questionSetId);
 		String value = redisTemplate.opsForValue().get(key);
 		if (value == null) {
 			return AiRequestStatus.NOT_FOUND;
@@ -29,4 +32,3 @@ public class AiRequestStatusManager {
 		return AiRequestStatus.valueOf(value);
 	}
 }
-

@@ -162,4 +162,42 @@ class TeamControllerTest {
 		verify(teamService).getTeamInviteInfo(any(MaitUser.class), eq(code));
 	}
 
+	@Test
+	@DisplayName("팀 탈퇴 API 성공 테스트")
+	void leaveTeam_Success() throws Exception {
+		// given
+		Long teamId = 1L;
+
+		doNothing().when(teamService).leaveTeam(eq(teamId), eq(USER_ID));
+
+		// when & then
+		mockMvc.perform(delete("/api/v1/teams/{teamId}/users/me", teamId))
+			.andExpectAll(
+				status().isOk(),
+				jsonPath("$.isSuccess").value(true),
+				jsonPath("$.data").doesNotExist()
+			);
+
+		verify(teamService).leaveTeam(eq(teamId), eq(USER_ID));
+	}
+
+	@Test
+	@DisplayName("팀 삭제 API 성공 테스트")
+	void deleteTeam_Success() throws Exception {
+		// given
+		Long teamId = 1L;
+
+		doNothing().when(teamService).deleteTeam(eq(teamId), eq(USER_ID));
+
+		// when & then
+		mockMvc.perform(delete("/api/v1/teams/{teamId}", teamId))
+			.andExpectAll(
+				status().isOk(),
+				jsonPath("$.isSuccess").value(true),
+				jsonPath("$.data").doesNotExist()
+			);
+
+		verify(teamService).deleteTeam(eq(teamId), eq(USER_ID));
+	}
+
 }

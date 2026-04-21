@@ -56,7 +56,7 @@ public class OrderingQuestionFactory implements QuestionFactory<OrderingQuestion
 
 	@Override
 	public void deleteSubEntities(QuestionEntity question) {
-		orderingOptionEntityRepository.deleteAllByOrderingQuestionId(question.getId());
+		orderingOptionEntityRepository.deleteBulkAllByQuestionId(question.getId());
 	}
 
 	@Override

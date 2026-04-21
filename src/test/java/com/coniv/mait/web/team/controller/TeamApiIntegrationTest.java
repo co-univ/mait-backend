@@ -19,6 +19,10 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.coniv.mait.domain.question.entity.QuestionSetEntity;
+import com.coniv.mait.domain.question.enums.QuestionSetSolveMode;
+import com.coniv.mait.domain.question.enums.QuestionSetStatus;
+import com.coniv.mait.domain.question.repository.QuestionSetEntityRepository;
 import com.coniv.mait.domain.team.entity.TeamEntity;
 import com.coniv.mait.domain.team.entity.TeamInvitationApplicantEntity;
 import com.coniv.mait.domain.team.entity.TeamInvitationLinkEntity;
@@ -69,10 +73,14 @@ public class TeamApiIntegrationTest extends BaseIntegrationTest {
 	@Autowired
 	private TeamInvitationApplicationEntityRepository teamInvitationApplicationEntityRepository;
 
+	@Autowired
+	private QuestionSetEntityRepository questionSetEntityRepository;
+
 	@AfterEach
 	void clear() {
 		teamInvitationApplicationEntityRepository.deleteAll();
 		teamInvitationEntityRepository.deleteAll();
+		questionSetEntityRepository.deleteAll();
 		teamUserEntityRepository.deleteAll();
 		teamEntityRepository.deleteAll();
 		userEntityRepository.deleteAll();
@@ -225,6 +233,155 @@ public class TeamApiIntegrationTest extends BaseIntegrationTest {
 			.andExpect(jsonPath("$.data.teamName").value(team.getName()))
 			.andExpect(jsonPath("$.data.requiresApproval").value(true))
 			.andExpect(jsonPath("$.data.applicationStatus").value("PENDING"));
+	}
+
+	@Test
+	@Transactional
+	@WithCustomUser(email = "player@example.com", name = "플레이어")
+	@DisplayName("팀 탈퇴 API 통합 테스트 - 성공")
+	void leaveTeam_Success() throws Exception {
+		// given
+		UserEntity owner = UserEntity.socialLoginUser("owner-leave@example.com", "오너", "provider", null);
+		userEntityRepository.save(owner);
+		UserEntity player = userEntityRepository.findByEmail("player@example.com").orElseThrow();
+
+		TeamEntity team = createTeamWithOwner("탈퇴팀", owner);
+		teamUserEntityRepository.save(TeamUserEntity.createPlayerUser(player, team));
+
+		// when & then
+		mockMvc.perform(delete("/api/v1/teams/{teamId}/users/me", team.getId())
+				.with(csrf()))
+			.andExpectAll(
+				status().isOk(),
+				jsonPath("$.isSuccess").value(true),
+				jsonPath("$.data").doesNotExist()
+			);
+
+		assertThat(teamUserEntityRepository.existsByTeamAndUser(team, player)).isFalse();
+		assertThat(teamUserEntityRepository.existsByTeamAndUser(team, owner)).isTrue();
+	}
+
+	@Test
+	@Transactional
+	@WithCustomUser(email = "maker@example.com", name = "메이커")
+	@DisplayName("팀 탈퇴 API 통합 테스트 - MAKER 탈퇴 성공")
+	void leaveTeam_Success_Maker() throws Exception {
+		// given
+		UserEntity owner = UserEntity.socialLoginUser("owner-maker-leave@example.com", "오너", "provider", null);
+		userEntityRepository.save(owner);
+		UserEntity maker = userEntityRepository.findByEmail("maker@example.com").orElseThrow();
+
+		TeamEntity team = createTeamWithOwner("메이커탈퇴팀", owner);
+		teamUserEntityRepository.save(TeamUserEntity.createTeamUser(maker, team, TeamUserRole.MAKER));
+
+		// when & then
+		mockMvc.perform(delete("/api/v1/teams/{teamId}/users/me", team.getId())
+				.with(csrf()))
+			.andExpectAll(
+				status().isOk(),
+				jsonPath("$.isSuccess").value(true),
+				jsonPath("$.data").doesNotExist()
+			);
+
+		assertThat(teamUserEntityRepository.existsByTeamAndUser(team, maker)).isFalse();
+	}
+
+	@Test
+	@Transactional
+	@WithCustomUser(email = "owner-cannot-leave@example.com", name = "오너")
+	@DisplayName("팀 탈퇴 API 통합 테스트 - OWNER 탈퇴 실패")
+	void leaveTeam_Failure_OwnerCannotLeave() throws Exception {
+		// given
+		UserEntity owner = userEntityRepository.findByEmail("owner-cannot-leave@example.com").orElseThrow();
+		TeamEntity team = createTeamWithOwner("오너탈퇴불가팀", owner);
+
+		// when & then
+		mockMvc.perform(delete("/api/v1/teams/{teamId}/users/me", team.getId())
+				.with(csrf()))
+			.andExpectAll(
+				status().isBadRequest(),
+				jsonPath("$.isSuccess").value(false),
+				jsonPath("$.code").value("T-001")
+			);
+
+		assertThat(teamUserEntityRepository.existsByTeamAndUser(team, owner)).isTrue();
+	}
+
+	@Test
+	@Transactional
+	@WithCustomUser(email = "team-delete-owner@example.com", name = "오너")
+	@DisplayName("팀 삭제 API 통합 테스트 - OWNER가 팀을 논리 삭제하고 진행 중 LIVE_TIME 문제셋을 종료한다")
+	void deleteTeam_Success() throws Exception {
+		// given
+		UserEntity owner = userEntityRepository.findByEmail("team-delete-owner@example.com").orElseThrow();
+		TeamEntity team = createTeamWithOwner("삭제팀", owner);
+		QuestionSetEntity questionSet = questionSetEntityRepository.save(QuestionSetEntity.builder()
+			.subject("진행 중 실시간 문제셋")
+			.teamId(team.getId())
+			.solveMode(QuestionSetSolveMode.LIVE_TIME)
+			.status(QuestionSetStatus.ONGOING)
+			.build());
+
+		// when & then
+		mockMvc.perform(delete("/api/v1/teams/{teamId}", team.getId())
+				.with(csrf()))
+			.andExpectAll(
+				status().isOk(),
+				jsonPath("$.isSuccess").value(true),
+				jsonPath("$.data").doesNotExist()
+			);
+
+		TeamEntity deletedTeam = teamEntityRepository.findById(team.getId()).orElseThrow();
+		QuestionSetEntity endedQuestionSet = questionSetEntityRepository.findById(questionSet.getId()).orElseThrow();
+		assertThat(deletedTeam.getDeletedAt()).isNotNull();
+		assertThat(endedQuestionSet.getStatus()).isEqualTo(QuestionSetStatus.AFTER);
+	}
+
+	@Test
+	@Transactional
+	@WithCustomUser(email = "team-delete-player@example.com", name = "플레이어")
+	@DisplayName("팀 삭제 API 통합 테스트 - OWNER가 아니면 403을 반환한다")
+	void deleteTeam_Failure_NotOwner() throws Exception {
+		// given
+		UserEntity owner = UserEntity.socialLoginUser("team-delete-owner2@example.com", "오너", "owner-provider",
+			null);
+		userEntityRepository.save(owner);
+		UserEntity player = userEntityRepository.findByEmail("team-delete-player@example.com").orElseThrow();
+		TeamEntity team = createTeamWithOwner("삭제권한없음팀", owner);
+		teamUserEntityRepository.save(TeamUserEntity.createPlayerUser(player, team));
+
+		// when & then
+		mockMvc.perform(delete("/api/v1/teams/{teamId}", team.getId())
+				.with(csrf()))
+			.andExpectAll(
+				status().isForbidden(),
+				jsonPath("$.isSuccess").value(false),
+				jsonPath("$.code").value("C-008")
+			);
+
+		TeamEntity activeTeam = teamEntityRepository.findById(team.getId()).orElseThrow();
+		assertThat(activeTeam.getDeletedAt()).isNull();
+	}
+
+	@Test
+	@Transactional
+	@WithCustomUser(email = "team-delete-again-owner@example.com", name = "오너")
+	@DisplayName("팀 삭제 API 통합 테스트 - 이미 삭제된 팀은 재삭제할 수 없다")
+	void deleteTeam_Failure_AlreadyDeleted() throws Exception {
+		// given
+		UserEntity owner = userEntityRepository.findByEmail("team-delete-again-owner@example.com").orElseThrow();
+		TeamEntity team = createTeamWithOwner("이미삭제팀", owner);
+		team.updateDeletedAt(LocalDateTime.now());
+
+		// when & then
+		mockMvc.perform(delete("/api/v1/teams/{teamId}", team.getId())
+				.with(csrf()))
+			.andExpectAll(
+				status().isBadRequest(),
+				jsonPath("$.isSuccess").value(false),
+				jsonPath("$.code").value("T-001"),
+				jsonPath("$.reasons[0]").value("삭제된 팀입니다.")
+			);
 	}
 
 	private TeamEntity createTeamWithOwner(String teamName, UserEntity owner) {

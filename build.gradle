@@ -51,6 +51,7 @@ dependencies {
     // AWS S3 연동을 위한 의존성
     implementation 'io.awspring.cloud:spring-cloud-aws-starter-s3:3.2.1'
     implementation 'software.amazon.awssdk:s3'
+    implementation 'software.amazon.awssdk:sesv2:2.25.70'
 
     compileOnly 'org.projectlombok:lombok'
 
@@ -82,7 +83,7 @@ checkstyle {
     toolVersion = '10.12.4'
     configFile = file('config/checkstyle/checkstyle.xml')
     configProperties = [
-            'suppressionFile': 'config/checkstyle/suppressions.xml'
+            'suppressionFile': project.file('config/checkstyle/suppressions.xml').absolutePath
     ]
     ignoreFailures = false
     maxWarnings = 0

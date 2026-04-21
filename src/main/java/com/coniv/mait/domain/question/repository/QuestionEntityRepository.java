@@ -4,6 +4,7 @@ import java.util.List;
 import java.util.Optional;
 
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
@@ -33,4 +34,8 @@ public interface QuestionEntityRepository extends JpaRepository<QuestionEntity, 
 	List<QuestionEntity> findAllByQuestionType(@Param("questionType") QuestionType questionType);
 
 	List<QuestionEntity> findAllByQuestionSetIdIn(List<Long> questionSetIds);
+
+	@Modifying(clearAutomatically = true)
+	@Query("DELETE FROM QuestionEntity q WHERE q.questionSet.id = :questionSetId")
+	void deleteAllByQuestionSetId(@Param("questionSetId") Long questionSetId);
 }

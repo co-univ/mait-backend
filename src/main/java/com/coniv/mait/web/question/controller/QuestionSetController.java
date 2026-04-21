@@ -6,6 +6,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -20,10 +21,12 @@ import org.springframework.web.multipart.MultipartFile;
 
 import com.coniv.mait.domain.question.enums.AiRequestStatus;
 import com.coniv.mait.domain.question.enums.DeliveryMode;
+import com.coniv.mait.domain.question.service.QuestionSetDeleteService;
 import com.coniv.mait.domain.question.service.QuestionSetMaterialService;
 import com.coniv.mait.domain.question.service.QuestionSetService;
 import com.coniv.mait.domain.question.service.dto.QuestionSetDto;
 import com.coniv.mait.domain.question.service.dto.QuestionSetMaterialDto;
+import com.coniv.mait.domain.solve.service.StudyModeService;
 import com.coniv.mait.global.auth.model.MaitUser;
 import com.coniv.mait.global.response.ApiResponse;
 import com.coniv.mait.web.question.dto.AiRequestStatusApiResponse;
@@ -31,9 +34,11 @@ import com.coniv.mait.web.question.dto.CreateQuestionSetApiRequest;
 import com.coniv.mait.web.question.dto.CreateQuestionSetApiResponse;
 import com.coniv.mait.web.question.dto.QuestionSetApiResponse;
 import com.coniv.mait.web.question.dto.QuestionSetContainer;
+import com.coniv.mait.web.question.dto.QuestionSetGroup;
 import com.coniv.mait.web.question.dto.QuestionSetMaterialApiResponse;
 import com.coniv.mait.web.question.dto.QuestionSetsApiResponse;
 import com.coniv.mait.web.question.dto.QuestionValidationApiResponse;
+import com.coniv.mait.web.question.dto.StudyQuestionSetGroup;
 import com.coniv.mait.web.question.dto.UpdateQuestionSetApiRequest;
 import com.coniv.mait.web.question.dto.UpdateQuestionSetFieldApiRequest;
 import com.coniv.mait.web.question.dto.UpdateQuestionSetReviewApiRequest;
@@ -50,6 +55,10 @@ import lombok.RequiredArgsConstructor;
 public class QuestionSetController {
 
 	private final QuestionSetService questionSetService;
+
+	private final StudyModeService studyModeService;
+
+	private final QuestionSetDeleteService questionSetDeleteService;
 
 	private final QuestionSetMaterialService questionSetMaterialService;
 
@@ -74,13 +83,26 @@ public class QuestionSetController {
 	}
 
 	@Operation(summary = "문제 셋 목록 조회")
-	@GetMapping
+	@GetMapping(params = {"mode", "mode!=STUDY", "mode!=MANAGING"})
 	public ResponseEntity<ApiResponse<QuestionSetsApiResponse>> getQuestionSets(
-		@AuthenticationPrincipal MaitUser user,
-		@RequestParam(value = "mode") DeliveryMode mode, @RequestParam("teamId") Long teamId) {
+		@AuthenticationPrincipal MaitUser user, @RequestParam(value = "mode") DeliveryMode mode,
+		@RequestParam("teamId") Long teamId) {
 		QuestionSetContainer questionSets = questionSetService.getQuestionSets(teamId, mode, user);
-		QuestionSetsApiResponse response = QuestionSetsApiResponse.of(mode, questionSets);
-		return ResponseEntity.ok(ApiResponse.ok(response));
+		return ResponseEntity.ok(ApiResponse.ok(QuestionSetsApiResponse.of(mode, questionSets)));
+	}
+
+	@Operation(summary = "학습 모드 관리 - 문제 셋 상태별 목록 조회")
+	@GetMapping("/study/management")
+	public ResponseEntity<ApiResponse<QuestionSetGroup>> getStudyManagementQuestionSets(
+		@AuthenticationPrincipal MaitUser user, @RequestParam("teamId") Long teamId) {
+		return ResponseEntity.ok(ApiResponse.ok(questionSetService.getStudyManagementQuestionSets(teamId, user)));
+	}
+
+	@Operation(summary = "학습 모드 풀이 - 유저 풀이 상태별 문제 셋 목록 조회")
+	@GetMapping("/study/progress")
+	public ResponseEntity<ApiResponse<StudyQuestionSetGroup>> getStudyProgressQuestionSets(
+		@AuthenticationPrincipal MaitUser user, @RequestParam("teamId") Long teamId) {
+		return ResponseEntity.ok(ApiResponse.ok(studyModeService.getStudyQuestionSets(teamId, user)));
 	}
 
 	@Operation(summary = "문제 셋 단건 조회")
@@ -141,6 +163,14 @@ public class QuestionSetController {
 	public ResponseEntity<ApiResponse<Void>> restartQuestionSet(@PathVariable Long questionSetId,
 		@AuthenticationPrincipal MaitUser user) {
 		questionSetService.restartQuestionSet(questionSetId, user);
+		return ResponseEntity.ok(ApiResponse.noContent());
+	}
+
+	@Operation(summary = "문제 셋 삭제", description = "문제 셋과 관련된 모든 데이터를 삭제합니다.")
+	@DeleteMapping("/{questionSetId}")
+	public ResponseEntity<ApiResponse<Void>> deleteQuestionSet(@PathVariable Long questionSetId,
+		@AuthenticationPrincipal MaitUser user) {
+		questionSetDeleteService.deleteQuestionSet(questionSetId, user.id());
 		return ResponseEntity.ok(ApiResponse.noContent());
 	}
 }

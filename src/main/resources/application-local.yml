@@ -2,6 +2,10 @@ spring:
   config:
     import: classpath:variables/variable-local.yml
 
+mait:
+  email:
+    provider: ${EMAIL_PROVIDER:console}
+
 logging:
   level:
     org.hibernate.SQL: debug
