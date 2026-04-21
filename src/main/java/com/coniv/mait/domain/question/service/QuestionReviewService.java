@@ -21,6 +21,7 @@ import com.coniv.mait.domain.question.repository.QuestionSetEntityRepository;
 import com.coniv.mait.domain.question.service.component.LastViewedQuestionRedisRepository;
 import com.coniv.mait.domain.question.service.component.QuestionFactory;
 import com.coniv.mait.domain.question.service.component.QuestionReader;
+import com.coniv.mait.domain.question.service.component.QuestionSetReader;
 import com.coniv.mait.domain.question.service.component.ReviewAnswerGrader;
 import com.coniv.mait.domain.question.service.dto.QuestionDto;
 import com.coniv.mait.domain.question.service.dto.ReviewAnswerCheckResult;
@@ -39,6 +40,7 @@ public class QuestionReviewService {
 
 	private final LastViewedQuestionRedisRepository lastViewedQuestionRedisRepository;
 	private final QuestionSetEntityRepository questionSetEntityRepository;
+	private final QuestionSetReader questionSetReader;
 
 	private final Map<QuestionType, QuestionFactory<?>> questionFactories;
 
@@ -48,6 +50,7 @@ public class QuestionReviewService {
 		LastViewedQuestionRedisRepository lastViewedQuestionRedisRepository,
 		ReviewAnswerGrader reviewAnswerGrader,
 		QuestionReader questionReader,
+		QuestionSetReader questionSetReader,
 		List<QuestionFactory<?>> factories
 	) {
 		this.questionSetEntityRepository = questionSetEntityRepository;
@@ -55,13 +58,13 @@ public class QuestionReviewService {
 		this.lastViewedQuestionRedisRepository = lastViewedQuestionRedisRepository;
 		this.reviewAnswerGrader = reviewAnswerGrader;
 		this.questionReader = questionReader;
+		this.questionSetReader = questionSetReader;
 		questionFactories = factories.stream()
 			.collect(Collectors.toUnmodifiableMap(QuestionFactory::getQuestionType, Function.identity()));
 	}
 
 	public QuestionDto getLastViewedQuestionInReview(final Long questionSetId, final Long userId) {
-		QuestionSetEntity questionSet = questionSetEntityRepository.findById(questionSetId)
-			.orElseThrow(() -> new EntityNotFoundException("해당 문제 셋을 조회할 수 없음"));
+		QuestionSetEntity questionSet = questionSetReader.getActiveQuestionSet(questionSetId);
 
 		if (questionSet.getStatus() != QuestionSetStatus.REVIEW) {
 			throw new QuestionSetStatusException(QuestionSetStatusExceptionCode.ONLY_REVIEW);
@@ -86,8 +89,7 @@ public class QuestionReviewService {
 	public ReviewAnswerCheckResult checkReviewAnswer(final Long questionId, final Long questionSetId,
 		final Long userId, final SubmitAnswerDto<?> submitAnswers) {
 		final QuestionEntity question = questionReader.getQuestion(questionId, questionSetId);
-		final QuestionSetEntity questionSet = questionSetEntityRepository.findById(questionSetId)
-			.orElseThrow(() -> new EntityNotFoundException("해당 문제 셋을 찾을 수 없습니다."));
+		final QuestionSetEntity questionSet = questionSetReader.getActiveQuestionSet(questionSetId);
 
 		if (questionSet.getVisibility() == QuestionSetVisibility.PRIVATE) {
 			throw new QuestionSetStatusException(QuestionSetStatusExceptionCode.NEED_OPEN);

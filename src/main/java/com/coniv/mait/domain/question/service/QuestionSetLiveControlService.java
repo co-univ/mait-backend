@@ -25,13 +25,12 @@ import com.coniv.mait.domain.question.enums.QuestionStatusType;
 import com.coniv.mait.domain.question.repository.QuestionEntityRepository;
 import com.coniv.mait.domain.question.repository.QuestionSetEntityRepository;
 import com.coniv.mait.domain.question.repository.QuestionSetParticipantRepository;
+import com.coniv.mait.domain.question.service.component.QuestionSetReader;
 import com.coniv.mait.domain.question.service.component.QuestionWebSocketSender;
 import com.coniv.mait.domain.question.service.dto.CurrentQuestionDto;
 import com.coniv.mait.global.constant.WebSocketConstants;
-import com.coniv.mait.global.exception.custom.ResourceNotBelongException;
 import com.coniv.mait.web.question.dto.ParticipantSendType;
 
-import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
@@ -47,6 +46,7 @@ public class QuestionSetLiveControlService {
 	private final SimpMessagingTemplate messagingTemplate;
 	private final QuestionSetParticipantService questionSetParticipantService;
 	private final QuestionService questionService;
+	private final QuestionSetReader questionSetReader;
 
 	@Transactional
 	public void startLiveQuestionSet(Long questionSetId) {
@@ -76,8 +76,7 @@ public class QuestionSetLiveControlService {
 	}
 
 	private QuestionSetEntity findQuestionSetById(Long questionSetId) {
-		return questionSetEntityRepository.findById(questionSetId)
-			.orElseThrow(() -> new EntityNotFoundException("QuestionSet not found with id: " + questionSetId));
+		return questionSetReader.getActiveQuestionSet(questionSetId);
 	}
 
 	@Transactional(readOnly = true)

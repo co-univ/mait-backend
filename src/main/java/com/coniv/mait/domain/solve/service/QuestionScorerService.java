@@ -15,6 +15,7 @@ import com.coniv.mait.domain.question.entity.QuestionSetEntity;
 import com.coniv.mait.domain.question.repository.QuestionEntityRepository;
 import com.coniv.mait.domain.question.repository.QuestionSetEntityRepository;
 import com.coniv.mait.domain.question.service.component.QuestionReader;
+import com.coniv.mait.domain.question.service.component.QuestionSetReader;
 import com.coniv.mait.domain.solve.entity.QuestionScorerEntity;
 import com.coniv.mait.domain.solve.repository.QuestionScorerEntityRepository;
 import com.coniv.mait.domain.solve.service.dto.QuestionScorerDto;
@@ -38,9 +39,12 @@ public class QuestionScorerService {
 	private final QuestionScorerEntityRepository questionScorerEntityRepository;
 
 	private final QuestionSetEntityRepository questionSetEntityRepository;
+	private final QuestionSetReader questionSetReader;
 
 	@Transactional(readOnly = true)
 	public QuestionScorerDto getScorer(final Long questionSetId, final Long questionId) {
+		questionSetReader.getActiveQuestionSet(questionSetId);
+
 		QuestionEntity question = questionEntityRepository.findById(questionId)
 			.orElseThrow(() -> new EntityNotFoundException("문제 ID에 해당하는 문제가 없습니다."));
 
@@ -59,8 +63,7 @@ public class QuestionScorerService {
 
 	@Transactional(readOnly = true)
 	public List<QuestionScorerDto> getScorers(final Long questionSetId) {
-		QuestionSetEntity questionSet = questionSetEntityRepository.findById(questionSetId)
-			.orElseThrow(() -> new EntityNotFoundException("해당 문제 셋을 찾을 수 없습니다."));
+		QuestionSetEntity questionSet = questionSetReader.getActiveQuestionSet(questionSetId);
 
 		Map<Long, QuestionEntity> questionById = questionReader.getQuestionsByQuestionSet(questionSet).stream()
 			.collect(Collectors.toMap(QuestionEntity::getId, question -> question));

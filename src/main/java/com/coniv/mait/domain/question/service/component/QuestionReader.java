@@ -21,12 +21,14 @@ public class QuestionReader {
 
 	private final QuestionEntityRepository questionEntityRepository;
 	private final QuestionSetEntityRepository questionSetEntityRepository;
+	private final QuestionSetReader questionSetReader;
 
 	public QuestionEntity getQuestion(final Long questionId, final Long questionSetId) {
 		QuestionEntity question = questionEntityRepository.findById(questionId)
 			.orElseThrow(() -> new EntityNotFoundException("문제를 찾을 수 없습니다."));
+		QuestionSetEntity questionSet = questionSetReader.getActiveQuestionSet(questionSetId);
 
-		if (!question.getQuestionSet().getId().equals(questionSetId)) {
+		if (!question.getQuestionSet().getId().equals(questionSet.getId())) {
 			throw new ResourceNotBelongException("문제가 해당 문제 세트에 속하지 않습니다.");
 		}
 

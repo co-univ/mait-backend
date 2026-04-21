@@ -46,7 +46,7 @@ public class TeamQuestionRankService {
 	private final TeamRoleValidator teamRoleValidator;
 
 	public List<RankDto> getTeamQuestionScorerRank(final Long teamId) {
-		TeamEntity team = teamReader.getTeam(teamId);
+		TeamEntity team = teamReader.getActiveTeam(teamId);
 
 		List<QuestionEntity> completedQuestions = questionReader.getCompletedQuestionsInTeam(team);
 
@@ -77,7 +77,7 @@ public class TeamQuestionRankService {
 	}
 
 	public List<RankDto> getTeamQuestionCorrectAnswerRank(final Long teamId) {
-		TeamEntity team = teamReader.getTeam(teamId);
+		TeamEntity team = teamReader.getActiveTeam(teamId);
 
 		List<QuestionEntity> completedQuestions = questionReader.getCompletedQuestionsInTeam(team);
 
@@ -123,7 +123,7 @@ public class TeamQuestionRankService {
 	public PersonalAccuracyDto getPersonalAccuracy(final Long teamId, final Long userId) {
 		teamRoleValidator.checkIsTeamMember(teamId, userId);
 
-		TeamEntity team = teamReader.getTeam(teamId);
+		TeamEntity team = teamReader.getActiveTeam(teamId);
 
 		List<Long> finishedLiveQuestionSetIds = questionSetReader.getFinishedLiveQuestionSetsInTeam(
 			team.getId()).stream().map(QuestionSetEntity::getId).toList();

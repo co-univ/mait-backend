@@ -17,6 +17,7 @@ import com.coniv.mait.domain.question.enums.QuestionSetSolveMode;
 import com.coniv.mait.domain.question.enums.QuestionSetStatus;
 import com.coniv.mait.domain.question.repository.QuestionSetEntityRepository;
 import com.coniv.mait.domain.question.service.component.QuestionReader;
+import com.coniv.mait.domain.question.service.component.QuestionSetReader;
 import com.coniv.mait.domain.solve.entity.AnswerSubmitRecordEntity;
 import com.coniv.mait.domain.solve.entity.SolvingSessionEntity;
 import com.coniv.mait.domain.solve.entity.StudyAnswerDraftEntity;
@@ -62,6 +63,7 @@ public class StudyModeService {
 	private final AnswerGrader answerGrader;
 
 	private final QuestionSetEntityRepository questionSetEntityRepository;
+	private final QuestionSetReader questionSetReader;
 	private final SolvingSessionEntityRepository solvingSessionEntityRepository;
 	private final StudyAnswerDraftEntityRepository studyAnswerDraftEntityRepository;
 	private final AnswerSubmitRecordEntityRepository answerSubmitRecordEntityRepository;
@@ -90,8 +92,7 @@ public class StudyModeService {
 
 	@Transactional
 	public SolvingSessionDto startStudyMode(final MaitUser maitUser, final Long questionSetId) {
-		QuestionSetEntity questionSet = questionSetEntityRepository.findById(questionSetId)
-			.orElseThrow(() -> new EntityNotFoundException("존재하지 않는 문제 셋 입니다."));
+		QuestionSetEntity questionSet = questionSetReader.getActiveQuestionSet(questionSetId);
 
 		UserEntity user = userReader.getById(maitUser.id());
 
@@ -113,8 +114,7 @@ public class StudyModeService {
 	}
 
 	public List<StudyAnswerDraftDto> getStudyAnswerDrafts(final MaitUser maitUser, final Long questionSetId) {
-		QuestionSetEntity questionSet = questionSetEntityRepository.findById(questionSetId)
-			.orElseThrow(() -> new EntityNotFoundException("존재하지 않는 문제 셋 입니다."));
+		QuestionSetEntity questionSet = questionSetReader.getActiveQuestionSet(questionSetId);
 
 		UserEntity user = userReader.getById(maitUser.id());
 
@@ -131,8 +131,7 @@ public class StudyModeService {
 
 	@Transactional
 	public StudyGradeResultDto gradeStudySession(final MaitUser maitUser, final Long questionSetId) {
-		QuestionSetEntity questionSet = questionSetEntityRepository.findById(questionSetId)
-			.orElseThrow(() -> new EntityNotFoundException("존재하지 않는 문제 셋 입니다."));
+		QuestionSetEntity questionSet = questionSetReader.getActiveQuestionSet(questionSetId);
 
 		UserEntity user = userReader.getById(maitUser.id());
 
@@ -188,8 +187,7 @@ public class StudyModeService {
 	@Transactional
 	public StudyAnswerDraftDto updateStudyAnswerDraft(final MaitUser maitUser, final Long questionSetId,
 		final Long questionId, final SubmitAnswerDto<?> submittedAnswer) throws JsonProcessingException {
-		QuestionSetEntity questionSet = questionSetEntityRepository.findById(questionSetId)
-			.orElseThrow(() -> new EntityNotFoundException("존재하지 않는 문제 셋 입니다."));
+		QuestionSetEntity questionSet = questionSetReader.getActiveQuestionSet(questionSetId);
 
 		UserEntity user = userReader.getById(maitUser.id());
 

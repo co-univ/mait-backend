@@ -19,17 +19,16 @@ import com.coniv.mait.domain.question.repository.QuestionEntityRepository;
 import com.coniv.mait.domain.question.repository.QuestionSetEntityRepository;
 import com.coniv.mait.domain.question.repository.QuestionSetParticipantRepository;
 import com.coniv.mait.domain.question.service.component.QuestionReader;
+import com.coniv.mait.domain.question.service.component.QuestionSetReader;
 import com.coniv.mait.domain.question.service.dto.ParticipantCorrectAnswerRankDto;
 import com.coniv.mait.domain.question.service.dto.ParticipantCorrectAnswersDto;
 import com.coniv.mait.domain.solve.entity.AnswerSubmitRecordEntity;
 import com.coniv.mait.domain.solve.entity.QuestionScorerEntity;
 import com.coniv.mait.domain.solve.repository.AnswerSubmitRecordEntityRepository;
 import com.coniv.mait.domain.solve.repository.QuestionScorerEntityRepository;
-import com.coniv.mait.domain.team.service.component.TeamReader;
 import com.coniv.mait.domain.user.service.component.UserReader;
 import com.coniv.mait.domain.user.service.dto.UserDto;
 
-import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
@@ -40,9 +39,8 @@ public class QuestionRankService {
 
 	private final UserReader userReader;
 
-	private final TeamReader teamReader;
-
 	private final QuestionReader questionReader;
+	private final QuestionSetReader questionSetReader;
 
 	private final QuestionSetParticipantRepository questionSetParticipantRepository;
 
@@ -54,7 +52,7 @@ public class QuestionRankService {
 	private final QuestionScorerEntityRepository questionScorerEntityRepository;
 
 	public ParticipantCorrectAnswerRankDto getParticipantCorrectRank(Long questionSetId) {
-		QuestionSetEntity questionSet = findQuestionSetById(questionSetId);
+		QuestionSetEntity questionSet = questionSetReader.getActiveQuestionSet(questionSetId);
 		List<QuestionSetParticipantEntity> allParticipants =
 			questionSetParticipantRepository.findAllByQuestionSetWithFetchJoinUser(questionSet);
 
@@ -104,14 +102,9 @@ public class QuestionRankService {
 		return ParticipantCorrectAnswerRankDto.of(activeParticipants, eliminateParticipants);
 	}
 
-	private QuestionSetEntity findQuestionSetById(Long questionSetId) {
-		return questionSetEntityRepository.findById(questionSetId)
-			.orElseThrow(() -> new EntityNotFoundException("해당 문제 세트가 존재하지 않습니다."));
-	}
-
 	@Transactional(readOnly = true)
 	public List<AnswerRankDto> getCorrectorsByQuestionSetId(final Long questionSetId) {
-		QuestionSetEntity questionSet = findQuestionSetById(questionSetId);
+		QuestionSetEntity questionSet = questionSetReader.getActiveQuestionSet(questionSetId);
 
 		List<Long> questionIds = questionReader.getQuestionsByQuestionSet(questionSet).stream()
 			.map(QuestionEntity::getId).toList();
@@ -139,7 +132,7 @@ public class QuestionRankService {
 
 	@Transactional(readOnly = true)
 	public List<AnswerRankDto> getScorersByQuestionSetId(final Long questionSetId) {
-		QuestionSetEntity questionSet = findQuestionSetById(questionSetId);
+		QuestionSetEntity questionSet = questionSetReader.getActiveQuestionSet(questionSetId);
 
 		List<Long> questionIds = questionReader.getQuestionsByQuestionSet(questionSet).stream()
 			.map(QuestionEntity::getId).toList();

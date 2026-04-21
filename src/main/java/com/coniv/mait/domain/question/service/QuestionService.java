@@ -29,6 +29,7 @@ import com.coniv.mait.domain.question.repository.MultipleChoiceEntityRepository;
 import com.coniv.mait.domain.question.repository.QuestionEntityRepository;
 import com.coniv.mait.domain.question.repository.QuestionSetEntityRepository;
 import com.coniv.mait.domain.question.service.component.QuestionFactory;
+import com.coniv.mait.domain.question.service.component.QuestionSetReader;
 import com.coniv.mait.domain.question.service.dto.CurrentQuestionDto;
 import com.coniv.mait.domain.question.service.dto.QuestionCount;
 import com.coniv.mait.domain.question.service.dto.QuestionDto;
@@ -57,6 +58,7 @@ public class QuestionService {
 	private final AiCreateApiService aiCreateApiService;
 
 	private final AiRequestStatusManager aiRequestStatusManager;
+	private final QuestionSetReader questionSetReader;
 
 	@Autowired
 	public QuestionService(
@@ -66,7 +68,8 @@ public class QuestionService {
 		MultipleChoiceEntityRepository multipleChoiceEntityRepository,
 		QuestionImageService questionImageService,
 		AiCreateApiService aiCreateApiService,
-		AiRequestStatusManager aiRequestStatusManager) {
+		AiRequestStatusManager aiRequestStatusManager,
+		QuestionSetReader questionSetReader) {
 		questionFactories = factories.stream()
 			.collect(Collectors.toUnmodifiableMap(QuestionFactory::getQuestionType, Function.identity()));
 		this.questionEntityRepository = questionEntityRepository;
@@ -75,6 +78,7 @@ public class QuestionService {
 		this.multipleChoiceEntityRepository = multipleChoiceEntityRepository;
 		this.aiCreateApiService = aiCreateApiService;
 		this.aiRequestStatusManager = aiRequestStatusManager;
+		this.questionSetReader = questionSetReader;
 	}
 
 	public <T extends QuestionDto> void createQuestion(
@@ -82,8 +86,7 @@ public class QuestionService {
 		final QuestionType type,
 		final T questionDto
 	) {
-		QuestionSetEntity questionSetEntity = questionSetEntityRepository.findById(questionSetId)
-			.orElseThrow(() -> new EntityNotFoundException("QuestionSet not found with id: " + questionSetId));
+		QuestionSetEntity questionSetEntity = questionSetReader.getActiveQuestionSet(questionSetId);
 
 		QuestionFactory<QuestionDto> questionFactory = getQuestionFactory(type);
 
@@ -92,8 +95,7 @@ public class QuestionService {
 
 	@Transactional
 	public QuestionDto createDefaultQuestion(final Long questionSetId) {
-		QuestionSetEntity questionSet = questionSetEntityRepository.findById(questionSetId)
-			.orElseThrow(() -> new EntityNotFoundException("QuestionSet not found with id: " + questionSetId));
+		QuestionSetEntity questionSet = questionSetReader.getActiveQuestionSet(questionSetId);
 
 		final String nextRank = questionEntityRepository.findTopByQuestionSetIdOrderByLexoRankDesc(questionSetId)
 			.map(QuestionEntity::getLexoRank)
@@ -128,6 +130,8 @@ public class QuestionService {
 	}
 
 	public QuestionDto getQuestion(final Long questionSetId, final Long questionId, final DeliveryMode mode) {
+		questionSetReader.getActiveQuestionSet(questionSetId);
+
 		QuestionEntity question = questionEntityRepository.findById(questionId)
 			.orElseThrow(() -> new EntityNotFoundException("Question not found with id: " + questionId));
 
@@ -142,6 +146,8 @@ public class QuestionService {
 
 	// Todo: 조회 성능 개선
 	public List<QuestionDto> getQuestions(final Long questionSetId, final DeliveryMode mode) {
+		questionSetReader.getActiveQuestionSet(questionSetId);
+
 		List<QuestionEntity> questions = questionEntityRepository.findAllByQuestionSetId(questionSetId);
 		return questions.stream()
 			.sorted(mode.questionComparator())
@@ -161,8 +167,7 @@ public class QuestionService {
 	}
 
 	public CurrentQuestionDto findCurrentQuestion(final Long questionSetId) {
-		QuestionSetEntity questionSet = questionSetEntityRepository.findById(questionSetId)
-			.orElseThrow(() -> new EntityNotFoundException("QuestionSet not found with id: " + questionSetId));
+		QuestionSetEntity questionSet = questionSetReader.getActiveQuestionSet(questionSetId);
 
 		Optional<QuestionEntity> mayBeOpenQuestion = questionEntityRepository.findFirstByQuestionSetAndQuestionStatusIn(
 			questionSet, List.of(QuestionStatusType.ACCESS_PERMISSION, QuestionStatusType.SOLVE_PERMISSION));
@@ -177,6 +182,8 @@ public class QuestionService {
 
 	@Transactional
 	public QuestionDto updateQuestion(final Long questionSetId, final Long questionId, final QuestionDto questionDto) {
+		questionSetReader.getActiveQuestionSet(questionSetId);
+
 		QuestionEntity question = questionEntityRepository.findById(questionId)
 			.orElseThrow(() -> new EntityNotFoundException("Question not found with id: " + questionId));
 
@@ -216,6 +223,8 @@ public class QuestionService {
 
 	@Transactional
 	public void deleteQuestion(final Long questionSetId, final Long questionId) {
+		questionSetReader.getActiveQuestionSet(questionSetId);
+
 		QuestionEntity question = questionEntityRepository.findById(questionId)
 			.orElseThrow(() -> new EntityNotFoundException("Question not found with id: " + questionId));
 
@@ -231,6 +240,8 @@ public class QuestionService {
 	@Transactional
 	public void changeQuestionOrder(final Long questionSetId, final Long sourceQuestionId, final Long prevQuestionId,
 		final Long nextQuestionId) {
+		questionSetReader.getActiveQuestionSet(questionSetId);
+
 		QuestionEntity sourceQuestion = questionEntityRepository.findById(sourceQuestionId)
 			.orElseThrow(() -> new EntityNotFoundException("Question not found with id: " + sourceQuestionId));
 		if (!sourceQuestion.getQuestionSet().getId().equals(questionSetId)) {
@@ -288,8 +299,7 @@ public class QuestionService {
 		aiRequestStatusManager.updateStatus(questionSetId, AiRequestStatus.PENDING);
 		log.info("[AI 문제 생성 시작] - QuestionSetId: {}, Status: PROCESSING", questionSetId);
 
-		QuestionSetEntity questionSetEntity = questionSetEntityRepository.findById(questionSetId)
-			.orElseThrow(() -> new EntityNotFoundException("QuestionSet not found with id: " + questionSetId));
+		QuestionSetEntity questionSetEntity = questionSetReader.getActiveQuestionSet(questionSetId);
 
 		AiCreateRequest aiRequest = AiCreateRequest.builder()
 			.subject(questionSetEntity.getSubject())

@@ -20,6 +20,7 @@ import com.coniv.mait.domain.question.repository.AiRequestStatusManager;
 import com.coniv.mait.domain.question.repository.QuestionEntityRepository;
 import com.coniv.mait.domain.question.repository.QuestionSetEntityRepository;
 import com.coniv.mait.domain.question.service.component.QuestionChecker;
+import com.coniv.mait.domain.question.service.component.QuestionSetReader;
 import com.coniv.mait.domain.question.service.dto.QuestionCount;
 import com.coniv.mait.domain.question.service.dto.QuestionSetDto;
 import com.coniv.mait.domain.question.service.dto.QuestionValidateDto;
@@ -59,6 +60,7 @@ public class QuestionSetService {
 	private final AiRequestStatusManager aiRequestStatusManager;
 
 	private final RedisTemplate<String, String> redisTemplate;
+	private final QuestionSetReader questionSetReader;
 
 	@Transactional
 	public QuestionSetDto createQuestionSet(final QuestionSetDto questionSetDto, final List<QuestionCount> counts,
@@ -130,8 +132,7 @@ public class QuestionSetService {
 	}
 
 	public QuestionSetDto getQuestionSet(final Long questionSetId, final MaitUser maitUser) {
-		final QuestionSetEntity questionSetEntity = questionSetEntityRepository.findById(questionSetId)
-			.orElseThrow(() -> new IllegalArgumentException("Question set not found"));
+		final QuestionSetEntity questionSetEntity = questionSetReader.getActiveQuestionSet(questionSetId);
 
 		long questionCount = questionEntityRepository.countByQuestionSetId(questionSetEntity.getId());
 
@@ -146,8 +147,7 @@ public class QuestionSetService {
 		final QuestionSetSolveMode solveMode,
 		final String difficulty,
 		final QuestionSetVisibility visibility) {
-		QuestionSetEntity questionSet = questionSetEntityRepository.findById(questionSetId)
-			.orElseThrow(() -> new EntityNotFoundException("Question set not found"));
+		QuestionSetEntity questionSet = questionSetReader.getActiveQuestionSet(questionSetId);
 
 		// Todo: 현재 생성 단계가 아니면 예외
 		int number = 1;
@@ -164,15 +164,13 @@ public class QuestionSetService {
 
 	@Transactional
 	public void updateQuestionSetField(final Long questionSetId, final String title) {
-		QuestionSetEntity questionSet = questionSetEntityRepository.findById(questionSetId)
-			.orElseThrow(() -> new EntityNotFoundException("Question set not found"));
+		QuestionSetEntity questionSet = questionSetReader.getActiveQuestionSet(questionSetId);
 
 		questionSet.updateTitle(title);
 	}
 
 	public List<QuestionValidateDto> validateQuestionSet(final Long questionSetId) {
-		QuestionSetEntity questionSet = questionSetEntityRepository.findById(questionSetId)
-			.orElseThrow(() -> new EntityNotFoundException("Question set not found"));
+		QuestionSetEntity questionSet = questionSetReader.getActiveQuestionSet(questionSetId);
 
 		List<QuestionEntity> questions = questionEntityRepository.findAllByQuestionSetId(questionSet.getId());
 
@@ -183,21 +181,20 @@ public class QuestionSetService {
 	}
 
 	public AiRequestStatus getAiRequestStatus(Long questionSetId) {
+		questionSetReader.getActiveQuestionSet(questionSetId);
 		return aiRequestStatusManager.getStatus(questionSetId);
 	}
 
 	@Transactional
 	public void updateQuestionSetToReviewMode(final Long questionSetId, final QuestionSetVisibility visibility) {
-		QuestionSetEntity questionSet = questionSetEntityRepository.findById(questionSetId)
-			.orElseThrow(() -> new EntityNotFoundException("해당 문제 셋을 찾을 수 없습니다."));
+		QuestionSetEntity questionSet = questionSetReader.getActiveQuestionSet(questionSetId);
 
 		questionSet.openReview(visibility);
 	}
 
 	@Transactional
 	public void restartQuestionSet(final Long questionSetId, final MaitUser user) {
-		QuestionSetEntity questionSet = questionSetEntityRepository.findById(questionSetId)
-			.orElseThrow(() -> new EntityNotFoundException("해당 문제 셋을 찾을 수 없습니다."));
+		QuestionSetEntity questionSet = questionSetReader.getActiveQuestionSet(questionSetId);
 
 		teamRoleValidator.checkHasCreateQuestionSetAuthority(questionSet.getTeamId(), user.id());
 		questionSet.restartLive();

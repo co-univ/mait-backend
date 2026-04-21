@@ -37,12 +37,8 @@ public class QuestionControlService {
 	@Deprecated(since = "2025-11-21 정기배포 이후")
 	@Transactional
 	public void allowQuestionAccess(Long questionSetId, Long questionId) {
-		QuestionEntity question = questionEntityRepository.findById(questionId)
-				.orElseThrow(() -> new EntityNotFoundException("Question not found with id: " + questionId));
-
+		QuestionEntity question = questionReader.getQuestion(questionId, questionSetId);
 		checkQuestionSetIsOnLive(question.getQuestionSet());
-		checkQuestionBelongsToSet(questionSetId, question);
-
 		closeAllQuestionStatus(questionSetId);
 
 		question.updateQuestionStatus(QuestionStatusType.ACCESS_PERMISSION);
@@ -61,11 +57,8 @@ public class QuestionControlService {
 	@Deprecated(since = "2025-11-21 정기배포 이후")
 	@Transactional
 	public void allowQuestionSolve(Long questionSetId, Long questionId) {
-		QuestionEntity question = questionEntityRepository.findById(questionId)
-				.orElseThrow(() -> new EntityNotFoundException("Question not found with id: " + questionId));
-
+		QuestionEntity question = questionReader.getQuestion(questionId, questionSetId);
 		checkQuestionSetIsOnLive(question.getQuestionSet());
-		checkQuestionBelongsToSet(questionSetId, question);
 
 		if (question.getQuestionStatus() != QuestionStatusType.ACCESS_PERMISSION) {
 			throw new QuestionSetLiveException("Question must be in ACCESS_PERMISSION status before solving.");
@@ -81,14 +74,6 @@ public class QuestionControlService {
 				.build();
 
 		questionWebSocketSender.broadcastQuestionStatus(questionSetId, message);
-	}
-
-	private void checkQuestionBelongsToSet(Long questionSetId, QuestionEntity question) {
-		if (!question.getQuestionSet().getId().equals(questionSetId)) {
-			throw new ResourceNotBelongException(
-					"Question with id " + question.getQuestionSet().getId() + " does not belong to Set with id "
-							+ questionSetId);
-		}
 	}
 
 	private void closeAllQuestionStatus(Long questionSetId) {

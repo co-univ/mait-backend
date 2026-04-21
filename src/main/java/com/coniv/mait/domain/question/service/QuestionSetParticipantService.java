@@ -19,6 +19,7 @@ import com.coniv.mait.domain.question.exception.QuestionSetStatusException;
 import com.coniv.mait.domain.question.exception.code.QuestionSetStatusExceptionCode;
 import com.coniv.mait.domain.question.repository.QuestionSetEntityRepository;
 import com.coniv.mait.domain.question.repository.QuestionSetParticipantRepository;
+import com.coniv.mait.domain.question.service.component.QuestionSetReader;
 import com.coniv.mait.domain.question.service.component.QuestionWebSocketSender;
 import com.coniv.mait.domain.user.entity.UserEntity;
 import com.coniv.mait.domain.user.repository.UserEntityRepository;
@@ -43,10 +44,10 @@ public class QuestionSetParticipantService {
 	private final QuestionWebSocketSender questionWebSocketSender;
 
 	private final MaitEventPublisher maitEventPublisher;
+	private final QuestionSetReader questionSetReader;
 
 	public List<ParticipantDto> getParticipants(final Long questionSetId) {
-		QuestionSetEntity questionSet = questionSetEntityRepository.findById(questionSetId)
-			.orElseThrow(() -> new EntityNotFoundException("해당 문제 셋을 조회할 수 없음 id: " + questionSetId));
+		QuestionSetEntity questionSet = questionSetReader.getActiveQuestionSet(questionSetId);
 
 		return questionSetParticipantRepository.findAllByQuestionSetWithFetchJoinUser(questionSet).stream()
 			.map(ParticipantDto::from)
@@ -59,8 +60,7 @@ public class QuestionSetParticipantService {
 		final List<ParticipantDto> activeUsers, final List<ParticipantDto> eliminatedUsers) {
 		validateParticipants(activeUsers, eliminatedUsers);
 
-		QuestionSetEntity questionSet = questionSetEntityRepository.findById(questionSetId)
-			.orElseThrow(() -> new EntityNotFoundException("해당 문제 셋을 조회할 수 없음 id: " + questionSetId));
+		QuestionSetEntity questionSet = questionSetReader.getActiveQuestionSet(questionSetId);
 
 		questionSet.markAdvancementSelected();
 
@@ -102,8 +102,7 @@ public class QuestionSetParticipantService {
 
 	@Transactional
 	public void updateWinners(final Long questionSetId, final List<ParticipantDto> winners) {
-		QuestionSetEntity questionSet = questionSetEntityRepository.findById(questionSetId)
-			.orElseThrow(() -> new EntityNotFoundException("해당 문제 셋을 조회할 수 없음 id: " + questionSetId));
+		QuestionSetEntity questionSet = questionSetReader.getActiveQuestionSet(questionSetId);
 
 		Set<Long> winnerParticipantIds = winners.stream()
 			.map(ParticipantDto::getParticipantId)
@@ -116,8 +115,7 @@ public class QuestionSetParticipantService {
 
 	@Transactional
 	public ParticipantDto participateLiveQuestionSet(final Long questionSetId, final Long userId) {
-		QuestionSetEntity questionSet = questionSetEntityRepository.findById(questionSetId)
-			.orElseThrow(() -> new EntityNotFoundException("해당 문제 셋을 찾을 수 없습니다. id=" + questionSetId));
+		QuestionSetEntity questionSet = questionSetReader.getActiveQuestionSet(questionSetId);
 
 		if (!questionSet.isOnLive()) {
 			throw new QuestionSetStatusException(QuestionSetStatusExceptionCode.ONLY_LIVE_TIME);

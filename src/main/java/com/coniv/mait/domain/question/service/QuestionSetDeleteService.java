@@ -22,6 +22,7 @@ import com.coniv.mait.domain.question.repository.QuestionEntityRepository;
 import com.coniv.mait.domain.question.repository.QuestionSetEntityRepository;
 import com.coniv.mait.domain.question.repository.QuestionSetParticipantRepository;
 import com.coniv.mait.domain.question.service.component.QuestionFactory;
+import com.coniv.mait.domain.question.service.component.QuestionSetReader;
 import com.coniv.mait.domain.solve.repository.AnswerSubmitRecordEntityRepository;
 import com.coniv.mait.domain.solve.repository.QuestionScorerEntityRepository;
 import com.coniv.mait.domain.solve.repository.SolvingSessionEntityRepository;
@@ -46,6 +47,7 @@ public class QuestionSetDeleteService {
 	private final Map<QuestionType, QuestionFactory<?>> questionFactories;
 	private final TeamRoleValidator teamRoleValidator;
 	private final MaitEventPublisher maitEventPublisher;
+	private final QuestionSetReader questionSetReader;
 
 	@Autowired
 	public QuestionSetDeleteService(
@@ -58,7 +60,8 @@ public class QuestionSetDeleteService {
 		QuestionScorerEntityRepository questionScorerEntityRepository,
 		StudyAnswerDraftEntityRepository studyAnswerDraftEntityRepository,
 		TeamRoleValidator teamRoleValidator,
-		MaitEventPublisher maitEventPublisher
+		MaitEventPublisher maitEventPublisher,
+		QuestionSetReader questionSetReader
 	) {
 		this.questionFactories = factories.stream()
 			.collect(Collectors.toUnmodifiableMap(QuestionFactory::getQuestionType, Function.identity()));
@@ -71,12 +74,12 @@ public class QuestionSetDeleteService {
 		this.studyAnswerDraftEntityRepository = studyAnswerDraftEntityRepository;
 		this.teamRoleValidator = teamRoleValidator;
 		this.maitEventPublisher = maitEventPublisher;
+		this.questionSetReader = questionSetReader;
 	}
 
 	@Transactional
 	public void deleteQuestionSet(final Long questionSetId, final Long userId) {
-		QuestionSetEntity questionSet = questionSetEntityRepository.findById(questionSetId)
-			.orElseThrow(() -> new EntityNotFoundException("QuestionSet not found with id: " + questionSetId));
+		QuestionSetEntity questionSet = questionSetReader.getActiveQuestionSet(questionSetId);
 
 		teamRoleValidator.checkHasCreateQuestionSetAuthority(questionSet.getTeamId(), userId);
 		if (questionSet.getStatus() == QuestionSetStatus.ONGOING
