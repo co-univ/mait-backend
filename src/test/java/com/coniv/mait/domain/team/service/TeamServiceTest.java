@@ -16,12 +16,17 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import com.coniv.mait.domain.question.entity.QuestionSetEntity;
+import com.coniv.mait.domain.question.enums.QuestionSetSolveMode;
+import com.coniv.mait.domain.question.enums.QuestionSetStatus;
+import com.coniv.mait.domain.question.repository.QuestionSetEntityRepository;
 import com.coniv.mait.domain.team.entity.TeamEntity;
 import com.coniv.mait.domain.team.entity.TeamInvitationApplicantEntity;
 import com.coniv.mait.domain.team.entity.TeamInvitationLinkEntity;
 import com.coniv.mait.domain.team.entity.TeamUserEntity;
 import com.coniv.mait.domain.team.enums.InvitationApplicationStatus;
 import com.coniv.mait.domain.team.enums.TeamUserRole;
+import com.coniv.mait.domain.team.event.TeamDeletedEvent;
 import com.coniv.mait.domain.team.event.TeamMemberLeftEvent;
 import com.coniv.mait.domain.team.exception.InvitationErrorCode;
 import com.coniv.mait.domain.team.exception.TeamInvitationFailException;
@@ -36,6 +41,7 @@ import com.coniv.mait.domain.team.service.dto.TeamInvitationDto;
 import com.coniv.mait.domain.user.entity.UserEntity;
 import com.coniv.mait.domain.user.enums.LoginProvider;
 import com.coniv.mait.domain.user.repository.UserEntityRepository;
+import com.coniv.mait.domain.user.service.component.TeamRoleValidator;
 import com.coniv.mait.global.auth.model.MaitUser;
 import com.coniv.mait.global.enums.InviteTokenDuration;
 import com.coniv.mait.global.event.MaitEventPublisher;
@@ -68,6 +74,12 @@ class TeamServiceTest {
 
 	@Mock
 	private TeamReader teamReader;
+
+	@Mock
+	private QuestionSetEntityRepository questionSetEntityRepository;
+
+	@Mock
+	private TeamRoleValidator teamRoleValidator;
 
 	@InjectMocks
 	private TeamService teamService;
@@ -378,5 +390,51 @@ class TeamServiceTest {
 
 		verify(teamUserEntityRepository, never()).delete(any());
 		verify(maitEventPublisher, never()).publishEvent(any());
+	}
+
+	@Test
+	@DisplayName("팀 삭제 성공 - 팀을 논리 삭제하고 진행 중 LIVE_TIME 문제셋 종료 이벤트를 발행한다")
+	void deleteTeam_Success() {
+		// given
+		Long teamId = 1L;
+		Long ownerId = 10L;
+		TeamEntity team = TeamEntity.of("삭제 대상 팀", ownerId);
+
+		UserEntity owner = mock(UserEntity.class);
+		when(owner.getName()).thenReturn("오너");
+		when(owner.getEmail()).thenReturn("owner@example.com");
+		TeamUserEntity ownerTeamUser = TeamUserEntity.createOwnerUser(owner, team);
+
+		UserEntity member = mock(UserEntity.class);
+		when(member.getName()).thenReturn("멤버");
+		when(member.getEmail()).thenReturn("member@example.com");
+		TeamUserEntity memberTeamUser = TeamUserEntity.createPlayerUser(member, team);
+
+		QuestionSetEntity ongoingLiveQuestionSet = mock(QuestionSetEntity.class);
+		when(ongoingLiveQuestionSet.getId()).thenReturn(100L);
+
+		when(teamReader.getActiveTeam(teamId)).thenReturn(team);
+		when(teamUserEntityRepository.findAllByTeamIdFetchJoinUser(teamId))
+			.thenReturn(List.of(ownerTeamUser, memberTeamUser));
+		when(questionSetEntityRepository.findAllByTeamIdAndSolveModeAndStatusIn(
+			teamId, QuestionSetSolveMode.LIVE_TIME, List.of(QuestionSetStatus.ONGOING)))
+			.thenReturn(List.of(ongoingLiveQuestionSet));
+
+		// when
+		teamService.deleteTeam(teamId, ownerId);
+
+		// then
+		assertThat(team.deleted()).isTrue();
+		verify(teamRoleValidator).checkIsTeamOwner(teamId, ownerId);
+		verify(ongoingLiveQuestionSet).endLiveQuestionSet();
+
+		ArgumentCaptor<TeamDeletedEvent> eventCaptor = ArgumentCaptor.forClass(TeamDeletedEvent.class);
+		verify(maitEventPublisher).publishEvent(eventCaptor.capture());
+		TeamDeletedEvent event = eventCaptor.getValue();
+		assertThat(event.teamId()).isEqualTo(teamId);
+		assertThat(event.teamName()).isEqualTo("삭제 대상 팀");
+		assertThat(event.recipients()).extracting("email")
+			.containsExactly("owner@example.com", "member@example.com");
+		assertThat(event.ongoingLiveQuestionSetIds()).containsExactly(100L);
 	}
 }

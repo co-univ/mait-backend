@@ -50,6 +50,10 @@ public class TeamEntity extends BaseTimeEntity {
 		this.deletedAt = deletedAt;
 	}
 
+	public void markDeleted() {
+		this.deletedAt = LocalDateTime.now();
+	}
+
 	public boolean deleted() {
 		return deletedAt != null;
 	}
