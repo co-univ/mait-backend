@@ -20,6 +20,8 @@ import com.coniv.mait.domain.team.entity.TeamUserEntity;
 import com.coniv.mait.domain.team.enums.InvitationApplicationStatus;
 import com.coniv.mait.domain.team.enums.JoinedImmediate;
 import com.coniv.mait.domain.team.enums.TeamUserRole;
+import com.coniv.mait.domain.team.event.MemberEmailInfo;
+import com.coniv.mait.domain.team.event.TeamDeletedEvent;
 import com.coniv.mait.domain.team.event.TeamMemberLeftEvent;
 import com.coniv.mait.domain.team.exception.InvitationErrorCode;
 import com.coniv.mait.domain.team.exception.TeamInvitationFailException;
@@ -315,13 +317,27 @@ public class TeamService {
 		TeamEntity team = teamReader.getActiveTeam(teamId);
 		teamRoleValidator.checkIsTeamOwner(teamId, userId);
 
+		List<TeamUserEntity> teamUsers = teamUserEntityRepository.findAllByTeamIdFetchJoinUser(teamId);
+		List<MemberEmailInfo> recipients = teamUsers.stream()
+			.map(teamUser -> new MemberEmailInfo(teamUser.getUser().getName(), teamUser.getUser().getEmail()))
+			.toList();
+
 		List<QuestionSetEntity> ongoingLiveQuestionSets =
 			questionSetEntityRepository.findAllByTeamIdAndSolveModeAndStatusIn(teamId, QuestionSetSolveMode.LIVE_TIME,
 				List.of(QuestionSetStatus.ONGOING)
 			);
 		ongoingLiveQuestionSets.forEach(QuestionSetEntity::endLiveQuestionSet);
+		List<Long> ongoingLiveQuestionSetIds = ongoingLiveQuestionSets.stream()
+			.map(QuestionSetEntity::getId)
+			.toList();
 
 		team.markDeleted();
+		maitEventPublisher.publishEvent(TeamDeletedEvent.builder()
+			.teamId(teamId)
+			.teamName(team.getName())
+			.recipients(recipients)
+			.ongoingLiveQuestionSetIds(ongoingLiveQuestionSetIds)
+			.build());
 	}
 
 	@Transactional
