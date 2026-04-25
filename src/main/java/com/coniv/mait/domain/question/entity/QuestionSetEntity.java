@@ -117,7 +117,7 @@ public class QuestionSetEntity extends BaseTimeEntity {
 	}
 
 	public void startStudyQuestionSet() {
-		checkStudyDeliveryMode();
+		checkStudyMode();
 		if (status != QuestionSetStatus.BEFORE) {
 			throw new QuestionSetStatusException(QuestionSetStatusExceptionCode.ONLY_BEFORE);
 		}
@@ -126,7 +126,7 @@ public class QuestionSetEntity extends BaseTimeEntity {
 	}
 
 	public void endStudyQuestionSet() {
-		checkStudyDeliveryMode();
+		checkStudyMode();
 		if (status != QuestionSetStatus.ONGOING) {
 			throw new QuestionSetStatusException(QuestionSetStatusExceptionCode.ONLY_ONGOING);
 		}
@@ -134,7 +134,7 @@ public class QuestionSetEntity extends BaseTimeEntity {
 		this.endTime = LocalDateTime.now();
 	}
 
-	private void checkStudyDeliveryMode() {
+	private void checkStudyMode() {
 		if (solveMode != QuestionSetSolveMode.STUDY) {
 			throw new QuestionSetStatusException(QuestionSetStatusExceptionCode.ONLY_STUDY);
 		}
