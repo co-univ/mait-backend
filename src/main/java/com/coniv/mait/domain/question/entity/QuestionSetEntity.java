@@ -93,7 +93,7 @@ public class QuestionSetEntity extends BaseTimeEntity {
 	}
 
 	public void startLiveQuestionSet() {
-		checkLiveDeliveryMode();
+		checkLiveTimeMode();
 		if (status != QuestionSetStatus.BEFORE) {
 			throw new QuestionSetLiveException("BEFORE_LIVE 상태에서만 실시간 문제를 시작할 수 있습니다. 현재 상태: " + status);
 		}
@@ -102,7 +102,7 @@ public class QuestionSetEntity extends BaseTimeEntity {
 	}
 
 	public void endLiveQuestionSet() {
-		checkLiveDeliveryMode();
+		checkLiveTimeMode();
 		if (status != QuestionSetStatus.ONGOING) {
 			throw new QuestionSetLiveException("LIVE 상태에서만 실시간 문제를 종료할 수 있습니다. 현재 상태: " + status);
 		}
@@ -110,9 +110,24 @@ public class QuestionSetEntity extends BaseTimeEntity {
 		this.endTime = LocalDateTime.now();
 	}
 
-	private void checkLiveDeliveryMode() {
+	private void checkLiveTimeMode() {
 		if (solveMode != QuestionSetSolveMode.LIVE_TIME) {
-			throw new QuestionSetLiveException("LIVE_TIME 모드가 아닌 문제셋은 실시간 시작할 수 없습니다. 현재 solveMode: " + solveMode);
+			throw new QuestionSetStatusException(QuestionSetStatusExceptionCode.ONLY_LIVE_TIME);
+		}
+	}
+
+	public void startStudyQuestionSet() {
+		checkStudyDeliveryMode();
+		if (status != QuestionSetStatus.BEFORE) {
+			throw new QuestionSetStatusException(QuestionSetStatusExceptionCode.ONLY_BEFORE);
+		}
+		this.status = QuestionSetStatus.ONGOING;
+		this.startTime = LocalDateTime.now();
+	}
+
+	private void checkStudyDeliveryMode() {
+		if (solveMode != QuestionSetSolveMode.STUDY) {
+			throw new QuestionSetStatusException(QuestionSetStatusExceptionCode.ONLY_STUDY);
 		}
 	}
 
