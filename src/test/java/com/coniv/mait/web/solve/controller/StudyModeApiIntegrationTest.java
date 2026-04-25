@@ -16,6 +16,8 @@ import com.coniv.mait.domain.question.entity.MultipleQuestionEntity;
 import com.coniv.mait.domain.question.entity.QuestionSetEntity;
 import com.coniv.mait.domain.question.entity.ShortAnswerEntity;
 import com.coniv.mait.domain.question.entity.ShortQuestionEntity;
+import com.coniv.mait.domain.question.enums.QuestionSetSolveMode;
+import com.coniv.mait.domain.question.enums.QuestionSetStatus;
 import com.coniv.mait.domain.question.repository.QuestionEntityRepository;
 import com.coniv.mait.domain.question.repository.QuestionSetEntityRepository;
 import com.coniv.mait.domain.question.repository.ShortAnswerEntityRepository;
@@ -27,6 +29,7 @@ import com.coniv.mait.domain.solve.repository.SolvingSessionEntityRepository;
 import com.coniv.mait.domain.solve.repository.StudyAnswerDraftEntityRepository;
 import com.coniv.mait.domain.team.entity.TeamEntity;
 import com.coniv.mait.domain.team.entity.TeamUserEntity;
+import com.coniv.mait.domain.team.enums.TeamUserRole;
 import com.coniv.mait.domain.team.repository.TeamEntityRepository;
 import com.coniv.mait.domain.team.repository.TeamUserEntityRepository;
 import com.coniv.mait.domain.user.entity.UserEntity;
@@ -281,5 +284,33 @@ public class StudyModeApiIntegrationTest extends BaseIntegrationTest {
 			.orElseThrow();
 		assertThat(updatedDraft.isSubmitted()).isTrue();
 		assertThat(updatedDraft.getSubmittedAnswer()).contains("답안1");
+	}
+
+	@Test
+	@DisplayName("MAKER가 STUDY 모드 문제 셋을 시작하면 ONGOING으로 전환된다")
+	void startStudyQuestionSet_Success() throws Exception {
+		// given
+		UserEntity user = userEntityRepository.findByEmail("user@example.com").orElseThrow();
+		TeamEntity team = teamEntityRepository.save(
+			TeamEntity.builder().name("studyStartTeam").creatorId(user.getId()).build());
+		teamUserEntityRepository.save(TeamUserEntity.createTeamUser(user, team, TeamUserRole.MAKER));
+
+		QuestionSetEntity questionSet = questionSetEntityRepository.save(
+			QuestionSetEntity.builder()
+				.teamId(team.getId())
+				.solveMode(QuestionSetSolveMode.STUDY)
+				.status(QuestionSetStatus.BEFORE)
+				.build());
+
+		// when & then
+		mockMvc.perform(
+				patch("/api/v1/question-sets/{questionSetId}/study-mode/start", questionSet.getId()))
+			.andExpectAll(
+				status().isOk(),
+				jsonPath("$.isSuccess").value(true));
+
+		QuestionSetEntity updated = questionSetEntityRepository.findById(questionSet.getId()).orElseThrow();
+		assertThat(updated.getStatus()).isEqualTo(QuestionSetStatus.ONGOING);
+		assertThat(updated.getStartTime()).isNotNull();
 	}
 }
