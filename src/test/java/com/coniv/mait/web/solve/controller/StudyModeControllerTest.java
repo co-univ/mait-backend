@@ -18,6 +18,7 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
 import com.coniv.mait.domain.question.enums.QuestionSetSolveMode;
+import com.coniv.mait.domain.question.service.QuestionSetStudyControlService;
 import com.coniv.mait.domain.solve.enums.SolvingStatus;
 import com.coniv.mait.domain.solve.service.StudyModeService;
 import com.coniv.mait.domain.solve.service.dto.AnswerSubmitDto;
@@ -40,6 +41,9 @@ class StudyModeControllerTest {
 
 	@MockitoBean
 	private StudyModeService studyModeService;
+
+	@MockitoBean
+	private QuestionSetStudyControlService questionSetStudyControlService;
 
 	@MockitoBean
 	private IdempotencyInterceptor idempotencyInterceptor;
@@ -240,5 +244,22 @@ class StudyModeControllerTest {
 				jsonPath("$.isSuccess").value(false),
 				jsonPath("$.code").value("C-008"),
 				jsonPath("$.reasons[0]").value("해당 문제를 풀 수 있는 권한이 없습니다."));
+	}
+
+	@Test
+	@DisplayName("학습모드 문제셋 시작 성공")
+	void startStudyQuestionSet_Success() throws Exception {
+		// given
+		Long questionSetId = 1L;
+		willDoNothing().given(questionSetStudyControlService).startStudyQuestionSet(any(), eq(questionSetId));
+
+		// when & then
+		mockMvc.perform(
+				patch("/api/v1/question-sets/{questionSetId}/study-mode/start", questionSetId))
+			.andExpectAll(
+				status().isOk(),
+				jsonPath("$.isSuccess").value(true));
+
+		verify(questionSetStudyControlService).startStudyQuestionSet(any(), eq(questionSetId));
 	}
 }

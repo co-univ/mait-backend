@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.coniv.mait.domain.question.service.QuestionSetStudyControlService;
 import com.coniv.mait.domain.solve.service.StudyModeService;
 import com.coniv.mait.global.auth.model.MaitUser;
 import com.coniv.mait.global.response.ApiResponse;
@@ -33,6 +34,7 @@ import lombok.RequiredArgsConstructor;
 public class StudyModeController {
 
 	private final StudyModeService studyModeService;
+	private final QuestionSetStudyControlService questionSetStudyControlService;
 
 	@Operation(summary = "학습모드 풀이 시작 API", description = "학습 모드 - 문제 풀기 버튼 클릭 시 활용하는 API")
 	@PostMapping
@@ -69,5 +71,13 @@ public class StudyModeController {
 		@Valid @RequestBody QuestionAnswerSubmitApiRequest request) throws JsonProcessingException {
 		return ResponseEntity.ok(ApiResponse.ok(StudyAnswerDraftApiResponse.from(
 			studyModeService.updateStudyAnswerDraft(user, questionSetId, questionId, request.getSubmitAnswers()))));
+	}
+
+	@Operation(summary = "학습모드 문제셋 시작", description = "관리자가 학습 모드 문제 셋을 시작합니다.")
+	@PatchMapping("/start")
+	public ResponseEntity<ApiResponse<Void>> startStudyQuestionSet(
+		@AuthenticationPrincipal MaitUser user, @PathVariable Long questionSetId) {
+		questionSetStudyControlService.startStudyQuestionSet(user, questionSetId);
+		return ResponseEntity.ok(ApiResponse.noContent());
 	}
 }
