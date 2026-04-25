@@ -313,4 +313,32 @@ public class StudyModeApiIntegrationTest extends BaseIntegrationTest {
 		assertThat(updated.getStatus()).isEqualTo(QuestionSetStatus.ONGOING);
 		assertThat(updated.getStartTime()).isNotNull();
 	}
+
+	@Test
+	@DisplayName("MAKER가 STUDY 모드 문제 셋을 종료하면 AFTER로 전환된다")
+	void endStudyQuestionSet_Success() throws Exception {
+		// given
+		UserEntity user = userEntityRepository.findByEmail("user@example.com").orElseThrow();
+		TeamEntity team = teamEntityRepository.save(
+			TeamEntity.builder().name("studyEndTeam").creatorId(user.getId()).build());
+		teamUserEntityRepository.save(TeamUserEntity.createTeamUser(user, team, TeamUserRole.MAKER));
+
+		QuestionSetEntity questionSet = questionSetEntityRepository.save(
+			QuestionSetEntity.builder()
+				.teamId(team.getId())
+				.solveMode(QuestionSetSolveMode.STUDY)
+				.status(QuestionSetStatus.ONGOING)
+				.build());
+
+		// when & then
+		mockMvc.perform(
+				patch("/api/v1/question-sets/{questionSetId}/study-mode/end", questionSet.getId()))
+			.andExpectAll(
+				status().isOk(),
+				jsonPath("$.isSuccess").value(true));
+
+		QuestionSetEntity updated = questionSetEntityRepository.findById(questionSet.getId()).orElseThrow();
+		assertThat(updated.getStatus()).isEqualTo(QuestionSetStatus.AFTER);
+		assertThat(updated.getEndTime()).isNotNull();
+	}
 }
