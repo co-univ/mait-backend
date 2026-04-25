@@ -80,4 +80,12 @@ public class StudyModeController {
 		questionSetStudyControlService.startStudyQuestionSet(user, questionSetId);
 		return ResponseEntity.ok(ApiResponse.noContent());
 	}
+
+	@Operation(summary = "학습모드 문제셋 종료", description = "관리자가 학습 모드 문제 셋을 종료합니다.")
+	@PatchMapping("/end")
+	public ResponseEntity<ApiResponse<Void>> endStudyQuestionSet(
+		@AuthenticationPrincipal MaitUser user, @PathVariable Long questionSetId) {
+		questionSetStudyControlService.endStudyQuestionSet(user, questionSetId);
+		return ResponseEntity.ok(ApiResponse.noContent());
+	}
 }

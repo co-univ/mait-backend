@@ -125,6 +125,15 @@ public class QuestionSetEntity extends BaseTimeEntity {
 		this.startTime = LocalDateTime.now();
 	}
 
+	public void endStudyQuestionSet() {
+		checkStudyDeliveryMode();
+		if (status != QuestionSetStatus.ONGOING) {
+			throw new QuestionSetStatusException(QuestionSetStatusExceptionCode.ONLY_ONGOING);
+		}
+		this.status = QuestionSetStatus.AFTER;
+		this.endTime = LocalDateTime.now();
+	}
+
 	private void checkStudyDeliveryMode() {
 		if (solveMode != QuestionSetSolveMode.STUDY) {
 			throw new QuestionSetStatusException(QuestionSetStatusExceptionCode.ONLY_STUDY);
