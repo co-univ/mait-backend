@@ -27,4 +27,13 @@ public class QuestionSetStudyControlService {
 		log.info("[학습 문제 셋 시작] questionSetId={}, teamId={}, startedBy={}",
 			questionSetId, questionSet.getTeamId(), user.id());
 	}
+
+	@Transactional
+	public void endStudyQuestionSet(final MaitUser user, final Long questionSetId) {
+		QuestionSetEntity questionSet = questionSetReader.getQuestionSet(questionSetId);
+		teamRoleValidator.checkHasCreateQuestionSetAuthority(questionSet.getTeamId(), user.id());
+		questionSet.endStudyQuestionSet();
+		log.info("[학습 문제 셋 종료] questionSetId={}, teamId={}, endedBy={}",
+			questionSetId, questionSet.getTeamId(), user.id());
+	}
 }

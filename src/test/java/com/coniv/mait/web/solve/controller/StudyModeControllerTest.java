@@ -262,4 +262,21 @@ class StudyModeControllerTest {
 
 		verify(questionSetStudyControlService).startStudyQuestionSet(any(), eq(questionSetId));
 	}
+
+	@Test
+	@DisplayName("학습모드 문제셋 종료 성공")
+	void endStudyQuestionSet_Success() throws Exception {
+		// given
+		Long questionSetId = 1L;
+		willDoNothing().given(questionSetStudyControlService).endStudyQuestionSet(any(), eq(questionSetId));
+
+		// when & then
+		mockMvc.perform(
+				patch("/api/v1/question-sets/{questionSetId}/study-mode/end", questionSetId))
+			.andExpectAll(
+				status().isOk(),
+				jsonPath("$.isSuccess").value(true));
+
+		verify(questionSetStudyControlService).endStudyQuestionSet(any(), eq(questionSetId));
+	}
 }
