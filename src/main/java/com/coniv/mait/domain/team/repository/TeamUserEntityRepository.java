@@ -26,4 +26,19 @@ public interface TeamUserEntityRepository extends JpaRepository<TeamUserEntity, 
 	List<TeamUserEntity> findAllByTeamIdFetchJoinUser(@Param("teamId") Long teamId);
 
 	Optional<TeamUserEntity> findByTeamIdAndUserRole(Long teamId, TeamUserRole userRole);
+
+	@Query("""
+		SELECT count(tu)
+		FROM TeamUserEntity tu
+		LEFT JOIN SolvingSessionEntity ss
+			ON ss.user.id = tu.user.id
+			AND ss.questionSet.id = :questionSetId
+			AND ss.solveMode = com.coniv.mait.domain.question.enums.QuestionSetSolveMode.STUDY
+			AND ss.status = com.coniv.mait.domain.solve.enums.SolvingStatus.COMPLETE
+		WHERE tu.team.id = :teamId
+			AND ss.id IS NULL
+		""")
+	long countTeamMembersWithoutCompletedStudySession(
+		@Param("teamId") Long teamId,
+		@Param("questionSetId") Long questionSetId);
 }

@@ -22,6 +22,7 @@ import com.coniv.mait.domain.solve.entity.SolvingSessionEntity;
 import com.coniv.mait.domain.solve.entity.StudyAnswerDraftEntity;
 import com.coniv.mait.domain.solve.entity.StudyAnswerDraftId;
 import com.coniv.mait.domain.solve.enums.SolvingStatus;
+import com.coniv.mait.domain.solve.event.StudySessionCompletedEvent;
 import com.coniv.mait.domain.solve.exception.QuestionSolveExceptionCode;
 import com.coniv.mait.domain.solve.exception.QuestionSolvingException;
 import com.coniv.mait.domain.solve.repository.AnswerSubmitRecordEntityRepository;
@@ -37,6 +38,7 @@ import com.coniv.mait.domain.user.entity.UserEntity;
 import com.coniv.mait.domain.user.service.component.TeamRoleValidator;
 import com.coniv.mait.domain.user.service.component.UserReader;
 import com.coniv.mait.global.auth.model.MaitUser;
+import com.coniv.mait.global.event.MaitEventPublisher;
 import com.coniv.mait.web.question.dto.StudyQuestionSetDto;
 import com.coniv.mait.web.question.dto.StudyQuestionSetGroup;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -60,6 +62,7 @@ public class StudyModeService {
 	private final StudyAnswerDraftFactory studyAnswerDraftFactory;
 	private final QuestionReader questionReader;
 	private final AnswerGrader answerGrader;
+	private final MaitEventPublisher maitEventPublisher;
 
 	private final QuestionSetEntityRepository questionSetEntityRepository;
 	private final SolvingSessionEntityRepository solvingSessionEntityRepository;
@@ -181,6 +184,10 @@ public class StudyModeService {
 			.count();
 
 		solvingSession.submit(totalCount, correctCount);
+
+		maitEventPublisher.publishEvent(StudySessionCompletedEvent.builder()
+			.questionSetId(questionSetId)
+			.build());
 
 		return StudyGradeResultDto.of(solvingSession, records);
 	}

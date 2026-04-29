@@ -17,5 +17,4 @@ public interface QuestionSetEntityRepository extends JpaRepository<QuestionSetEn
 
 	List<QuestionSetEntity> findAllByTeamIdAndSolveModeAndStatusIn(Long teamId, QuestionSetSolveMode solveMode,
 		List<QuestionSetStatus> statuses);
-
 }
