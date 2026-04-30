@@ -17,6 +17,9 @@ public interface SolvingSessionEntityRepository extends JpaRepository<SolvingSes
 	Optional<SolvingSessionEntity> findByUserIdAndQuestionSetIdAndSolveMode(Long userId, Long questionSetId,
 		QuestionSetSolveMode solveMode);
 
+	long countByQuestionSetIdAndSolveModeAndStatus(Long questionSetId, QuestionSetSolveMode solveMode,
+		SolvingStatus status);
+
 	List<SolvingSessionEntity> findAllByUserIdAndStatusAndSolveModeAndQuestionSetTeamId(Long userId,
 		SolvingStatus status, QuestionSetSolveMode solveMode, Long teamId);
 

@@ -15,6 +15,9 @@ import com.coniv.mait.domain.question.enums.QuestionSetSolveMode;
 import com.coniv.mait.domain.question.enums.QuestionSetStatus;
 import com.coniv.mait.domain.question.exception.QuestionSetStatusException;
 import com.coniv.mait.domain.question.service.component.QuestionSetReader;
+import com.coniv.mait.domain.solve.enums.SolvingStatus;
+import com.coniv.mait.domain.solve.repository.SolvingSessionEntityRepository;
+import com.coniv.mait.domain.team.repository.TeamUserEntityRepository;
 import com.coniv.mait.domain.user.exception.UserRoleException;
 import com.coniv.mait.domain.user.service.component.TeamRoleValidator;
 import com.coniv.mait.global.auth.model.MaitUser;
@@ -37,6 +40,12 @@ class QuestionSetStudyControlServiceTest {
 
 	@Mock
 	private TeamRoleValidator teamRoleValidator;
+
+	@Mock
+	private SolvingSessionEntityRepository solvingSessionEntityRepository;
+
+	@Mock
+	private TeamUserEntityRepository teamUserEntityRepository;
 
 	@Test
 	@DisplayName("MAKER가 STUDY 모드 BEFORE 상태 문제 셋을 시작하면 ONGOING으로 전환된다")
@@ -216,5 +225,121 @@ class QuestionSetStudyControlServiceTest {
 		assertThatThrownBy(() ->
 			questionSetStudyControlService.endStudyQuestionSet(MAIT_USER, QUESTION_SET_ID))
 			.isInstanceOf(QuestionSetStatusException.class);
+	}
+
+	@Test
+	@DisplayName("STUDY 모드가 아닌 문제 셋은 자동 종료되지 않는다")
+	void evaluateAndAutoEnd_NotStudyMode_DoesNothing() {
+		// given
+		QuestionSetEntity questionSet = QuestionSetEntity.builder()
+			.teamId(TEAM_ID)
+			.solveMode(QuestionSetSolveMode.LIVE_TIME)
+			.status(QuestionSetStatus.ONGOING)
+			.build();
+
+		when(questionSetReader.getQuestionSet(QUESTION_SET_ID)).thenReturn(questionSet);
+
+		// when
+		questionSetStudyControlService.evaluateAndAutoEnd(QUESTION_SET_ID);
+
+		// then
+		assertThat(questionSet.getStatus()).isEqualTo(QuestionSetStatus.ONGOING);
+		verifyNoInteractions(solvingSessionEntityRepository, teamUserEntityRepository);
+	}
+
+	@Test
+	@DisplayName("ONGOING 상태가 아닌 문제 셋은 자동 종료되지 않는다")
+	void evaluateAndAutoEnd_NotOngoing_DoesNothing() {
+		// given
+		QuestionSetEntity questionSet = QuestionSetEntity.builder()
+			.teamId(TEAM_ID)
+			.solveMode(QuestionSetSolveMode.STUDY)
+			.status(QuestionSetStatus.AFTER)
+			.build();
+
+		when(questionSetReader.getQuestionSet(QUESTION_SET_ID)).thenReturn(questionSet);
+
+		// when
+		questionSetStudyControlService.evaluateAndAutoEnd(QUESTION_SET_ID);
+
+		// then
+		assertThat(questionSet.getStatus()).isEqualTo(QuestionSetStatus.AFTER);
+		verifyNoInteractions(solvingSessionEntityRepository, teamUserEntityRepository);
+	}
+
+	@Test
+	@DisplayName("진행 중인 학습 세션이 남아있으면 자동 종료되지 않는다")
+	void evaluateAndAutoEnd_HasProgressingSession_DoesNothing() {
+		// given
+		QuestionSetEntity questionSet = QuestionSetEntity.builder()
+			.teamId(TEAM_ID)
+			.solveMode(QuestionSetSolveMode.STUDY)
+			.status(QuestionSetStatus.ONGOING)
+			.build();
+
+		when(questionSetReader.getQuestionSet(QUESTION_SET_ID)).thenReturn(questionSet);
+		when(solvingSessionEntityRepository.countByQuestionSetIdAndSolveModeAndStatus(
+			QUESTION_SET_ID, QuestionSetSolveMode.STUDY, SolvingStatus.PROGRESSING))
+			.thenReturn(1L);
+
+		// when
+		questionSetStudyControlService.evaluateAndAutoEnd(QUESTION_SET_ID);
+
+		// then
+		assertThat(questionSet.getStatus()).isEqualTo(QuestionSetStatus.ONGOING);
+		verifyNoInteractions(teamUserEntityRepository);
+	}
+
+	@Test
+	@DisplayName("완료된 세션 수가 팀원 수보다 적으면 자동 종료되지 않는다")
+	void evaluateAndAutoEnd_CompletedCountLessThanTeamMembers_DoesNothing() {
+		// given
+		QuestionSetEntity questionSet = QuestionSetEntity.builder()
+			.teamId(TEAM_ID)
+			.solveMode(QuestionSetSolveMode.STUDY)
+			.status(QuestionSetStatus.ONGOING)
+			.build();
+
+		when(questionSetReader.getQuestionSet(QUESTION_SET_ID)).thenReturn(questionSet);
+		when(solvingSessionEntityRepository.countByQuestionSetIdAndSolveModeAndStatus(
+			QUESTION_SET_ID, QuestionSetSolveMode.STUDY, SolvingStatus.PROGRESSING))
+			.thenReturn(0L);
+		when(solvingSessionEntityRepository.countByQuestionSetIdAndSolveModeAndStatus(
+			QUESTION_SET_ID, QuestionSetSolveMode.STUDY, SolvingStatus.COMPLETE))
+			.thenReturn(2L);
+		when(teamUserEntityRepository.countByTeamId(TEAM_ID)).thenReturn(3L);
+
+		// when
+		questionSetStudyControlService.evaluateAndAutoEnd(QUESTION_SET_ID);
+
+		// then
+		assertThat(questionSet.getStatus()).isEqualTo(QuestionSetStatus.ONGOING);
+	}
+
+	@Test
+	@DisplayName("완료된 세션 수가 팀원 수와 같으면 AFTER로 자동 종료된다")
+	void evaluateAndAutoEnd_CompletedCountEqualsTeamMembers_AutoEnds() {
+		// given
+		QuestionSetEntity questionSet = QuestionSetEntity.builder()
+			.teamId(TEAM_ID)
+			.solveMode(QuestionSetSolveMode.STUDY)
+			.status(QuestionSetStatus.ONGOING)
+			.build();
+
+		when(questionSetReader.getQuestionSet(QUESTION_SET_ID)).thenReturn(questionSet);
+		when(solvingSessionEntityRepository.countByQuestionSetIdAndSolveModeAndStatus(
+			QUESTION_SET_ID, QuestionSetSolveMode.STUDY, SolvingStatus.PROGRESSING))
+			.thenReturn(0L);
+		when(solvingSessionEntityRepository.countByQuestionSetIdAndSolveModeAndStatus(
+			QUESTION_SET_ID, QuestionSetSolveMode.STUDY, SolvingStatus.COMPLETE))
+			.thenReturn(3L);
+		when(teamUserEntityRepository.countByTeamId(TEAM_ID)).thenReturn(3L);
+
+		// when
+		questionSetStudyControlService.evaluateAndAutoEnd(QUESTION_SET_ID);
+
+		// then
+		assertThat(questionSet.getStatus()).isEqualTo(QuestionSetStatus.AFTER);
+		assertThat(questionSet.getEndTime()).isNotNull();
 	}
 }

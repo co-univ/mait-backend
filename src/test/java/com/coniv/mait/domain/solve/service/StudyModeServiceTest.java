@@ -21,10 +21,12 @@ import com.coniv.mait.domain.question.enums.QuestionSetStatus;
 import com.coniv.mait.domain.question.enums.UserStudyStatus;
 import com.coniv.mait.domain.question.repository.QuestionSetEntityRepository;
 import com.coniv.mait.domain.question.service.component.QuestionReader;
+import com.coniv.mait.domain.question.service.component.QuestionSetReader;
 import com.coniv.mait.domain.solve.entity.SolvingSessionEntity;
 import com.coniv.mait.domain.solve.entity.StudyAnswerDraftEntity;
 import com.coniv.mait.domain.solve.entity.StudyAnswerDraftId;
 import com.coniv.mait.domain.solve.enums.SolvingStatus;
+import com.coniv.mait.domain.solve.event.StudySessionCompletedEvent;
 import com.coniv.mait.domain.solve.exception.QuestionSolveExceptionCode;
 import com.coniv.mait.domain.solve.exception.QuestionSolvingException;
 import com.coniv.mait.domain.solve.repository.AnswerSubmitRecordEntityRepository;
@@ -41,6 +43,7 @@ import com.coniv.mait.domain.user.exception.UserRoleException;
 import com.coniv.mait.domain.user.service.component.TeamRoleValidator;
 import com.coniv.mait.domain.user.service.component.UserReader;
 import com.coniv.mait.global.auth.model.MaitUser;
+import com.coniv.mait.global.event.MaitEventPublisher;
 import com.coniv.mait.web.question.dto.StudyQuestionSetGroup;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -68,6 +71,9 @@ class StudyModeServiceTest {
 	private QuestionSetEntityRepository questionSetEntityRepository;
 
 	@Mock
+	private QuestionSetReader questionSetReader;
+
+	@Mock
 	private SolvingSessionEntityRepository solvingSessionEntityRepository;
 
 	@Mock
@@ -84,6 +90,9 @@ class StudyModeServiceTest {
 
 	@Mock
 	private AnswerGrader answerGrader;
+
+	@Mock
+	private MaitEventPublisher maitEventPublisher;
 
 	@Mock
 	private ObjectMapper objectMapper;
@@ -353,7 +362,7 @@ class StudyModeServiceTest {
 			.submitted(false)
 			.build();
 
-		when(questionSetEntityRepository.findById(QUESTION_SET_ID)).thenReturn(Optional.of(mockQuestionSet));
+		when(questionSetReader.getQuestionSet(QUESTION_SET_ID)).thenReturn(mockQuestionSet);
 		when(userReader.getById(USER_ID)).thenReturn(mockUser);
 		when(mockQuestionSet.getTeamId()).thenReturn(TEAM_ID);
 		when(mockUser.getId()).thenReturn(USER_ID);
@@ -386,18 +395,20 @@ class StudyModeServiceTest {
 
 		verify(answerSubmitRecordEntityRepository).saveAll(anyList());
 		verify(mockSession).submit(2, 1);
+		verify(maitEventPublisher).publishEvent(any(StudySessionCompletedEvent.class));
 	}
 
 	@Test
 	@DisplayName("gradeStudySession - 문제셋이 없으면 EntityNotFoundException이 발생한다")
 	void gradeStudySession_throwsException_WhenQuestionSetNotFound() {
 		// given
-		when(questionSetEntityRepository.findById(QUESTION_SET_ID)).thenReturn(Optional.empty());
+		when(questionSetReader.getQuestionSet(QUESTION_SET_ID))
+			.thenThrow(new EntityNotFoundException(QUESTION_SET_ID + " : 해당 문제 셋을 찾을 수 없습니다."));
 
 		// when & then
 		assertThatThrownBy(() -> studyModeService.gradeStudySession(MAIT_USER, QUESTION_SET_ID))
 			.isInstanceOf(EntityNotFoundException.class)
-			.hasMessage("존재하지 않는 문제 셋 입니다.");
+			.hasMessage(QUESTION_SET_ID + " : 해당 문제 셋을 찾을 수 없습니다.");
 	}
 
 	@Test
@@ -407,7 +418,7 @@ class StudyModeServiceTest {
 		QuestionSetEntity mockQuestionSet = mock(QuestionSetEntity.class);
 		UserEntity mockUser = mock(UserEntity.class);
 
-		when(questionSetEntityRepository.findById(QUESTION_SET_ID)).thenReturn(Optional.of(mockQuestionSet));
+		when(questionSetReader.getQuestionSet(QUESTION_SET_ID)).thenReturn(mockQuestionSet);
 		when(userReader.getById(USER_ID)).thenReturn(mockUser);
 		when(mockQuestionSet.getTeamId()).thenReturn(TEAM_ID);
 		when(mockUser.getId()).thenReturn(USER_ID);
@@ -430,7 +441,7 @@ class StudyModeServiceTest {
 		UserEntity mockUser = mock(UserEntity.class);
 		SolvingSessionEntity mockSession = mock(SolvingSessionEntity.class);
 
-		when(questionSetEntityRepository.findById(QUESTION_SET_ID)).thenReturn(Optional.of(mockQuestionSet));
+		when(questionSetReader.getQuestionSet(QUESTION_SET_ID)).thenReturn(mockQuestionSet);
 		when(userReader.getById(USER_ID)).thenReturn(mockUser);
 		when(mockQuestionSet.getTeamId()).thenReturn(TEAM_ID);
 		when(mockUser.getId()).thenReturn(USER_ID);
@@ -468,7 +479,7 @@ class StudyModeServiceTest {
 			.solvingSession(mockSession)
 			.build();
 
-		when(questionSetEntityRepository.findById(QUESTION_SET_ID)).thenReturn(Optional.of(mockQuestionSet));
+		when(questionSetReader.getQuestionSet(QUESTION_SET_ID)).thenReturn(mockQuestionSet);
 		when(userReader.getById(USER_ID)).thenReturn(mockUser);
 		when(mockQuestionSet.getTeamId()).thenReturn(TEAM_ID);
 		when(mockUser.getId()).thenReturn(USER_ID);
@@ -496,13 +507,14 @@ class StudyModeServiceTest {
 	void updateStudyAnswerDraft_throwsException_WhenQuestionSetNotFound() {
 		// given
 		SubmitAnswerDto<?> submitAnswer = new ShortQuestionSubmitAnswer(List.of("답안"));
-		when(questionSetEntityRepository.findById(QUESTION_SET_ID)).thenReturn(Optional.empty());
+		when(questionSetReader.getQuestionSet(QUESTION_SET_ID))
+			.thenThrow(new EntityNotFoundException(QUESTION_SET_ID + " : 해당 문제 셋을 찾을 수 없습니다."));
 
 		// when & then
 		assertThatThrownBy(
 			() -> studyModeService.updateStudyAnswerDraft(MAIT_USER, QUESTION_SET_ID, 101L, submitAnswer))
 			.isInstanceOf(EntityNotFoundException.class)
-			.hasMessage("존재하지 않는 문제 셋 입니다.");
+			.hasMessage(QUESTION_SET_ID + " : 해당 문제 셋을 찾을 수 없습니다.");
 	}
 
 	@Test
@@ -513,7 +525,7 @@ class StudyModeServiceTest {
 		QuestionSetEntity mockQuestionSet = mock(QuestionSetEntity.class);
 		UserEntity mockUser = mock(UserEntity.class);
 
-		when(questionSetEntityRepository.findById(QUESTION_SET_ID)).thenReturn(Optional.of(mockQuestionSet));
+		when(questionSetReader.getQuestionSet(QUESTION_SET_ID)).thenReturn(mockQuestionSet);
 		when(userReader.getById(USER_ID)).thenReturn(mockUser);
 		when(mockQuestionSet.getTeamId()).thenReturn(TEAM_ID);
 		when(mockUser.getId()).thenReturn(USER_ID);
@@ -541,7 +553,7 @@ class StudyModeServiceTest {
 		UserEntity mockUser = mock(UserEntity.class);
 		SolvingSessionEntity mockSession = mock(SolvingSessionEntity.class);
 
-		when(questionSetEntityRepository.findById(QUESTION_SET_ID)).thenReturn(Optional.of(mockQuestionSet));
+		when(questionSetReader.getQuestionSet(QUESTION_SET_ID)).thenReturn(mockQuestionSet);
 		when(userReader.getById(USER_ID)).thenReturn(mockUser);
 		when(mockQuestionSet.getTeamId()).thenReturn(TEAM_ID);
 		when(mockUser.getId()).thenReturn(USER_ID);
