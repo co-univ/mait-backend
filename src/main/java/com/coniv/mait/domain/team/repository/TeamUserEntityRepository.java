@@ -26,4 +26,6 @@ public interface TeamUserEntityRepository extends JpaRepository<TeamUserEntity, 
 	List<TeamUserEntity> findAllByTeamIdFetchJoinUser(@Param("teamId") Long teamId);
 
 	Optional<TeamUserEntity> findByTeamIdAndUserRole(Long teamId, TeamUserRole userRole);
+
+	long countByTeamId(Long teamId);
 }
