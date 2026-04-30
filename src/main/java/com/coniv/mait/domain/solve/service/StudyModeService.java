@@ -196,8 +196,7 @@ public class StudyModeService {
 	@Transactional
 	public StudyAnswerDraftDto updateStudyAnswerDraft(final MaitUser maitUser, final Long questionSetId,
 		final Long questionId, final SubmitAnswerDto<?> submittedAnswer) throws JsonProcessingException {
-		QuestionSetEntity questionSet = questionSetEntityRepository.findById(questionSetId)
-			.orElseThrow(() -> new EntityNotFoundException("존재하지 않는 문제 셋 입니다."));
+		QuestionSetEntity questionSet = questionSetReader.getQuestionSet(questionSetId);
 
 		UserEntity user = userReader.getById(maitUser.id());
 
