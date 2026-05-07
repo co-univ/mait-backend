@@ -1,4 +1,4 @@
-package com.coniv.mait.domain.category.entity;
+package com.coniv.mait.domain.team.entity;
 
 import java.time.LocalDateTime;
 
