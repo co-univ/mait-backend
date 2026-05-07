@@ -4,12 +4,15 @@ import static org.assertj.core.api.Assertions.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
+import java.time.LocalDateTime;
+
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
 
+import com.coniv.mait.domain.question.entity.QuestionSetCategoryEntity;
 import com.coniv.mait.domain.question.repository.QuestionSetCategoryEntityRepository;
 import com.coniv.mait.domain.team.entity.TeamEntity;
 import com.coniv.mait.domain.team.entity.TeamUserEntity;
@@ -64,5 +67,35 @@ public class QuestionSetCategoryApiIntegrationTest extends BaseIntegrationTest {
 				jsonPath("$.data.id").exists());
 
 		assertThat(questionSetCategoryEntityRepository.count()).isEqualTo(1);
+	}
+
+	@Test
+	@DisplayName("카테고리 목록 조회 API 성공 테스트 - 활성 카테고리만 추가순으로 반환")
+	void getCategoriesApiSuccess() throws Exception {
+		// given
+		UserEntity currentUser = userEntityRepository.findByEmail("user@example.com").orElseThrow();
+		TeamEntity team = teamEntityRepository.save(TeamEntity.builder().name("코니브").creatorId(1L).build());
+		teamUserEntityRepository.save(TeamUserEntity.createTeamUser(currentUser, team, TeamUserRole.PLAYER));
+
+		QuestionSetCategoryEntity first = questionSetCategoryEntityRepository.save(
+			QuestionSetCategoryEntity.of(team.getId(), "알고리즘"));
+		QuestionSetCategoryEntity second = questionSetCategoryEntityRepository.save(
+			QuestionSetCategoryEntity.of(team.getId(), "자료구조"));
+		QuestionSetCategoryEntity deleted = questionSetCategoryEntityRepository.save(
+			QuestionSetCategoryEntity.of(team.getId(), "삭제된카테고리"));
+		deleted.updateDeletedAt(LocalDateTime.now());
+		questionSetCategoryEntityRepository.save(deleted);
+
+		// when & then
+		mockMvc.perform(get("/api/v1/question-sets/categories")
+				.param("teamId", String.valueOf(team.getId())))
+			.andExpectAll(
+				status().isOk(),
+				jsonPath("$.data.length()").value(2),
+				jsonPath("$.data[0].id").value(first.getId()),
+				jsonPath("$.data[0].teamId").value(team.getId()),
+				jsonPath("$.data[0].name").value("알고리즘"),
+				jsonPath("$.data[1].id").value(second.getId()),
+				jsonPath("$.data[1].name").value("자료구조"));
 	}
 }

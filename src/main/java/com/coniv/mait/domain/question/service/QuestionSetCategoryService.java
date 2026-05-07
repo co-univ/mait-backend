@@ -1,5 +1,7 @@
 package com.coniv.mait.domain.question.service;
 
+import java.util.List;
+
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -35,5 +37,14 @@ public class QuestionSetCategoryService {
 		QuestionSetCategoryEntity category = questionSetCategoryEntityRepository.save(
 			QuestionSetCategoryEntity.of(teamId, name));
 		return QuestionSetCategoryDto.from(category);
+	}
+
+	public List<QuestionSetCategoryDto> getCategories(final Long teamId, final Long userId) {
+		teamRoleValidator.checkIsTeamMember(teamId, userId);
+
+		return questionSetCategoryEntityRepository.findAllByTeamIdAndDeletedAtIsNullOrderByCreatedAtAsc(teamId)
+			.stream()
+			.map(QuestionSetCategoryDto::from)
+			.toList();
 	}
 }

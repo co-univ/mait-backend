@@ -4,6 +4,8 @@ import static org.assertj.core.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
+import java.util.List;
+
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -117,5 +119,47 @@ class QuestionSetCategoryServiceTest {
 		verify(questionSetCategoryEntityRepository, never())
 			.existsByTeamIdAndNameAndDeletedAtIsNull(anyLong(), anyString());
 		verify(questionSetCategoryEntityRepository, never()).save(any());
+	}
+
+	@Test
+	@DisplayName("카테고리 목록 조회 성공 - 활성 카테고리만 DTO 변환되어 반환")
+	void getCategories_success() {
+		// given
+		Long teamId = 1L;
+		Long userId = 10L;
+
+		QuestionSetCategoryEntity first = QuestionSetCategoryEntity.of(teamId, "알고리즘");
+		QuestionSetCategoryEntity second = QuestionSetCategoryEntity.of(teamId, "자료구조");
+		when(questionSetCategoryEntityRepository.findAllByTeamIdAndDeletedAtIsNullOrderByCreatedAtAsc(teamId))
+			.thenReturn(List.of(first, second));
+
+		// when
+		List<QuestionSetCategoryDto> result = questionSetCategoryService.getCategories(teamId, userId);
+
+		// then
+		assertThat(result).hasSize(2);
+		assertThat(result).extracting(QuestionSetCategoryDto::getName)
+			.containsExactly("알고리즘", "자료구조");
+		assertThat(result).allSatisfy(dto -> assertThat(dto.getTeamId()).isEqualTo(teamId));
+
+		verify(teamRoleValidator).checkIsTeamMember(teamId, userId);
+	}
+
+	@Test
+	@DisplayName("카테고리 목록 조회 실패 - 팀 멤버가 아님 (TeamRoleValidator 예외 전파)")
+	void getCategories_fail_notTeamMember() {
+		// given
+		Long teamId = 1L;
+		Long userId = 10L;
+
+		doThrow(new RuntimeException("팀 멤버가 아님"))
+			.when(teamRoleValidator).checkIsTeamMember(teamId, userId);
+
+		// when & then
+		assertThatThrownBy(() -> questionSetCategoryService.getCategories(teamId, userId))
+			.isInstanceOf(RuntimeException.class);
+
+		verify(questionSetCategoryEntityRepository, never())
+			.findAllByTeamIdAndDeletedAtIsNullOrderByCreatedAtAsc(anyLong());
 	}
 }
