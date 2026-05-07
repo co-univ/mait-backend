@@ -127,4 +127,38 @@ class QuestionSetCategoryControllerTest {
 			Arguments.of("name 공백", 1L, "   ", "카테고리 이름을 입력해주세요."),
 			Arguments.of("name 41자 초과", 1L, "가".repeat(41), "카테고리 이름은 40자 이하여야 합니다."));
 	}
+
+	@Test
+	@DisplayName("카테고리 목록 조회 성공 - 200 OK 와 응답 바디 반환")
+	void getCategoriesSuccess() throws Exception {
+		// given
+		Long teamId = 1L;
+
+		QuestionSetCategoryDto first = QuestionSetCategoryDto.builder()
+			.id(100L)
+			.teamId(teamId)
+			.name("알고리즘")
+			.build();
+		QuestionSetCategoryDto second = QuestionSetCategoryDto.builder()
+			.id(101L)
+			.teamId(teamId)
+			.name("자료구조")
+			.build();
+
+		when(questionSetCategoryService.getCategories(teamId, USER_ID)).thenReturn(List.of(first, second));
+
+		// when & then
+		mockMvc.perform(get("/api/v1/question-sets/categories")
+				.param("teamId", String.valueOf(teamId)))
+			.andExpectAll(
+				status().isOk(),
+				jsonPath("$.data.length()").value(2),
+				jsonPath("$.data[0].id").value(100L),
+				jsonPath("$.data[0].teamId").value(teamId),
+				jsonPath("$.data[0].name").value("알고리즘"),
+				jsonPath("$.data[1].id").value(101L),
+				jsonPath("$.data[1].name").value("자료구조"));
+
+		verify(questionSetCategoryService).getCategories(teamId, USER_ID);
+	}
 }
