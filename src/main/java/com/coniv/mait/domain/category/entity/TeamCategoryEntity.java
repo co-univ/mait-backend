@@ -30,7 +30,7 @@ import lombok.NoArgsConstructor;
 @Getter
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-public class CategoryEntity extends BaseTimeEntity {
+public class TeamCategoryEntity extends BaseTimeEntity {
 
 	@Id
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -45,13 +45,13 @@ public class CategoryEntity extends BaseTimeEntity {
 	@Column(name = "deleted_at")
 	private LocalDateTime deletedAt;
 
-	private CategoryEntity(final Long teamId, final String name) {
+	private TeamCategoryEntity(final Long teamId, final String name) {
 		this.teamId = teamId;
 		this.name = name;
 	}
 
-	public static CategoryEntity of(final Long teamId, final String name) {
-		return new CategoryEntity(teamId, name);
+	public static TeamCategoryEntity of(final Long teamId, final String name) {
+		return new TeamCategoryEntity(teamId, name);
 	}
 
 	public void updateDeletedAt(final LocalDateTime deletedAt) {
