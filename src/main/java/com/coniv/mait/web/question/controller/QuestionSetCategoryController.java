@@ -1,10 +1,14 @@
 package com.coniv.mait.web.question.controller;
 
+import java.util.List;
+
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.coniv.mait.domain.question.service.QuestionSetCategoryService;
@@ -34,5 +38,16 @@ public class QuestionSetCategoryController {
 		QuestionSetCategoryDto category = questionSetCategoryService.createCategory(request.teamId(), request.name(),
 			user.id());
 		return ResponseEntity.ok(ApiResponse.ok(QuestionSetCategoryApiResponse.from(category)));
+	}
+
+	@Operation(summary = "문제 셋 카테고리 목록 조회 API", description = "팀의 활성 카테고리 목록을 조회합니다. 팀 멤버만 조회 가능합니다.")
+	@GetMapping
+	public ResponseEntity<ApiResponse<List<QuestionSetCategoryApiResponse>>> getCategories(
+		@AuthenticationPrincipal MaitUser user, @RequestParam("teamId") Long teamId) {
+		List<QuestionSetCategoryApiResponse> categories = questionSetCategoryService.getCategories(teamId, user.id())
+			.stream()
+			.map(QuestionSetCategoryApiResponse::from)
+			.toList();
+		return ResponseEntity.ok(ApiResponse.ok(categories));
 	}
 }
