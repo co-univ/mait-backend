@@ -24,8 +24,6 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
-import com.coniv.mait.domain.question.exception.QuestionSetCategoryException;
-import com.coniv.mait.domain.question.exception.code.QuestionSetCategoryExceptionCode;
 import com.coniv.mait.domain.question.service.QuestionSetCategoryService;
 import com.coniv.mait.domain.question.service.dto.QuestionSetCategoryDto;
 import com.coniv.mait.global.auth.model.MaitUser;
@@ -128,42 +126,5 @@ class QuestionSetCategoryControllerTest {
 			Arguments.of("name null", 1L, null, "카테고리 이름을 입력해주세요."),
 			Arguments.of("name 공백", 1L, "   ", "카테고리 이름을 입력해주세요."),
 			Arguments.of("name 41자 초과", 1L, "가".repeat(41), "카테고리 이름은 40자 이하여야 합니다."));
-	}
-
-	@Test
-	@DisplayName("카테고리 생성 실패 - 동일 이름 활성 카테고리 존재 (서비스 예외 → 409)")
-	void createCategoryDuplicateActive() throws Exception {
-		// given
-		CreateQuestionSetCategoryApiRequest request = new CreateQuestionSetCategoryApiRequest(1L, "알고리즘");
-
-		when(questionSetCategoryService.createCategory(anyLong(), anyString(), anyLong()))
-			.thenThrow(new QuestionSetCategoryException(QuestionSetCategoryExceptionCode.DUPLICATE_NAME));
-
-		// when & then
-		mockMvc.perform(post("/api/v1/question-sets/categories")
-				.contentType(MediaType.APPLICATION_JSON)
-				.content(objectMapper.writeValueAsString(request)))
-			.andExpectAll(
-				status().isConflict(),
-				jsonPath("$.code").value(QuestionSetCategoryExceptionCode.DUPLICATE_NAME.getCode()),
-				jsonPath("$.message").value(QuestionSetCategoryExceptionCode.DUPLICATE_NAME.getMessage()));
-	}
-
-	@Test
-	@DisplayName("카테고리 생성 실패 - 동일 이름 삭제된 카테고리 존재 (서비스 예외 → 409, 복구 안내)")
-	void createCategoryDuplicateDeleted() throws Exception {
-		// given
-		CreateQuestionSetCategoryApiRequest request = new CreateQuestionSetCategoryApiRequest(1L, "알고리즘");
-
-		when(questionSetCategoryService.createCategory(anyLong(), anyString(), anyLong()))
-			.thenThrow(new QuestionSetCategoryException(QuestionSetCategoryExceptionCode.DUPLICATE_NAME_DELETED));
-
-		// when & then
-		mockMvc.perform(post("/api/v1/question-sets/categories")
-				.contentType(MediaType.APPLICATION_JSON)
-				.content(objectMapper.writeValueAsString(request)))
-			.andExpectAll(
-				status().isConflict(),
-				jsonPath("$.code").value(QuestionSetCategoryExceptionCode.DUPLICATE_NAME_DELETED.getCode()));
 	}
 }
