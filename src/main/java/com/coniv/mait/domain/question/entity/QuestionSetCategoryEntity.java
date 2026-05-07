@@ -1,4 +1,4 @@
-package com.coniv.mait.domain.team.entity;
+package com.coniv.mait.domain.question.entity;
 
 import java.time.LocalDateTime;
 
@@ -18,19 +18,19 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 @Table(
-	name = "team_categories",
+	name = "question_set_categories",
 	uniqueConstraints = {
-		@UniqueConstraint(name = "uk_team_categories_teamid_name", columnNames = {"team_id", "name"})
+		@UniqueConstraint(name = "uk_question_set_categories_teamid_name", columnNames = {"team_id", "name"})
 	},
 	indexes = {
-		@Index(name = "idx_team_categories_teamid_deletedat", columnList = "team_id, deleted_at")
+		@Index(name = "idx_question_set_categories_teamid_deletedat", columnList = "team_id, deleted_at")
 	}
 )
 @Entity
 @Getter
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-public class TeamCategoryEntity extends BaseTimeEntity {
+public class QuestionSetCategoryEntity extends BaseTimeEntity {
 
 	@Id
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -45,13 +45,13 @@ public class TeamCategoryEntity extends BaseTimeEntity {
 	@Column(name = "deleted_at")
 	private LocalDateTime deletedAt;
 
-	private TeamCategoryEntity(final Long teamId, final String name) {
+	private QuestionSetCategoryEntity(final Long teamId, final String name) {
 		this.teamId = teamId;
 		this.name = name;
 	}
 
-	public static TeamCategoryEntity of(final Long teamId, final String name) {
-		return new TeamCategoryEntity(teamId, name);
+	public static QuestionSetCategoryEntity of(final Long teamId, final String name) {
+		return new QuestionSetCategoryEntity(teamId, name);
 	}
 
 	public void updateDeletedAt(final LocalDateTime deletedAt) {
