@@ -129,6 +129,21 @@ class QuestionSetCategoryControllerTest {
 	}
 
 	@Test
+	@DisplayName("카테고리 삭제 성공 - 200 OK")
+	void deleteCategorySuccess() throws Exception {
+		// given
+		Long categoryId = 100L;
+
+		// when & then
+		mockMvc.perform(delete("/api/v1/question-sets/categories/{categoryId}", categoryId))
+			.andExpectAll(
+				status().isOk(),
+				jsonPath("$.isSuccess").value(true));
+
+		verify(questionSetCategoryService).deleteCategory(categoryId, USER_ID);
+	}
+
+	@Test
 	@DisplayName("카테고리 목록 조회 성공 - 200 OK 와 응답 바디 반환")
 	void getCategoriesSuccess() throws Exception {
 		// given
