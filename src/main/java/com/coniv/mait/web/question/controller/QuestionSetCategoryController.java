@@ -19,6 +19,7 @@ import com.coniv.mait.global.auth.model.MaitUser;
 import com.coniv.mait.global.response.ApiResponse;
 import com.coniv.mait.web.question.dto.CreateQuestionSetCategoryApiRequest;
 import com.coniv.mait.web.question.dto.QuestionSetCategoryApiResponse;
+import com.coniv.mait.web.question.dto.RestoreQuestionSetCategoryApiRequest;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -59,5 +60,15 @@ public class QuestionSetCategoryController {
 		@AuthenticationPrincipal MaitUser user, @PathVariable Long categoryId) {
 		questionSetCategoryService.deleteCategory(categoryId, user.id());
 		return ResponseEntity.ok(ApiResponse.noContent());
+	}
+
+	@Operation(summary = "문제 셋 카테고리 복구 API",
+		description = "팀과 이름으로 식별되는 soft delete 된 카테고리를 복구합니다. 동일 이름 활성 카테고리가 존재하면 409 를 반환합니다.")
+	@PostMapping("/restore")
+	public ResponseEntity<ApiResponse<QuestionSetCategoryApiResponse>> restoreCategory(
+		@AuthenticationPrincipal MaitUser user, @Valid @RequestBody RestoreQuestionSetCategoryApiRequest request) {
+		QuestionSetCategoryDto category = questionSetCategoryService.restoreCategory(
+			request.teamId(), request.name(), user.id());
+		return ResponseEntity.ok(ApiResponse.ok(QuestionSetCategoryApiResponse.from(category)));
 	}
 }

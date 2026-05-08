@@ -1,6 +1,7 @@
 package com.coniv.mait.domain.question.repository;
 
 import java.util.List;
+import java.util.Optional;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 
@@ -11,6 +12,8 @@ public interface QuestionSetCategoryEntityRepository extends JpaRepository<Quest
 	boolean existsByTeamIdAndNameAndDeletedAtIsNull(Long teamId, String name);
 
 	boolean existsByTeamIdAndNameAndDeletedAtIsNotNull(Long teamId, String name);
+
+	Optional<QuestionSetCategoryEntity> findByTeamIdAndNameAndDeletedAtIsNotNull(Long teamId, String name);
 
 	List<QuestionSetCategoryEntity> findAllByTeamIdAndDeletedAtIsNullOrderByCreatedAtAsc(Long teamId);
 }
