@@ -56,7 +56,7 @@ public class QuestionSetCategoryController {
 	@Operation(summary = "문제 셋 카테고리 삭제 API", description = "팀 카테고리를 soft delete 합니다. 이미 삭제된 카테고리는 멱등 처리됩니다.")
 	@DeleteMapping("/{categoryId}")
 	public ResponseEntity<ApiResponse<Void>> deleteCategory(
-		@AuthenticationPrincipal MaitUser user, @PathVariable("categoryId") Long categoryId) {
+		@AuthenticationPrincipal MaitUser user, @PathVariable Long categoryId) {
 		questionSetCategoryService.deleteCategory(categoryId, user.id());
 		return ResponseEntity.ok(ApiResponse.noContent());
 	}
