@@ -70,6 +70,29 @@ public class QuestionSetCategoryApiIntegrationTest extends BaseIntegrationTest {
 	}
 
 	@Test
+	@DisplayName("카테고리 삭제 API 성공 테스트 - MAKER 권한, soft delete 반영")
+	void deleteCategoryApiSuccess() throws Exception {
+		// given
+		UserEntity currentUser = userEntityRepository.findByEmail("user@example.com").orElseThrow();
+		TeamEntity team = teamEntityRepository.save(TeamEntity.builder().name("코니브").creatorId(1L).build());
+		teamUserEntityRepository.save(TeamUserEntity.createTeamUser(currentUser, team, TeamUserRole.MAKER));
+
+		QuestionSetCategoryEntity category = questionSetCategoryEntityRepository.save(
+			QuestionSetCategoryEntity.of(team.getId(), "알고리즘"));
+
+		// when & then
+		mockMvc.perform(delete("/api/v1/question-sets/categories/{categoryId}", category.getId()))
+			.andExpectAll(
+				status().isOk(),
+				jsonPath("$.isSuccess").value(true));
+
+		QuestionSetCategoryEntity updated = questionSetCategoryEntityRepository.findById(category.getId())
+			.orElseThrow();
+		assertThat(updated.deleted()).isTrue();
+		assertThat(updated.getDeletedAt()).isNotNull();
+	}
+
+	@Test
 	@DisplayName("카테고리 목록 조회 API 성공 테스트 - 활성 카테고리만 추가순으로 반환")
 	void getCategoriesApiSuccess() throws Exception {
 		// given
