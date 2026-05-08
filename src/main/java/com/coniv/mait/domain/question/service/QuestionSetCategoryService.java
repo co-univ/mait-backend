@@ -62,4 +62,20 @@ public class QuestionSetCategoryService {
 
 		category.markDeleted();
 	}
+
+	@Transactional
+	public QuestionSetCategoryDto restoreCategory(final Long teamId, final String name, final Long userId) {
+		teamRoleValidator.checkHasCreateQuestionSetAuthority(teamId, userId);
+
+		if (questionSetCategoryEntityRepository.existsByTeamIdAndNameAndDeletedAtIsNull(teamId, name)) {
+			throw new QuestionSetCategoryException(QuestionSetCategoryExceptionCode.ALREADY_ACTIVE);
+		}
+
+		QuestionSetCategoryEntity category = questionSetCategoryEntityRepository
+			.findByTeamIdAndNameAndDeletedAtIsNotNull(teamId, name)
+			.orElseThrow(() -> new EntityNotFoundException("복구할 카테고리를 찾을 수 없습니다."));
+
+		category.restore();
+		return QuestionSetCategoryDto.from(category);
+	}
 }
