@@ -12,6 +12,7 @@ import com.coniv.mait.domain.question.repository.QuestionSetCategoryEntityReposi
 import com.coniv.mait.domain.question.service.dto.QuestionSetCategoryDto;
 import com.coniv.mait.domain.user.service.component.TeamRoleValidator;
 
+import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 
 @Service
@@ -46,5 +47,19 @@ public class QuestionSetCategoryService {
 			.stream()
 			.map(QuestionSetCategoryDto::from)
 			.toList();
+	}
+
+	@Transactional
+	public void deleteCategory(final Long categoryId, final Long userId) {
+		QuestionSetCategoryEntity category = questionSetCategoryEntityRepository.findById(categoryId)
+			.orElseThrow(() -> new EntityNotFoundException("해당 카테고리를 찾을 수 없습니다."));
+
+		teamRoleValidator.checkHasCreateQuestionSetAuthority(category.getTeamId(), userId);
+
+		if (category.deleted()) {
+			return;
+		}
+
+		category.markDeleted();
 	}
 }
