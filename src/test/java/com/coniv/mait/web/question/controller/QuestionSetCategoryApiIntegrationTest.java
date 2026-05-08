@@ -24,6 +24,7 @@ import com.coniv.mait.domain.user.repository.UserEntityRepository;
 import com.coniv.mait.login.WithCustomUser;
 import com.coniv.mait.web.integration.BaseIntegrationTest;
 import com.coniv.mait.web.question.dto.CreateQuestionSetCategoryApiRequest;
+import com.coniv.mait.web.question.dto.RestoreQuestionSetCategoryApiRequest;
 
 @WithCustomUser
 public class QuestionSetCategoryApiIntegrationTest extends BaseIntegrationTest {
@@ -90,6 +91,37 @@ public class QuestionSetCategoryApiIntegrationTest extends BaseIntegrationTest {
 			.orElseThrow();
 		assertThat(updated.deleted()).isTrue();
 		assertThat(updated.getDeletedAt()).isNotNull();
+	}
+
+	@Test
+	@DisplayName("카테고리 복구 API 성공 테스트 - MAKER 권한, (teamId, name) 식별 row 의 deletedAt 이 null 로 반영")
+	void restoreCategoryApiSuccess() throws Exception {
+		// given
+		UserEntity currentUser = userEntityRepository.findByEmail("user@example.com").orElseThrow();
+		TeamEntity team = teamEntityRepository.save(TeamEntity.builder().name("코니브").creatorId(1L).build());
+		teamUserEntityRepository.save(TeamUserEntity.createTeamUser(currentUser, team, TeamUserRole.MAKER));
+
+		QuestionSetCategoryEntity category = QuestionSetCategoryEntity.of(team.getId(), "알고리즘");
+		category.updateDeletedAt(LocalDateTime.now());
+		QuestionSetCategoryEntity saved = questionSetCategoryEntityRepository.save(category);
+
+		RestoreQuestionSetCategoryApiRequest request = new RestoreQuestionSetCategoryApiRequest(
+			team.getId(), "알고리즘");
+
+		// when & then
+		mockMvc.perform(post("/api/v1/question-sets/categories/restore")
+				.contentType(MediaType.APPLICATION_JSON)
+				.content(objectMapper.writeValueAsString(request)))
+			.andExpectAll(
+				status().isOk(),
+				jsonPath("$.data.id").value(saved.getId()),
+				jsonPath("$.data.teamId").value(team.getId()),
+				jsonPath("$.data.name").value("알고리즘"));
+
+		QuestionSetCategoryEntity updated = questionSetCategoryEntityRepository.findById(saved.getId())
+			.orElseThrow();
+		assertThat(updated.deleted()).isFalse();
+		assertThat(updated.getDeletedAt()).isNull();
 	}
 
 	@Test

@@ -30,6 +30,7 @@ import com.coniv.mait.global.auth.model.MaitUser;
 import com.coniv.mait.global.filter.JwtAuthorizationFilter;
 import com.coniv.mait.global.interceptor.idempotency.IdempotencyInterceptor;
 import com.coniv.mait.web.question.dto.CreateQuestionSetCategoryApiRequest;
+import com.coniv.mait.web.question.dto.RestoreQuestionSetCategoryApiRequest;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 @WebMvcTest(controllers = QuestionSetCategoryController.class)
@@ -141,6 +142,65 @@ class QuestionSetCategoryControllerTest {
 				jsonPath("$.isSuccess").value(true));
 
 		verify(questionSetCategoryService).deleteCategory(categoryId, USER_ID);
+	}
+
+	@Test
+	@DisplayName("카테고리 복구 성공 - 200 OK 와 응답 바디 반환")
+	void restoreCategorySuccess() throws Exception {
+		// given
+		Long categoryId = 100L;
+		Long teamId = 1L;
+		String name = "알고리즘";
+
+		RestoreQuestionSetCategoryApiRequest request = new RestoreQuestionSetCategoryApiRequest(teamId, name);
+		QuestionSetCategoryDto dto = QuestionSetCategoryDto.builder()
+			.id(categoryId)
+			.teamId(teamId)
+			.name(name)
+			.build();
+
+		when(questionSetCategoryService.restoreCategory(teamId, name, USER_ID)).thenReturn(dto);
+
+		// when & then
+		mockMvc.perform(post("/api/v1/question-sets/categories/restore")
+				.contentType(MediaType.APPLICATION_JSON)
+				.content(objectMapper.writeValueAsString(request)))
+			.andExpectAll(
+				status().isOk(),
+				jsonPath("$.data.id").value(categoryId),
+				jsonPath("$.data.teamId").value(teamId),
+				jsonPath("$.data.name").value(name));
+
+		verify(questionSetCategoryService).restoreCategory(teamId, name, USER_ID);
+	}
+
+	@ParameterizedTest(name = "{index} - {0}")
+	@DisplayName("카테고리 복구 실패 - 유효하지 않은 요청 (400)")
+	@MethodSource("invalidRestoreCategoryRequests")
+	void restoreCategoryInvalidRequest(String testName, Long teamId, String name, String expectedReason)
+		throws Exception {
+		// given
+		RestoreQuestionSetCategoryApiRequest request = new RestoreQuestionSetCategoryApiRequest(teamId, name);
+
+		// when & then
+		mockMvc.perform(post("/api/v1/question-sets/categories/restore")
+				.contentType(MediaType.APPLICATION_JSON)
+				.content(objectMapper.writeValueAsString(request)))
+			.andExpectAll(
+				status().isBadRequest(),
+				jsonPath("$.isSuccess").value(false),
+				jsonPath("$.reasons[*]").value(org.hamcrest.Matchers.hasItem(expectedReason)));
+
+		verify(questionSetCategoryService, never()).restoreCategory(any(), any(), any());
+	}
+
+	static Stream<Arguments> invalidRestoreCategoryRequests() {
+		return Stream.of(
+			Arguments.of("teamId null", null, "알고리즘", "팀 정보는 필수 입니다."),
+			Arguments.of("name 빈 문자열", 1L, "", "카테고리 이름을 입력해주세요."),
+			Arguments.of("name null", 1L, null, "카테고리 이름을 입력해주세요."),
+			Arguments.of("name 공백", 1L, "   ", "카테고리 이름을 입력해주세요."),
+			Arguments.of("name 41자 초과", 1L, "가".repeat(41), "카테고리 이름은 40자 이하여야 합니다."));
 	}
 
 	@Test

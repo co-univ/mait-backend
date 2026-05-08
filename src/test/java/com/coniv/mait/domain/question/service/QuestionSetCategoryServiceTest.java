@@ -242,4 +242,91 @@ class QuestionSetCategoryServiceTest {
 
 		assertThat(category.deleted()).isFalse();
 	}
+
+	@Test
+	@DisplayName("카테고리 복구 성공 - 삭제된 카테고리의 deletedAt 이 null 로 변경됨")
+	void restoreCategory_success() {
+		// given
+		Long teamId = 1L;
+		Long userId = 10L;
+		String name = "알고리즘";
+
+		QuestionSetCategoryEntity category = QuestionSetCategoryEntity.of(teamId, name);
+		category.markDeleted();
+		when(questionSetCategoryEntityRepository.existsByTeamIdAndNameAndDeletedAtIsNull(teamId, name))
+			.thenReturn(false);
+		when(questionSetCategoryEntityRepository.findByTeamIdAndNameAndDeletedAtIsNotNull(teamId, name))
+			.thenReturn(Optional.of(category));
+
+		// when
+		QuestionSetCategoryDto result = questionSetCategoryService.restoreCategory(teamId, name, userId);
+
+		// then
+		assertThat(category.deleted()).isFalse();
+		assertThat(result.getTeamId()).isEqualTo(teamId);
+		assertThat(result.getName()).isEqualTo(name);
+
+		verify(teamRoleValidator).checkHasCreateQuestionSetAuthority(teamId, userId);
+	}
+
+	@Test
+	@DisplayName("카테고리 복구 실패 - 권한 없음 (TeamRoleValidator 예외 전파)")
+	void restoreCategory_fail_noPermission() {
+		// given
+		Long teamId = 1L;
+		Long userId = 10L;
+		String name = "알고리즘";
+
+		doThrow(new RuntimeException("권한 없음"))
+			.when(teamRoleValidator).checkHasCreateQuestionSetAuthority(teamId, userId);
+
+		// when & then
+		assertThatThrownBy(() -> questionSetCategoryService.restoreCategory(teamId, name, userId))
+			.isInstanceOf(RuntimeException.class);
+
+		verify(questionSetCategoryEntityRepository, never())
+			.existsByTeamIdAndNameAndDeletedAtIsNull(anyLong(), anyString());
+		verify(questionSetCategoryEntityRepository, never())
+			.findByTeamIdAndNameAndDeletedAtIsNotNull(anyLong(), anyString());
+	}
+
+	@Test
+	@DisplayName("카테고리 복구 실패 - 동일 이름의 활성 카테고리가 이미 존재")
+	void restoreCategory_fail_alreadyActive() {
+		// given
+		Long teamId = 1L;
+		Long userId = 10L;
+		String name = "알고리즘";
+
+		when(questionSetCategoryEntityRepository.existsByTeamIdAndNameAndDeletedAtIsNull(teamId, name))
+			.thenReturn(true);
+
+		// when & then
+		assertThatThrownBy(() -> questionSetCategoryService.restoreCategory(teamId, name, userId))
+			.isInstanceOf(QuestionSetCategoryException.class)
+			.extracting("exceptionCode")
+			.isEqualTo(QuestionSetCategoryExceptionCode.ALREADY_ACTIVE);
+
+		verify(questionSetCategoryEntityRepository, never())
+			.findByTeamIdAndNameAndDeletedAtIsNotNull(anyLong(), anyString());
+	}
+
+	@Test
+	@DisplayName("카테고리 복구 실패 - 복구할 카테고리가 존재하지 않음")
+	void restoreCategory_fail_notFound() {
+		// given
+		Long teamId = 1L;
+		Long userId = 10L;
+		String name = "알고리즘";
+
+		when(questionSetCategoryEntityRepository.existsByTeamIdAndNameAndDeletedAtIsNull(teamId, name))
+			.thenReturn(false);
+		when(questionSetCategoryEntityRepository.findByTeamIdAndNameAndDeletedAtIsNotNull(teamId, name))
+			.thenReturn(Optional.empty());
+
+		// when & then
+		assertThatThrownBy(() -> questionSetCategoryService.restoreCategory(teamId, name, userId))
+			.isInstanceOf(EntityNotFoundException.class)
+			.hasMessageContaining("복구할 카테고리를 찾을 수 없습니다.");
+	}
 }
