@@ -135,6 +135,15 @@ public class QuestionSetController {
 		return ResponseEntity.ok(ApiResponse.noContent());
 	}
 
+	@Operation(summary = "문제 셋에서 카테고리 단건 매핑 제거 API",
+		description = "문제 셋에서 카테고리 1개의 매핑을 제거한다. 이미 매핑되어 있지 않으면 멱등 처리.")
+	@DeleteMapping("/{questionSetId}/categories/{categoryId}")
+	public ResponseEntity<ApiResponse<Void>> detachCategory(@PathVariable Long questionSetId,
+		@PathVariable Long categoryId, @AuthenticationPrincipal MaitUser user) {
+		questionSetCategoryService.detachCategory(questionSetId, categoryId, user.id());
+		return ResponseEntity.ok(ApiResponse.noContent());
+	}
+
 	@Operation(summary = "문제 셋 제목 단건 수정 API", description = "연필 버튼 클릭을 통한 문제 셋 단건 수정")
 	@PatchMapping("/{questionSetId}")
 	public ResponseEntity<ApiResponse<Void>> updateQuestionSet(
