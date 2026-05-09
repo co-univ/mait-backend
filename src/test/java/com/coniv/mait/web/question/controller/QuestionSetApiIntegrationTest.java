@@ -351,6 +351,35 @@ public class QuestionSetApiIntegrationTest extends BaseIntegrationTest {
 	}
 
 	@Test
+	@DisplayName("문제 셋에 카테고리 단건 매핑 추가 API 성공 - DB 에 매핑 row 저장")
+	void attachCategoryApiSuccess() throws Exception {
+		// given
+		UserEntity currentUser = userEntityRepository.findByEmail("user@example.com").orElseThrow();
+		TeamEntity team = teamEntityRepository.save(TeamEntity.builder().name("코니브").creatorId(1L).build());
+		teamUserEntityRepository.save(TeamUserEntity.createTeamUser(currentUser, team, TeamUserRole.MAKER));
+
+		QuestionSetCategoryEntity category = questionSetCategoryEntityRepository.save(
+			QuestionSetCategoryEntity.of(team.getId(), "알고리즘"));
+
+		QuestionSetEntity questionSet = questionSetEntityRepository.save(
+			QuestionSetEntity.builder()
+				.subject("Initial Subject")
+				.teamId(team.getId())
+				.creationType(QuestionSetCreationType.MANUAL)
+				.build());
+
+		// when & then
+		mockMvc.perform(post("/api/v1/question-sets/{questionSetId}/categories/{categoryId}",
+				questionSet.getId(), category.getId()))
+			.andExpect(status().isOk());
+
+		List<QuestionSetCategoryLinkEntity> links =
+			questionSetCategoryLinkEntityRepository.findAllByQuestionSetId(questionSet.getId());
+		assertThat(links).hasSize(1);
+		assertThat(links.get(0).getCategoryId()).isEqualTo(category.getId());
+	}
+
+	@Test
 	@DisplayName("문제 셋 단건 조회 API - 매핑된 카테고리(삭제 포함) 응답 포함")
 	void getQuestionSetApiSuccess_IncludesCategoriesWithDeletedFlag() throws Exception {
 		// given
