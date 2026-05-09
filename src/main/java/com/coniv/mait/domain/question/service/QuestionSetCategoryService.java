@@ -109,6 +109,16 @@ public class QuestionSetCategoryService {
 	}
 
 	@Transactional
+	public void detachCategory(final Long questionSetId, final Long categoryId, final Long userId) {
+		QuestionSetEntity questionSet = questionSetEntityRepository.findById(questionSetId)
+			.orElseThrow(() -> new EntityNotFoundException("문제 셋을 찾을 수 없습니다."));
+
+		teamRoleValidator.checkHasCreateQuestionSetAuthority(questionSet.getTeamId(), userId);
+
+		questionSetCategoryLinkEntityRepository.deleteByQuestionSetIdAndCategoryId(questionSetId, categoryId);
+	}
+
+	@Transactional
 	public void attachCategories(final Long questionSetId, final Long teamId, final List<Long> categoryIds) {
 		if (categoryIds == null || categoryIds.isEmpty()) {
 			return;
