@@ -1,6 +1,5 @@
 package com.coniv.mait.domain.question.repository;
 
-import java.util.Collection;
 import java.util.List;
 
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -16,5 +15,5 @@ public interface QuestionSetCategoryLinkEntityRepository
 	boolean existsByQuestionSetIdAndCategoryId(Long questionSetId, Long categoryId);
 
 	@Modifying(clearAutomatically = true)
-	void deleteByQuestionSetIdAndCategoryIdIn(Long questionSetId, Collection<Long> categoryIds);
+	void deleteByQuestionSetIdAndCategoryId(Long questionSetId, Long categoryId);
 }
