@@ -35,11 +35,6 @@ public class QuestionSetDto {
 	private LocalDateTime updatedAt;
 
 	public static QuestionSetDto from(final QuestionSetEntity questionSetEntity) {
-		return from(questionSetEntity, List.of());
-	}
-
-	public static QuestionSetDto from(final QuestionSetEntity questionSetEntity,
-		final List<QuestionSetCategoryDto> categories) {
 		return QuestionSetDto.builder()
 			.id(questionSetEntity.getId())
 			.subject(questionSetEntity.getSubject())
@@ -51,12 +46,8 @@ public class QuestionSetDto {
 			.teamId(questionSetEntity.getTeamId())
 			.difficulty(questionSetEntity.getDifficulty())
 			.updatedAt(questionSetEntity.getModifiedAt())
-			.categories(categories)
+			.categories(List.of())
 			.build();
-	}
-
-	public static QuestionSetDto of(QuestionSetEntity questionSetEntity, long questionCount) {
-		return of(questionSetEntity, questionCount, List.of());
 	}
 
 	public static QuestionSetDto of(QuestionSetEntity questionSetEntity, long questionCount,
@@ -76,5 +67,4 @@ public class QuestionSetDto {
 			.categories(categories)
 			.build();
 	}
-
 }
