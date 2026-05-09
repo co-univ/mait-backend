@@ -5,6 +5,8 @@ import static org.hamcrest.Matchers.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
+import java.util.List;
+
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -13,6 +15,8 @@ import org.springframework.http.MediaType;
 
 import com.coniv.mait.domain.question.entity.MultipleChoiceEntity;
 import com.coniv.mait.domain.question.entity.MultipleQuestionEntity;
+import com.coniv.mait.domain.question.entity.QuestionSetCategoryEntity;
+import com.coniv.mait.domain.question.entity.QuestionSetCategoryLinkEntity;
 import com.coniv.mait.domain.question.entity.QuestionSetEntity;
 import com.coniv.mait.domain.question.enums.DeliveryMode;
 import com.coniv.mait.domain.question.enums.QuestionSetCreationType;
@@ -21,6 +25,8 @@ import com.coniv.mait.domain.question.enums.QuestionSetStatus;
 import com.coniv.mait.domain.question.enums.QuestionSetVisibility;
 import com.coniv.mait.domain.question.repository.MultipleChoiceEntityRepository;
 import com.coniv.mait.domain.question.repository.QuestionEntityRepository;
+import com.coniv.mait.domain.question.repository.QuestionSetCategoryEntityRepository;
+import com.coniv.mait.domain.question.repository.QuestionSetCategoryLinkEntityRepository;
 import com.coniv.mait.domain.question.repository.QuestionSetEntityRepository;
 import com.coniv.mait.domain.solve.entity.SolvingSessionEntity;
 import com.coniv.mait.domain.solve.repository.SolvingSessionEntityRepository;
@@ -60,10 +66,18 @@ public class QuestionSetApiIntegrationTest extends BaseIntegrationTest {
 	@Autowired
 	private UserEntityRepository userEntityRepository;
 
+	@Autowired
+	private QuestionSetCategoryEntityRepository questionSetCategoryEntityRepository;
+
+	@Autowired
+	private QuestionSetCategoryLinkEntityRepository questionSetCategoryLinkEntityRepository;
+
 	@BeforeEach
 	void setUp() {
 		solvingSessionEntityRepository.deleteAll();
 		teamUserEntityRepository.deleteAll();
+		questionSetCategoryLinkEntityRepository.deleteAll();
+		questionSetCategoryEntityRepository.deleteAll();
 		questionSetEntityRepository.deleteAll();
 		questionEntityRepository.deleteAll();
 		multipleChoiceEntityRepository.deleteAll();
@@ -334,6 +348,46 @@ public class QuestionSetApiIntegrationTest extends BaseIntegrationTest {
 				jsonPath("$.data.title").value("Updated Title"),
 				jsonPath("$.data.subject").value("Updated Subject"),
 				jsonPath("$.data.deliveryMode").value(DeliveryMode.LIVE_TIME.name()));
+	}
+
+	@Test
+	@DisplayName("문제 셋 단건 조회 API - 매핑된 카테고리(삭제 포함) 응답 포함")
+	void getQuestionSetApiSuccess_IncludesCategoriesWithDeletedFlag() throws Exception {
+		// given
+		UserEntity currentUser = userEntityRepository.findByEmail("user@example.com").orElseThrow();
+		TeamEntity team = teamEntityRepository.save(TeamEntity.builder().name("코니브").creatorId(1L).build());
+		teamUserEntityRepository.save(TeamUserEntity.createTeamUser(currentUser, team, TeamUserRole.MAKER));
+
+		QuestionSetCategoryEntity activeCategory = questionSetCategoryEntityRepository.save(
+			QuestionSetCategoryEntity.of(team.getId(), "활성카테고리"));
+		QuestionSetCategoryEntity deletedCategory = questionSetCategoryEntityRepository.save(
+			QuestionSetCategoryEntity.of(team.getId(), "삭제된카테고리"));
+		deletedCategory.markDeleted();
+		questionSetCategoryEntityRepository.save(deletedCategory);
+
+		QuestionSetEntity questionSet = questionSetEntityRepository.save(
+			QuestionSetEntity.builder()
+				.subject("Sample Subject")
+				.teamId(team.getId())
+				.creationType(QuestionSetCreationType.MANUAL)
+				.build());
+
+		questionSetCategoryLinkEntityRepository.save(
+			QuestionSetCategoryLinkEntity.of(questionSet.getId(), activeCategory.getId()));
+		questionSetCategoryLinkEntityRepository.save(
+			QuestionSetCategoryLinkEntity.of(questionSet.getId(), deletedCategory.getId()));
+
+		// when & then
+		mockMvc.perform(get("/api/v1/question-sets/{questionSetId}", questionSet.getId())
+				.accept(MediaType.APPLICATION_JSON))
+			.andExpectAll(
+				status().isOk(),
+				jsonPath("$.data.id").value(questionSet.getId()),
+				jsonPath("$.data.categories.length()").value(2),
+				jsonPath("$.data.categories[?(@.deleted == true)].name")
+					.value(hasItem("삭제된카테고리")),
+				jsonPath("$.data.categories[?(@.deleted == false)].name")
+					.value(hasItem("활성카테고리")));
 	}
 
 	@Test

@@ -31,9 +31,15 @@ public class QuestionSetDto {
 	private Long questionCount;
 	private String difficulty;
 	private List<MaterialDto> materials;
+	private List<QuestionSetCategoryDto> categories;
 	private LocalDateTime updatedAt;
 
 	public static QuestionSetDto from(final QuestionSetEntity questionSetEntity) {
+		return from(questionSetEntity, List.of());
+	}
+
+	public static QuestionSetDto from(final QuestionSetEntity questionSetEntity,
+		final List<QuestionSetCategoryDto> categories) {
 		return QuestionSetDto.builder()
 			.id(questionSetEntity.getId())
 			.subject(questionSetEntity.getSubject())
@@ -45,10 +51,16 @@ public class QuestionSetDto {
 			.teamId(questionSetEntity.getTeamId())
 			.difficulty(questionSetEntity.getDifficulty())
 			.updatedAt(questionSetEntity.getModifiedAt())
+			.categories(categories)
 			.build();
 	}
 
 	public static QuestionSetDto of(QuestionSetEntity questionSetEntity, long questionCount) {
+		return of(questionSetEntity, questionCount, List.of());
+	}
+
+	public static QuestionSetDto of(QuestionSetEntity questionSetEntity, long questionCount,
+		List<QuestionSetCategoryDto> categories) {
 		return QuestionSetDto.builder()
 			.id(questionSetEntity.getId())
 			.subject(questionSetEntity.getSubject())
@@ -61,6 +73,7 @@ public class QuestionSetDto {
 			.status(questionSetEntity.getStatus())
 			.updatedAt(questionSetEntity.getModifiedAt())
 			.questionCount(questionCount)
+			.categories(categories)
 			.build();
 	}
 

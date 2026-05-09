@@ -31,6 +31,7 @@ import com.coniv.mait.domain.question.enums.QuestionSetStatus;
 import com.coniv.mait.domain.question.enums.QuestionSetVisibility;
 import com.coniv.mait.domain.question.enums.QuestionValidationResult;
 import com.coniv.mait.domain.question.enums.UserStudyStatus;
+import com.coniv.mait.domain.question.service.QuestionSetCategoryService;
 import com.coniv.mait.domain.question.service.QuestionSetDeleteService;
 import com.coniv.mait.domain.question.service.QuestionSetMaterialService;
 import com.coniv.mait.domain.question.service.QuestionSetService;
@@ -67,6 +68,9 @@ class QuestionSetControllerTest {
 
 	@MockitoBean
 	private QuestionSetMaterialService questionSetMaterialService;
+
+	@MockitoBean
+	private QuestionSetCategoryService questionSetCategoryService;
 
 	@Autowired
 	private MockMvc mockMvc;

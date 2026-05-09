@@ -15,9 +15,11 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import com.coniv.mait.domain.question.entity.QuestionSetCategoryEntity;
+import com.coniv.mait.domain.question.entity.QuestionSetCategoryLinkEntity;
 import com.coniv.mait.domain.question.exception.QuestionSetCategoryException;
 import com.coniv.mait.domain.question.exception.code.QuestionSetCategoryExceptionCode;
 import com.coniv.mait.domain.question.repository.QuestionSetCategoryEntityRepository;
+import com.coniv.mait.domain.question.repository.QuestionSetCategoryLinkEntityRepository;
 import com.coniv.mait.domain.question.service.dto.QuestionSetCategoryDto;
 import com.coniv.mait.domain.user.service.component.TeamRoleValidator;
 
@@ -32,6 +34,9 @@ class QuestionSetCategoryServiceTest {
 
 	@Mock
 	private QuestionSetCategoryEntityRepository questionSetCategoryEntityRepository;
+
+	@Mock
+	private QuestionSetCategoryLinkEntityRepository questionSetCategoryLinkEntityRepository;
 
 	@Mock
 	private TeamRoleValidator teamRoleValidator;
@@ -328,5 +333,47 @@ class QuestionSetCategoryServiceTest {
 		assertThatThrownBy(() -> questionSetCategoryService.restoreCategory(teamId, name, userId))
 			.isInstanceOf(EntityNotFoundException.class)
 			.hasMessageContaining("복구할 카테고리를 찾을 수 없습니다.");
+	}
+
+	@Test
+	@DisplayName("attachCategories - 모든 categoryId가 같은 팀의 활성 카테고리면 일괄 INSERT")
+	void attachCategories_savesAll() {
+		// given
+		Long questionSetId = 1L;
+		Long teamId = 100L;
+		List<Long> incoming = List.of(11L, 12L);
+
+		QuestionSetCategoryEntity category1 = mock(QuestionSetCategoryEntity.class);
+		QuestionSetCategoryEntity category2 = mock(QuestionSetCategoryEntity.class);
+
+		when(questionSetCategoryEntityRepository.findAllByIdInAndTeamIdAndDeletedAtIsNull(anySet(), eq(teamId)))
+			.thenReturn(List.of(category1, category2));
+
+		// when
+		questionSetCategoryService.attachCategories(questionSetId, teamId, incoming);
+
+		// then
+		verify(questionSetCategoryLinkEntityRepository, times(1)).saveAll(anyList());
+	}
+
+	@Test
+	@DisplayName("attachCategories - 다른 팀 또는 미존재(또는 삭제된) 카테고리 포함 시 예외")
+	void attachCategories_invalidCategory_throws() {
+		// given
+		Long questionSetId = 1L;
+		Long teamId = 100L;
+		List<Long> incoming = List.of(11L, 12L);
+
+		QuestionSetCategoryEntity onlyOne = mock(QuestionSetCategoryEntity.class);
+
+		when(questionSetCategoryEntityRepository.findAllByIdInAndTeamIdAndDeletedAtIsNull(anySet(), eq(teamId)))
+			.thenReturn(List.of(onlyOne));
+
+		// when & then
+		assertThatThrownBy(() -> questionSetCategoryService.attachCategories(questionSetId, teamId, incoming))
+			.isInstanceOf(QuestionSetCategoryException.class)
+			.hasMessage(QuestionSetCategoryExceptionCode.INVALID_TEAM_OR_NOT_FOUND.getMessage());
+
+		verify(questionSetCategoryLinkEntityRepository, never()).saveAll(anyList());
 	}
 }

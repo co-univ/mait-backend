@@ -21,6 +21,7 @@ import com.coniv.mait.domain.question.repository.QuestionEntityRepository;
 import com.coniv.mait.domain.question.repository.QuestionSetEntityRepository;
 import com.coniv.mait.domain.question.service.component.QuestionChecker;
 import com.coniv.mait.domain.question.service.dto.QuestionCount;
+import com.coniv.mait.domain.question.service.dto.QuestionSetCategoryDto;
 import com.coniv.mait.domain.question.service.dto.QuestionSetDto;
 import com.coniv.mait.domain.question.service.dto.QuestionValidateDto;
 import com.coniv.mait.domain.user.service.component.TeamRoleValidator;
@@ -60,9 +61,12 @@ public class QuestionSetService {
 
 	private final RedisTemplate<String, String> redisTemplate;
 
+	private final QuestionSetCategoryService questionSetCategoryService;
+
 	@Transactional
 	public QuestionSetDto createQuestionSet(final QuestionSetDto questionSetDto, final List<QuestionCount> counts,
-		final List<MaterialDto> materials, final String instruction, final String difficulty, final Long userId) {
+		final List<MaterialDto> materials, final String instruction, final String difficulty,
+		final List<Long> categoryIds, final Long userId) {
 		teamRoleValidator.checkHasCreateQuestionSetAuthority(questionSetDto.getTeamId(), userId);
 
 		QuestionSetEntity questionSetEntity = QuestionSetEntity.builder()
@@ -89,6 +93,9 @@ public class QuestionSetService {
 				.difficulty(difficulty)
 				.build());
 		}
+
+		questionSetCategoryService.attachCategories(questionSetEntity.getId(), questionSetEntity.getTeamId(),
+			categoryIds);
 
 		return QuestionSetDto.from(questionSetEntity);
 	}
@@ -135,7 +142,10 @@ public class QuestionSetService {
 
 		long questionCount = questionEntityRepository.countByQuestionSetId(questionSetEntity.getId());
 
-		return QuestionSetDto.of(questionSetEntity, questionCount);
+		List<QuestionSetCategoryDto> categories =
+			questionSetCategoryService.getCategoriesByQuestionSetId(questionSetEntity.getId());
+
+		return QuestionSetDto.of(questionSetEntity, questionCount, categories);
 	}
 
 	@Transactional
