@@ -1,14 +1,22 @@
 package com.coniv.mait.domain.question.service;
 
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.coniv.mait.domain.question.entity.QuestionSetCategoryEntity;
+import com.coniv.mait.domain.question.entity.QuestionSetCategoryLinkEntity;
+import com.coniv.mait.domain.question.entity.QuestionSetEntity;
 import com.coniv.mait.domain.question.exception.QuestionSetCategoryException;
 import com.coniv.mait.domain.question.exception.code.QuestionSetCategoryExceptionCode;
 import com.coniv.mait.domain.question.repository.QuestionSetCategoryEntityRepository;
+import com.coniv.mait.domain.question.repository.QuestionSetCategoryLinkEntityRepository;
+import com.coniv.mait.domain.question.repository.QuestionSetEntityRepository;
 import com.coniv.mait.domain.question.service.dto.QuestionSetCategoryDto;
 import com.coniv.mait.domain.user.service.component.TeamRoleValidator;
 
@@ -20,6 +28,10 @@ import lombok.RequiredArgsConstructor;
 public class QuestionSetCategoryService {
 
 	private final QuestionSetCategoryEntityRepository questionSetCategoryEntityRepository;
+
+	private final QuestionSetCategoryLinkEntityRepository questionSetCategoryLinkEntityRepository;
+
+	private final QuestionSetEntityRepository questionSetEntityRepository;
 
 	private final TeamRoleValidator teamRoleValidator;
 
@@ -77,5 +89,63 @@ public class QuestionSetCategoryService {
 
 		category.restore();
 		return QuestionSetCategoryDto.from(category);
+	}
+
+	@Transactional
+	public void attachCategory(final Long questionSetId, final Long categoryId, final Long userId) {
+		QuestionSetEntity questionSet = questionSetEntityRepository.findById(questionSetId)
+			.orElseThrow(() -> new EntityNotFoundException("문제 셋을 찾을 수 없습니다."));
+
+		teamRoleValidator.checkHasCreateQuestionSetAuthority(questionSet.getTeamId(), userId);
+
+		if (questionSetCategoryLinkEntityRepository.existsByQuestionSetIdAndCategoryId(questionSetId, categoryId)) {
+			return;
+		}
+
+		questionSetCategoryEntityRepository.findByIdAndTeamIdAndDeletedAtIsNull(categoryId, questionSet.getTeamId())
+			.orElseThrow(() -> new EntityNotFoundException("해당 카테고리를 찾을 수 없습니다."));
+
+		questionSetCategoryLinkEntityRepository.save(QuestionSetCategoryLinkEntity.of(questionSetId, categoryId));
+	}
+
+	@Transactional
+	public void attachCategories(final Long questionSetId, final Long teamId, final List<Long> categoryIds) {
+		if (categoryIds == null || categoryIds.isEmpty()) {
+			return;
+		}
+
+		Set<Long> uniqueIds = Set.copyOf(categoryIds);
+
+		List<QuestionSetCategoryEntity> categories =
+			questionSetCategoryEntityRepository.findAllByIdInAndTeamIdAndDeletedAtIsNull(uniqueIds, teamId);
+
+		if (categories.size() != uniqueIds.size()) {
+			throw new QuestionSetCategoryException(QuestionSetCategoryExceptionCode.INVALID_TEAM_OR_NOT_FOUND);
+		}
+
+		List<QuestionSetCategoryLinkEntity> links = uniqueIds.stream()
+			.map(catId -> QuestionSetCategoryLinkEntity.of(questionSetId, catId))
+			.toList();
+		questionSetCategoryLinkEntityRepository.saveAll(links);
+	}
+
+	public List<QuestionSetCategoryDto> getCategoriesByQuestionSetId(final Long questionSetId) {
+		List<QuestionSetCategoryLinkEntity> links =
+			questionSetCategoryLinkEntityRepository.findAllByQuestionSetId(questionSetId);
+		if (links.isEmpty()) {
+			return List.of();
+		}
+
+		Set<Long> categoryIds = links.stream()
+			.map(QuestionSetCategoryLinkEntity::getCategoryId)
+			.collect(Collectors.toSet());
+
+		Map<Long, QuestionSetCategoryEntity> categoryById = questionSetCategoryEntityRepository.findAllByIdIn(
+				categoryIds).stream()
+			.collect(Collectors.toUnmodifiableMap(QuestionSetCategoryEntity::getId, Function.identity()));
+
+		return links.stream()
+			.map(link -> QuestionSetCategoryDto.from(categoryById.get(link.getCategoryId())))
+			.toList();
 	}
 }

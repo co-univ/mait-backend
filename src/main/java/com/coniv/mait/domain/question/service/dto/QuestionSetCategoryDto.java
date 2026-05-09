@@ -12,12 +12,14 @@ public class QuestionSetCategoryDto {
 	private final Long id;
 	private final Long teamId;
 	private final String name;
+	private final boolean deleted;
 
 	public static QuestionSetCategoryDto from(final QuestionSetCategoryEntity entity) {
 		return QuestionSetCategoryDto.builder()
 			.id(entity.getId())
 			.teamId(entity.getTeamId())
 			.name(entity.getName())
+			.deleted(entity.deleted())
 			.build();
 	}
 }
