@@ -341,6 +341,48 @@ class QuestionSetCategoryServiceTest {
 	}
 
 	@Test
+	@DisplayName("detachCategory - 매핑 row 가 있으면 삭제")
+	void detachCategory_existingMapping_deletes() {
+		// given
+		Long questionSetId = 1L;
+		Long categoryId = 11L;
+		Long teamId = 100L;
+		Long userId = 10L;
+
+		QuestionSetEntity questionSet = mock(QuestionSetEntity.class);
+		when(questionSet.getTeamId()).thenReturn(teamId);
+
+		when(questionSetEntityRepository.findById(questionSetId)).thenReturn(Optional.of(questionSet));
+
+		// when
+		questionSetCategoryService.detachCategory(questionSetId, categoryId, userId);
+
+		// then
+		verify(teamRoleValidator).checkHasCreateQuestionSetAuthority(teamId, userId);
+		verify(questionSetCategoryLinkEntityRepository)
+			.deleteByQuestionSetIdAndCategoryId(questionSetId, categoryId);
+	}
+
+	@Test
+	@DisplayName("detachCategory - 문제 셋이 존재하지 않으면 예외")
+	void detachCategory_questionSetNotFound_throws() {
+		// given
+		Long questionSetId = 999L;
+		Long categoryId = 11L;
+		Long userId = 10L;
+
+		when(questionSetEntityRepository.findById(questionSetId)).thenReturn(Optional.empty());
+
+		// when & then
+		assertThatThrownBy(() -> questionSetCategoryService.detachCategory(questionSetId, categoryId, userId))
+			.isInstanceOf(EntityNotFoundException.class)
+			.hasMessageContaining("문제 셋을 찾을 수 없습니다.");
+
+		verify(questionSetCategoryLinkEntityRepository, never())
+			.deleteByQuestionSetIdAndCategoryId(anyLong(), anyLong());
+	}
+
+	@Test
 	@DisplayName("attachCategories - 모든 categoryId가 같은 팀의 활성 카테고리면 일괄 INSERT")
 	void attachCategories_savesAll() {
 		// given
