@@ -31,6 +31,7 @@ import com.coniv.mait.domain.question.enums.QuestionSetStatus;
 import com.coniv.mait.domain.question.enums.QuestionSetVisibility;
 import com.coniv.mait.domain.question.enums.QuestionValidationResult;
 import com.coniv.mait.domain.question.enums.UserStudyStatus;
+import com.coniv.mait.domain.question.service.QuestionSetCategoryService;
 import com.coniv.mait.domain.question.service.QuestionSetDeleteService;
 import com.coniv.mait.domain.question.service.QuestionSetMaterialService;
 import com.coniv.mait.domain.question.service.QuestionSetService;
@@ -67,6 +68,9 @@ class QuestionSetControllerTest {
 
 	@MockitoBean
 	private QuestionSetMaterialService questionSetMaterialService;
+
+	@MockitoBean
+	private QuestionSetCategoryService questionSetCategoryService;
 
 	@Autowired
 	private MockMvc mockMvc;
@@ -435,6 +439,21 @@ class QuestionSetControllerTest {
 
 		verify(questionSetService).completeQuestionSet(questionSetId, title, subject, solveMode, difficulty,
 			visibility);
+	}
+
+	@Test
+	@DisplayName("문제 셋에 카테고리 단건 매핑 추가 API 성공 테스트")
+	void attachCategoryApiSuccess() throws Exception {
+		// given
+		final Long questionSetId = 1L;
+		final Long categoryId = 11L;
+
+		// when & then
+		mockMvc.perform(post("/api/v1/question-sets/{questionSetId}/categories/{categoryId}",
+				questionSetId, categoryId))
+			.andExpect(status().isOk());
+
+		verify(questionSetCategoryService).attachCategory(questionSetId, categoryId, USER_ID);
 	}
 
 	@ParameterizedTest(name = "{index} - {0}")

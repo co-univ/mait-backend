@@ -15,9 +15,13 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import com.coniv.mait.domain.question.entity.QuestionSetCategoryEntity;
+import com.coniv.mait.domain.question.entity.QuestionSetCategoryLinkEntity;
+import com.coniv.mait.domain.question.entity.QuestionSetEntity;
 import com.coniv.mait.domain.question.exception.QuestionSetCategoryException;
 import com.coniv.mait.domain.question.exception.code.QuestionSetCategoryExceptionCode;
 import com.coniv.mait.domain.question.repository.QuestionSetCategoryEntityRepository;
+import com.coniv.mait.domain.question.repository.QuestionSetCategoryLinkEntityRepository;
+import com.coniv.mait.domain.question.repository.QuestionSetEntityRepository;
 import com.coniv.mait.domain.question.service.dto.QuestionSetCategoryDto;
 import com.coniv.mait.domain.user.service.component.TeamRoleValidator;
 
@@ -32,6 +36,12 @@ class QuestionSetCategoryServiceTest {
 
 	@Mock
 	private QuestionSetCategoryEntityRepository questionSetCategoryEntityRepository;
+
+	@Mock
+	private QuestionSetCategoryLinkEntityRepository questionSetCategoryLinkEntityRepository;
+
+	@Mock
+	private QuestionSetEntityRepository questionSetEntityRepository;
 
 	@Mock
 	private TeamRoleValidator teamRoleValidator;
@@ -328,5 +338,193 @@ class QuestionSetCategoryServiceTest {
 		assertThatThrownBy(() -> questionSetCategoryService.restoreCategory(teamId, name, userId))
 			.isInstanceOf(EntityNotFoundException.class)
 			.hasMessageContaining("복구할 카테고리를 찾을 수 없습니다.");
+	}
+
+	@Test
+	@DisplayName("attachCategories - 모든 categoryId가 같은 팀의 활성 카테고리면 일괄 INSERT")
+	void attachCategories_savesAll() {
+		// given
+		Long questionSetId = 1L;
+		Long teamId = 100L;
+		List<Long> incoming = List.of(11L, 12L);
+
+		QuestionSetCategoryEntity category1 = mock(QuestionSetCategoryEntity.class);
+		QuestionSetCategoryEntity category2 = mock(QuestionSetCategoryEntity.class);
+
+		when(questionSetCategoryEntityRepository.findAllByIdInAndTeamIdAndDeletedAtIsNull(anySet(), eq(teamId)))
+			.thenReturn(List.of(category1, category2));
+
+		// when
+		questionSetCategoryService.attachCategories(questionSetId, teamId, incoming);
+
+		// then
+		verify(questionSetCategoryLinkEntityRepository, times(1)).saveAll(anyList());
+	}
+
+	@Test
+	@DisplayName("attachCategories - 다른 팀 또는 미존재(또는 삭제된) 카테고리 포함 시 예외")
+	void attachCategories_invalidCategory_throws() {
+		// given
+		Long questionSetId = 1L;
+		Long teamId = 100L;
+		List<Long> incoming = List.of(11L, 12L);
+
+		QuestionSetCategoryEntity onlyOne = mock(QuestionSetCategoryEntity.class);
+
+		when(questionSetCategoryEntityRepository.findAllByIdInAndTeamIdAndDeletedAtIsNull(anySet(), eq(teamId)))
+			.thenReturn(List.of(onlyOne));
+
+		// when & then
+		assertThatThrownBy(() -> questionSetCategoryService.attachCategories(questionSetId, teamId, incoming))
+			.isInstanceOf(QuestionSetCategoryException.class)
+			.hasMessage(QuestionSetCategoryExceptionCode.INVALID_TEAM_OR_NOT_FOUND.getMessage());
+
+		verify(questionSetCategoryLinkEntityRepository, never()).saveAll(anyList());
+	}
+
+	@Test
+	@DisplayName("attachCategory - 활성 카테고리 단건 매핑 성공")
+	void attachCategory_success() {
+		// given
+		Long questionSetId = 1L;
+		Long categoryId = 11L;
+		Long teamId = 100L;
+		Long userId = 10L;
+
+		QuestionSetEntity questionSet = mock(QuestionSetEntity.class);
+		when(questionSet.getTeamId()).thenReturn(teamId);
+		QuestionSetCategoryEntity category = mock(QuestionSetCategoryEntity.class);
+
+		when(questionSetEntityRepository.findById(questionSetId)).thenReturn(Optional.of(questionSet));
+		when(questionSetCategoryLinkEntityRepository.existsByQuestionSetIdAndCategoryId(questionSetId, categoryId))
+			.thenReturn(false);
+		when(questionSetCategoryEntityRepository.findByIdAndTeamIdAndDeletedAtIsNull(categoryId, teamId))
+			.thenReturn(Optional.of(category));
+
+		// when
+		questionSetCategoryService.attachCategory(questionSetId, categoryId, userId);
+
+		// then
+		verify(teamRoleValidator).checkHasCreateQuestionSetAuthority(teamId, userId);
+		verify(questionSetCategoryLinkEntityRepository).save(any(QuestionSetCategoryLinkEntity.class));
+	}
+
+	@Test
+	@DisplayName("attachCategory - 이미 매핑된 카테고리는 멱등 처리 (save 호출 안 됨)")
+	void attachCategory_alreadyMapped_idempotent() {
+		// given
+		Long questionSetId = 1L;
+		Long categoryId = 11L;
+		Long teamId = 100L;
+		Long userId = 10L;
+
+		QuestionSetEntity questionSet = mock(QuestionSetEntity.class);
+		when(questionSet.getTeamId()).thenReturn(teamId);
+
+		when(questionSetEntityRepository.findById(questionSetId)).thenReturn(Optional.of(questionSet));
+		when(questionSetCategoryLinkEntityRepository.existsByQuestionSetIdAndCategoryId(questionSetId, categoryId))
+			.thenReturn(true);
+
+		// when
+		questionSetCategoryService.attachCategory(questionSetId, categoryId, userId);
+
+		// then
+		verify(questionSetCategoryEntityRepository, never())
+			.findByIdAndTeamIdAndDeletedAtIsNull(anyLong(), anyLong());
+		verify(questionSetCategoryLinkEntityRepository, never()).save(any(QuestionSetCategoryLinkEntity.class));
+	}
+
+	@Test
+	@DisplayName("attachCategory - 문제 셋이 존재하지 않으면 예외")
+	void attachCategory_questionSetNotFound_throws() {
+		// given
+		Long questionSetId = 999L;
+		Long categoryId = 11L;
+		Long userId = 10L;
+
+		when(questionSetEntityRepository.findById(questionSetId)).thenReturn(Optional.empty());
+
+		// when & then
+		assertThatThrownBy(() -> questionSetCategoryService.attachCategory(questionSetId, categoryId, userId))
+			.isInstanceOf(EntityNotFoundException.class)
+			.hasMessageContaining("문제 셋을 찾을 수 없습니다.");
+
+		verify(questionSetCategoryLinkEntityRepository, never()).save(any(QuestionSetCategoryLinkEntity.class));
+	}
+
+	@Test
+	@DisplayName("attachCategory - 다른 팀 또는 삭제된 카테고리는 EntityNotFoundException")
+	void attachCategory_categoryNotFoundOrOtherTeamOrDeleted_throws() {
+		// given
+		Long questionSetId = 1L;
+		Long categoryId = 11L;
+		Long teamId = 100L;
+		Long userId = 10L;
+
+		QuestionSetEntity questionSet = mock(QuestionSetEntity.class);
+		when(questionSet.getTeamId()).thenReturn(teamId);
+
+		when(questionSetEntityRepository.findById(questionSetId)).thenReturn(Optional.of(questionSet));
+		when(questionSetCategoryLinkEntityRepository.existsByQuestionSetIdAndCategoryId(questionSetId, categoryId))
+			.thenReturn(false);
+		when(questionSetCategoryEntityRepository.findByIdAndTeamIdAndDeletedAtIsNull(categoryId, teamId))
+			.thenReturn(Optional.empty());
+
+		// when & then
+		assertThatThrownBy(() -> questionSetCategoryService.attachCategory(questionSetId, categoryId, userId))
+			.isInstanceOf(EntityNotFoundException.class)
+			.hasMessageContaining("해당 카테고리를 찾을 수 없습니다.");
+
+		verify(questionSetCategoryLinkEntityRepository, never()).save(any(QuestionSetCategoryLinkEntity.class));
+	}
+
+	@Test
+	@DisplayName("getCategoriesByQuestionSetId - 매핑이 없으면 빈 리스트")
+	void getCategoriesByQuestionSetId_noLinks_returnsEmpty() {
+		// given
+		Long questionSetId = 1L;
+		when(questionSetCategoryLinkEntityRepository.findAllByQuestionSetId(questionSetId)).thenReturn(List.of());
+
+		// when
+		List<QuestionSetCategoryDto> result = questionSetCategoryService.getCategoriesByQuestionSetId(questionSetId);
+
+		// then
+		assertThat(result).isEmpty();
+		verify(questionSetCategoryEntityRepository, never()).findAllByIdIn(anySet());
+	}
+
+	@Test
+	@DisplayName("getCategoriesByQuestionSetId - 매핑된 카테고리(삭제 포함)를 DTO 로 변환")
+	void getCategoriesByQuestionSetId_returnsMappedCategoriesIncludingDeleted() {
+		// given
+		Long questionSetId = 1L;
+		Long activeId = 11L;
+		Long deletedId = 12L;
+
+		QuestionSetCategoryLinkEntity activeLink = QuestionSetCategoryLinkEntity.of(questionSetId, activeId);
+		QuestionSetCategoryLinkEntity deletedLink = QuestionSetCategoryLinkEntity.of(questionSetId, deletedId);
+
+		QuestionSetCategoryEntity activeCategory = mock(QuestionSetCategoryEntity.class);
+		when(activeCategory.getId()).thenReturn(activeId);
+		when(activeCategory.getName()).thenReturn("활성");
+		when(activeCategory.deleted()).thenReturn(false);
+
+		QuestionSetCategoryEntity deletedCategory = mock(QuestionSetCategoryEntity.class);
+		when(deletedCategory.getId()).thenReturn(deletedId);
+		when(deletedCategory.getName()).thenReturn("삭제됨");
+		when(deletedCategory.deleted()).thenReturn(true);
+
+		when(questionSetCategoryLinkEntityRepository.findAllByQuestionSetId(questionSetId))
+			.thenReturn(List.of(activeLink, deletedLink));
+		when(questionSetCategoryEntityRepository.findAllByIdIn(anySet()))
+			.thenReturn(List.of(activeCategory, deletedCategory));
+
+		// when
+		List<QuestionSetCategoryDto> result = questionSetCategoryService.getCategoriesByQuestionSetId(questionSetId);
+
+		// then
+		assertThat(result).hasSize(2);
+		assertThat(result).extracting(QuestionSetCategoryDto::isDeleted)
+			.containsExactlyInAnyOrder(false, true);
 	}
 }

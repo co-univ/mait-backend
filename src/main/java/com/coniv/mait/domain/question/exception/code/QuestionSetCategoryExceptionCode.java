@@ -13,7 +13,8 @@ public enum QuestionSetCategoryExceptionCode implements ExceptionCode {
 
 	DUPLICATE_NAME(HttpStatus.CONFLICT, "QSC-001", "이미 존재하는 카테고리입니다."),
 	DUPLICATE_NAME_DELETED(HttpStatus.CONFLICT, "QSC-002", "삭제된 동일 이름의 카테고리가 존재합니다. 복구하시겠습니까?"),
-	ALREADY_ACTIVE(HttpStatus.CONFLICT, "QSC-003", "이미 활성 상태인 카테고리입니다.");
+	ALREADY_ACTIVE(HttpStatus.CONFLICT, "QSC-003", "이미 활성 상태인 카테고리입니다."),
+	INVALID_TEAM_OR_NOT_FOUND(HttpStatus.BAD_REQUEST, "QSC-004", "카테고리를 찾을 수 없거나 다른 팀의 카테고리입니다.");
 
 	private final HttpStatus status;
 	private final String code;
