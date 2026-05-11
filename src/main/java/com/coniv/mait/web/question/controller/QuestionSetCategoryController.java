@@ -54,6 +54,19 @@ public class QuestionSetCategoryController {
 		return ResponseEntity.ok(ApiResponse.ok(categories));
 	}
 
+	@Operation(summary = "문제 셋 카테고리 검색 API", description = "팀의 활성 카테고리를 이름 부분 일치로 검색합니다. 팀 멤버만 조회 가능합니다.")
+	@GetMapping("/search")
+	public ResponseEntity<ApiResponse<List<QuestionSetCategoryApiResponse>>> searchCategories(
+		@AuthenticationPrincipal MaitUser user, @RequestParam("teamId") Long teamId,
+		@RequestParam("keyword") String keyword) {
+		List<QuestionSetCategoryApiResponse> categories = questionSetCategoryService.searchCategories(teamId, user.id(),
+				keyword)
+			.stream()
+			.map(QuestionSetCategoryApiResponse::from)
+			.toList();
+		return ResponseEntity.ok(ApiResponse.ok(categories));
+	}
+
 	@Operation(summary = "문제 셋 카테고리 삭제 API", description = "팀 카테고리를 soft delete 합니다. 이미 삭제된 카테고리는 멱등 처리됩니다.")
 	@DeleteMapping("/{categoryId}")
 	public ResponseEntity<ApiResponse<Void>> deleteCategory(

@@ -153,4 +153,38 @@ public class QuestionSetCategoryApiIntegrationTest extends BaseIntegrationTest {
 				jsonPath("$.data[1].id").value(second.getId()),
 				jsonPath("$.data[1].name").value("자료구조"));
 	}
+
+	@Test
+	@DisplayName("카테고리 검색 API 성공 테스트 - 팀의 활성 카테고리 중 이름 부분 일치만 반환")
+	void searchCategoriesApiSuccess() throws Exception {
+		// given
+		UserEntity currentUser = userEntityRepository.findByEmail("user@example.com").orElseThrow();
+		TeamEntity team = teamEntityRepository.save(TeamEntity.builder().name("코니브").creatorId(1L).build());
+		TeamEntity otherTeam = teamEntityRepository.save(TeamEntity.builder().name("다른팀").creatorId(2L).build());
+		teamUserEntityRepository.save(TeamUserEntity.createTeamUser(currentUser, team, TeamUserRole.PLAYER));
+
+		QuestionSetCategoryEntity first = questionSetCategoryEntityRepository.save(
+			QuestionSetCategoryEntity.of(team.getId(), "알고리즘"));
+		QuestionSetCategoryEntity second = questionSetCategoryEntityRepository.save(
+			QuestionSetCategoryEntity.of(team.getId(), "고급 알고리즘"));
+		questionSetCategoryEntityRepository.save(QuestionSetCategoryEntity.of(team.getId(), "자료구조"));
+		questionSetCategoryEntityRepository.save(QuestionSetCategoryEntity.of(otherTeam.getId(), "알고리즘"));
+		QuestionSetCategoryEntity deleted = questionSetCategoryEntityRepository.save(
+			QuestionSetCategoryEntity.of(team.getId(), "알고리즘 삭제됨"));
+		deleted.updateDeletedAt(LocalDateTime.now());
+		questionSetCategoryEntityRepository.save(deleted);
+
+		// when & then
+		mockMvc.perform(get("/api/v1/question-sets/categories/search")
+				.param("teamId", String.valueOf(team.getId()))
+				.param("keyword", "알고"))
+			.andExpectAll(
+				status().isOk(),
+				jsonPath("$.data.length()").value(2),
+				jsonPath("$.data[0].id").value(first.getId()),
+				jsonPath("$.data[0].teamId").value(team.getId()),
+				jsonPath("$.data[0].name").value("알고리즘"),
+				jsonPath("$.data[1].id").value(second.getId()),
+				jsonPath("$.data[1].name").value("고급 알고리즘"));
+	}
 }
