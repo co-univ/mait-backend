@@ -159,6 +159,66 @@ class QuestionSetCategoryServiceTest {
 	}
 
 	@Test
+	@DisplayName("카테고리 검색 성공 - 검색어를 포함한 활성 카테고리만 반환")
+	void searchCategories_success() {
+		// given
+		Long teamId = 1L;
+		Long userId = 10L;
+		String keyword = " 고리 ";
+
+		QuestionSetCategoryEntity category = QuestionSetCategoryEntity.of(teamId, "알고리즘");
+		when(questionSetCategoryEntityRepository
+			.findAllByTeamIdAndNameContainingAndDeletedAtIsNullOrderByCreatedAtAsc(teamId, "고리"))
+			.thenReturn(List.of(category));
+
+		// when
+		List<QuestionSetCategoryDto> result = questionSetCategoryService.searchCategories(teamId, userId, keyword);
+
+		// then
+		assertThat(result).hasSize(1);
+		assertThat(result).extracting(QuestionSetCategoryDto::getName)
+			.containsExactly("알고리즘");
+
+		verify(teamRoleValidator).checkIsTeamMember(teamId, userId);
+	}
+
+	@Test
+	@DisplayName("카테고리 검색 성공 - 검색어가 공백이면 빈 목록 반환")
+	void searchCategories_blankKeyword_returnsEmpty() {
+		// given
+		Long teamId = 1L;
+		Long userId = 10L;
+
+		// when
+		List<QuestionSetCategoryDto> result = questionSetCategoryService.searchCategories(teamId, userId, "   ");
+
+		// then
+		assertThat(result).isEmpty();
+
+		verify(teamRoleValidator).checkIsTeamMember(teamId, userId);
+		verify(questionSetCategoryEntityRepository, never())
+			.findAllByTeamIdAndNameContainingAndDeletedAtIsNullOrderByCreatedAtAsc(anyLong(), anyString());
+	}
+
+	@Test
+	@DisplayName("카테고리 검색 실패 - 팀 멤버가 아님 (TeamRoleValidator 예외 전파)")
+	void searchCategories_fail_notTeamMember() {
+		// given
+		Long teamId = 1L;
+		Long userId = 10L;
+
+		doThrow(new RuntimeException("팀 멤버가 아님"))
+			.when(teamRoleValidator).checkIsTeamMember(teamId, userId);
+
+		// when & then
+		assertThatThrownBy(() -> questionSetCategoryService.searchCategories(teamId, userId, "알고"))
+			.isInstanceOf(RuntimeException.class);
+
+		verify(questionSetCategoryEntityRepository, never())
+			.findAllByTeamIdAndNameContainingAndDeletedAtIsNullOrderByCreatedAtAsc(anyLong(), anyString());
+	}
+
+	@Test
 	@DisplayName("카테고리 목록 조회 실패 - 팀 멤버가 아님 (TeamRoleValidator 예외 전파)")
 	void getCategories_fail_notTeamMember() {
 		// given

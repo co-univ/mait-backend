@@ -61,6 +61,20 @@ public class QuestionSetCategoryService {
 			.toList();
 	}
 
+	public List<QuestionSetCategoryDto> searchCategories(final Long teamId, final Long userId, final String keyword) {
+		teamRoleValidator.checkIsTeamMember(teamId, userId);
+
+		String trimmedKeyword = keyword == null ? "" : keyword.trim();
+		if (trimmedKeyword.isBlank()) {
+			return List.of();
+		}
+
+		return questionSetCategoryEntityRepository
+			.findAllByTeamIdAndNameContainingAndDeletedAtIsNullOrderByCreatedAtAsc(teamId, trimmedKeyword).stream()
+			.map(QuestionSetCategoryDto::from)
+			.toList();
+	}
+
 	@Transactional
 	public void deleteCategory(final Long categoryId, final Long userId) {
 		QuestionSetCategoryEntity category = questionSetCategoryEntityRepository.findById(categoryId)
