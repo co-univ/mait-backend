@@ -236,4 +236,33 @@ class QuestionSetCategoryControllerTest {
 
 		verify(questionSetCategoryService).getCategories(teamId, USER_ID);
 	}
+
+	@Test
+	@DisplayName("카테고리 검색 성공 - 200 OK 와 응답 바디 반환")
+	void searchCategoriesSuccess() throws Exception {
+		// given
+		Long teamId = 1L;
+		String keyword = "알고";
+
+		QuestionSetCategoryDto category = QuestionSetCategoryDto.builder()
+			.id(100L)
+			.teamId(teamId)
+			.name("알고리즘")
+			.build();
+
+		when(questionSetCategoryService.searchCategories(teamId, USER_ID, keyword)).thenReturn(List.of(category));
+
+		// when & then
+		mockMvc.perform(get("/api/v1/question-sets/categories/search")
+				.param("teamId", String.valueOf(teamId))
+				.param("keyword", keyword))
+			.andExpectAll(
+				status().isOk(),
+				jsonPath("$.data.length()").value(1),
+				jsonPath("$.data[0].id").value(100L),
+				jsonPath("$.data[0].teamId").value(teamId),
+				jsonPath("$.data[0].name").value("알고리즘"));
+
+		verify(questionSetCategoryService).searchCategories(teamId, USER_ID, keyword);
+	}
 }
