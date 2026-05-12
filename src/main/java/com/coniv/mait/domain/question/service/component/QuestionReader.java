@@ -6,6 +6,7 @@ import org.springframework.stereotype.Component;
 
 import com.coniv.mait.domain.question.entity.QuestionEntity;
 import com.coniv.mait.domain.question.entity.QuestionSetEntity;
+import com.coniv.mait.domain.question.enums.QuestionSetSolveMode;
 import com.coniv.mait.domain.question.enums.QuestionSetStatus;
 import com.coniv.mait.domain.question.repository.QuestionEntityRepository;
 import com.coniv.mait.domain.question.repository.QuestionSetEntityRepository;
@@ -47,9 +48,10 @@ public class QuestionReader {
 			.orElseThrow(() -> new EntityNotFoundException("문제를 찾을 수 없습니다."));
 	}
 
-	public List<QuestionEntity> getCompletedQuestionsInTeam(final TeamEntity team) {
-		List<QuestionSetEntity> completedQuestionSets = questionSetEntityRepository.findAllByTeamIdAndStatusIn(
-			team.getId(), List.of(QuestionSetStatus.AFTER, QuestionSetStatus.REVIEW));
+	public List<QuestionEntity> getCompletedLiveQuestionsInTeam(final TeamEntity team) {
+		List<QuestionSetEntity> completedQuestionSets =
+			questionSetEntityRepository.findAllByTeamIdAndSolveModeAndStatusIn(team.getId(),
+				QuestionSetSolveMode.LIVE_TIME, List.of(QuestionSetStatus.AFTER, QuestionSetStatus.REVIEW));
 
 		List<Long> questionSetIds = completedQuestionSets.stream()
 			.map(QuestionSetEntity::getId)
