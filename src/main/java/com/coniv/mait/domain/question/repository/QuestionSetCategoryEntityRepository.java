@@ -25,5 +25,7 @@ public interface QuestionSetCategoryEntityRepository extends JpaRepository<Quest
 
 	List<QuestionSetCategoryEntity> findAllByIdIn(Collection<Long> ids);
 
+	Optional<QuestionSetCategoryEntity> findByIdAndDeletedAtIsNull(Long id);
+
 	Optional<QuestionSetCategoryEntity> findByIdAndTeamIdAndDeletedAtIsNull(Long id, Long teamId);
 }
