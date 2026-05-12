@@ -6,6 +6,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -20,6 +21,7 @@ import com.coniv.mait.global.response.ApiResponse;
 import com.coniv.mait.web.question.dto.CreateQuestionSetCategoryApiRequest;
 import com.coniv.mait.web.question.dto.QuestionSetCategoryApiResponse;
 import com.coniv.mait.web.question.dto.RestoreQuestionSetCategoryApiRequest;
+import com.coniv.mait.web.question.dto.UpdateQuestionSetCategoryApiRequest;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -65,6 +67,17 @@ public class QuestionSetCategoryController {
 			.map(QuestionSetCategoryApiResponse::from)
 			.toList();
 		return ResponseEntity.ok(ApiResponse.ok(categories));
+	}
+
+	@Operation(summary = "문제 셋 카테고리 이름 수정 API",
+		description = "활성 팀 카테고리의 이름을 수정합니다. 기존 문제 셋 매핑은 유지됩니다.")
+	@PatchMapping("/{categoryId}")
+	public ResponseEntity<ApiResponse<QuestionSetCategoryApiResponse>> updateCategoryName(
+		@AuthenticationPrincipal MaitUser user, @PathVariable Long categoryId,
+		@Valid @RequestBody UpdateQuestionSetCategoryApiRequest request) {
+		QuestionSetCategoryDto category = questionSetCategoryService.updateCategoryName(categoryId, request.name(),
+			user.id());
+		return ResponseEntity.ok(ApiResponse.ok(QuestionSetCategoryApiResponse.from(category)));
 	}
 
 	@Operation(summary = "문제 셋 카테고리 삭제 API", description = "팀 카테고리를 soft delete 합니다. 이미 삭제된 카테고리는 멱등 처리됩니다.")
