@@ -20,6 +20,7 @@ public enum CommonExceptionCode implements ExceptionCode {
 
 	TEAM_INVITE_FAIL_EXCEPTION(HttpStatus.BAD_REQUEST, "C-007", "팀 초대 생성에서 오류가 발생했습니다."),
 	USER_ROLE_EXCEPTION(HttpStatus.FORBIDDEN, "C-008", "사용자 권한이 부족합니다."),
+	DATA_INTEGRITY_VIOLATION(HttpStatus.CONFLICT, "C-009", "데이터 무결성 제약 조건을 위반했습니다."),
 
 	LOGIN_FAIL_EXCEPTION(HttpStatus.UNAUTHORIZED, "A-001", "로그인 실패"),
 	JWT_AUTH_EXCEPTION(HttpStatus.UNAUTHORIZED, "A-002", "JWT 인증 오류"),

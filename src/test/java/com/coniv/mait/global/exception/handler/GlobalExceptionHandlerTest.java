@@ -14,6 +14,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -224,6 +225,31 @@ class GlobalExceptionHandlerTest {
 		assertThat(errorResponse.getIsSuccess()).isFalse();
 		assertThat(errorResponse.getStatus()).isEqualTo(HttpStatus.INTERNAL_SERVER_ERROR);
 		assertThat(errorResponse.getMessage()).isEqualTo(CommonExceptionCode.UNEXPECTED_EXCEPTION.getMessage());
+
+		verify(httpServletRequest).getRequestURI();
+	}
+
+	@Test
+	@DisplayName("DataIntegrityViolationException 처리 - 데이터 무결성 위반")
+	void handleDataIntegrityViolationException() {
+		// Given
+		String requestUri = "/api/test";
+		when(httpServletRequest.getRequestURI()).thenReturn(requestUri);
+
+		// When
+		ResponseEntity<ErrorResponse> response = globalExceptionHandler.handleDataIntegrityViolationException(
+			new DataIntegrityViolationException("constraint violation"), httpServletRequest);
+
+		// Then
+		assertThat(response.getStatusCode()).isEqualTo(HttpStatus.CONFLICT);
+		assertThat(response.getBody()).isNotNull();
+
+		ErrorResponse errorResponse = response.getBody();
+		assertThat(errorResponse.getIsSuccess()).isFalse();
+		assertThat(errorResponse.getStatus()).isEqualTo(HttpStatus.CONFLICT);
+		assertThat(errorResponse.getMessage())
+			.isEqualTo(CommonExceptionCode.DATA_INTEGRITY_VIOLATION.getMessage());
+		assertThat(errorResponse.getReasons()).isNull();
 
 		verify(httpServletRequest).getRequestURI();
 	}
