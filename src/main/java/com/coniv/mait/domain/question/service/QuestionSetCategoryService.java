@@ -47,7 +47,7 @@ public class QuestionSetCategoryService {
 			throw new QuestionSetCategoryException(QuestionSetCategoryExceptionCode.DUPLICATE_NAME_DELETED);
 		}
 
-		QuestionSetCategoryEntity category = questionSetCategoryEntityRepository.save(
+		QuestionSetCategoryEntity category = questionSetCategoryEntityRepository.saveAndFlush(
 			QuestionSetCategoryEntity.of(teamId, name));
 		return QuestionSetCategoryDto.from(category);
 	}
@@ -73,6 +73,31 @@ public class QuestionSetCategoryService {
 			.findAllByTeamIdAndNameContainingAndDeletedAtIsNullOrderByCreatedAtAsc(teamId, trimmedKeyword).stream()
 			.map(QuestionSetCategoryDto::from)
 			.toList();
+	}
+
+	@Transactional
+	public QuestionSetCategoryDto updateCategoryName(final Long categoryId, final String name, final Long userId) {
+		QuestionSetCategoryEntity category = questionSetCategoryEntityRepository.findByIdAndDeletedAtIsNull(categoryId)
+			.orElseThrow(() -> new EntityNotFoundException("해당 카테고리를 찾을 수 없습니다."));
+
+		teamRoleValidator.checkHasCreateQuestionSetAuthority(category.getTeamId(), userId);
+
+		if (category.getName().equals(name)) {
+			return QuestionSetCategoryDto.from(category);
+		}
+
+		if (questionSetCategoryEntityRepository.existsByTeamIdAndNameAndDeletedAtIsNull(category.getTeamId(), name)) {
+			throw new QuestionSetCategoryException(QuestionSetCategoryExceptionCode.DUPLICATE_NAME);
+		}
+
+		if (questionSetCategoryEntityRepository.existsByTeamIdAndNameAndDeletedAtIsNotNull(
+			category.getTeamId(), name)) {
+			throw new QuestionSetCategoryException(QuestionSetCategoryExceptionCode.DUPLICATE_NAME_DELETED);
+		}
+
+		category.updateName(name);
+		questionSetCategoryEntityRepository.saveAndFlush(category);
+		return QuestionSetCategoryDto.from(category);
 	}
 
 	@Transactional
