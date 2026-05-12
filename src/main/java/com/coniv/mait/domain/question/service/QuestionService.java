@@ -129,6 +129,7 @@ public class QuestionService {
 		}
 	}
 
+	@Transactional(readOnly = true)
 	public QuestionDto getQuestion(final Long questionSetId, final Long questionId, final DeliveryMode mode) {
 		QuestionEntity question = questionEntityRepository.findById(questionId)
 			.orElseThrow(() -> new EntityNotFoundException("Question not found with id: " + questionId));
