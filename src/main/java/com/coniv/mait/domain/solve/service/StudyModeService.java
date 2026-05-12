@@ -17,11 +17,13 @@ import com.coniv.mait.domain.question.enums.QuestionSetSolveMode;
 import com.coniv.mait.domain.question.enums.QuestionSetStatus;
 import com.coniv.mait.domain.question.repository.QuestionSetEntityRepository;
 import com.coniv.mait.domain.question.service.component.QuestionReader;
+import com.coniv.mait.domain.question.service.component.QuestionSetReader;
 import com.coniv.mait.domain.solve.entity.AnswerSubmitRecordEntity;
 import com.coniv.mait.domain.solve.entity.SolvingSessionEntity;
 import com.coniv.mait.domain.solve.entity.StudyAnswerDraftEntity;
 import com.coniv.mait.domain.solve.entity.StudyAnswerDraftId;
 import com.coniv.mait.domain.solve.enums.SolvingStatus;
+import com.coniv.mait.domain.solve.event.StudySessionCompletedEvent;
 import com.coniv.mait.domain.solve.exception.QuestionSolveExceptionCode;
 import com.coniv.mait.domain.solve.exception.QuestionSolvingException;
 import com.coniv.mait.domain.solve.repository.AnswerSubmitRecordEntityRepository;
@@ -37,6 +39,7 @@ import com.coniv.mait.domain.user.entity.UserEntity;
 import com.coniv.mait.domain.user.service.component.TeamRoleValidator;
 import com.coniv.mait.domain.user.service.component.UserReader;
 import com.coniv.mait.global.auth.model.MaitUser;
+import com.coniv.mait.global.event.MaitEventPublisher;
 import com.coniv.mait.web.question.dto.StudyQuestionSetDto;
 import com.coniv.mait.web.question.dto.StudyQuestionSetGroup;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -60,11 +63,13 @@ public class StudyModeService {
 	private final StudyAnswerDraftFactory studyAnswerDraftFactory;
 	private final QuestionReader questionReader;
 	private final AnswerGrader answerGrader;
+	private final MaitEventPublisher maitEventPublisher;
 
 	private final QuestionSetEntityRepository questionSetEntityRepository;
 	private final SolvingSessionEntityRepository solvingSessionEntityRepository;
 	private final StudyAnswerDraftEntityRepository studyAnswerDraftEntityRepository;
 	private final AnswerSubmitRecordEntityRepository answerSubmitRecordEntityRepository;
+	private final QuestionSetReader questionSetReader;
 
 	@Transactional(readOnly = true)
 	public StudyQuestionSetGroup getStudyQuestionSets(final Long teamId, final MaitUser user) {
@@ -131,8 +136,7 @@ public class StudyModeService {
 
 	@Transactional
 	public StudyGradeResultDto gradeStudySession(final MaitUser maitUser, final Long questionSetId) {
-		QuestionSetEntity questionSet = questionSetEntityRepository.findById(questionSetId)
-			.orElseThrow(() -> new EntityNotFoundException("존재하지 않는 문제 셋 입니다."));
+		QuestionSetEntity questionSet = questionSetReader.getQuestionSet(questionSetId);
 
 		UserEntity user = userReader.getById(maitUser.id());
 
@@ -182,14 +186,17 @@ public class StudyModeService {
 
 		solvingSession.submit(totalCount, correctCount);
 
+		maitEventPublisher.publishEvent(StudySessionCompletedEvent.builder()
+			.questionSetId(questionSetId)
+			.build());
+
 		return StudyGradeResultDto.of(solvingSession, records);
 	}
 
 	@Transactional
 	public StudyAnswerDraftDto updateStudyAnswerDraft(final MaitUser maitUser, final Long questionSetId,
 		final Long questionId, final SubmitAnswerDto<?> submittedAnswer) throws JsonProcessingException {
-		QuestionSetEntity questionSet = questionSetEntityRepository.findById(questionSetId)
-			.orElseThrow(() -> new EntityNotFoundException("존재하지 않는 문제 셋 입니다."));
+		QuestionSetEntity questionSet = questionSetReader.getQuestionSet(questionSetId);
 
 		UserEntity user = userReader.getById(maitUser.id());
 

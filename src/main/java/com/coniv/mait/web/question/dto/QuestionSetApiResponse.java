@@ -1,12 +1,14 @@
 package com.coniv.mait.web.question.dto;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 import com.coniv.mait.domain.question.enums.DeliveryMode;
 import com.coniv.mait.domain.question.enums.QuestionSetCreationType;
 import com.coniv.mait.domain.question.enums.QuestionSetSolveMode;
 import com.coniv.mait.domain.question.enums.QuestionSetStatus;
 import com.coniv.mait.domain.question.enums.QuestionSetVisibility;
+import com.coniv.mait.domain.question.service.dto.QuestionSetCategoryDto;
 import com.coniv.mait.domain.question.service.dto.QuestionSetDto;
 
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -38,6 +40,8 @@ public record QuestionSetApiResponse(
 	Long questionCount,
 	@Schema(requiredMode = Schema.RequiredMode.NOT_REQUIRED)
 	String difficulty,
+	@Schema(description = "문제 셋에 부착된 카테고리 목록", requiredMode = Schema.RequiredMode.REQUIRED)
+	List<QuestionSetCategoryDto> categories,
 	@Schema(requiredMode = Schema.RequiredMode.REQUIRED)
 	LocalDateTime updatedAt
 
@@ -55,6 +59,7 @@ public record QuestionSetApiResponse(
 			.teamId(questionSetDto.getTeamId())
 			.questionCount(questionSetDto.getQuestionCount())
 			.difficulty(questionSetDto.getDifficulty())
+			.categories(questionSetDto.getCategories() == null ? List.of() : questionSetDto.getCategories())
 			.updatedAt(questionSetDto.getUpdatedAt())
 			.build();
 	}

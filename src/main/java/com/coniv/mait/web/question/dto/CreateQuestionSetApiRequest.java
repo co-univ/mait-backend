@@ -27,7 +27,9 @@ public record CreateQuestionSetApiRequest(
 	@Schema(description = "문제 난이도, AI 생성인 경우에만 활용")
 	String difficulty,
 	@Schema(description = "문제 셋에 대한 보충 설명, AI 생성인 경우에만 활용")
-	String instruction
+	String instruction,
+	@Schema(description = "문제 셋에 부착할 카테고리 ID 목록")
+	List<Long> categoryIds
 ) {
 
 	public CreateQuestionSetApiRequest {

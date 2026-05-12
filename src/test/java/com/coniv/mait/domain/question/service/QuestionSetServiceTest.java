@@ -62,6 +62,9 @@ class QuestionSetServiceTest {
 	@Mock
 	private AiRequestStatusManager aiRequestStatusManager;
 
+	@Mock
+	private QuestionSetCategoryService questionSetCategoryService;
+
 	// Todo: 생성 관련 feature가 최종 완성 시에 수정
 	// @Test
 	// @DisplayName("문제 셋 생성 테스트")

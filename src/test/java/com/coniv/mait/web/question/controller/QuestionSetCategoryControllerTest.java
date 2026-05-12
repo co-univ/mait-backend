@@ -1,0 +1,327 @@
+package com.coniv.mait.web.question.controller;
+
+import static org.mockito.ArgumentMatchers.*;
+import static org.mockito.Mockito.*;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
+
+import java.util.List;
+import java.util.stream.Stream;
+
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
+import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.http.MediaType;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
+import org.springframework.test.web.servlet.MockMvc;
+
+import com.coniv.mait.domain.question.service.QuestionSetCategoryService;
+import com.coniv.mait.domain.question.service.dto.QuestionSetCategoryDto;
+import com.coniv.mait.global.auth.model.MaitUser;
+import com.coniv.mait.global.filter.JwtAuthorizationFilter;
+import com.coniv.mait.global.interceptor.idempotency.IdempotencyInterceptor;
+import com.coniv.mait.web.question.dto.CreateQuestionSetCategoryApiRequest;
+import com.coniv.mait.web.question.dto.RestoreQuestionSetCategoryApiRequest;
+import com.coniv.mait.web.question.dto.UpdateQuestionSetCategoryApiRequest;
+import com.fasterxml.jackson.databind.ObjectMapper;
+
+@WebMvcTest(controllers = QuestionSetCategoryController.class)
+@AutoConfigureMockMvc(addFilters = false)
+class QuestionSetCategoryControllerTest {
+
+	private static final Long USER_ID = 10L;
+
+	@MockitoBean
+	private QuestionSetCategoryService questionSetCategoryService;
+
+	@MockitoBean
+	private IdempotencyInterceptor idempotencyInterceptor;
+
+	@MockitoBean
+	private JwtAuthorizationFilter jwtAuthorizationFilter;
+
+	@Autowired
+	private MockMvc mockMvc;
+
+	@Autowired
+	private ObjectMapper objectMapper;
+
+	@BeforeEach
+	void setUp() throws Exception {
+		when(idempotencyInterceptor.preHandle(any(), any(), any())).thenReturn(true);
+
+		MaitUser user = MaitUser.builder().id(USER_ID).build();
+		var authentication = new UsernamePasswordAuthenticationToken(user, null, List.of());
+		var context = SecurityContextHolder.createEmptyContext();
+		context.setAuthentication(authentication);
+		SecurityContextHolder.setContext(context);
+	}
+
+	@AfterEach
+	void tearDown() {
+		SecurityContextHolder.clearContext();
+	}
+
+	@Test
+	@DisplayName("카테고리 생성 성공 - 200 OK 와 응답 바디 반환")
+	void createCategorySuccess() throws Exception {
+		// given
+		Long teamId = 1L;
+		String name = "알고리즘";
+		Long categoryId = 100L;
+
+		CreateQuestionSetCategoryApiRequest request = new CreateQuestionSetCategoryApiRequest(teamId, name);
+		QuestionSetCategoryDto dto = QuestionSetCategoryDto.builder()
+			.id(categoryId)
+			.teamId(teamId)
+			.name(name)
+			.build();
+
+		when(questionSetCategoryService.createCategory(teamId, name, USER_ID)).thenReturn(dto);
+
+		// when & then
+		mockMvc.perform(post("/api/v1/question-sets/categories")
+				.contentType(MediaType.APPLICATION_JSON)
+				.content(objectMapper.writeValueAsString(request)))
+			.andExpectAll(
+				status().isOk(),
+				jsonPath("$.data.id").value(categoryId),
+				jsonPath("$.data.teamId").value(teamId),
+				jsonPath("$.data.name").value(name));
+
+		verify(questionSetCategoryService).createCategory(teamId, name, USER_ID);
+	}
+
+	@ParameterizedTest(name = "{index} - {0}")
+	@DisplayName("카테고리 생성 실패 - 유효하지 않은 요청 (400)")
+	@MethodSource("invalidCreateCategoryRequests")
+	void createCategoryInvalidRequest(String testName, Long teamId, String name, String expectedReason)
+		throws Exception {
+		// given
+		CreateQuestionSetCategoryApiRequest request = new CreateQuestionSetCategoryApiRequest(teamId, name);
+
+		// when & then
+		mockMvc.perform(post("/api/v1/question-sets/categories")
+				.contentType(MediaType.APPLICATION_JSON)
+				.content(objectMapper.writeValueAsString(request)))
+			.andExpectAll(
+				status().isBadRequest(),
+				jsonPath("$.isSuccess").value(false),
+				jsonPath("$.reasons[*]").value(org.hamcrest.Matchers.hasItem(expectedReason)));
+
+		verify(questionSetCategoryService, never()).createCategory(any(), any(), any());
+	}
+
+	static Stream<Arguments> invalidCreateCategoryRequests() {
+		return Stream.of(
+			Arguments.of("teamId null", null, "알고리즘", "팀 정보는 필수 입니다."),
+			Arguments.of("name 빈 문자열", 1L, "", "카테고리 이름을 입력해주세요."),
+			Arguments.of("name null", 1L, null, "카테고리 이름을 입력해주세요."),
+			Arguments.of("name 공백", 1L, "   ", "카테고리 이름을 입력해주세요."),
+			Arguments.of("name 41자 초과", 1L, "가".repeat(41), "카테고리 이름은 40자 이하여야 합니다."));
+	}
+
+	@Test
+	@DisplayName("카테고리 이름 수정 성공 - 200 OK 와 응답 바디 반환")
+	void updateCategoryNameSuccess() throws Exception {
+		// given
+		Long categoryId = 100L;
+		Long teamId = 1L;
+		String name = "자료구조";
+
+		UpdateQuestionSetCategoryApiRequest request = new UpdateQuestionSetCategoryApiRequest(name);
+		QuestionSetCategoryDto dto = QuestionSetCategoryDto.builder()
+			.id(categoryId)
+			.teamId(teamId)
+			.name(name)
+			.build();
+
+		when(questionSetCategoryService.updateCategoryName(categoryId, name, USER_ID)).thenReturn(dto);
+
+		// when & then
+		mockMvc.perform(patch("/api/v1/question-sets/categories/{categoryId}", categoryId)
+				.contentType(MediaType.APPLICATION_JSON)
+				.content(objectMapper.writeValueAsString(request)))
+			.andExpectAll(
+				status().isOk(),
+				jsonPath("$.data.id").value(categoryId),
+				jsonPath("$.data.teamId").value(teamId),
+				jsonPath("$.data.name").value(name));
+
+		verify(questionSetCategoryService).updateCategoryName(categoryId, name, USER_ID);
+	}
+
+	@ParameterizedTest(name = "{index} - {0}")
+	@DisplayName("카테고리 이름 수정 실패 - 유효하지 않은 요청 (400)")
+	@MethodSource("invalidUpdateCategoryRequests")
+	void updateCategoryNameInvalidRequest(String testName, String name, String expectedReason) throws Exception {
+		// given
+		Long categoryId = 100L;
+		UpdateQuestionSetCategoryApiRequest request = new UpdateQuestionSetCategoryApiRequest(name);
+
+		// when & then
+		mockMvc.perform(patch("/api/v1/question-sets/categories/{categoryId}", categoryId)
+				.contentType(MediaType.APPLICATION_JSON)
+				.content(objectMapper.writeValueAsString(request)))
+			.andExpectAll(
+				status().isBadRequest(),
+				jsonPath("$.isSuccess").value(false),
+				jsonPath("$.reasons[*]").value(org.hamcrest.Matchers.hasItem(expectedReason)));
+
+		verify(questionSetCategoryService, never()).updateCategoryName(any(), any(), any());
+	}
+
+	static Stream<Arguments> invalidUpdateCategoryRequests() {
+		return Stream.of(
+			Arguments.of("name 빈 문자열", "", "카테고리 이름을 입력해주세요."),
+			Arguments.of("name null", null, "카테고리 이름을 입력해주세요."),
+			Arguments.of("name 공백", "   ", "카테고리 이름을 입력해주세요."),
+			Arguments.of("name 41자 초과", "가".repeat(41), "카테고리 이름은 40자 이하여야 합니다."));
+	}
+
+	@Test
+	@DisplayName("카테고리 삭제 성공 - 200 OK")
+	void deleteCategorySuccess() throws Exception {
+		// given
+		Long categoryId = 100L;
+
+		// when & then
+		mockMvc.perform(delete("/api/v1/question-sets/categories/{categoryId}", categoryId))
+			.andExpectAll(
+				status().isOk(),
+				jsonPath("$.isSuccess").value(true));
+
+		verify(questionSetCategoryService).deleteCategory(categoryId, USER_ID);
+	}
+
+	@Test
+	@DisplayName("카테고리 복구 성공 - 200 OK 와 응답 바디 반환")
+	void restoreCategorySuccess() throws Exception {
+		// given
+		Long categoryId = 100L;
+		Long teamId = 1L;
+		String name = "알고리즘";
+
+		RestoreQuestionSetCategoryApiRequest request = new RestoreQuestionSetCategoryApiRequest(teamId, name);
+		QuestionSetCategoryDto dto = QuestionSetCategoryDto.builder()
+			.id(categoryId)
+			.teamId(teamId)
+			.name(name)
+			.build();
+
+		when(questionSetCategoryService.restoreCategory(teamId, name, USER_ID)).thenReturn(dto);
+
+		// when & then
+		mockMvc.perform(post("/api/v1/question-sets/categories/restore")
+				.contentType(MediaType.APPLICATION_JSON)
+				.content(objectMapper.writeValueAsString(request)))
+			.andExpectAll(
+				status().isOk(),
+				jsonPath("$.data.id").value(categoryId),
+				jsonPath("$.data.teamId").value(teamId),
+				jsonPath("$.data.name").value(name));
+
+		verify(questionSetCategoryService).restoreCategory(teamId, name, USER_ID);
+	}
+
+	@ParameterizedTest(name = "{index} - {0}")
+	@DisplayName("카테고리 복구 실패 - 유효하지 않은 요청 (400)")
+	@MethodSource("invalidRestoreCategoryRequests")
+	void restoreCategoryInvalidRequest(String testName, Long teamId, String name, String expectedReason)
+		throws Exception {
+		// given
+		RestoreQuestionSetCategoryApiRequest request = new RestoreQuestionSetCategoryApiRequest(teamId, name);
+
+		// when & then
+		mockMvc.perform(post("/api/v1/question-sets/categories/restore")
+				.contentType(MediaType.APPLICATION_JSON)
+				.content(objectMapper.writeValueAsString(request)))
+			.andExpectAll(
+				status().isBadRequest(),
+				jsonPath("$.isSuccess").value(false),
+				jsonPath("$.reasons[*]").value(org.hamcrest.Matchers.hasItem(expectedReason)));
+
+		verify(questionSetCategoryService, never()).restoreCategory(any(), any(), any());
+	}
+
+	static Stream<Arguments> invalidRestoreCategoryRequests() {
+		return Stream.of(
+			Arguments.of("teamId null", null, "알고리즘", "팀 정보는 필수 입니다."),
+			Arguments.of("name 빈 문자열", 1L, "", "카테고리 이름을 입력해주세요."),
+			Arguments.of("name null", 1L, null, "카테고리 이름을 입력해주세요."),
+			Arguments.of("name 공백", 1L, "   ", "카테고리 이름을 입력해주세요."),
+			Arguments.of("name 41자 초과", 1L, "가".repeat(41), "카테고리 이름은 40자 이하여야 합니다."));
+	}
+
+	@Test
+	@DisplayName("카테고리 목록 조회 성공 - 200 OK 와 응답 바디 반환")
+	void getCategoriesSuccess() throws Exception {
+		// given
+		Long teamId = 1L;
+
+		QuestionSetCategoryDto first = QuestionSetCategoryDto.builder()
+			.id(100L)
+			.teamId(teamId)
+			.name("알고리즘")
+			.build();
+		QuestionSetCategoryDto second = QuestionSetCategoryDto.builder()
+			.id(101L)
+			.teamId(teamId)
+			.name("자료구조")
+			.build();
+
+		when(questionSetCategoryService.getCategories(teamId, USER_ID)).thenReturn(List.of(first, second));
+
+		// when & then
+		mockMvc.perform(get("/api/v1/question-sets/categories")
+				.param("teamId", String.valueOf(teamId)))
+			.andExpectAll(
+				status().isOk(),
+				jsonPath("$.data.length()").value(2),
+				jsonPath("$.data[0].id").value(100L),
+				jsonPath("$.data[0].teamId").value(teamId),
+				jsonPath("$.data[0].name").value("알고리즘"),
+				jsonPath("$.data[1].id").value(101L),
+				jsonPath("$.data[1].name").value("자료구조"));
+
+		verify(questionSetCategoryService).getCategories(teamId, USER_ID);
+	}
+
+	@Test
+	@DisplayName("카테고리 검색 성공 - 200 OK 와 응답 바디 반환")
+	void searchCategoriesSuccess() throws Exception {
+		// given
+		Long teamId = 1L;
+		String keyword = "알고";
+
+		QuestionSetCategoryDto category = QuestionSetCategoryDto.builder()
+			.id(100L)
+			.teamId(teamId)
+			.name("알고리즘")
+			.build();
+
+		when(questionSetCategoryService.searchCategories(teamId, USER_ID, keyword)).thenReturn(List.of(category));
+
+		// when & then
+		mockMvc.perform(get("/api/v1/question-sets/categories/search")
+				.param("teamId", String.valueOf(teamId))
+				.param("keyword", keyword))
+			.andExpectAll(
+				status().isOk(),
+				jsonPath("$.data.length()").value(1),
+				jsonPath("$.data[0].id").value(100L),
+				jsonPath("$.data[0].teamId").value(teamId),
+				jsonPath("$.data[0].name").value("알고리즘"));
+
+		verify(questionSetCategoryService).searchCategories(teamId, USER_ID, keyword);
+	}
+}

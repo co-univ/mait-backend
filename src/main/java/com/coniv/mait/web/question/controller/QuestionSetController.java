@@ -21,6 +21,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import com.coniv.mait.domain.question.enums.AiRequestStatus;
 import com.coniv.mait.domain.question.enums.DeliveryMode;
+import com.coniv.mait.domain.question.service.QuestionSetCategoryService;
 import com.coniv.mait.domain.question.service.QuestionSetDeleteService;
 import com.coniv.mait.domain.question.service.QuestionSetMaterialService;
 import com.coniv.mait.domain.question.service.QuestionSetService;
@@ -62,13 +63,16 @@ public class QuestionSetController {
 
 	private final QuestionSetMaterialService questionSetMaterialService;
 
+	private final QuestionSetCategoryService questionSetCategoryService;
+
 	@Operation(summary = "문제 셋 생성 API", description = "새로운 문제 셋을 생성합니다.")
 	@PostMapping
 	public ResponseEntity<ApiResponse<CreateQuestionSetApiResponse>> createQuestionSet(
 		@AuthenticationPrincipal MaitUser user,
 		@Valid @RequestBody CreateQuestionSetApiRequest request) {
 		QuestionSetDto questionSetDto = questionSetService.createQuestionSet(request.toQuestionSetDto(),
-			request.counts(), request.materials(), request.instruction(), request.difficulty(), user.id());
+			request.counts(), request.materials(), request.instruction(), request.difficulty(), request.categoryIds(),
+			user.id());
 		return ResponseEntity.status(HttpStatus.OK)
 			.body(ApiResponse.ok(CreateQuestionSetApiResponse.from(questionSetDto)));
 	}
@@ -122,11 +126,29 @@ public class QuestionSetController {
 				request.solveMode(), request.difficulty(), request.visibility()))));
 	}
 
+	@Operation(summary = "문제 셋에 카테고리 단건 매핑 추가 API",
+		description = "문제 셋에 카테고리 1개를 매핑한다. 이미 매핑된 경우 멱등 처리.")
+	@PostMapping("/{questionSetId}/categories/{categoryId}")
+	public ResponseEntity<ApiResponse<Void>> attachCategory(@PathVariable Long questionSetId,
+		@PathVariable Long categoryId, @AuthenticationPrincipal MaitUser user) {
+		questionSetCategoryService.attachCategory(questionSetId, categoryId, user.id());
+		return ResponseEntity.ok(ApiResponse.noContent());
+	}
+
+	@Operation(summary = "문제 셋에서 카테고리 단건 매핑 제거 API",
+		description = "문제 셋에서 카테고리 1개의 매핑을 제거한다. 이미 매핑되어 있지 않으면 멱등 처리.")
+	@DeleteMapping("/{questionSetId}/categories/{categoryId}")
+	public ResponseEntity<ApiResponse<Void>> detachCategory(@PathVariable Long questionSetId,
+		@PathVariable Long categoryId, @AuthenticationPrincipal MaitUser user) {
+		questionSetCategoryService.detachCategory(questionSetId, categoryId, user.id());
+		return ResponseEntity.ok(ApiResponse.noContent());
+	}
+
 	@Operation(summary = "문제 셋 제목 단건 수정 API", description = "연필 버튼 클릭을 통한 문제 셋 단건 수정")
 	@PatchMapping("/{questionSetId}")
 	public ResponseEntity<ApiResponse<Void>> updateQuestionSet(
 		@RequestBody @Valid UpdateQuestionSetFieldApiRequest request,
-		@PathVariable("questionSetId") Long questionSetId) {
+		@PathVariable Long questionSetId) {
 		questionSetService.updateQuestionSetField(questionSetId, request.title());
 		return ResponseEntity.ok(ApiResponse.noContent());
 	}
@@ -145,7 +167,7 @@ public class QuestionSetController {
 	@Operation(summary = "AI 문제 제작 상태 조회", description = "AI 문제 제작 상태를 조회합니다.")
 	@GetMapping("/{questionSetId}/ai-status")
 	public ResponseEntity<ApiResponse<AiRequestStatusApiResponse>> getAiRequestStatus(
-		@PathVariable("questionSetId") Long questionSetId) {
+		@PathVariable Long questionSetId) {
 		AiRequestStatus status = questionSetService.getAiRequestStatus(questionSetId);
 		return ResponseEntity.ok(ApiResponse.ok(AiRequestStatusApiResponse.of(questionSetId, status)));
 	}

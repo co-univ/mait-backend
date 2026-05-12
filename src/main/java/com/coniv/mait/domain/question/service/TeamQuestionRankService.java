@@ -48,7 +48,7 @@ public class TeamQuestionRankService {
 	public List<RankDto> getTeamQuestionScorerRank(final Long teamId) {
 		TeamEntity team = teamReader.getTeam(teamId);
 
-		List<QuestionEntity> completedQuestions = questionReader.getCompletedQuestionsInTeam(team);
+		List<QuestionEntity> completedQuestions = questionReader.getCompletedLiveQuestionsInTeam(team);
 
 		if (completedQuestions.isEmpty()) {
 			return List.of();
@@ -79,7 +79,7 @@ public class TeamQuestionRankService {
 	public List<RankDto> getTeamQuestionCorrectAnswerRank(final Long teamId) {
 		TeamEntity team = teamReader.getTeam(teamId);
 
-		List<QuestionEntity> completedQuestions = questionReader.getCompletedQuestionsInTeam(team);
+		List<QuestionEntity> completedQuestions = questionReader.getCompletedLiveQuestionsInTeam(team);
 
 		if (completedQuestions.isEmpty()) {
 			return List.of();

@@ -14,7 +14,6 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import com.coniv.mait.domain.question.constant.QuestionConstant;
 import com.coniv.mait.domain.question.entity.FillBlankQuestionEntity;
 import com.coniv.mait.domain.question.entity.MultipleQuestionEntity;
 import com.coniv.mait.domain.question.entity.OrderingQuestionEntity;
@@ -23,6 +22,8 @@ import com.coniv.mait.domain.question.entity.QuestionSetEntity;
 import com.coniv.mait.domain.question.entity.ShortQuestionEntity;
 import com.coniv.mait.domain.question.enums.DeliveryMode;
 import com.coniv.mait.domain.question.enums.QuestionType;
+import com.coniv.mait.domain.question.exception.QuestionSetStatusException;
+import com.coniv.mait.domain.question.exception.code.QuestionSetStatusExceptionCode;
 import com.coniv.mait.domain.question.external.AiCreateApiService;
 import com.coniv.mait.domain.question.repository.AiRequestStatusManager;
 import com.coniv.mait.domain.question.repository.MultipleChoiceEntityRepository;
@@ -404,12 +405,40 @@ class QuestionServiceTest {
 		ShortQuestionDto expectedDto = mock(ShortQuestionDto.class);
 		when(shortQuestionFactory.getQuestion(shortQuestion, false)).thenReturn(expectedDto);
 		when(questionEntityRepository.findById(questionId)).thenReturn(Optional.of(shortQuestion));
+		when(questionSetEntity.isOnLive()).thenReturn(true);
 
 		// when - LIVE_TIME 모드 (답안 숨김)
 		questionService.getQuestion(questionSetId, questionId, DeliveryMode.LIVE_TIME);
 
 		// then - answerVisible = false로 호출되어야 함
 		verify(shortQuestionFactory).getQuestion(shortQuestion, false);
+	}
+
+	@Test
+	@DisplayName("진행 중이지 않은 실시간 문제 셋의 문제 조회 시 예외 발생")
+	void getQuestion_DeliveryMode_LiveTime_NotLive() {
+		// given
+		final Long questionSetId = 1L;
+		final Long questionId = 1L;
+
+		QuestionSetEntity questionSetEntity = mock(QuestionSetEntity.class);
+		when(questionSetEntity.getId()).thenReturn(questionSetId);
+
+		ShortQuestionEntity shortQuestion = mock(ShortQuestionEntity.class);
+		when(shortQuestion.getQuestionSet()).thenReturn(questionSetEntity);
+
+		when(questionEntityRepository.findById(questionId)).thenReturn(Optional.of(shortQuestion));
+		when(questionSetEntity.isOnLive()).thenReturn(false);
+
+		// when
+		QuestionSetStatusException questionSetStatusException = assertThrows(QuestionSetStatusException.class,
+			() -> questionService.getQuestion(questionSetId, questionId, DeliveryMode.LIVE_TIME));
+
+		// then
+		assertEquals(QuestionSetStatusExceptionCode.ONLY_LIVE_TIME, questionSetStatusException.getExceptionCode());
+		assertEquals("실시간 상태의 문제 셋만 처리가 가능합니다.", questionSetStatusException.getMessage());
+		verify(questionEntityRepository).findById(questionId);
+		verify(shortQuestionFactory, never()).getQuestion(any(), anyBoolean());
 	}
 
 	@Test

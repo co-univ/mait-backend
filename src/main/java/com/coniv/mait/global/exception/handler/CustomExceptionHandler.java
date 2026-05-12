@@ -6,6 +6,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
+import com.coniv.mait.domain.question.exception.QuestionSetCategoryException;
 import com.coniv.mait.domain.question.exception.QuestionSetStatusException;
 import com.coniv.mait.domain.question.exception.QuestionStatusException;
 import com.coniv.mait.domain.solve.exception.QuestionSolvingException;
@@ -150,5 +151,12 @@ public class CustomExceptionHandler {
 		HttpServletRequest request) {
 		return ResponseEntity.status(exception.getQuestionExceptionCode().getStatus())
 			.body(ErrorResponse.from(exception.getQuestionExceptionCode()));
+	}
+
+	@ExceptionHandler(QuestionSetCategoryException.class)
+	public ResponseEntity<ErrorResponse> handleQuestionSetCategoryException(QuestionSetCategoryException exception,
+		HttpServletRequest request) {
+		return ResponseEntity.status(exception.getExceptionCode().getStatus())
+			.body(ErrorResponse.from(exception.getExceptionCode()));
 	}
 }
