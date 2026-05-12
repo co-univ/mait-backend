@@ -97,7 +97,7 @@ class TeamQuestionRankServiceTest {
 			when(q2.getId()).thenReturn(2L);
 
 			when(teamReader.getTeam(teamId)).thenReturn(team);
-			when(questionReader.getCompletedQuestionsInTeam(team)).thenReturn(List.of(q1, q2));
+			when(questionReader.getCompletedLiveQuestionsInTeam(team)).thenReturn(List.of(q1, q2));
 
 			QuestionScorerEntity s1 = mock(QuestionScorerEntity.class);
 			QuestionScorerEntity s2 = mock(QuestionScorerEntity.class);
@@ -137,7 +137,7 @@ class TeamQuestionRankServiceTest {
 			TeamEntity team = mock(TeamEntity.class);
 
 			when(teamReader.getTeam(teamId)).thenReturn(team);
-			when(questionReader.getCompletedQuestionsInTeam(team)).thenReturn(List.of());
+			when(questionReader.getCompletedLiveQuestionsInTeam(team)).thenReturn(List.of());
 
 			// when
 			List<RankDto> result = teamQuestionRankService.getTeamQuestionScorerRank(teamId);
@@ -163,7 +163,7 @@ class TeamQuestionRankServiceTest {
 			when(q3.getId()).thenReturn(3L);
 
 			when(teamReader.getTeam(teamId)).thenReturn(team);
-			when(questionReader.getCompletedQuestionsInTeam(team)).thenReturn(List.of(q1, q2, q3));
+			when(questionReader.getCompletedLiveQuestionsInTeam(team)).thenReturn(List.of(q1, q2, q3));
 
 			// user1: 3점, user2: 3점, user3: 1점
 			QuestionScorerEntity s1 = mock(QuestionScorerEntity.class);
@@ -217,7 +217,7 @@ class TeamQuestionRankServiceTest {
 			when(q1.getId()).thenReturn(1L);
 
 			when(teamReader.getTeam(teamId)).thenReturn(team);
-			when(questionReader.getCompletedQuestionsInTeam(team)).thenReturn(List.of(q1));
+			when(questionReader.getCompletedLiveQuestionsInTeam(team)).thenReturn(List.of(q1));
 
 			// user1,2,3: 3점 / user4,5: 2점 / user6: 1점
 			List<QuestionScorerEntity> scorers = new java.util.ArrayList<>();
@@ -299,7 +299,7 @@ class TeamQuestionRankServiceTest {
 			when(q2.getId()).thenReturn(2L);
 
 			when(teamReader.getTeam(teamId)).thenReturn(team);
-			when(questionReader.getCompletedQuestionsInTeam(team)).thenReturn(List.of(q1, q2));
+			when(questionReader.getCompletedLiveQuestionsInTeam(team)).thenReturn(List.of(q1, q2));
 
 			AnswerSubmitRecordEntity a1 = mockRecord(1L, 1L, true);
 			AnswerSubmitRecordEntity a2 = mockRecord(1L, 2L, true);
@@ -336,7 +336,7 @@ class TeamQuestionRankServiceTest {
 			when(q2.getId()).thenReturn(2L);
 
 			when(teamReader.getTeam(teamId)).thenReturn(team);
-			when(questionReader.getCompletedQuestionsInTeam(team)).thenReturn(List.of(q1, q2));
+			when(questionReader.getCompletedLiveQuestionsInTeam(team)).thenReturn(List.of(q1, q2));
 
 			List<AnswerSubmitRecordEntity> records = List.of(
 				mockRecord(1L, 1L, true),
@@ -373,7 +373,7 @@ class TeamQuestionRankServiceTest {
 			TeamEntity team = mock(TeamEntity.class);
 
 			when(teamReader.getTeam(teamId)).thenReturn(team);
-			when(questionReader.getCompletedQuestionsInTeam(team)).thenReturn(List.of());
+			when(questionReader.getCompletedLiveQuestionsInTeam(team)).thenReturn(List.of());
 
 			// when
 			List<RankDto> result = teamQuestionRankService.getTeamQuestionCorrectAnswerRank(teamId);
@@ -397,7 +397,7 @@ class TeamQuestionRankServiceTest {
 			when(q2.getId()).thenReturn(2L);
 
 			when(teamReader.getTeam(teamId)).thenReturn(team);
-			when(questionReader.getCompletedQuestionsInTeam(team)).thenReturn(List.of(q1, q2));
+			when(questionReader.getCompletedLiveQuestionsInTeam(team)).thenReturn(List.of(q1, q2));
 
 			// user1: 2개, user2: 2개, user3: 1개
 			AnswerSubmitRecordEntity a1 = mockRecord(1L, 1L, true);
@@ -448,7 +448,7 @@ class TeamQuestionRankServiceTest {
 			}
 
 			when(teamReader.getTeam(teamId)).thenReturn(team);
-			when(questionReader.getCompletedQuestionsInTeam(team)).thenReturn(questions);
+			when(questionReader.getCompletedLiveQuestionsInTeam(team)).thenReturn(questions);
 
 			// 1등(10개): user1~3, 2등(8개): user4~8, 3등(5개): user9~14
 			List<AnswerSubmitRecordEntity> records = new java.util.ArrayList<>();
@@ -508,7 +508,7 @@ class TeamQuestionRankServiceTest {
 			when(q1.getId()).thenReturn(1L);
 
 			when(teamReader.getTeam(teamId)).thenReturn(team);
-			when(questionReader.getCompletedQuestionsInTeam(team)).thenReturn(List.of(q1));
+			when(questionReader.getCompletedLiveQuestionsInTeam(team)).thenReturn(List.of(q1));
 
 			AnswerSubmitRecordEntity a1 = mockRecord(1L, 1L, true);
 			AnswerSubmitRecordEntity a2 = mockRecord(2L, 1L, true);

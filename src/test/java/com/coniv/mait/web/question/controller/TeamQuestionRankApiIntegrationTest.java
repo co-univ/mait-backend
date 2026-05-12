@@ -329,4 +329,74 @@ public class TeamQuestionRankApiIntegrationTest extends BaseIntegrationTest {
 				jsonPath("$.isSuccess").value(true),
 				jsonPath("$.data.containsUserRank").value(true));
 	}
+
+	@Test
+	@DisplayName("팀 정답 랭킹 조회 API 통합 테스트 - 학습모드 문제셋 제외")
+	void getTeamQuestionCorrectRank_ExcludeStudyMode() throws Exception {
+		// given
+		UserEntity currentUser = userEntityRepository.findByEmail("user@example.com").orElseThrow();
+
+		TeamEntity team = teamEntityRepository.save(
+			TeamEntity.builder().name("랭킹 테스트 팀").creatorId(currentUser.getId()).build());
+		teamUserEntityRepository.save(TeamUserEntity.createPlayerUser(currentUser, team));
+
+		QuestionSetEntity liveQuestionSet = questionSetEntityRepository.save(
+			QuestionSetEntity.builder()
+				.subject("실시간 문제집")
+				.teamId(team.getId())
+				.solveMode(QuestionSetSolveMode.LIVE_TIME)
+				.status(QuestionSetStatus.AFTER)
+				.build());
+
+		MultipleQuestionEntity liveQuestion = questionEntityRepository.save(
+			MultipleQuestionEntity.builder()
+				.questionSet(liveQuestionSet)
+				.content("실시간 문제")
+				.number(1L)
+				.lexoRank("a")
+				.build());
+
+		answerSubmitRecordEntityRepository.save(AnswerSubmitRecordEntity.builder()
+			.userId(currentUser.getId())
+			.questionId(liveQuestion.getId())
+			.submitOrder(1L)
+			.isCorrect(true)
+			.submittedAnswer("{}")
+			.build());
+
+		QuestionSetEntity studyQuestionSet = questionSetEntityRepository.save(
+			QuestionSetEntity.builder()
+				.subject("학습 문제집")
+				.teamId(team.getId())
+				.solveMode(QuestionSetSolveMode.STUDY)
+				.status(QuestionSetStatus.AFTER)
+				.build());
+
+		MultipleQuestionEntity studyQuestion = questionEntityRepository.save(
+			MultipleQuestionEntity.builder()
+				.questionSet(studyQuestionSet)
+				.content("학습 문제")
+				.number(1L)
+				.lexoRank("a")
+				.build());
+
+		answerSubmitRecordEntityRepository.save(AnswerSubmitRecordEntity.builder()
+			.userId(currentUser.getId())
+			.questionId(studyQuestion.getId())
+			.submitOrder(2L)
+			.isCorrect(true)
+			.submittedAnswer("{}")
+			.build());
+
+		// when & then
+		mockMvc.perform(get("/api/v1/teams/{teamId}/question-ranks", team.getId())
+				.param("type", "CORRECT")
+				.accept(MediaType.APPLICATION_JSON))
+			.andExpectAll(
+				status().isOk(),
+				jsonPath("$.isSuccess").value(true),
+				jsonPath("$.data.teamRankings[0].count").value(1),
+				jsonPath("$.data.userRank.count").value(1)
+			);
+	}
 }
