@@ -21,6 +21,8 @@ import com.coniv.mait.domain.question.enums.AiRequestStatus;
 import com.coniv.mait.domain.question.enums.DeliveryMode;
 import com.coniv.mait.domain.question.enums.QuestionStatusType;
 import com.coniv.mait.domain.question.enums.QuestionType;
+import com.coniv.mait.domain.question.exception.QuestionSetStatusException;
+import com.coniv.mait.domain.question.exception.code.QuestionSetStatusExceptionCode;
 import com.coniv.mait.domain.question.external.AiCreateApiService;
 import com.coniv.mait.domain.question.external.dto.AiCreateRequest;
 import com.coniv.mait.domain.question.external.dto.AiCreateResponse;
@@ -127,12 +129,17 @@ public class QuestionService {
 		}
 	}
 
+	@Transactional(readOnly = true)
 	public QuestionDto getQuestion(final Long questionSetId, final Long questionId, final DeliveryMode mode) {
 		QuestionEntity question = questionEntityRepository.findById(questionId)
 			.orElseThrow(() -> new EntityNotFoundException("Question not found with id: " + questionId));
 
 		if (!question.getQuestionSet().getId().equals(questionSetId)) {
 			throw new ResourceNotBelongException("해당 문제 셋에 속한 문제가 아닙니다.");
+		}
+
+		if (mode == DeliveryMode.LIVE_TIME && !question.getQuestionSet().isOnLive()) {
+			throw new QuestionSetStatusException(QuestionSetStatusExceptionCode.ONLY_LIVE_TIME);
 		}
 
 		boolean answerVisible = mode == null || mode.isAnswerVisible();
