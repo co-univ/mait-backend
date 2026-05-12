@@ -31,6 +31,7 @@ import com.coniv.mait.global.filter.JwtAuthorizationFilter;
 import com.coniv.mait.global.interceptor.idempotency.IdempotencyInterceptor;
 import com.coniv.mait.web.question.dto.CreateQuestionSetCategoryApiRequest;
 import com.coniv.mait.web.question.dto.RestoreQuestionSetCategoryApiRequest;
+import com.coniv.mait.web.question.dto.UpdateQuestionSetCategoryApiRequest;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 @WebMvcTest(controllers = QuestionSetCategoryController.class)
@@ -127,6 +128,64 @@ class QuestionSetCategoryControllerTest {
 			Arguments.of("name null", 1L, null, "카테고리 이름을 입력해주세요."),
 			Arguments.of("name 공백", 1L, "   ", "카테고리 이름을 입력해주세요."),
 			Arguments.of("name 41자 초과", 1L, "가".repeat(41), "카테고리 이름은 40자 이하여야 합니다."));
+	}
+
+	@Test
+	@DisplayName("카테고리 이름 수정 성공 - 200 OK 와 응답 바디 반환")
+	void updateCategoryNameSuccess() throws Exception {
+		// given
+		Long categoryId = 100L;
+		Long teamId = 1L;
+		String name = "자료구조";
+
+		UpdateQuestionSetCategoryApiRequest request = new UpdateQuestionSetCategoryApiRequest(name);
+		QuestionSetCategoryDto dto = QuestionSetCategoryDto.builder()
+			.id(categoryId)
+			.teamId(teamId)
+			.name(name)
+			.build();
+
+		when(questionSetCategoryService.updateCategoryName(categoryId, name, USER_ID)).thenReturn(dto);
+
+		// when & then
+		mockMvc.perform(patch("/api/v1/question-sets/categories/{categoryId}", categoryId)
+				.contentType(MediaType.APPLICATION_JSON)
+				.content(objectMapper.writeValueAsString(request)))
+			.andExpectAll(
+				status().isOk(),
+				jsonPath("$.data.id").value(categoryId),
+				jsonPath("$.data.teamId").value(teamId),
+				jsonPath("$.data.name").value(name));
+
+		verify(questionSetCategoryService).updateCategoryName(categoryId, name, USER_ID);
+	}
+
+	@ParameterizedTest(name = "{index} - {0}")
+	@DisplayName("카테고리 이름 수정 실패 - 유효하지 않은 요청 (400)")
+	@MethodSource("invalidUpdateCategoryRequests")
+	void updateCategoryNameInvalidRequest(String testName, String name, String expectedReason) throws Exception {
+		// given
+		Long categoryId = 100L;
+		UpdateQuestionSetCategoryApiRequest request = new UpdateQuestionSetCategoryApiRequest(name);
+
+		// when & then
+		mockMvc.perform(patch("/api/v1/question-sets/categories/{categoryId}", categoryId)
+				.contentType(MediaType.APPLICATION_JSON)
+				.content(objectMapper.writeValueAsString(request)))
+			.andExpectAll(
+				status().isBadRequest(),
+				jsonPath("$.isSuccess").value(false),
+				jsonPath("$.reasons[*]").value(org.hamcrest.Matchers.hasItem(expectedReason)));
+
+		verify(questionSetCategoryService, never()).updateCategoryName(any(), any(), any());
+	}
+
+	static Stream<Arguments> invalidUpdateCategoryRequests() {
+		return Stream.of(
+			Arguments.of("name 빈 문자열", "", "카테고리 이름을 입력해주세요."),
+			Arguments.of("name null", null, "카테고리 이름을 입력해주세요."),
+			Arguments.of("name 공백", "   ", "카테고리 이름을 입력해주세요."),
+			Arguments.of("name 41자 초과", "가".repeat(41), "카테고리 이름은 40자 이하여야 합니다."));
 	}
 
 	@Test

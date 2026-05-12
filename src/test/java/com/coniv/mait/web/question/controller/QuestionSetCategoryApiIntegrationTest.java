@@ -25,6 +25,7 @@ import com.coniv.mait.login.WithCustomUser;
 import com.coniv.mait.web.integration.BaseIntegrationTest;
 import com.coniv.mait.web.question.dto.CreateQuestionSetCategoryApiRequest;
 import com.coniv.mait.web.question.dto.RestoreQuestionSetCategoryApiRequest;
+import com.coniv.mait.web.question.dto.UpdateQuestionSetCategoryApiRequest;
 
 @WithCustomUser
 public class QuestionSetCategoryApiIntegrationTest extends BaseIntegrationTest {
@@ -68,6 +69,80 @@ public class QuestionSetCategoryApiIntegrationTest extends BaseIntegrationTest {
 				jsonPath("$.data.id").exists());
 
 		assertThat(questionSetCategoryEntityRepository.count()).isEqualTo(1);
+	}
+
+	@Test
+	@DisplayName("카테고리 이름 수정 API 성공 테스트 - 카테고리 ID 유지, 이름만 변경")
+	void updateCategoryNameApiSuccess() throws Exception {
+		// given
+		UserEntity currentUser = userEntityRepository.findByEmail("user@example.com").orElseThrow();
+		TeamEntity team = teamEntityRepository.save(TeamEntity.builder().name("코니브").creatorId(1L).build());
+		teamUserEntityRepository.save(TeamUserEntity.createTeamUser(currentUser, team, TeamUserRole.MAKER));
+
+		QuestionSetCategoryEntity category = questionSetCategoryEntityRepository.save(
+			QuestionSetCategoryEntity.of(team.getId(), "알고리즘"));
+		UpdateQuestionSetCategoryApiRequest request = new UpdateQuestionSetCategoryApiRequest("자료구조");
+
+		// when & then
+		mockMvc.perform(patch("/api/v1/question-sets/categories/{categoryId}", category.getId())
+				.contentType(MediaType.APPLICATION_JSON)
+				.content(objectMapper.writeValueAsString(request)))
+			.andExpectAll(
+				status().isOk(),
+				jsonPath("$.data.id").value(category.getId()),
+				jsonPath("$.data.teamId").value(team.getId()),
+				jsonPath("$.data.name").value("자료구조"));
+
+		QuestionSetCategoryEntity updated = questionSetCategoryEntityRepository.findById(category.getId())
+			.orElseThrow();
+		assertThat(updated.getName()).isEqualTo("자료구조");
+	}
+
+	@Test
+	@DisplayName("카테고리 이름 수정 API 실패 테스트 - 활성 카테고리 이름 중복")
+	void updateCategoryNameApiFailDuplicateActiveName() throws Exception {
+		// given
+		UserEntity currentUser = userEntityRepository.findByEmail("user@example.com").orElseThrow();
+		TeamEntity team = teamEntityRepository.save(TeamEntity.builder().name("코니브").creatorId(1L).build());
+		teamUserEntityRepository.save(TeamUserEntity.createTeamUser(currentUser, team, TeamUserRole.MAKER));
+
+		QuestionSetCategoryEntity category = questionSetCategoryEntityRepository.save(
+			QuestionSetCategoryEntity.of(team.getId(), "알고리즘"));
+		questionSetCategoryEntityRepository.save(QuestionSetCategoryEntity.of(team.getId(), "자료구조"));
+		UpdateQuestionSetCategoryApiRequest request = new UpdateQuestionSetCategoryApiRequest("자료구조");
+
+		// when & then
+		mockMvc.perform(patch("/api/v1/question-sets/categories/{categoryId}", category.getId())
+				.contentType(MediaType.APPLICATION_JSON)
+				.content(objectMapper.writeValueAsString(request)))
+			.andExpectAll(
+				status().isConflict(),
+				jsonPath("$.code").value("QSC-001"));
+	}
+
+	@Test
+	@DisplayName("카테고리 이름 수정 API 실패 테스트 - 삭제된 카테고리 이름 중복")
+	void updateCategoryNameApiFailDuplicateDeletedName() throws Exception {
+		// given
+		UserEntity currentUser = userEntityRepository.findByEmail("user@example.com").orElseThrow();
+		TeamEntity team = teamEntityRepository.save(TeamEntity.builder().name("코니브").creatorId(1L).build());
+		teamUserEntityRepository.save(TeamUserEntity.createTeamUser(currentUser, team, TeamUserRole.MAKER));
+
+		QuestionSetCategoryEntity category = questionSetCategoryEntityRepository.save(
+			QuestionSetCategoryEntity.of(team.getId(), "알고리즘"));
+		QuestionSetCategoryEntity deleted = questionSetCategoryEntityRepository.save(
+			QuestionSetCategoryEntity.of(team.getId(), "자료구조"));
+		deleted.updateDeletedAt(LocalDateTime.now());
+		questionSetCategoryEntityRepository.save(deleted);
+		UpdateQuestionSetCategoryApiRequest request = new UpdateQuestionSetCategoryApiRequest("자료구조");
+
+		// when & then
+		mockMvc.perform(patch("/api/v1/question-sets/categories/{categoryId}", category.getId())
+				.contentType(MediaType.APPLICATION_JSON)
+				.content(objectMapper.writeValueAsString(request)))
+			.andExpectAll(
+				status().isConflict(),
+				jsonPath("$.code").value("QSC-002"));
 	}
 
 	@Test

@@ -13,6 +13,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.test.util.ReflectionTestUtils;
 
 import com.coniv.mait.domain.question.entity.QuestionSetCategoryEntity;
 import com.coniv.mait.domain.question.entity.QuestionSetCategoryLinkEntity;
@@ -58,7 +59,7 @@ class QuestionSetCategoryServiceTest {
 			.thenReturn(false);
 		when(questionSetCategoryEntityRepository.existsByTeamIdAndNameAndDeletedAtIsNotNull(teamId, name))
 			.thenReturn(false);
-		when(questionSetCategoryEntityRepository.save(any(QuestionSetCategoryEntity.class)))
+		when(questionSetCategoryEntityRepository.saveAndFlush(any(QuestionSetCategoryEntity.class)))
 			.thenAnswer(invocation -> invocation.getArgument(0));
 
 		// when
@@ -69,7 +70,7 @@ class QuestionSetCategoryServiceTest {
 		assertThat(result.getName()).isEqualTo(name);
 
 		verify(teamRoleValidator).checkHasCreateQuestionSetAuthority(teamId, userId);
-		verify(questionSetCategoryEntityRepository).save(any(QuestionSetCategoryEntity.class));
+		verify(questionSetCategoryEntityRepository).saveAndFlush(any(QuestionSetCategoryEntity.class));
 	}
 
 	@Test
@@ -89,7 +90,7 @@ class QuestionSetCategoryServiceTest {
 			.extracting("exceptionCode")
 			.isEqualTo(QuestionSetCategoryExceptionCode.DUPLICATE_NAME);
 
-		verify(questionSetCategoryEntityRepository, never()).save(any());
+		verify(questionSetCategoryEntityRepository, never()).saveAndFlush(any());
 	}
 
 	@Test
@@ -111,7 +112,7 @@ class QuestionSetCategoryServiceTest {
 			.extracting("exceptionCode")
 			.isEqualTo(QuestionSetCategoryExceptionCode.DUPLICATE_NAME_DELETED);
 
-		verify(questionSetCategoryEntityRepository, never()).save(any());
+		verify(questionSetCategoryEntityRepository, never()).saveAndFlush(any());
 	}
 
 	@Test
@@ -131,7 +132,7 @@ class QuestionSetCategoryServiceTest {
 
 		verify(questionSetCategoryEntityRepository, never())
 			.existsByTeamIdAndNameAndDeletedAtIsNull(anyLong(), anyString());
-		verify(questionSetCategoryEntityRepository, never()).save(any());
+		verify(questionSetCategoryEntityRepository, never()).saveAndFlush(any());
 	}
 
 	@Test
@@ -216,6 +217,138 @@ class QuestionSetCategoryServiceTest {
 
 		verify(questionSetCategoryEntityRepository, never())
 			.findAllByTeamIdAndNameContainingAndDeletedAtIsNullOrderByCreatedAtAsc(anyLong(), anyString());
+	}
+
+	@Test
+	@DisplayName("카테고리 이름 수정 성공 - 활성 카테고리 이름만 변경")
+	void updateCategoryName_success() {
+		// given
+		Long categoryId = 100L;
+		Long teamId = 1L;
+		Long userId = 10L;
+		String newName = "자료구조";
+
+		QuestionSetCategoryEntity category = category(categoryId, teamId, "알고리즘");
+		when(questionSetCategoryEntityRepository.findByIdAndDeletedAtIsNull(categoryId))
+			.thenReturn(Optional.of(category));
+		when(questionSetCategoryEntityRepository.existsByTeamIdAndNameAndDeletedAtIsNull(teamId, newName))
+			.thenReturn(false);
+		when(questionSetCategoryEntityRepository.existsByTeamIdAndNameAndDeletedAtIsNotNull(teamId, newName))
+			.thenReturn(false);
+
+		// when
+		QuestionSetCategoryDto result = questionSetCategoryService.updateCategoryName(categoryId, newName, userId);
+
+		// then
+		assertThat(category.getName()).isEqualTo(newName);
+		assertThat(result.getId()).isEqualTo(categoryId);
+		assertThat(result.getTeamId()).isEqualTo(teamId);
+		assertThat(result.getName()).isEqualTo(newName);
+
+		verify(teamRoleValidator).checkHasCreateQuestionSetAuthority(teamId, userId);
+		verify(questionSetCategoryEntityRepository).saveAndFlush(category);
+	}
+
+	@Test
+	@DisplayName("카테고리 이름 수정 성공 - 기존 이름과 같으면 멱등 처리")
+	void updateCategoryName_sameName_idempotent() {
+		// given
+		Long categoryId = 100L;
+		Long teamId = 1L;
+		Long userId = 10L;
+		String name = "알고리즘";
+
+		QuestionSetCategoryEntity category = category(categoryId, teamId, name);
+		when(questionSetCategoryEntityRepository.findByIdAndDeletedAtIsNull(categoryId))
+			.thenReturn(Optional.of(category));
+
+		// when
+		QuestionSetCategoryDto result = questionSetCategoryService.updateCategoryName(categoryId, name, userId);
+
+		// then
+		assertThat(result.getName()).isEqualTo(name);
+		verify(questionSetCategoryEntityRepository, never())
+			.existsByTeamIdAndNameAndDeletedAtIsNull(anyLong(), anyString());
+		verify(questionSetCategoryEntityRepository, never())
+			.existsByTeamIdAndNameAndDeletedAtIsNotNull(anyLong(), anyString());
+		verify(questionSetCategoryEntityRepository, never()).saveAndFlush(any());
+	}
+
+	@Test
+	@DisplayName("카테고리 이름 수정 실패 - 동일 이름의 활성 카테고리가 이미 존재")
+	void updateCategoryName_fail_duplicateActiveName() {
+		// given
+		Long categoryId = 100L;
+		Long teamId = 1L;
+		Long userId = 10L;
+		String newName = "자료구조";
+
+		QuestionSetCategoryEntity category = category(categoryId, teamId, "알고리즘");
+		when(questionSetCategoryEntityRepository.findByIdAndDeletedAtIsNull(categoryId))
+			.thenReturn(Optional.of(category));
+		when(questionSetCategoryEntityRepository.existsByTeamIdAndNameAndDeletedAtIsNull(teamId, newName))
+			.thenReturn(true);
+
+		// when & then
+		assertThatThrownBy(() -> questionSetCategoryService.updateCategoryName(categoryId, newName, userId))
+			.isInstanceOf(QuestionSetCategoryException.class)
+			.extracting("exceptionCode")
+			.isEqualTo(QuestionSetCategoryExceptionCode.DUPLICATE_NAME);
+
+		assertThat(category.getName()).isEqualTo("알고리즘");
+		verify(questionSetCategoryEntityRepository, never())
+			.existsByTeamIdAndNameAndDeletedAtIsNotNull(anyLong(), anyString());
+		verify(questionSetCategoryEntityRepository, never()).saveAndFlush(any());
+	}
+
+	@Test
+	@DisplayName("카테고리 이름 수정 실패 - 동일 이름의 삭제된 카테고리 존재")
+	void updateCategoryName_fail_duplicateDeletedName() {
+		// given
+		Long categoryId = 100L;
+		Long teamId = 1L;
+		Long userId = 10L;
+		String newName = "자료구조";
+
+		QuestionSetCategoryEntity category = category(categoryId, teamId, "알고리즘");
+		when(questionSetCategoryEntityRepository.findByIdAndDeletedAtIsNull(categoryId))
+			.thenReturn(Optional.of(category));
+		when(questionSetCategoryEntityRepository.existsByTeamIdAndNameAndDeletedAtIsNull(teamId, newName))
+			.thenReturn(false);
+		when(questionSetCategoryEntityRepository.existsByTeamIdAndNameAndDeletedAtIsNotNull(teamId, newName))
+			.thenReturn(true);
+
+		// when & then
+		assertThatThrownBy(() -> questionSetCategoryService.updateCategoryName(categoryId, newName, userId))
+			.isInstanceOf(QuestionSetCategoryException.class)
+			.extracting("exceptionCode")
+			.isEqualTo(QuestionSetCategoryExceptionCode.DUPLICATE_NAME_DELETED);
+
+		assertThat(category.getName()).isEqualTo("알고리즘");
+		verify(questionSetCategoryEntityRepository, never()).saveAndFlush(any());
+	}
+
+	@Test
+	@DisplayName("카테고리 이름 수정 실패 - 삭제된 카테고리는 수정 불가")
+	void updateCategoryName_fail_deletedCategory() {
+		// given
+		Long categoryId = 100L;
+		Long teamId = 1L;
+		Long userId = 10L;
+
+		when(questionSetCategoryEntityRepository.findByIdAndDeletedAtIsNull(categoryId)).thenReturn(Optional.empty());
+
+		// when & then
+		assertThatThrownBy(() -> questionSetCategoryService.updateCategoryName(categoryId, "자료구조", userId))
+			.isInstanceOf(EntityNotFoundException.class)
+			.hasMessageContaining("해당 카테고리를 찾을 수 없습니다.");
+
+		verify(teamRoleValidator, never()).checkHasCreateQuestionSetAuthority(anyLong(), anyLong());
+		verify(questionSetCategoryEntityRepository, never())
+			.existsByTeamIdAndNameAndDeletedAtIsNull(anyLong(), anyString());
+		verify(questionSetCategoryEntityRepository, never())
+			.existsByTeamIdAndNameAndDeletedAtIsNotNull(anyLong(), anyString());
+		verify(questionSetCategoryEntityRepository, never()).saveAndFlush(any());
 	}
 
 	@Test
@@ -628,5 +761,11 @@ class QuestionSetCategoryServiceTest {
 		assertThat(result).hasSize(2);
 		assertThat(result).extracting(QuestionSetCategoryDto::isDeleted)
 			.containsExactlyInAnyOrder(false, true);
+	}
+
+	private static QuestionSetCategoryEntity category(final Long id, final Long teamId, final String name) {
+		QuestionSetCategoryEntity category = QuestionSetCategoryEntity.of(teamId, name);
+		ReflectionTestUtils.setField(category, "id", id);
+		return category;
 	}
 }

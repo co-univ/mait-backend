@@ -58,6 +58,10 @@ public class QuestionSetCategoryEntity extends BaseTimeEntity {
 		this.deletedAt = deletedAt;
 	}
 
+	public void updateName(final String name) {
+		this.name = name;
+	}
+
 	public void markDeleted() {
 		this.deletedAt = LocalDateTime.now();
 	}

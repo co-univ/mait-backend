@@ -5,6 +5,7 @@ import java.util.List;
 
 import org.hibernate.LazyInitializationException;
 import org.springframework.context.support.DefaultMessageSourceResolvable;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.HttpStatusCode;
@@ -71,6 +72,14 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
 			exception);
 		return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
 			.body(ErrorResponse.from(CommonExceptionCode.UNEXPECTED_EXCEPTION));
+	}
+
+	@ExceptionHandler(DataIntegrityViolationException.class)
+	public ResponseEntity<ErrorResponse> handleDataIntegrityViolationException(
+		DataIntegrityViolationException exception, HttpServletRequest request) {
+		log.info("DataIntegrityViolationException 발생: {}, 경로: {}", exception.getMessage(), request.getRequestURI());
+		return ResponseEntity.status(CommonExceptionCode.DATA_INTEGRITY_VIOLATION.getStatus())
+			.body(ErrorResponse.from(CommonExceptionCode.DATA_INTEGRITY_VIOLATION));
 	}
 
 	@ExceptionHandler(Exception.class)
