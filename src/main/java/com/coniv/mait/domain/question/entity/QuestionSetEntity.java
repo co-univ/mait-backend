@@ -170,14 +170,13 @@ public class QuestionSetEntity extends BaseTimeEntity {
 		return status == QuestionSetStatus.REVIEW;
 	}
 
-	public void restartLive() {
+	public void restart() {
 		if (status != QuestionSetStatus.AFTER) {
 			throw new QuestionSetStatusException(QuestionSetStatusExceptionCode.ONLY_AFTER);
 		}
-		if (solveMode != QuestionSetSolveMode.LIVE_TIME) {
-			throw new QuestionSetStatusException(QuestionSetStatusExceptionCode.ONLY_LIVE_TIME);
-		}
 		this.status = QuestionSetStatus.ONGOING;
+		this.startTime = LocalDateTime.now();
+		this.endTime = null;
 	}
 
 	public void markAdvancementSelected() {

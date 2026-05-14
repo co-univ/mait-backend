@@ -210,6 +210,6 @@ public class QuestionSetService {
 			.orElseThrow(() -> new EntityNotFoundException("해당 문제 셋을 찾을 수 없습니다."));
 
 		teamRoleValidator.checkHasCreateQuestionSetAuthority(questionSet.getTeamId(), user.id());
-		questionSet.restartLive();
+		questionSet.restart();
 	}
 }

@@ -520,17 +520,19 @@ class QuestionSetServiceTest {
 	}
 
 	@Test
-	@DisplayName("종료된 문제 셋을 재시작 - 성공")
+	@DisplayName("종료된 실시간 문제 셋을 재시작 - 성공")
 	void restartQuestionSet() {
 		// given
 		final Long questionSetId = 1L;
 		final Long teamId = 2L;
+		final LocalDateTime endedAt = LocalDateTime.now().minusMinutes(10);
 		final MaitUser user = MaitUser.builder().id(USER_ID).build();
 		QuestionSetEntity questionSetEntity = QuestionSetEntity.builder()
 			.id(questionSetId)
 			.teamId(teamId)
 			.status(QuestionSetStatus.AFTER)
 			.solveMode(QuestionSetSolveMode.LIVE_TIME)
+			.endTime(endedAt)
 			.build();
 		when(questionSetEntityRepository.findById(questionSetId)).thenReturn(Optional.of(questionSetEntity));
 
@@ -540,6 +542,35 @@ class QuestionSetServiceTest {
 		// then
 		verify(teamRoleValidator).checkHasCreateQuestionSetAuthority(teamId, USER_ID);
 		assertThat(questionSetEntity.getStatus()).isEqualTo(QuestionSetStatus.ONGOING);
+		assertThat(questionSetEntity.getStartTime()).isAfter(endedAt);
+		assertThat(questionSetEntity.getEndTime()).isNull();
+	}
+
+	@Test
+	@DisplayName("종료된 학습 문제 셋을 재시작 - 성공")
+	void restartStudyQuestionSet() {
+		// given
+		final Long questionSetId = 1L;
+		final Long teamId = 2L;
+		final LocalDateTime endedAt = LocalDateTime.now().minusMinutes(10);
+		final MaitUser user = MaitUser.builder().id(USER_ID).build();
+		QuestionSetEntity questionSetEntity = QuestionSetEntity.builder()
+			.id(questionSetId)
+			.teamId(teamId)
+			.status(QuestionSetStatus.AFTER)
+			.solveMode(QuestionSetSolveMode.STUDY)
+			.endTime(endedAt)
+			.build();
+		when(questionSetEntityRepository.findById(questionSetId)).thenReturn(Optional.of(questionSetEntity));
+
+		// when
+		questionSetService.restartQuestionSet(questionSetId, user);
+
+		// then
+		verify(teamRoleValidator).checkHasCreateQuestionSetAuthority(teamId, USER_ID);
+		assertThat(questionSetEntity.getStatus()).isEqualTo(QuestionSetStatus.ONGOING);
+		assertThat(questionSetEntity.getStartTime()).isAfter(endedAt);
+		assertThat(questionSetEntity.getEndTime()).isNull();
 	}
 
 	@Test
