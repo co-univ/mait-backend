@@ -714,6 +714,22 @@ class QuestionSetControllerTest {
 	}
 
 	@Test
+	@DisplayName("종료된 문제 셋 재시작 API 테스트 - 성공")
+	void restartQuestionSet_Success() throws Exception {
+		// given
+		final Long questionSetId = 1L;
+
+		// when & then
+		mockMvc.perform(patch("/api/v1/question-sets/{questionSetId}/restart", questionSetId))
+			.andExpectAll(
+				status().isOk(),
+				jsonPath("$.isSuccess").value(true),
+				jsonPath("$.data").doesNotExist());
+
+		verify(questionSetService).restartQuestionSet(eq(questionSetId), any(MaitUser.class));
+	}
+
+	@Test
 	@DisplayName("문제 셋 삭제 성공 테스트")
 	void deleteQuestionSet_Success() throws Exception {
 		// given
