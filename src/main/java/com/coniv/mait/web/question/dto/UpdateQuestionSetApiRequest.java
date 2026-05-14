@@ -1,5 +1,7 @@
 package com.coniv.mait.web.question.dto;
 
+import java.util.List;
+
 import com.coniv.mait.domain.question.enums.QuestionSetSolveMode;
 import com.coniv.mait.domain.question.enums.QuestionSetVisibility;
 
@@ -24,8 +26,17 @@ public record UpdateQuestionSetApiRequest(
 	String difficulty,
 
 	@Schema(description = "문제 셋 공개 단위", enumAsRef = true)
-	QuestionSetVisibility visibility
+	QuestionSetVisibility visibility,
+
+	@Schema(description = "문제 셋에 매핑할 카테고리 ID 목록. null 또는 빈 목록이면 기존 매핑을 모두 제거한다.")
+	List<Long> categoryIds
 ) {
+	public UpdateQuestionSetApiRequest {
+		if (categoryIds == null) {
+			categoryIds = List.of();
+		}
+	}
+
 	@AssertTrue(message = "문제 풀이 방식은 STUDY 또는 LIVE_TIME만 가능합니다")
 	private boolean isSupportedMode() {
 		return solveMode == QuestionSetSolveMode.STUDY || solveMode == QuestionSetSolveMode.LIVE_TIME;

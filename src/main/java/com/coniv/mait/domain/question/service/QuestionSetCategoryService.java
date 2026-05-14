@@ -1,11 +1,13 @@
 package com.coniv.mait.domain.question.service;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
+import org.apache.commons.collections4.SetUtils;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -158,7 +160,7 @@ public class QuestionSetCategoryService {
 	}
 
 	@Transactional
-	public void attachCategories(final Long questionSetId, final Long teamId, final List<Long> categoryIds) {
+	public void attachCategories(final Long questionSetId, final Long teamId, final Collection<Long> categoryIds) {
 		if (categoryIds == null || categoryIds.isEmpty()) {
 			return;
 		}
@@ -176,6 +178,21 @@ public class QuestionSetCategoryService {
 			.map(catId -> QuestionSetCategoryLinkEntity.of(questionSetId, catId))
 			.toList();
 		questionSetCategoryLinkEntityRepository.saveAll(links);
+	}
+
+	@Transactional
+	public void updateLinkedCategories(final Long questionSetId, final Long teamId, final List<Long> categoryIds) {
+		Set<Long> desired = Set.copyOf(categoryIds);
+
+		Set<Long> existing = questionSetCategoryLinkEntityRepository.findAllByQuestionSetId(questionSetId).stream()
+			.map(QuestionSetCategoryLinkEntity::getCategoryId)
+			.collect(Collectors.toSet());
+
+		Set<Long> toRemove = SetUtils.difference(existing, desired);
+		Set<Long> toAdd = SetUtils.difference(desired, existing);
+
+		attachCategories(questionSetId, teamId, toAdd);
+		questionSetCategoryLinkEntityRepository.deleteByQuestionSetIdAndCategoryIdIn(questionSetId, toRemove);
 	}
 
 	public List<QuestionSetCategoryDto> getCategoriesByQuestionSetId(final Long questionSetId) {

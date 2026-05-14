@@ -123,7 +123,7 @@ public class QuestionSetController {
 		@PathVariable Long questionSetId, @Valid @RequestBody UpdateQuestionSetApiRequest request) {
 		return ResponseEntity.ok(ApiResponse.ok(QuestionSetApiResponse.from(
 			questionSetService.completeQuestionSet(questionSetId, request.title(), request.subject(),
-				request.solveMode(), request.difficulty(), request.visibility()))));
+				request.solveMode(), request.difficulty(), request.visibility(), request.categoryIds()))));
 	}
 
 	@Operation(summary = "문제 셋에 카테고리 단건 매핑 추가 API",

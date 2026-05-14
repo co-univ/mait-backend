@@ -6,6 +6,7 @@ import static org.mockito.Mockito.*;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -711,6 +712,130 @@ class QuestionSetCategoryServiceTest {
 			.hasMessageContaining("해당 카테고리를 찾을 수 없습니다.");
 
 		verify(questionSetCategoryLinkEntityRepository, never()).save(any(QuestionSetCategoryLinkEntity.class));
+	}
+
+	@Test
+	@DisplayName("updateLinkedCategories - 기존 매핑과 요청을 비교해 추가/제거를 적용")
+	void updateLinkedCategories_addsAndRemoves() {
+		// given
+		Long questionSetId = 1L;
+		Long teamId = 100L;
+		Long keepId = 11L;
+		Long removeId = 12L;
+		Long addId = 13L;
+
+		QuestionSetCategoryLinkEntity keepLink = QuestionSetCategoryLinkEntity.of(questionSetId, keepId);
+		QuestionSetCategoryLinkEntity removeLink = QuestionSetCategoryLinkEntity.of(questionSetId, removeId);
+
+		when(questionSetCategoryLinkEntityRepository.findAllByQuestionSetId(questionSetId))
+			.thenReturn(List.of(keepLink, removeLink));
+
+		QuestionSetCategoryEntity newCategory = mock(QuestionSetCategoryEntity.class);
+		when(questionSetCategoryEntityRepository.findAllByIdInAndTeamIdAndDeletedAtIsNull(eq(Set.of(addId)),
+			eq(teamId))).thenReturn(List.of(newCategory));
+
+		// when
+		questionSetCategoryService.updateLinkedCategories(questionSetId, teamId, List.of(keepId, addId));
+
+		// then
+		verify(questionSetCategoryLinkEntityRepository).saveAll(anyList());
+		verify(questionSetCategoryLinkEntityRepository).deleteByQuestionSetIdAndCategoryIdIn(questionSetId,
+			Set.of(removeId));
+	}
+
+	@Test
+	@DisplayName("updateLinkedCategories - 요청과 기존이 동일하면 실제 추가/제거 대상이 없음")
+	void updateLinkedCategories_noChange_idempotent() {
+		// given
+		Long questionSetId = 1L;
+		Long teamId = 100L;
+		Long categoryId = 11L;
+
+		QuestionSetCategoryLinkEntity existingLink = QuestionSetCategoryLinkEntity.of(questionSetId, categoryId);
+		when(questionSetCategoryLinkEntityRepository.findAllByQuestionSetId(questionSetId))
+			.thenReturn(List.of(existingLink));
+
+		// when
+		questionSetCategoryService.updateLinkedCategories(questionSetId, teamId, List.of(categoryId));
+
+		// then
+		verify(questionSetCategoryLinkEntityRepository, never()).saveAll(anyList());
+		verify(questionSetCategoryLinkEntityRepository)
+			.deleteByQuestionSetIdAndCategoryIdIn(eq(questionSetId), argThat(c -> c.isEmpty()));
+		verify(questionSetCategoryEntityRepository, never())
+			.findAllByIdInAndTeamIdAndDeletedAtIsNull(anySet(), anyLong());
+	}
+
+	@Test
+	@DisplayName("updateLinkedCategories - 빈 리스트면 기존 매핑을 모두 제거")
+	void updateLinkedCategories_emptyList_removesAll() {
+		// given
+		Long questionSetId = 1L;
+		Long teamId = 100L;
+
+		QuestionSetCategoryLinkEntity link1 = QuestionSetCategoryLinkEntity.of(questionSetId, 11L);
+		QuestionSetCategoryLinkEntity link2 = QuestionSetCategoryLinkEntity.of(questionSetId, 12L);
+		when(questionSetCategoryLinkEntityRepository.findAllByQuestionSetId(questionSetId))
+			.thenReturn(List.of(link1, link2));
+
+		// when
+		questionSetCategoryService.updateLinkedCategories(questionSetId, teamId, List.of());
+
+		// then
+		verify(questionSetCategoryLinkEntityRepository).deleteByQuestionSetIdAndCategoryIdIn(questionSetId,
+			Set.of(11L, 12L));
+		verify(questionSetCategoryLinkEntityRepository, never()).saveAll(anyList());
+		verify(questionSetCategoryEntityRepository, never())
+			.findAllByIdInAndTeamIdAndDeletedAtIsNull(anySet(), anyLong());
+	}
+
+	@Test
+	@DisplayName("updateLinkedCategories - 추가 대상 중 다른 팀 또는 미존재 카테고리가 있으면 예외")
+	void updateLinkedCategories_invalidNewCategory_throws() {
+		// given
+		Long questionSetId = 1L;
+		Long teamId = 100L;
+		Long addId1 = 13L;
+		Long addId2 = 14L;
+
+		when(questionSetCategoryLinkEntityRepository.findAllByQuestionSetId(questionSetId)).thenReturn(List.of());
+
+		QuestionSetCategoryEntity onlyOne = mock(QuestionSetCategoryEntity.class);
+		when(questionSetCategoryEntityRepository.findAllByIdInAndTeamIdAndDeletedAtIsNull(anySet(), eq(teamId)))
+			.thenReturn(List.of(onlyOne));
+
+		// when & then
+		assertThatThrownBy(() ->
+			questionSetCategoryService.updateLinkedCategories(questionSetId, teamId, List.of(addId1, addId2)))
+			.isInstanceOf(QuestionSetCategoryException.class)
+			.hasMessage(QuestionSetCategoryExceptionCode.INVALID_TEAM_OR_NOT_FOUND.getMessage());
+
+		verify(questionSetCategoryLinkEntityRepository, never()).saveAll(anyList());
+		verify(questionSetCategoryLinkEntityRepository, never())
+			.deleteByQuestionSetIdAndCategoryIdIn(anyLong(), anyCollection());
+	}
+
+	@Test
+	@DisplayName("updateLinkedCategories - 기존에 매핑된 카테고리는 검증 대상에서 제외 (deleted 라도 유지 가능)")
+	void updateLinkedCategories_existingCategoryNotRevalidated() {
+		// given
+		Long questionSetId = 1L;
+		Long teamId = 100L;
+		Long existingId = 11L;
+
+		QuestionSetCategoryLinkEntity existingLink = QuestionSetCategoryLinkEntity.of(questionSetId, existingId);
+		when(questionSetCategoryLinkEntityRepository.findAllByQuestionSetId(questionSetId))
+			.thenReturn(List.of(existingLink));
+
+		// when
+		questionSetCategoryService.updateLinkedCategories(questionSetId, teamId, List.of(existingId));
+
+		// then
+		verify(questionSetCategoryEntityRepository, never())
+			.findAllByIdInAndTeamIdAndDeletedAtIsNull(anySet(), anyLong());
+		verify(questionSetCategoryLinkEntityRepository, never()).saveAll(anyList());
+		verify(questionSetCategoryLinkEntityRepository)
+			.deleteByQuestionSetIdAndCategoryIdIn(eq(questionSetId), argThat(c -> c.isEmpty()));
 	}
 
 	@Test

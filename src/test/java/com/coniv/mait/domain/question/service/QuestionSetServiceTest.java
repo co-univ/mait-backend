@@ -317,7 +317,8 @@ class QuestionSetServiceTest {
 			newSubject,
 			newSolveMode,
 			difficulty,
-			newVisibility);
+			newVisibility,
+			List.of());
 
 		// then
 		verify(questionSetEntityRepository, times(1)).findById(questionSetId);
@@ -336,6 +337,39 @@ class QuestionSetServiceTest {
 		assertThat(result.getStatus()).isEqualTo(QuestionSetStatus.BEFORE);
 		assertThat(result.getDifficulty()).isEqualTo(difficulty);
 		assertThat(result.getVisibility()).isEqualTo(newVisibility);
+
+		verify(questionSetCategoryService).updateLinkedCategories(questionSetId, null, List.of());
+	}
+
+	@Test
+	@DisplayName("문제 셋 완료 처리 테스트 - categoryIds가 주어지면 updateLinkedCategories 호출")
+	void completeQuestionSetTest_withCategoryIds_callsUpdateLinkedCategories() {
+		// given
+		final Long questionSetId = 1L;
+		final Long teamId = 100L;
+		final List<Long> categoryIds = List.of(11L, 12L);
+
+		QuestionSetEntity questionSetEntity = QuestionSetEntity.builder()
+			.subject("주제")
+			.title("제목")
+			.teamId(teamId)
+			.visibility(QuestionSetVisibility.GROUP)
+			.build();
+
+		when(questionSetEntityRepository.findById(questionSetId)).thenReturn(Optional.of(questionSetEntity));
+
+		// when
+		questionSetService.completeQuestionSet(
+			questionSetId,
+			"새 제목",
+			"새 주제",
+			QuestionSetSolveMode.LIVE_TIME,
+			"난이도",
+			QuestionSetVisibility.GROUP,
+			categoryIds);
+
+		// then
+		verify(questionSetCategoryService).updateLinkedCategories(questionSetId, teamId, categoryIds);
 	}
 
 	@Test
@@ -353,7 +387,8 @@ class QuestionSetServiceTest {
 			"주제",
 			QuestionSetSolveMode.LIVE_TIME,
 			"설명",
-			QuestionSetVisibility.GROUP))
+			QuestionSetVisibility.GROUP,
+			null))
 			.isInstanceOf(EntityNotFoundException.class)
 			.hasMessage("Question set not found");
 
