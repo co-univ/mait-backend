@@ -330,7 +330,8 @@ public class QuestionSetApiIntegrationTest extends BaseIntegrationTest {
 			"Updated Subject",
 			QuestionSetSolveMode.LIVE_TIME,
 			"중급",
-			QuestionSetVisibility.GROUP);
+			QuestionSetVisibility.GROUP,
+			null);
 
 		QuestionSetEntity questionSet = questionSetEntityRepository.save(
 			QuestionSetEntity.builder()
@@ -348,6 +349,54 @@ public class QuestionSetApiIntegrationTest extends BaseIntegrationTest {
 				jsonPath("$.data.title").value("Updated Title"),
 				jsonPath("$.data.subject").value("Updated Subject"),
 				jsonPath("$.data.deliveryMode").value(DeliveryMode.LIVE_TIME.name()));
+	}
+
+	@Test
+	@DisplayName("문제 셋 최종 저장 API 성공 - categoryIds 일괄 동기화 (기존 매핑 교체)")
+	void updateQuestionSetsApi_syncCategoryIds() throws Exception {
+		// given
+		UserEntity currentUser = userEntityRepository.findByEmail("user@example.com").orElseThrow();
+		TeamEntity team = teamEntityRepository.save(TeamEntity.builder().name("코니브").creatorId(1L).build());
+		teamUserEntityRepository.save(TeamUserEntity.createTeamUser(currentUser, team, TeamUserRole.MAKER));
+
+		QuestionSetCategoryEntity keepCategory = questionSetCategoryEntityRepository.save(
+			QuestionSetCategoryEntity.of(team.getId(), "유지"));
+		QuestionSetCategoryEntity removeCategory = questionSetCategoryEntityRepository.save(
+			QuestionSetCategoryEntity.of(team.getId(), "제거"));
+		QuestionSetCategoryEntity addCategory = questionSetCategoryEntityRepository.save(
+			QuestionSetCategoryEntity.of(team.getId(), "추가"));
+
+		QuestionSetEntity questionSet = questionSetEntityRepository.save(
+			QuestionSetEntity.builder()
+				.subject("Initial Subject")
+				.teamId(team.getId())
+				.creationType(QuestionSetCreationType.MANUAL)
+				.build());
+
+		questionSetCategoryLinkEntityRepository.save(
+			QuestionSetCategoryLinkEntity.of(questionSet.getId(), keepCategory.getId()));
+		questionSetCategoryLinkEntityRepository.save(
+			QuestionSetCategoryLinkEntity.of(questionSet.getId(), removeCategory.getId()));
+
+		UpdateQuestionSetApiRequest request = new UpdateQuestionSetApiRequest(
+			"Updated Title",
+			"Updated Subject",
+			QuestionSetSolveMode.LIVE_TIME,
+			"중급",
+			QuestionSetVisibility.GROUP,
+			List.of(keepCategory.getId(), addCategory.getId()));
+
+		// when & then
+		mockMvc.perform(put("/api/v1/question-sets/{questionSetId}", questionSet.getId())
+				.contentType(MediaType.APPLICATION_JSON)
+				.content(objectMapper.writeValueAsString(request)))
+			.andExpect(status().isOk());
+
+		List<Long> linkedCategoryIds = questionSetCategoryLinkEntityRepository
+			.findAllByQuestionSetId(questionSet.getId()).stream()
+			.map(QuestionSetCategoryLinkEntity::getCategoryId)
+			.toList();
+		assertThat(linkedCategoryIds).containsExactlyInAnyOrder(keepCategory.getId(), addCategory.getId());
 	}
 
 	@Test

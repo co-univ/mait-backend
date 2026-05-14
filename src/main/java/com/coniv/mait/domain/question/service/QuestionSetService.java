@@ -155,7 +155,8 @@ public class QuestionSetService {
 		final String subject,
 		final QuestionSetSolveMode solveMode,
 		final String difficulty,
-		final QuestionSetVisibility visibility) {
+		final QuestionSetVisibility visibility,
+		final List<Long> categoryIds) {
 		QuestionSetEntity questionSet = questionSetEntityRepository.findById(questionSetId)
 			.orElseThrow(() -> new EntityNotFoundException("Question set not found"));
 
@@ -169,6 +170,8 @@ public class QuestionSetService {
 		}
 
 		questionSet.completeQuestionSet(title, subject, solveMode, difficulty, visibility);
+		questionSetCategoryService.updateLinkedCategories(questionSetId, questionSet.getTeamId(), categoryIds);
+
 		return QuestionSetDto.from(questionSet);
 	}
 
