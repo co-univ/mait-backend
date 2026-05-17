@@ -155,7 +155,8 @@ public class QuestionSetService {
 		final String subject,
 		final QuestionSetSolveMode solveMode,
 		final String difficulty,
-		final QuestionSetVisibility visibility) {
+		final QuestionSetVisibility visibility,
+		final List<Long> categoryIds) {
 		QuestionSetEntity questionSet = questionSetEntityRepository.findById(questionSetId)
 			.orElseThrow(() -> new EntityNotFoundException("Question set not found"));
 
@@ -169,6 +170,8 @@ public class QuestionSetService {
 		}
 
 		questionSet.completeQuestionSet(title, subject, solveMode, difficulty, visibility);
+		questionSetCategoryService.updateLinkedCategories(questionSetId, questionSet.getTeamId(), categoryIds);
+
 		return QuestionSetDto.from(questionSet);
 	}
 
@@ -210,6 +213,6 @@ public class QuestionSetService {
 			.orElseThrow(() -> new EntityNotFoundException("해당 문제 셋을 찾을 수 없습니다."));
 
 		teamRoleValidator.checkHasCreateQuestionSetAuthority(questionSet.getTeamId(), user.id());
-		questionSet.restartLive();
+		questionSet.restart();
 	}
 }
