@@ -2,10 +2,13 @@ package com.coniv.mait.domain.team.entity;
 
 import java.time.LocalDateTime;
 
+import com.coniv.mait.domain.team.enums.TeamType;
 import com.coniv.mait.global.entity.BaseTimeEntity;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -34,16 +37,25 @@ public class TeamEntity extends BaseTimeEntity {
 	@Column(nullable = false)
 	private Long creatorId;
 
+	@Enumerated(EnumType.STRING)
+	@Column(nullable = false)
+	private TeamType type;
+
 	@Column(name = "deleted_at")
 	private LocalDateTime deletedAt;
 
-	private TeamEntity(String name, Long creatorId) {
+	private TeamEntity(String name, Long creatorId, TeamType type) {
 		this.name = name;
 		this.creatorId = creatorId;
+		this.type = type;
 	}
 
-	public static TeamEntity of(String name, Long creatorId) {
-		return new TeamEntity(name, creatorId);
+	public static TeamEntity ofGroup(String name, Long creatorId) {
+		return new TeamEntity(name, creatorId, TeamType.GROUP);
+	}
+
+	public static TeamEntity ofPersonal(String name, Long creatorId) {
+		return new TeamEntity(name, creatorId, TeamType.PERSONAL);
 	}
 
 	public void updateDeletedAt(final LocalDateTime deletedAt) {

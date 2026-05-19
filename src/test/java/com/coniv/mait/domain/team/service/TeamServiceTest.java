@@ -93,7 +93,7 @@ class TeamServiceTest {
 		UserEntity owner = mock(UserEntity.class);
 		when(owner.getId()).thenReturn(ownerId);
 
-		TeamEntity mockTeamEntity = TeamEntity.of(teamName, ownerId);
+		TeamEntity mockTeamEntity = TeamEntity.ofGroup(teamName, ownerId);
 		TeamUserEntity ownerTeamUser = TeamUserEntity.createOwnerUser(owner, mockTeamEntity);
 
 		when(userEntityRepository.findById(ownerId)).thenReturn(Optional.of(owner));
@@ -113,7 +113,7 @@ class TeamServiceTest {
 	@DisplayName("사용자들과 팀 연결 시 TeamUserEntity들이 저장되는지 확인")
 	void createUsersAndLinkTeam_SavesTeamUserEntities() {
 		// given
-		TeamEntity team = TeamEntity.of("테스트 팀", 1L);
+		TeamEntity team = TeamEntity.ofGroup("테스트 팀", 1L);
 		List<UserEntity> users = List.of(
 			UserEntity.socialLoginUser("user1@test.com", "사용자1", "provider1", LoginProvider.GOOGLE),
 			UserEntity.socialLoginUser("user2@test.com", "사용자2", "provider2", LoginProvider.GOOGLE)
@@ -133,7 +133,7 @@ class TeamServiceTest {
 		Long teamId = 1L;
 		Long ownerId = 1L;
 		UserEntity mockOwner = mock(UserEntity.class);
-		TeamEntity team = TeamEntity.of("테스트 팀", 1L);
+		TeamEntity team = TeamEntity.ofGroup("테스트 팀", 1L);
 		TeamUserEntity ownerTeamUser = TeamUserEntity.createOwnerUser(mockOwner, team);
 		String expectedToken = "test-invite-code";
 		InviteTokenDuration duration = InviteTokenDuration.ONE_DAY;
@@ -191,7 +191,7 @@ class TeamServiceTest {
 		Long userId = 999L;
 		UserEntity mockUser = mock(UserEntity.class);
 		when(mockUser.getId()).thenReturn(userId);
-		TeamEntity team = TeamEntity.of("테스트 팀", 1L);
+		TeamEntity team = TeamEntity.ofGroup("테스트 팀", 1L);
 		InviteTokenDuration duration = InviteTokenDuration.ONE_DAY;
 		TeamUserRole role = TeamUserRole.PLAYER;
 		boolean requiresApproval = false;
@@ -219,7 +219,7 @@ class TeamServiceTest {
 		Long teamId = 1L;
 		Long playerId = 2L;
 		UserEntity mockPlayer = mock(UserEntity.class);
-		TeamEntity team = TeamEntity.of("테스트 팀", 1L);
+		TeamEntity team = TeamEntity.ofGroup("테스트 팀", 1L);
 		TeamUserEntity playerTeamUser = TeamUserEntity.createPlayerUser(mockPlayer, team);
 		InviteTokenDuration duration = InviteTokenDuration.ONE_DAY;
 		TeamUserRole role = TeamUserRole.PLAYER;
@@ -250,7 +250,7 @@ class TeamServiceTest {
 		String token = "TOKEN_APP";
 		UserEntity invitor = mock(UserEntity.class);
 		when(invitor.getId()).thenReturn(10L);
-		TeamEntity team = TeamEntity.of("팀 C", 30L);
+		TeamEntity team = TeamEntity.ofGroup("팀 C", 30L);
 		TeamInvitationLinkEntity invite = TeamInvitationLinkEntity.createInvite(invitor, team, token,
 			InviteTokenDuration.ONE_DAY,
 			TeamUserRole.PLAYER, true);
@@ -290,7 +290,7 @@ class TeamServiceTest {
 		// given
 		String token = "TOKEN_IN_TEAM";
 		UserEntity invitor = mock(UserEntity.class);
-		TeamEntity team = TeamEntity.of("팀 D", 40L);
+		TeamEntity team = TeamEntity.ofGroup("팀 D", 40L);
 		TeamInvitationLinkEntity invite = TeamInvitationLinkEntity.createInvite(invitor, team, token,
 			InviteTokenDuration.ONE_DAY,
 			TeamUserRole.PLAYER, false);
@@ -315,7 +315,7 @@ class TeamServiceTest {
 		// given
 		Long teamId = 1L;
 		Long userId = 2L;
-		TeamEntity team = TeamEntity.of("테스트 팀", 1L);
+		TeamEntity team = TeamEntity.ofGroup("테스트 팀", 1L);
 		UserEntity leaver = mock(UserEntity.class);
 		when(leaver.getName()).thenReturn("홍길동");
 		when(leaver.getEmail()).thenReturn("leaver@example.com");
@@ -353,7 +353,7 @@ class TeamServiceTest {
 		// given
 		Long teamId = 1L;
 		Long userId = 2L;
-		TeamEntity team = TeamEntity.of("테스트 팀", 1L);
+		TeamEntity team = TeamEntity.ofGroup("테스트 팀", 1L);
 		UserEntity user = mock(UserEntity.class);
 
 		when(teamReader.getActiveTeam(teamId)).thenReturn(team);
@@ -375,7 +375,7 @@ class TeamServiceTest {
 		// given
 		Long teamId = 1L;
 		Long userId = 2L;
-		TeamEntity team = TeamEntity.of("테스트 팀", userId);
+		TeamEntity team = TeamEntity.ofGroup("테스트 팀", userId);
 		UserEntity owner = mock(UserEntity.class);
 		TeamUserEntity teamUser = TeamUserEntity.createOwnerUser(owner, team);
 
@@ -398,7 +398,7 @@ class TeamServiceTest {
 		// given
 		Long teamId = 1L;
 		Long ownerId = 10L;
-		TeamEntity team = TeamEntity.of("삭제 대상 팀", ownerId);
+		TeamEntity team = TeamEntity.ofGroup("삭제 대상 팀", ownerId);
 
 		UserEntity owner = mock(UserEntity.class);
 		when(owner.getName()).thenReturn("오너");

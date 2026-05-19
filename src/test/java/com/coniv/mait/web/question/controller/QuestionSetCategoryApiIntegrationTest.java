@@ -53,7 +53,7 @@ public class QuestionSetCategoryApiIntegrationTest extends BaseIntegrationTest {
 	void createCategoryApiSuccess() throws Exception {
 		// given
 		UserEntity currentUser = userEntityRepository.findByEmail("user@example.com").orElseThrow();
-		TeamEntity team = teamEntityRepository.save(TeamEntity.builder().name("코니브").creatorId(1L).build());
+		TeamEntity team = teamEntityRepository.save(TeamEntity.ofGroup("코니브", 1L));
 		teamUserEntityRepository.save(TeamUserEntity.createTeamUser(currentUser, team, TeamUserRole.MAKER));
 
 		CreateQuestionSetCategoryApiRequest request = new CreateQuestionSetCategoryApiRequest(team.getId(), "알고리즘");
@@ -76,7 +76,7 @@ public class QuestionSetCategoryApiIntegrationTest extends BaseIntegrationTest {
 	void updateCategoryNameApiSuccess() throws Exception {
 		// given
 		UserEntity currentUser = userEntityRepository.findByEmail("user@example.com").orElseThrow();
-		TeamEntity team = teamEntityRepository.save(TeamEntity.builder().name("코니브").creatorId(1L).build());
+		TeamEntity team = teamEntityRepository.save(TeamEntity.ofGroup("코니브", 1L));
 		teamUserEntityRepository.save(TeamUserEntity.createTeamUser(currentUser, team, TeamUserRole.MAKER));
 
 		QuestionSetCategoryEntity category = questionSetCategoryEntityRepository.save(
@@ -103,7 +103,7 @@ public class QuestionSetCategoryApiIntegrationTest extends BaseIntegrationTest {
 	void updateCategoryNameApiFailDuplicateActiveName() throws Exception {
 		// given
 		UserEntity currentUser = userEntityRepository.findByEmail("user@example.com").orElseThrow();
-		TeamEntity team = teamEntityRepository.save(TeamEntity.builder().name("코니브").creatorId(1L).build());
+		TeamEntity team = teamEntityRepository.save(TeamEntity.ofGroup("코니브", 1L));
 		teamUserEntityRepository.save(TeamUserEntity.createTeamUser(currentUser, team, TeamUserRole.MAKER));
 
 		QuestionSetCategoryEntity category = questionSetCategoryEntityRepository.save(
@@ -125,7 +125,7 @@ public class QuestionSetCategoryApiIntegrationTest extends BaseIntegrationTest {
 	void updateCategoryNameApiFailDuplicateDeletedName() throws Exception {
 		// given
 		UserEntity currentUser = userEntityRepository.findByEmail("user@example.com").orElseThrow();
-		TeamEntity team = teamEntityRepository.save(TeamEntity.builder().name("코니브").creatorId(1L).build());
+		TeamEntity team = teamEntityRepository.save(TeamEntity.ofGroup("코니브", 1L));
 		teamUserEntityRepository.save(TeamUserEntity.createTeamUser(currentUser, team, TeamUserRole.MAKER));
 
 		QuestionSetCategoryEntity category = questionSetCategoryEntityRepository.save(
@@ -150,7 +150,7 @@ public class QuestionSetCategoryApiIntegrationTest extends BaseIntegrationTest {
 	void deleteCategoryApiSuccess() throws Exception {
 		// given
 		UserEntity currentUser = userEntityRepository.findByEmail("user@example.com").orElseThrow();
-		TeamEntity team = teamEntityRepository.save(TeamEntity.builder().name("코니브").creatorId(1L).build());
+		TeamEntity team = teamEntityRepository.save(TeamEntity.ofGroup("코니브", 1L));
 		teamUserEntityRepository.save(TeamUserEntity.createTeamUser(currentUser, team, TeamUserRole.MAKER));
 
 		QuestionSetCategoryEntity category = questionSetCategoryEntityRepository.save(
@@ -173,7 +173,7 @@ public class QuestionSetCategoryApiIntegrationTest extends BaseIntegrationTest {
 	void restoreCategoryApiSuccess() throws Exception {
 		// given
 		UserEntity currentUser = userEntityRepository.findByEmail("user@example.com").orElseThrow();
-		TeamEntity team = teamEntityRepository.save(TeamEntity.builder().name("코니브").creatorId(1L).build());
+		TeamEntity team = teamEntityRepository.save(TeamEntity.ofGroup("코니브", 1L));
 		teamUserEntityRepository.save(TeamUserEntity.createTeamUser(currentUser, team, TeamUserRole.MAKER));
 
 		QuestionSetCategoryEntity category = QuestionSetCategoryEntity.of(team.getId(), "알고리즘");
@@ -204,7 +204,7 @@ public class QuestionSetCategoryApiIntegrationTest extends BaseIntegrationTest {
 	void getCategoriesApiSuccess() throws Exception {
 		// given
 		UserEntity currentUser = userEntityRepository.findByEmail("user@example.com").orElseThrow();
-		TeamEntity team = teamEntityRepository.save(TeamEntity.builder().name("코니브").creatorId(1L).build());
+		TeamEntity team = teamEntityRepository.save(TeamEntity.ofGroup("코니브", 1L));
 		teamUserEntityRepository.save(TeamUserEntity.createTeamUser(currentUser, team, TeamUserRole.PLAYER));
 
 		QuestionSetCategoryEntity first = questionSetCategoryEntityRepository.save(
@@ -234,8 +234,8 @@ public class QuestionSetCategoryApiIntegrationTest extends BaseIntegrationTest {
 	void searchCategoriesApiSuccess() throws Exception {
 		// given
 		UserEntity currentUser = userEntityRepository.findByEmail("user@example.com").orElseThrow();
-		TeamEntity team = teamEntityRepository.save(TeamEntity.builder().name("코니브").creatorId(1L).build());
-		TeamEntity otherTeam = teamEntityRepository.save(TeamEntity.builder().name("다른팀").creatorId(2L).build());
+		TeamEntity team = teamEntityRepository.save(TeamEntity.ofGroup("코니브", 1L));
+		TeamEntity otherTeam = teamEntityRepository.save(TeamEntity.ofGroup("다른팀", 2L));
 		teamUserEntityRepository.save(TeamUserEntity.createTeamUser(currentUser, team, TeamUserRole.PLAYER));
 
 		QuestionSetCategoryEntity first = questionSetCategoryEntityRepository.save(

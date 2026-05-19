@@ -1,6 +1,7 @@
 package com.coniv.mait.domain.team.service.dto;
 
 import com.coniv.mait.domain.team.entity.TeamUserEntity;
+import com.coniv.mait.domain.team.enums.TeamType;
 import com.coniv.mait.domain.team.enums.TeamUserRole;
 
 import lombok.AllArgsConstructor;
@@ -20,6 +21,8 @@ public class TeamUserDto {
 
 	private String teamName;
 
+	private TeamType teamType;
+
 	private String userName;
 
 	private String nickname;
@@ -31,6 +34,7 @@ public class TeamUserDto {
 			.id(teamUserEntity.getId())
 			.teamId(teamUserEntity.getTeam().getId())
 			.teamName(teamUserEntity.getTeam().getName())
+			.teamType(teamUserEntity.getTeam().getType())
 			.userName(teamUserEntity.getUser().getName())
 			.nickname(teamUserEntity.getUser().getNickname())
 			.role(teamUserEntity.getUserRole())
