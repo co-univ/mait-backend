@@ -107,7 +107,7 @@ public class QuestionAnswerSubmitApiIntegrationTest extends BaseIntegrationTest 
 		// Given
 		UserEntity user = userEntityRepository.save(
 			UserEntity.localLoginUser("email", "testUser", "youth", "singsing"));
-		TeamEntity team = teamEntityRepository.save(TeamEntity.builder().name("coniv").creatorId(user.getId()).build());
+		TeamEntity team = teamEntityRepository.save(TeamEntity.ofGroup("coniv", user.getId()));
 		final Long teamId = team.getId();
 		TeamUserEntity teamUser = teamUserEntityRepository.save(TeamUserEntity.createPlayerUser(user, team));
 
@@ -180,7 +180,7 @@ public class QuestionAnswerSubmitApiIntegrationTest extends BaseIntegrationTest 
 		// Given
 		UserEntity user = userEntityRepository.save(
 			UserEntity.localLoginUser("email", "testUser", "youth", "singsing"));
-		TeamEntity team = teamEntityRepository.save(TeamEntity.builder().name("coniv").creatorId(user.getId()).build());
+		TeamEntity team = teamEntityRepository.save(TeamEntity.ofGroup("coniv", user.getId()));
 		final Long teamId = team.getId();
 		teamUserEntityRepository.save(TeamUserEntity.createPlayerUser(user, team));
 

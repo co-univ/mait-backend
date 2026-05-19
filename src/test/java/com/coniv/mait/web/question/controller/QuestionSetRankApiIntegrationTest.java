@@ -70,7 +70,7 @@ public class QuestionSetRankApiIntegrationTest extends BaseIntegrationTest {
 	void getCorrectorsByQuestionSetId_IntegrationTest() throws Exception {
 		// given
 		TeamEntity team = teamEntityRepository.save(
-			TeamEntity.builder().name("테스트 팀").creatorId(1L).build());
+			TeamEntity.ofGroup("테스트 팀", 1L));
 
 		UserEntity user1 = userEntityRepository.save(
 			UserEntity.localLoginUser("user1@test.com", "password", "사용자1", "user1"));
