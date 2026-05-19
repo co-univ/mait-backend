@@ -113,7 +113,7 @@ public class QuestionSetDeleteApiIntegrationTest extends BaseIntegrationTest {
 		// given
 		UserEntity user = userEntityRepository.findByEmail("user@example.com").orElseThrow();
 		TeamEntity team = teamEntityRepository.save(
-			TeamEntity.builder().name("팀A").creatorId(user.getId()).build());
+			TeamEntity.ofGroup("팀A", user.getId()));
 		teamUserEntityRepository.save(TeamUserEntity.createTeamUser(user, team, TeamUserRole.MAKER));
 
 		QuestionSetEntity questionSet = questionSetEntityRepository.save(
@@ -171,7 +171,7 @@ public class QuestionSetDeleteApiIntegrationTest extends BaseIntegrationTest {
 		// given
 		UserEntity user = userEntityRepository.findByEmail("user@example.com").orElseThrow();
 		TeamEntity team = teamEntityRepository.save(
-			TeamEntity.builder().name("팀B").creatorId(user.getId()).build());
+			TeamEntity.ofGroup("팀B", user.getId()));
 		teamUserEntityRepository.save(TeamUserEntity.createTeamUser(user, team, TeamUserRole.MAKER));
 
 		QuestionSetEntity questionSet = questionSetEntityRepository.save(
@@ -221,7 +221,7 @@ public class QuestionSetDeleteApiIntegrationTest extends BaseIntegrationTest {
 		// given
 		UserEntity user = userEntityRepository.findByEmail("user@example.com").orElseThrow();
 		TeamEntity team = teamEntityRepository.save(
-			TeamEntity.builder().name("팀C").creatorId(user.getId()).build());
+			TeamEntity.ofGroup("팀C", user.getId()));
 		teamUserEntityRepository.save(TeamUserEntity.createTeamUser(user, team, TeamUserRole.MAKER));
 
 		QuestionSetEntity questionSet = questionSetEntityRepository.save(
@@ -268,7 +268,7 @@ public class QuestionSetDeleteApiIntegrationTest extends BaseIntegrationTest {
 		// given
 		UserEntity user = userEntityRepository.findByEmail("user@example.com").orElseThrow();
 		TeamEntity team = teamEntityRepository.save(
-			TeamEntity.builder().name("팀D").creatorId(user.getId()).build());
+			TeamEntity.ofGroup("팀D", user.getId()));
 		teamUserEntityRepository.save(TeamUserEntity.createTeamUser(user, team, TeamUserRole.MAKER));
 
 		QuestionSetEntity questionSet = questionSetEntityRepository.save(

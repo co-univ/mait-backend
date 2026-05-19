@@ -72,7 +72,7 @@ public class TeamQuestionRankApiIntegrationTest extends BaseIntegrationTest {
 		UserEntity currentUser = userEntityRepository.findByEmail("user@example.com").orElseThrow();
 
 		TeamEntity team = teamEntityRepository.save(
-			TeamEntity.builder().name("테스트 팀").creatorId(currentUser.getId()).build());
+			TeamEntity.ofGroup("테스트 팀", currentUser.getId()));
 
 		teamUserEntityRepository.save(TeamUserEntity.createPlayerUser(currentUser, team));
 
@@ -127,7 +127,7 @@ public class TeamQuestionRankApiIntegrationTest extends BaseIntegrationTest {
 		UserEntity currentUser = userEntityRepository.findByEmail("user@example.com").orElseThrow();
 
 		TeamEntity team = teamEntityRepository.save(
-			TeamEntity.builder().name("테스트 팀").creatorId(currentUser.getId()).build());
+			TeamEntity.ofGroup("테스트 팀", currentUser.getId()));
 
 		teamUserEntityRepository.save(TeamUserEntity.createPlayerUser(currentUser, team));
 
@@ -171,7 +171,7 @@ public class TeamQuestionRankApiIntegrationTest extends BaseIntegrationTest {
 		UserEntity currentUser = userEntityRepository.findByEmail("user@example.com").orElseThrow();
 
 		TeamEntity team = teamEntityRepository.save(
-			TeamEntity.builder().name("테스트 팀").creatorId(currentUser.getId()).build());
+			TeamEntity.ofGroup("테스트 팀", currentUser.getId()));
 
 		teamUserEntityRepository.save(TeamUserEntity.createPlayerUser(currentUser, team));
 
@@ -222,7 +222,7 @@ public class TeamQuestionRankApiIntegrationTest extends BaseIntegrationTest {
 		UserEntity currentUser = userEntityRepository.findByEmail("user@example.com").orElseThrow();
 
 		TeamEntity team = teamEntityRepository.save(
-			TeamEntity.builder().name("테스트 팀").creatorId(currentUser.getId()).build());
+			TeamEntity.ofGroup("테스트 팀", currentUser.getId()));
 
 		teamUserEntityRepository.save(TeamUserEntity.createPlayerUser(currentUser, team));
 
@@ -283,7 +283,7 @@ public class TeamQuestionRankApiIntegrationTest extends BaseIntegrationTest {
 		UserEntity currentUser = userEntityRepository.findByEmail("user@example.com").orElseThrow();
 
 		TeamEntity team = teamEntityRepository.save(
-			TeamEntity.builder().name("테스트 팀").creatorId(currentUser.getId()).build());
+			TeamEntity.ofGroup("테스트 팀", currentUser.getId()));
 
 		teamUserEntityRepository.save(TeamUserEntity.createPlayerUser(currentUser, team));
 
@@ -305,7 +305,7 @@ public class TeamQuestionRankApiIntegrationTest extends BaseIntegrationTest {
 		UserEntity currentUser = userEntityRepository.findByEmail("user@example.com").orElseThrow();
 
 		TeamEntity team = teamEntityRepository.save(
-			TeamEntity.builder().name("랭킹 테스트 팀").creatorId(currentUser.getId()).build());
+			TeamEntity.ofGroup("랭킹 테스트 팀", currentUser.getId()));
 		teamUserEntityRepository.save(TeamUserEntity.createPlayerUser(currentUser, team));
 
 		QuestionSetEntity questionSet = questionSetEntityRepository.save(
@@ -337,7 +337,7 @@ public class TeamQuestionRankApiIntegrationTest extends BaseIntegrationTest {
 		UserEntity currentUser = userEntityRepository.findByEmail("user@example.com").orElseThrow();
 
 		TeamEntity team = teamEntityRepository.save(
-			TeamEntity.builder().name("랭킹 테스트 팀").creatorId(currentUser.getId()).build());
+			TeamEntity.ofGroup("랭킹 테스트 팀", currentUser.getId()));
 		teamUserEntityRepository.save(TeamUserEntity.createPlayerUser(currentUser, team));
 
 		QuestionSetEntity liveQuestionSet = questionSetEntityRepository.save(

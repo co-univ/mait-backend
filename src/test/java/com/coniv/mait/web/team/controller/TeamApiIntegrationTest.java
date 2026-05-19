@@ -385,7 +385,7 @@ public class TeamApiIntegrationTest extends BaseIntegrationTest {
 	}
 
 	private TeamEntity createTeamWithOwner(String teamName, UserEntity owner) {
-		TeamEntity team = TeamEntity.of(teamName, owner.getId());
+		TeamEntity team = TeamEntity.ofGroup(teamName, owner.getId());
 		team = teamEntityRepository.save(team);
 
 		TeamUserEntity teamUser = TeamUserEntity.createOwnerUser(owner, team);
