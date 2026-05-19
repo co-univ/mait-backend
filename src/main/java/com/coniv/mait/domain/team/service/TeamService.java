@@ -66,7 +66,7 @@ public class TeamService {
 	public void createTeam(final String teamName, final Long ownerId) {
 		UserEntity owner = userEntityRepository.findById(ownerId)
 			.orElseThrow(() -> new EntityNotFoundException("Owner user not found with id: " + ownerId));
-		TeamEntity teamEntity = teamEntityRepository.save(TeamEntity.of(teamName, owner.getId()));
+		TeamEntity teamEntity = teamEntityRepository.save(TeamEntity.ofGroup(teamName, owner.getId()));
 		teamUserEntityRepository.save(TeamUserEntity.createOwnerUser(owner, teamEntity));
 	}
 
