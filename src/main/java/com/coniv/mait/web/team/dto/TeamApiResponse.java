@@ -13,10 +13,10 @@ public record TeamApiResponse(
 	@Schema(description = "팀 이름", requiredMode = Schema.RequiredMode.REQUIRED)
 	String teamName,
 
-	@Schema(description = "팀 타입 (개인 워크스페이스 / 단체 팀)", requiredMode = Schema.RequiredMode.REQUIRED)
+	@Schema(description = "팀 타입 (개인 워크스페이스 / 단체 팀)", requiredMode = Schema.RequiredMode.REQUIRED, enumAsRef = true)
 	TeamType teamType,
 
-	@Schema(description = "팀 내 유저 역할", requiredMode = Schema.RequiredMode.REQUIRED)
+	@Schema(description = "팀 내 유저 역할", requiredMode = Schema.RequiredMode.REQUIRED, enumAsRef = true)
 	TeamUserRole role
 ) {
 	public static TeamApiResponse from(TeamUserDto teamUserDto) {
