@@ -110,6 +110,38 @@ class TeamServiceTest {
 	}
 
 	@Test
+	@DisplayName("개인 워크스페이스 생성 시 PERSONAL 타입 팀과 OWNER TeamUser가 저장된다")
+	void createPersonalWorkspace_SavesPersonalTeamAndOwner() {
+		// given
+		Long ownerId = 1L;
+		UserEntity owner = mock(UserEntity.class);
+		when(owner.getId()).thenReturn(ownerId);
+
+		ArgumentCaptor<TeamEntity> teamCaptor = ArgumentCaptor.forClass(TeamEntity.class);
+		ArgumentCaptor<TeamUserEntity> teamUserCaptor = ArgumentCaptor.forClass(TeamUserEntity.class);
+
+		when(teamEntityRepository.save(any(TeamEntity.class))).thenAnswer(invocation -> invocation.getArgument(0));
+		when(teamUserEntityRepository.save(any(TeamUserEntity.class))).thenAnswer(
+			invocation -> invocation.getArgument(0));
+
+		// when
+		teamService.createPersonalWorkspace(owner);
+
+		// then
+		verify(teamEntityRepository).save(teamCaptor.capture());
+		verify(teamUserEntityRepository).save(teamUserCaptor.capture());
+
+		TeamEntity savedTeam = teamCaptor.getValue();
+		assertThat(savedTeam.getType()).isEqualTo(com.coniv.mait.domain.team.enums.TeamType.PERSONAL);
+		assertThat(savedTeam.getCreatorId()).isEqualTo(ownerId);
+		assertThat(savedTeam.getName()).isNotBlank();
+
+		TeamUserEntity savedTeamUser = teamUserCaptor.getValue();
+		assertThat(savedTeamUser.getUser()).isSameAs(owner);
+		assertThat(savedTeamUser.getUserRole()).isEqualTo(TeamUserRole.OWNER);
+	}
+
+	@Test
 	@DisplayName("사용자들과 팀 연결 시 TeamUserEntity들이 저장되는지 확인")
 	void createUsersAndLinkTeam_SavesTeamUserEntities() {
 		// given
