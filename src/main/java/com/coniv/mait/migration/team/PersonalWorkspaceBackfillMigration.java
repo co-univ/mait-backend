@@ -31,10 +31,10 @@ public class PersonalWorkspaceBackfillMigration implements MigrationJob {
 	@Override
 	public void migrate() {
 		List<UserEntity> users = userEntityRepository.findAll();
-		Set<Long> usersWithPersonalWorkspace = teamEntityRepository.findAll().stream()
-			.filter(team -> team.getType() == TeamType.PERSONAL)
+
+		Set<Long> usersWithPersonalWorkspace = teamEntityRepository.findAllByType(TeamType.PERSONAL).stream()
 			.map(TeamEntity::getCreatorId)
-			.collect(Collectors.toSet());
+			.collect(Collectors.toUnmodifiableSet());
 
 		int created = 0;
 		int skipped = 0;
