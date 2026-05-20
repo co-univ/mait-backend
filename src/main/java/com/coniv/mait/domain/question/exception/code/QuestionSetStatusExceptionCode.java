@@ -18,6 +18,8 @@ public enum QuestionSetStatusExceptionCode implements ExceptionCode {
 	NEED_OPEN(HttpStatus.FORBIDDEN, "1001", "공개된 문제 셋만 풀이 가능"),
 	ONLY_LIVE_TIME(HttpStatus.BAD_REQUEST, "2001", "실시간 상태의 문제 셋만 처리가 가능합니다."),
 	ONLY_STUDY(HttpStatus.BAD_REQUEST, "2002", "학습 모드의 문제 셋만 처리가 가능합니다."),
+	CANNOT_CREATE_LIVE_TIME_IN_PERSONAL_TEAM(HttpStatus.BAD_REQUEST, "2003",
+		"개인 워크스페이스에서는 실시간 문제 셋을 생성할 수 없습니다."),
 	CANNOT_DELETE_ONGOING(HttpStatus.CONFLICT, "3001", "진행중인 문제 셋은 삭제할 수 없습니다. 먼저 종료해주세요.");
 
 	private final HttpStatus status;

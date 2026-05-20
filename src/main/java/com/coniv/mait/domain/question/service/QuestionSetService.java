@@ -16,6 +16,8 @@ import com.coniv.mait.domain.question.enums.QuestionSetCreationType;
 import com.coniv.mait.domain.question.enums.QuestionSetSolveMode;
 import com.coniv.mait.domain.question.enums.QuestionSetVisibility;
 import com.coniv.mait.domain.question.event.AiQuestionGenerationRequestedEvent;
+import com.coniv.mait.domain.question.exception.QuestionSetStatusException;
+import com.coniv.mait.domain.question.exception.code.QuestionSetStatusExceptionCode;
 import com.coniv.mait.domain.question.repository.AiRequestStatusManager;
 import com.coniv.mait.domain.question.repository.QuestionEntityRepository;
 import com.coniv.mait.domain.question.repository.QuestionSetEntityRepository;
@@ -24,6 +26,9 @@ import com.coniv.mait.domain.question.service.dto.QuestionCount;
 import com.coniv.mait.domain.question.service.dto.QuestionSetCategoryDto;
 import com.coniv.mait.domain.question.service.dto.QuestionSetDto;
 import com.coniv.mait.domain.question.service.dto.QuestionValidateDto;
+import com.coniv.mait.domain.team.entity.TeamEntity;
+import com.coniv.mait.domain.team.enums.TeamType;
+import com.coniv.mait.domain.team.service.component.TeamReader;
 import com.coniv.mait.domain.user.service.component.TeamRoleValidator;
 import com.coniv.mait.global.auth.model.MaitUser;
 import com.coniv.mait.global.event.MaitEventPublisher;
@@ -54,6 +59,8 @@ public class QuestionSetService {
 	private final QuestionChecker questionChecker;
 
 	private final TeamRoleValidator teamRoleValidator;
+
+	private final TeamReader teamReader;
 
 	private final QuestionSetMaterialService questionSetMaterialService;
 
@@ -160,6 +167,8 @@ public class QuestionSetService {
 		QuestionSetEntity questionSet = questionSetEntityRepository.findById(questionSetId)
 			.orElseThrow(() -> new EntityNotFoundException("Question set not found"));
 
+		validateLiveTimeAllowedForTeam(questionSet.getTeamId(), solveMode);
+
 		// Todo: 현재 생성 단계가 아니면 예외
 		int number = 1;
 
@@ -205,6 +214,17 @@ public class QuestionSetService {
 			.orElseThrow(() -> new EntityNotFoundException("해당 문제 셋을 찾을 수 없습니다."));
 
 		questionSet.openReview(visibility);
+	}
+
+	private void validateLiveTimeAllowedForTeam(final Long teamId, final QuestionSetSolveMode solveMode) {
+		if (solveMode != QuestionSetSolveMode.LIVE_TIME) {
+			return;
+		}
+		TeamEntity team = teamReader.getTeam(teamId);
+		if (team.getType() == TeamType.PERSONAL) {
+			throw new QuestionSetStatusException(
+				QuestionSetStatusExceptionCode.CANNOT_CREATE_LIVE_TIME_IN_PERSONAL_TEAM);
+		}
 	}
 
 	@Transactional
