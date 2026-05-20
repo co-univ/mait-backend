@@ -167,7 +167,11 @@ public class QuestionSetService {
 		QuestionSetEntity questionSet = questionSetEntityRepository.findById(questionSetId)
 			.orElseThrow(() -> new EntityNotFoundException("Question set not found"));
 
-		validateLiveTimeAllowedForTeam(questionSet.getTeamId(), solveMode);
+		TeamEntity team = teamReader.getTeam(questionSet.getTeamId());
+		if (solveMode == QuestionSetSolveMode.LIVE_TIME && team.getType() == TeamType.PERSONAL) {
+			throw new QuestionSetStatusException(
+				QuestionSetStatusExceptionCode.CANNOT_CREATE_LIVE_TIME_IN_PERSONAL_TEAM);
+		}
 
 		// Todo: 현재 생성 단계가 아니면 예외
 		int number = 1;
@@ -214,17 +218,6 @@ public class QuestionSetService {
 			.orElseThrow(() -> new EntityNotFoundException("해당 문제 셋을 찾을 수 없습니다."));
 
 		questionSet.openReview(visibility);
-	}
-
-	private void validateLiveTimeAllowedForTeam(final Long teamId, final QuestionSetSolveMode solveMode) {
-		if (solveMode != QuestionSetSolveMode.LIVE_TIME) {
-			return;
-		}
-		TeamEntity team = teamReader.getTeam(teamId);
-		if (team.getType() == TeamType.PERSONAL) {
-			throw new QuestionSetStatusException(
-				QuestionSetStatusExceptionCode.CANNOT_CREATE_LIVE_TIME_IN_PERSONAL_TEAM);
-		}
 	}
 
 	@Transactional
