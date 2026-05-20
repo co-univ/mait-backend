@@ -62,7 +62,7 @@ public class TeamService {
 	private final QuestionSetEntityRepository questionSetEntityRepository;
 	private final TeamRoleValidator teamRoleValidator;
 
-	private static final String PERSONAL_WORKSPACE_NAME = "내 워크스페이스";
+	private static final String PERSONAL_WORKSPACE_NAME_SUFFIX = "의 워크스페이스";
 
 	@Transactional
 	public void createTeam(final String teamName, final Long ownerId) {
@@ -74,8 +74,8 @@ public class TeamService {
 
 	@Transactional
 	public void createPersonalWorkspace(final UserEntity owner) {
-		TeamEntity teamEntity = teamEntityRepository.save(
-			TeamEntity.ofPersonal(PERSONAL_WORKSPACE_NAME, owner.getId()));
+		String workspaceName = owner.getName() + PERSONAL_WORKSPACE_NAME_SUFFIX;
+		TeamEntity teamEntity = teamEntityRepository.save(TeamEntity.ofPersonal(workspaceName, owner.getId()));
 		teamUserEntityRepository.save(TeamUserEntity.createOwnerUser(owner, teamEntity));
 	}
 
