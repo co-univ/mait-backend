@@ -28,6 +28,9 @@ import com.coniv.mait.domain.question.repository.QuestionEntityRepository;
 import com.coniv.mait.domain.question.repository.QuestionSetEntityRepository;
 import com.coniv.mait.domain.question.service.dto.QuestionSetDto;
 import com.coniv.mait.domain.question.service.dto.QuestionValidateDto;
+import com.coniv.mait.domain.team.entity.TeamEntity;
+import com.coniv.mait.domain.team.enums.TeamType;
+import com.coniv.mait.domain.team.service.component.TeamReader;
 import com.coniv.mait.domain.user.service.component.TeamRoleValidator;
 import com.coniv.mait.global.auth.model.MaitUser;
 import com.coniv.mait.web.question.dto.QuestionSetContainer;
@@ -58,6 +61,9 @@ class QuestionSetServiceTest {
 
 	@Mock
 	private TeamRoleValidator teamRoleValidator;
+
+	@Mock
+	private TeamReader teamReader;
 
 	@Mock
 	private AiRequestStatusManager aiRequestStatusManager;
@@ -295,6 +301,7 @@ class QuestionSetServiceTest {
 	void completeQuestionSetTest() {
 		// given
 		final Long questionSetId = 1L;
+		final Long teamId = 100L;
 		final String originalSubject = "원래 주제";
 		final String newTitle = "변경할 제목";
 		final String newSubject = "변경할 주제";
@@ -305,10 +312,12 @@ class QuestionSetServiceTest {
 		QuestionSetEntity questionSetEntity = QuestionSetEntity.builder()
 			.subject(originalSubject)
 			.title("원래 제목")
+			.teamId(teamId)
 			.visibility(QuestionSetVisibility.GROUP)
 			.build();
 
 		when(questionSetEntityRepository.findById(questionSetId)).thenReturn(Optional.of(questionSetEntity));
+		when(teamReader.getTeam(teamId)).thenReturn(TeamEntity.ofGroup("코니브", 1L));
 
 		// when
 		QuestionSetDto result = questionSetService.completeQuestionSet(
@@ -338,7 +347,7 @@ class QuestionSetServiceTest {
 		assertThat(result.getDifficulty()).isEqualTo(difficulty);
 		assertThat(result.getVisibility()).isEqualTo(newVisibility);
 
-		verify(questionSetCategoryService).updateLinkedCategories(questionSetId, null, List.of());
+		verify(questionSetCategoryService).updateLinkedCategories(questionSetId, teamId, List.of());
 	}
 
 	@Test
@@ -357,6 +366,7 @@ class QuestionSetServiceTest {
 			.build();
 
 		when(questionSetEntityRepository.findById(questionSetId)).thenReturn(Optional.of(questionSetEntity));
+		when(teamReader.getTeam(teamId)).thenReturn(TeamEntity.ofGroup("코니브", 1L));
 
 		// when
 		questionSetService.completeQuestionSet(
@@ -370,6 +380,73 @@ class QuestionSetServiceTest {
 
 		// then
 		verify(questionSetCategoryService).updateLinkedCategories(questionSetId, teamId, categoryIds);
+	}
+
+	@Test
+	@DisplayName("문제 셋 완료 처리 테스트 - 실패 (개인 워크스페이스에서 실시간 모드 생성 시도)")
+	void completeQuestionSetTest_Fail_PersonalTeamWithLiveTimeMode() {
+		// given
+		final Long questionSetId = 1L;
+		final Long teamId = 100L;
+
+		QuestionSetEntity questionSetEntity = QuestionSetEntity.builder()
+			.subject("주제")
+			.title("제목")
+			.teamId(teamId)
+			.visibility(QuestionSetVisibility.GROUP)
+			.build();
+
+		when(questionSetEntityRepository.findById(questionSetId)).thenReturn(Optional.of(questionSetEntity));
+		when(teamReader.getTeam(teamId)).thenReturn(TeamEntity.ofPersonal("개인 워크스페이스", 1L));
+
+		// when, then
+		assertThatThrownBy(() -> questionSetService.completeQuestionSet(
+			questionSetId,
+			"제목",
+			"주제",
+			QuestionSetSolveMode.LIVE_TIME,
+			"난이도",
+			QuestionSetVisibility.GROUP,
+			List.of()))
+			.isInstanceOfSatisfying(QuestionSetStatusException.class, ex -> {
+				assertThat(ex.getExceptionCode())
+					.isEqualTo(QuestionSetStatusExceptionCode.CANNOT_CREATE_LIVE_TIME_IN_PERSONAL_TEAM);
+				assertThat(ex.getMessage())
+					.isEqualTo(QuestionSetStatusExceptionCode.CANNOT_CREATE_LIVE_TIME_IN_PERSONAL_TEAM.getMessage());
+			});
+
+		verify(questionSetCategoryService, never()).updateLinkedCategories(anyLong(), anyLong(), anyList());
+	}
+
+	@Test
+	@DisplayName("문제 셋 완료 처리 테스트 - 성공 (개인 워크스페이스에서 학습 모드 생성)")
+	void completeQuestionSetTest_PersonalTeamWithStudyMode() {
+		// given
+		final Long questionSetId = 1L;
+		final Long teamId = 100L;
+
+		QuestionSetEntity questionSetEntity = QuestionSetEntity.builder()
+			.subject("주제")
+			.title("제목")
+			.teamId(teamId)
+			.visibility(QuestionSetVisibility.GROUP)
+			.build();
+
+		when(questionSetEntityRepository.findById(questionSetId)).thenReturn(Optional.of(questionSetEntity));
+
+		// when
+		questionSetService.completeQuestionSet(
+			questionSetId,
+			"제목",
+			"주제",
+			QuestionSetSolveMode.STUDY,
+			"난이도",
+			QuestionSetVisibility.GROUP,
+			List.of());
+
+		// then
+		assertThat(questionSetEntity.getSolveMode()).isEqualTo(QuestionSetSolveMode.STUDY);
+		verify(teamReader, never()).getTeam(anyLong());
 	}
 
 	@Test
