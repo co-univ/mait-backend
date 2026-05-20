@@ -6,6 +6,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.coniv.mait.domain.auth.dto.OauthPendingPayload;
+import com.coniv.mait.domain.team.service.TeamService;
 import com.coniv.mait.domain.user.component.UserNickNameGenerator;
 import com.coniv.mait.domain.user.entity.UserEntity;
 import com.coniv.mait.domain.user.enums.LoginProvider;
@@ -34,6 +35,7 @@ public class UserService {
 	private final ObjectMapper objectMapper;
 	private final JwtTokenProvider jwtTokenProvider;
 	private final RefreshTokenRepository refreshTokenRepository;
+	private final TeamService teamService;
 
 	public UserDto getUserInfo(final Long userId) {
 		UserEntity user = userEntityRepository.findById(userId)
@@ -77,6 +79,8 @@ public class UserService {
 		String code = userNickNameGenerator.generateNicknameCode(nickname);
 		user.updateNickname(nickname, code);
 		UserEntity saved = userEntityRepository.save(user);
+
+		teamService.createPersonalWorkspace(saved);
 
 		policyService.checkPolicies(saved.getId(), policyChecks);
 
