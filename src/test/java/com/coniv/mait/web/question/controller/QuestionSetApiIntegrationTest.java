@@ -325,6 +325,8 @@ public class QuestionSetApiIntegrationTest extends BaseIntegrationTest {
 	@DisplayName("문제 셋 최종 저장 API 성공 테스트")
 	void updateQuestionSetsApiSuccess() throws Exception {
 		// given
+		TeamEntity team = teamEntityRepository.save(TeamEntity.ofGroup("코니브", 1L));
+
 		UpdateQuestionSetApiRequest request = new UpdateQuestionSetApiRequest(
 			"Updated Title",
 			"Updated Subject",
@@ -336,6 +338,7 @@ public class QuestionSetApiIntegrationTest extends BaseIntegrationTest {
 		QuestionSetEntity questionSet = questionSetEntityRepository.save(
 			QuestionSetEntity.builder()
 				.subject("Initial Subject")
+				.teamId(team.getId())
 				.creationType(QuestionSetCreationType.MANUAL)
 				.build());
 
