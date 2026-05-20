@@ -110,12 +110,14 @@ class TeamServiceTest {
 	}
 
 	@Test
-	@DisplayName("개인 워크스페이스 생성 시 PERSONAL 타입 팀과 OWNER TeamUser가 저장된다")
+	@DisplayName("개인 워크스페이스 생성 시 실명 기반 이름의 PERSONAL 팀과 OWNER TeamUser가 저장된다")
 	void createPersonalWorkspace_SavesPersonalTeamAndOwner() {
 		// given
 		Long ownerId = 1L;
+		String ownerName = "홍길동";
 		UserEntity owner = mock(UserEntity.class);
 		when(owner.getId()).thenReturn(ownerId);
+		when(owner.getName()).thenReturn(ownerName);
 
 		ArgumentCaptor<TeamEntity> teamCaptor = ArgumentCaptor.forClass(TeamEntity.class);
 		ArgumentCaptor<TeamUserEntity> teamUserCaptor = ArgumentCaptor.forClass(TeamUserEntity.class);
@@ -134,7 +136,7 @@ class TeamServiceTest {
 		TeamEntity savedTeam = teamCaptor.getValue();
 		assertThat(savedTeam.getType()).isEqualTo(com.coniv.mait.domain.team.enums.TeamType.PERSONAL);
 		assertThat(savedTeam.getCreatorId()).isEqualTo(ownerId);
-		assertThat(savedTeam.getName()).isNotBlank();
+		assertThat(savedTeam.getName()).isEqualTo(ownerName + "의 워크스페이스");
 
 		TeamUserEntity savedTeamUser = teamUserCaptor.getValue();
 		assertThat(savedTeamUser.getUser()).isSameAs(owner);
