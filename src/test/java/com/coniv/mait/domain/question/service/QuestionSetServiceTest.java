@@ -29,7 +29,6 @@ import com.coniv.mait.domain.question.repository.QuestionSetEntityRepository;
 import com.coniv.mait.domain.question.service.dto.QuestionSetDto;
 import com.coniv.mait.domain.question.service.dto.QuestionValidateDto;
 import com.coniv.mait.domain.team.entity.TeamEntity;
-import com.coniv.mait.domain.team.enums.TeamType;
 import com.coniv.mait.domain.team.service.component.TeamReader;
 import com.coniv.mait.domain.user.service.component.TeamRoleValidator;
 import com.coniv.mait.global.auth.model.MaitUser;
@@ -432,7 +431,10 @@ class QuestionSetServiceTest {
 			.visibility(QuestionSetVisibility.GROUP)
 			.build();
 
+		TeamEntity team = TeamEntity.ofPersonal("name", 1L);
+
 		when(questionSetEntityRepository.findById(questionSetId)).thenReturn(Optional.of(questionSetEntity));
+		when(teamReader.getTeam(questionSetEntity.getTeamId())).thenReturn(team);
 
 		// when
 		questionSetService.completeQuestionSet(
@@ -446,7 +448,6 @@ class QuestionSetServiceTest {
 
 		// then
 		assertThat(questionSetEntity.getSolveMode()).isEqualTo(QuestionSetSolveMode.STUDY);
-		verify(teamReader, never()).getTeam(anyLong());
 	}
 
 	@Test
