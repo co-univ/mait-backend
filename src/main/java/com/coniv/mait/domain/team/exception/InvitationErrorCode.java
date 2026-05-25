@@ -16,7 +16,8 @@ public enum InvitationErrorCode {
 	ONLY_OWNER_OR_MAKER_APPROVE("팀 소유자나 메이커만 신청을 승인할 수 있습니다."),
 	TOKEN_NOT_BELONG_TEAM("초대 토큰이 해당 팀에 속하지 않습니다."),
 	USER_ALREADY_APPLIED("해당 초대 코드로 이미 신청한 사용자입니다."),
-	CANT_CREATE_INVITE("초대 코드를 생성 권한이 없습니다.");
+	CANT_CREATE_INVITE("초대 코드를 생성 권한이 없습니다."),
+	CANNOT_INVITE_IN_PERSONAL_WORKSPACE("개인 워크스페이스에서는 초대 링크를 생성할 수 없습니다.");
 
 	private final String description;
 }

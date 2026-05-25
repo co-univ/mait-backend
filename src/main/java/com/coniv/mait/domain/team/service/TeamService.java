@@ -19,6 +19,7 @@ import com.coniv.mait.domain.team.entity.TeamInvitationLinkEntity;
 import com.coniv.mait.domain.team.entity.TeamUserEntity;
 import com.coniv.mait.domain.team.enums.InvitationApplicationStatus;
 import com.coniv.mait.domain.team.enums.JoinedImmediate;
+import com.coniv.mait.domain.team.enums.TeamType;
 import com.coniv.mait.domain.team.enums.TeamUserRole;
 import com.coniv.mait.domain.team.event.MemberEmailInfo;
 import com.coniv.mait.domain.team.event.TeamDeletedEvent;
@@ -128,6 +129,9 @@ public class TeamService {
 			throw new TeamInvitationFailException(InvitationErrorCode.CANNOT_CREATE_WITH_OWNER_ROLE);
 		}
 		TeamEntity team = teamReader.getActiveTeam(teamId);
+		if (team.getType() == TeamType.PERSONAL) {
+			throw new TeamInvitationFailException(InvitationErrorCode.CANNOT_INVITE_IN_PERSONAL_WORKSPACE);
+		}
 		UserEntity invitor = userEntityRepository.findById(invitorId)
 			.orElseThrow(
 				() -> new EntityNotFoundException("Owner user not found with id: " + invitorId));
