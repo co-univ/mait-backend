@@ -247,6 +247,33 @@ class TeamServiceTest {
 	}
 
 	@Test
+	@DisplayName("팀 초대 코드 생성 실패 - 개인 워크스페이스에서는 초대 링크를 생성할 수 없음")
+	void createTeamInviteCode_Failure_PersonalWorkspace() {
+		// given
+		Long teamId = 1L;
+		Long ownerId = 1L;
+		TeamEntity personalTeam = TeamEntity.ofPersonal("홍길동의 워크스페이스", ownerId);
+		InviteTokenDuration duration = InviteTokenDuration.ONE_DAY;
+		TeamUserRole role = TeamUserRole.PLAYER;
+		boolean requiresApproval = false;
+
+		when(teamReader.getActiveTeam(teamId)).thenReturn(personalTeam);
+
+		// when & then
+		Throwable thrown = catchThrowable(
+			() -> teamService.createTeamInviteCode(teamId, ownerId, duration, role, requiresApproval));
+		assertThat(thrown).isInstanceOf(TeamInvitationFailException.class);
+		assertThat(((TeamInvitationFailException)thrown).getErrorCode()).isEqualTo(
+			InvitationErrorCode.CANNOT_INVITE_IN_PERSONAL_WORKSPACE);
+
+		verify(teamReader).getActiveTeam(teamId);
+		verify(userEntityRepository, never()).findById(any());
+		verify(teamUserEntityRepository, never()).findByTeamAndUser(any(), any());
+		verify(inviteTokenGenerator, never()).generateUniqueInviteToken();
+		verify(teamInvitationEntityRepository, never()).save(any());
+	}
+
+	@Test
 	@DisplayName("팀 초대 코드 생성 실패 - PLAYER는 초대 코드를 생성할 수 없음")
 	void createTeamInviteCode_Failure_PlayerCannotInvite() {
 		// given
