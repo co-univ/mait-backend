@@ -11,18 +11,16 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.coniv.mait.domain.question.enums.QuestionSetStatus;
-import com.coniv.mait.domain.question.service.QuestionRankService;
 import com.coniv.mait.domain.question.service.QuestionService;
 import com.coniv.mait.domain.question.service.QuestionSetLiveControlService;
 import com.coniv.mait.domain.question.service.QuestionSetParticipantService;
+import com.coniv.mait.domain.question.service.QuestionSetRankService;
 import com.coniv.mait.domain.question.service.dto.CurrentQuestionDto;
 import com.coniv.mait.global.response.ApiResponse;
 import com.coniv.mait.web.question.dto.CurrentQuestionApiResponse;
 import com.coniv.mait.web.question.dto.ParticipantSendType;
 import com.coniv.mait.web.question.dto.ParticipantsByStatusApiResponse;
 import com.coniv.mait.web.question.dto.ParticipantsCorrectAnswerRankResponse;
-import com.coniv.mait.web.question.dto.QuestionSetLiveStatusResponse;
 import com.coniv.mait.web.question.dto.SendWinnerRequest;
 import com.coniv.mait.web.question.dto.UpdateActiveParticipantsRequest;
 import com.coniv.mait.web.question.dto.UpdateWinnerApiRequest;
@@ -44,7 +42,7 @@ public class QuestionSetLiveController {
 
 	private final QuestionService questionService;
 
-	private final QuestionRankService questionRankService;
+	private final QuestionSetRankService questionSetRankService;
 
 	private final QuestionSetParticipantService questionSetParticipantService;
 
@@ -93,8 +91,8 @@ public class QuestionSetLiveController {
 
 	@Operation(summary = "우승자 확정하기")
 	@PutMapping("/participants/winners")
-	public ResponseEntity<ApiResponse<?>> updateWinner(
-		@PathVariable("questionSetId") Long questionSetId, @RequestBody @Valid UpdateWinnerApiRequest request) {
+	public ResponseEntity<ApiResponse<Void>> updateWinner(
+		@PathVariable Long questionSetId, @RequestBody @Valid UpdateWinnerApiRequest request) {
 		questionSetParticipantService.updateWinners(questionSetId, request.winners());
 		return ResponseEntity.ok(ApiResponse.noContent());
 	}
@@ -114,7 +112,7 @@ public class QuestionSetLiveController {
 	public ResponseEntity<ApiResponse<ParticipantsCorrectAnswerRankResponse>> getCorrectAnswerRank(
 		@PathVariable Long questionSetId) {
 		ParticipantsCorrectAnswerRankResponse response = ParticipantsCorrectAnswerRankResponse.from(
-			questionRankService.getParticipantCorrectRank(questionSetId));
+			questionSetRankService.getParticipantCorrectRank(questionSetId));
 		return ResponseEntity.ok(ApiResponse.ok(response));
 	}
 

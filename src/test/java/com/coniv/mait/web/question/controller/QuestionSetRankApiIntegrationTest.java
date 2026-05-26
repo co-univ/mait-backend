@@ -15,11 +15,15 @@ import com.coniv.mait.config.TestRedisConfig;
 import com.coniv.mait.domain.question.entity.MultipleQuestionEntity;
 import com.coniv.mait.domain.question.entity.QuestionSetEntity;
 import com.coniv.mait.domain.question.entity.QuestionSetParticipantEntity;
+import com.coniv.mait.domain.question.enums.QuestionSetSolveMode;
+import com.coniv.mait.domain.question.enums.QuestionSetStatus;
 import com.coniv.mait.domain.question.repository.QuestionEntityRepository;
 import com.coniv.mait.domain.question.repository.QuestionSetEntityRepository;
 import com.coniv.mait.domain.question.repository.QuestionSetParticipantRepository;
 import com.coniv.mait.domain.solve.entity.AnswerSubmitRecordEntity;
+import com.coniv.mait.domain.solve.entity.QuestionScorerEntity;
 import com.coniv.mait.domain.solve.repository.AnswerSubmitRecordEntityRepository;
+import com.coniv.mait.domain.solve.repository.QuestionScorerEntityRepository;
 import com.coniv.mait.domain.team.entity.TeamEntity;
 import com.coniv.mait.domain.team.entity.TeamUserEntity;
 import com.coniv.mait.domain.team.repository.TeamEntityRepository;
@@ -54,9 +58,13 @@ public class QuestionSetRankApiIntegrationTest extends BaseIntegrationTest {
 	@Autowired
 	private AnswerSubmitRecordEntityRepository answerSubmitRecordEntityRepository;
 
+	@Autowired
+	private QuestionScorerEntityRepository questionScorerEntityRepository;
+
 	@BeforeEach
 	void setUp() {
 		answerSubmitRecordEntityRepository.deleteAll();
+		questionScorerEntityRepository.deleteAll();
 		questionSetParticipantRepository.deleteAll();
 		teamUserEntityRepository.deleteAll();
 		questionEntityRepository.deleteAll();
@@ -202,5 +210,88 @@ public class QuestionSetRankApiIntegrationTest extends BaseIntegrationTest {
 		assertThat(answerSubmitRecordEntityRepository.count()).isEqualTo(6);
 		assertThat(questionSetEntityRepository.count()).isEqualTo(1);
 		assertThat(userEntityRepository.count()).isEqualTo(3);
+	}
+
+	@Test
+	@DisplayName("실시간 득점자 랭킹 및 내 등수 조회 API 통합 테스트")
+	void getScorerRanks_IntegrationTest() throws Exception {
+		// given
+		TeamEntity team = teamEntityRepository.save(
+			TeamEntity.ofGroup("테스트 팀", 1L));
+
+		UserEntity user1 = userEntityRepository.save(
+			UserEntity.localLoginUser("user1@test.com", "password", "사용자1", "user1"));
+		UserEntity user2 = userEntityRepository.save(
+			UserEntity.localLoginUser("user2@test.com", "password", "사용자2", "user2"));
+		UserEntity user3 = userEntityRepository.save(
+			UserEntity.localLoginUser("user3@test.com", "password", "사용자3", "user3"));
+
+		teamUserEntityRepository.save(TeamUserEntity.createPlayerUser(user1, team));
+		teamUserEntityRepository.save(TeamUserEntity.createPlayerUser(user2, team));
+		teamUserEntityRepository.save(TeamUserEntity.createPlayerUser(user3, team));
+
+		QuestionSetEntity questionSet = questionSetEntityRepository.save(
+			QuestionSetEntity.builder()
+				.subject("실시간 문제집")
+				.teamId(team.getId())
+				.solveMode(QuestionSetSolveMode.LIVE_TIME)
+				.status(QuestionSetStatus.AFTER)
+				.build());
+
+		questionSetParticipantRepository.save(
+			QuestionSetParticipantEntity.createActiveParticipant(questionSet, user1));
+		questionSetParticipantRepository.save(
+			QuestionSetParticipantEntity.createActiveParticipant(questionSet, user2));
+		questionSetParticipantRepository.save(
+			QuestionSetParticipantEntity.createActiveParticipant(questionSet, user3));
+
+		MultipleQuestionEntity question1 = questionEntityRepository.save(
+			MultipleQuestionEntity.builder().questionSet(questionSet).content("문제 1").number(1L).lexoRank("a").build());
+		MultipleQuestionEntity question2 = questionEntityRepository.save(
+			MultipleQuestionEntity.builder().questionSet(questionSet).content("문제 2").number(2L).lexoRank("b").build());
+		MultipleQuestionEntity question3 = questionEntityRepository.save(
+			MultipleQuestionEntity.builder().questionSet(questionSet).content("문제 3").number(3L).lexoRank("c").build());
+		MultipleQuestionEntity question4 = questionEntityRepository.save(
+			MultipleQuestionEntity.builder().questionSet(questionSet).content("문제 4").number(4L).lexoRank("d").build());
+		MultipleQuestionEntity question5 = questionEntityRepository.save(
+			MultipleQuestionEntity.builder().questionSet(questionSet).content("문제 5").number(5L).lexoRank("e").build());
+
+		// user1: 2득점(q1, q2), user2: 2득점(q3, q4), user3: 1득점(q5)
+		questionScorerEntityRepository.save(
+			QuestionScorerEntity.builder().questionId(question1.getId()).userId(user1.getId()).submitOrder(1L).build());
+		questionScorerEntityRepository.save(
+			QuestionScorerEntity.builder().questionId(question2.getId()).userId(user1.getId()).submitOrder(1L).build());
+		questionScorerEntityRepository.save(
+			QuestionScorerEntity.builder().questionId(question3.getId()).userId(user2.getId()).submitOrder(1L).build());
+		questionScorerEntityRepository.save(
+			QuestionScorerEntity.builder().questionId(question4.getId()).userId(user2.getId()).submitOrder(1L).build());
+		questionScorerEntityRepository.save(
+			QuestionScorerEntity.builder().questionId(question5.getId()).userId(user3.getId()).submitOrder(1L).build());
+
+		// when & then
+		mockMvc.perform(get("/api/v1/question-sets/{questionSetId}/live/scorer-ranks", questionSet.getId())
+				.accept(MediaType.APPLICATION_JSON))
+			.andExpectAll(
+				status().isOk(),
+				jsonPath("$.isSuccess").value(true),
+				jsonPath("$.data.questionSetId").value(questionSet.getId()),
+				jsonPath("$.data.rankings").isArray(),
+				jsonPath("$.data.rankings.length()").value(3),
+				jsonPath("$.data.rankings[0].rank").value(1),
+				jsonPath("$.data.rankings[0].count").value(2L),
+				jsonPath("$.data.rankings[0].user.id").value(user1.getId()),
+				jsonPath("$.data.rankings[0].user.name").value("사용자1"),
+				jsonPath("$.data.rankings[1].rank").value(1),
+				jsonPath("$.data.rankings[1].count").value(2L),
+				jsonPath("$.data.rankings[1].user.id").value(user2.getId()),
+				jsonPath("$.data.rankings[2].rank").value(2),
+				jsonPath("$.data.rankings[2].count").value(1L),
+				jsonPath("$.data.rankings[2].user.id").value(user3.getId()),
+				jsonPath("$.data.containsUserRank").value(false)
+			);
+
+		// then
+		assertThat(questionScorerEntityRepository.count()).isEqualTo(5);
+		assertThat(questionSetParticipantRepository.count()).isEqualTo(3);
 	}
 }
