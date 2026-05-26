@@ -6,19 +6,24 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import java.util.List;
 
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
 import com.coniv.mait.domain.question.dto.AnswerRankDto;
-import com.coniv.mait.domain.question.service.QuestionRankService;
+import com.coniv.mait.domain.question.service.QuestionSetRankService;
 import com.coniv.mait.domain.solve.service.QuestionScorerService;
+import com.coniv.mait.domain.solve.service.dto.RankDto;
 import com.coniv.mait.domain.user.service.dto.UserDto;
+import com.coniv.mait.global.auth.model.MaitUser;
 import com.coniv.mait.global.filter.JwtAuthorizationFilter;
 import com.coniv.mait.global.interceptor.idempotency.IdempotencyInterceptor;
 
@@ -26,8 +31,10 @@ import com.coniv.mait.global.interceptor.idempotency.IdempotencyInterceptor;
 @AutoConfigureMockMvc(addFilters = false)
 class QuestionSetRankControllerTest {
 
+	private static final Long USER_ID = 1L;
+
 	@MockitoBean
-	private QuestionRankService questionRankService;
+	private QuestionSetRankService questionSetRankService;
 
 	@MockitoBean
 	private QuestionScorerService questionScorerService;
@@ -44,6 +51,17 @@ class QuestionSetRankControllerTest {
 	@BeforeEach
 	void setUp() throws Exception {
 		when(idempotencyInterceptor.preHandle(any(), any(), any())).thenReturn(true);
+
+		MaitUser user = MaitUser.builder().id(USER_ID).build();
+		var authentication = new UsernamePasswordAuthenticationToken(user, null, List.of());
+		var context = SecurityContextHolder.createEmptyContext();
+		context.setAuthentication(authentication);
+		SecurityContextHolder.setContext(context);
+	}
+
+	@AfterEach
+	void tearDown() {
+		SecurityContextHolder.clearContext();
 	}
 
 	@Test
@@ -96,7 +114,7 @@ class QuestionSetRankControllerTest {
 
 		List<AnswerRankDto> answerRanks = List.of(rank1, rank2, rank3);
 
-		when(questionRankService.getCorrectorsByQuestionSetId(questionSetId)).thenReturn(answerRanks);
+		when(questionSetRankService.getCorrectorsByQuestionSetId(questionSetId)).thenReturn(answerRanks);
 
 		// when & then
 		mockMvc.perform(get("/api/v1/question-sets/{questionSetId}/ranks", questionSetId)
@@ -118,6 +136,76 @@ class QuestionSetRankControllerTest {
 			.andExpect(jsonPath("$.data.ranksGroup[2].users.length()").value(1))
 			.andExpect(jsonPath("$.data.ranksGroup[2].users[0].userId").value(1L));
 
-		verify(questionRankService).getCorrectorsByQuestionSetId(questionSetId);
+		verify(questionSetRankService).getCorrectorsByQuestionSetId(questionSetId);
+	}
+
+	@Test
+	@DisplayName("실시간 득점자 랭킹 및 내 등수 조회 API 성공 - 내 등수가 노출 범위 내")
+	void getScorerRanks_Success_ContainsUserRank() throws Exception {
+		// given
+		final Long questionSetId = 1L;
+
+		RankDto myRank = RankDto.builder()
+			.user(UserDto.builder().id(USER_ID).name("나").build())
+			.rank(1)
+			.count(3L)
+			.build();
+		RankDto otherRank = RankDto.builder()
+			.user(UserDto.builder().id(2L).name("다른유저").build())
+			.rank(2)
+			.count(1L)
+			.build();
+
+		when(questionSetRankService.getScorerRankByQuestionSetId(questionSetId))
+			.thenReturn(List.of(myRank, otherRank));
+
+		// when & then
+		mockMvc.perform(get("/api/v1/question-sets/{questionSetId}/live/scorer-ranks", questionSetId)
+				.param("rankCount", "1"))
+			.andExpectAll(
+				status().isOk(),
+				jsonPath("$.isSuccess").value(true),
+				jsonPath("$.data.questionSetId").value(questionSetId),
+				jsonPath("$.data.rankings").isArray(),
+				jsonPath("$.data.rankings.length()").value(1),
+				jsonPath("$.data.rankings[0].rank").value(1),
+				jsonPath("$.data.rankings[0].count").value(3L),
+				jsonPath("$.data.rankings[0].user.id").value(USER_ID),
+				jsonPath("$.data.userRank.rank").value(1),
+				jsonPath("$.data.containsUserRank").value(true));
+
+		verify(questionSetRankService).getScorerRankByQuestionSetId(questionSetId);
+	}
+
+	@Test
+	@DisplayName("실시간 득점자 랭킹 및 내 등수 조회 API 성공 - 내 등수가 노출 범위 밖")
+	void getScorerRanks_Success_NotContainsUserRank() throws Exception {
+		// given
+		final Long questionSetId = 1L;
+
+		RankDto otherRank = RankDto.builder()
+			.user(UserDto.builder().id(2L).name("다른유저").build())
+			.rank(1)
+			.count(3L)
+			.build();
+		RankDto myRank = RankDto.builder()
+			.user(UserDto.builder().id(USER_ID).name("나").build())
+			.rank(2)
+			.count(1L)
+			.build();
+
+		when(questionSetRankService.getScorerRankByQuestionSetId(questionSetId))
+			.thenReturn(List.of(otherRank, myRank));
+
+		// when & then
+		mockMvc.perform(get("/api/v1/question-sets/{questionSetId}/live/scorer-ranks", questionSetId)
+				.param("rankCount", "1"))
+			.andExpectAll(
+				status().isOk(),
+				jsonPath("$.isSuccess").value(true),
+				jsonPath("$.data.rankings.length()").value(1),
+				jsonPath("$.data.rankings[0].user.id").value(2L),
+				jsonPath("$.data.userRank.rank").value(2),
+				jsonPath("$.data.containsUserRank").value(false));
 	}
 }
