@@ -255,4 +255,81 @@ class TeamRoleValidatorTest {
 		verify(teamUserEntityRepository).findByTeamAndUser(team, user);
 		verify(teamUser).getUserRole();
 	}
+
+	@Test
+	@DisplayName("checkIsTeamOwner - OWNER 권한을 가진 사용자는 팀 OWNER 확인 성공")
+	void checkIsTeamOwner_Owner_Success() {
+		// given
+		Long teamId = 1L;
+		Long userId = 100L;
+
+		TeamEntity team = mock(TeamEntity.class);
+		UserEntity user = mock(UserEntity.class);
+		TeamUserEntity teamUser = mock(TeamUserEntity.class);
+
+		when(teamReader.getActiveTeam(teamId)).thenReturn(team);
+		when(userEntityRepository.findById(userId)).thenReturn(Optional.of(user));
+		when(teamUserEntityRepository.findByTeamAndUser(team, user)).thenReturn(Optional.of(teamUser));
+		when(teamUser.getUserRole()).thenReturn(TeamUserRole.OWNER);
+
+		// when & then
+		assertThatCode(() -> teamRoleValidator.checkIsTeamOwner(teamId, userId))
+			.doesNotThrowAnyException();
+
+		verify(teamReader).getActiveTeam(teamId);
+		verify(userEntityRepository).findById(userId);
+		verify(teamUserEntityRepository).findByTeamAndUser(team, user);
+		verify(teamUser).getUserRole();
+	}
+
+	@Test
+	@DisplayName("checkIsTeamOwner - MAKER 권한을 가진 사용자는 UserRoleException 발생")
+	void checkIsTeamOwner_Maker_ThrowsUserRoleException() {
+		// given
+		Long teamId = 1L;
+		Long userId = 100L;
+
+		TeamEntity team = mock(TeamEntity.class);
+		UserEntity user = mock(UserEntity.class);
+		TeamUserEntity teamUser = mock(TeamUserEntity.class);
+
+		when(teamReader.getActiveTeam(teamId)).thenReturn(team);
+		when(userEntityRepository.findById(userId)).thenReturn(Optional.of(user));
+		when(teamUserEntityRepository.findByTeamAndUser(team, user)).thenReturn(Optional.of(teamUser));
+		when(teamUser.getUserRole()).thenReturn(TeamUserRole.MAKER);
+
+		// when & then
+		assertThatThrownBy(() -> teamRoleValidator.checkIsTeamOwner(teamId, userId))
+			.isInstanceOf(UserRoleException.class)
+			.hasMessage("해당 팀의 OWNER가 아닙니다.");
+
+		verify(teamReader).getActiveTeam(teamId);
+		verify(userEntityRepository).findById(userId);
+		verify(teamUserEntityRepository).findByTeamAndUser(team, user);
+		verify(teamUser).getUserRole();
+	}
+
+	@Test
+	@DisplayName("checkIsTeamOwner - 팀 멤버가 아닌 경우 EntityNotFoundException 발생")
+	void checkIsTeamOwner_NotTeamMember_ThrowsException() {
+		// given
+		Long teamId = 1L;
+		Long userId = 100L;
+
+		TeamEntity team = mock(TeamEntity.class);
+		UserEntity user = mock(UserEntity.class);
+
+		when(teamReader.getActiveTeam(teamId)).thenReturn(team);
+		when(userEntityRepository.findById(userId)).thenReturn(Optional.of(user));
+		when(teamUserEntityRepository.findByTeamAndUser(team, user)).thenReturn(Optional.empty());
+
+		// when & then
+		assertThatThrownBy(() -> teamRoleValidator.checkIsTeamOwner(teamId, userId))
+			.isInstanceOf(EntityNotFoundException.class)
+			.hasMessage("해당 팀의 멤버가 아닙니다.");
+
+		verify(teamReader).getActiveTeam(teamId);
+		verify(userEntityRepository).findById(userId);
+		verify(teamUserEntityRepository).findByTeamAndUser(team, user);
+	}
 }
