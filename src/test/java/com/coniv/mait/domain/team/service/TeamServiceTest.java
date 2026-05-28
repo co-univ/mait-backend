@@ -40,6 +40,7 @@ import com.coniv.mait.domain.team.service.component.TeamReader;
 import com.coniv.mait.domain.team.service.dto.TeamInvitationDto;
 import com.coniv.mait.domain.user.entity.UserEntity;
 import com.coniv.mait.domain.user.enums.LoginProvider;
+import com.coniv.mait.domain.user.exception.UserRoleException;
 import com.coniv.mait.domain.user.repository.UserEntityRepository;
 import com.coniv.mait.domain.user.service.component.TeamRoleValidator;
 import com.coniv.mait.global.auth.model.MaitUser;
@@ -158,6 +159,48 @@ class TeamServiceTest {
 
 		// then
 		verify(teamUserEntityRepository, times(1)).saveAll(anyList());
+	}
+
+	@Test
+	@DisplayName("팀 이름 변경 성공 - OWNER 권한 확인 후 팀 이름을 변경한다")
+	void updateTeamName_Success() {
+		// given
+		Long teamId = 1L;
+		Long ownerId = 1L;
+		TeamEntity team = TeamEntity.ofGroup("기존 팀", ownerId);
+
+		when(teamReader.getActiveTeam(teamId)).thenReturn(team);
+		doNothing().when(teamRoleValidator).checkIsTeamOwner(teamId, ownerId);
+
+		// when
+		teamService.updateTeamName(teamId, "변경된 팀", ownerId);
+
+		// then
+		assertThat(team.getName()).isEqualTo("변경된 팀");
+		verify(teamReader).getActiveTeam(teamId);
+		verify(teamRoleValidator).checkIsTeamOwner(teamId, ownerId);
+	}
+
+	@Test
+	@DisplayName("팀 이름 변경 실패 - OWNER가 아니면 팀 이름을 변경하지 않는다")
+	void updateTeamName_Failure_NotOwner() {
+		// given
+		Long teamId = 1L;
+		Long userId = 2L;
+		TeamEntity team = TeamEntity.ofGroup("기존 팀", 1L);
+
+		when(teamReader.getActiveTeam(teamId)).thenReturn(team);
+		doThrow(new UserRoleException("해당 팀의 OWNER가 아닙니다."))
+			.when(teamRoleValidator).checkIsTeamOwner(teamId, userId);
+
+		// when & then
+		assertThatThrownBy(() -> teamService.updateTeamName(teamId, "변경된 팀", userId))
+			.isInstanceOf(UserRoleException.class)
+			.hasMessageContaining("해당 팀의 OWNER가 아닙니다.");
+
+		assertThat(team.getName()).isEqualTo("기존 팀");
+		verify(teamReader).getActiveTeam(teamId);
+		verify(teamRoleValidator).checkIsTeamOwner(teamId, userId);
 	}
 
 	@Test
