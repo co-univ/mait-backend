@@ -30,6 +30,7 @@ import com.coniv.mait.global.filter.JwtAuthorizationFilter;
 import com.coniv.mait.global.interceptor.idempotency.IdempotencyInterceptor;
 import com.coniv.mait.web.team.dto.CreateTeamApiRequest;
 import com.coniv.mait.web.team.dto.CreateTeamInviteApiRequest;
+import com.coniv.mait.web.team.dto.UpdateTeamNameApiRequest;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 @WebMvcTest(controllers = TeamController.class)
@@ -100,6 +101,41 @@ class TeamControllerTest {
 			.andExpect(status().isBadRequest());
 
 		verify(teamService, never()).createTeam(anyString(), any(Long.class));
+	}
+
+	@Test
+	@DisplayName("팀 이름 변경 API 성공 테스트")
+	void updateTeamName_Success() throws Exception {
+		// given
+		Long teamId = 1L;
+		UpdateTeamNameApiRequest request = new UpdateTeamNameApiRequest("변경된 팀");
+
+		doNothing().when(teamService).updateTeamName(eq(teamId), eq("변경된 팀"), eq(USER_ID));
+
+		// when & then
+		mockMvc.perform(patch("/api/v1/teams/{teamId}/name", teamId)
+				.contentType(MediaType.APPLICATION_JSON)
+				.content(objectMapper.writeValueAsString(request)))
+			.andExpect(status().isOk())
+			.andExpect(jsonPath("$.data").doesNotExist());
+
+		verify(teamService).updateTeamName(eq(teamId), eq("변경된 팀"), eq(USER_ID));
+	}
+
+	@Test
+	@DisplayName("팀 이름 변경 API 실패 테스트 - 유효하지 않은 팀 이름")
+	void updateTeamName_Failure_InvalidTeamName() throws Exception {
+		// given
+		Long teamId = 1L;
+		UpdateTeamNameApiRequest request = new UpdateTeamNameApiRequest("");
+
+		// when & then
+		mockMvc.perform(patch("/api/v1/teams/{teamId}/name", teamId)
+				.contentType(MediaType.APPLICATION_JSON)
+				.content(objectMapper.writeValueAsString(request)))
+			.andExpect(status().isBadRequest());
+
+		verify(teamService, never()).updateTeamName(any(Long.class), anyString(), any(Long.class));
 	}
 
 	@Test
