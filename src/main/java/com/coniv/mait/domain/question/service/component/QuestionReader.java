@@ -38,6 +38,10 @@ public class QuestionReader {
 		return questionEntityRepository.findAllByQuestionSetId(questionSet.getId());
 	}
 
+	public List<QuestionEntity> getOrderedQuestions(final Long questionSetId) {
+		return questionEntityRepository.findAllByQuestionSetIdOrderByLexoRankAsc(questionSetId);
+	}
+
 	public QuestionEntity getQuestion(final Long questionId) {
 		return questionEntityRepository.findById(questionId)
 			.orElseThrow(() -> new EntityNotFoundException("문제를 찾을 수 없습니다."));
