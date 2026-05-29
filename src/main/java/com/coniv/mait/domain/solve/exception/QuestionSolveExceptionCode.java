@@ -16,6 +16,7 @@ public enum QuestionSolveExceptionCode implements ExceptionCode {
 	NOT_PARTICIPATED(HttpStatus.FORBIDDEN, "QS-002", "풀이에 참여중이지 않은 유저입니다."),
 	ALREADY(HttpStatus.CONFLICT, "QS-003", "이미 정답 처리 기록이 존재합니다."),
 	ALREADY_GRADED(HttpStatus.CONFLICT, "QS-004", "이미 채점된 학습 세션입니다."),
+	NO_SOLVE_RECORD(HttpStatus.NOT_FOUND, "QS-005", "해당 문제 셋에 대한 풀이 기록이 없습니다."),
 
 	ANSWER_COUNT(HttpStatus.BAD_REQUEST, "S-001", "제출된 답변의 개수와 문제의 답변 개수가 일치하지 않습니다."),
 
