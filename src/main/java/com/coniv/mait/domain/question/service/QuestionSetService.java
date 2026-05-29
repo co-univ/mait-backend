@@ -14,6 +14,7 @@ import com.coniv.mait.domain.question.enums.AiRequestStatus;
 import com.coniv.mait.domain.question.enums.DeliveryMode;
 import com.coniv.mait.domain.question.enums.QuestionSetCreationType;
 import com.coniv.mait.domain.question.enums.QuestionSetSolveMode;
+import com.coniv.mait.domain.question.enums.QuestionSetStatus;
 import com.coniv.mait.domain.question.enums.QuestionSetVisibility;
 import com.coniv.mait.domain.question.event.AiQuestionGenerationRequestedEvent;
 import com.coniv.mait.domain.question.exception.QuestionSetStatusException;
@@ -183,6 +184,9 @@ public class QuestionSetService {
 		}
 
 		questionSet.completeQuestionSet(title, subject, solveMode, difficulty, visibility);
+		if (team.getType() == TeamType.PERSONAL) {
+			questionSet.markOngoingOnComplete();
+		}
 		questionSetCategoryService.updateLinkedCategories(questionSetId, questionSet.getTeamId(), categoryIds);
 
 		return QuestionSetDto.from(questionSet);
