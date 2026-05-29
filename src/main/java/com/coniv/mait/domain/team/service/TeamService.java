@@ -75,7 +75,7 @@ public class TeamService {
 
 	@Transactional
 	public void createPersonalWorkspace(final UserEntity owner) {
-		String workspaceName = owner.getName() + PERSONAL_WORKSPACE_NAME_SUFFIX;
+		String workspaceName = owner.getNickname() + PERSONAL_WORKSPACE_NAME_SUFFIX;
 		TeamEntity teamEntity = teamEntityRepository.save(TeamEntity.ofPersonal(workspaceName, owner.getId()));
 		teamUserEntityRepository.save(TeamUserEntity.createOwnerUser(owner, teamEntity));
 	}

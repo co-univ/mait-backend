@@ -194,7 +194,7 @@ public class UserApiIntegrationTest extends BaseIntegrationTest {
 		TeamEntity personalTeam = personalMembership.getTeam();
 		assertThat(personalTeam.getType()).isEqualTo(TeamType.PERSONAL);
 		assertThat(personalTeam.getCreatorId()).isEqualTo(savedUser.getId());
-		assertThat(personalTeam.getName()).isEqualTo(savedUser.getName() + "의 워크스페이스");
+		assertThat(personalTeam.getName()).isEqualTo(savedUser.getNickname() + "의 워크스페이스");
 
 		assertThat(teamEntityRepository.findById(personalTeam.getId())).isPresent();
 	}
