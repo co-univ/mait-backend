@@ -418,7 +418,7 @@ class QuestionSetServiceTest {
 	}
 
 	@Test
-	@DisplayName("문제 셋 완료 처리 테스트 - 성공 (개인 워크스페이스에서 학습 모드 생성)")
+	@DisplayName("문제 셋 완료 처리 테스트 - 성공 (개인 워크스페이스 학습 모드 생성 시 풀이 중 상태로 전환)")
 	void completeQuestionSetTest_PersonalTeamWithStudyMode() {
 		// given
 		final Long questionSetId = 1L;
@@ -448,6 +448,8 @@ class QuestionSetServiceTest {
 
 		// then
 		assertThat(questionSetEntity.getSolveMode()).isEqualTo(QuestionSetSolveMode.STUDY);
+		assertThat(questionSetEntity.getStatus()).isEqualTo(QuestionSetStatus.ONGOING);
+		assertThat(questionSetEntity.getStartTime()).isNotNull();
 	}
 
 	@Test
