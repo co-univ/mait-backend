@@ -47,7 +47,7 @@ public class SolvingResultService {
 		}
 
 		List<QuestionSolveResultDto> results = orderedQuestionIds.stream()
-			.map(questionId -> toQuestionResult(questionId, earliestByQuestionId.get(questionId)))
+			.map(questionId -> QuestionSolveResultDto.of(questionId, earliestByQuestionId.get(questionId)))
 			.toList();
 
 		int totalCount = results.size();
@@ -56,13 +56,5 @@ public class SolvingResultService {
 			.count();
 
 		return MySolveRecordDto.of(questionSet.getId(), questionSet.getSolveMode(), totalCount, correctCount, results);
-	}
-
-	private QuestionSolveResultDto toQuestionResult(final Long questionId,
-		final AnswerSubmitRecordEntity earliestRecord) {
-		if (earliestRecord == null) {
-			return QuestionSolveResultDto.unanswered(questionId);
-		}
-		return QuestionSolveResultDto.from(earliestRecord);
 	}
 }
