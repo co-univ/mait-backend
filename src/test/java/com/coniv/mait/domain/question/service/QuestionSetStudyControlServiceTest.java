@@ -14,10 +14,13 @@ import com.coniv.mait.domain.question.entity.QuestionSetEntity;
 import com.coniv.mait.domain.question.enums.QuestionSetSolveMode;
 import com.coniv.mait.domain.question.enums.QuestionSetStatus;
 import com.coniv.mait.domain.question.exception.QuestionSetStatusException;
+import com.coniv.mait.domain.question.exception.code.QuestionSetStatusExceptionCode;
 import com.coniv.mait.domain.question.service.component.QuestionSetReader;
 import com.coniv.mait.domain.solve.enums.SolvingStatus;
 import com.coniv.mait.domain.solve.repository.SolvingSessionEntityRepository;
+import com.coniv.mait.domain.team.entity.TeamEntity;
 import com.coniv.mait.domain.team.repository.TeamUserEntityRepository;
+import com.coniv.mait.domain.team.service.component.TeamReader;
 import com.coniv.mait.domain.user.exception.UserRoleException;
 import com.coniv.mait.domain.user.service.component.TeamRoleValidator;
 import com.coniv.mait.global.auth.model.MaitUser;
@@ -46,6 +49,9 @@ class QuestionSetStudyControlServiceTest {
 
 	@Mock
 	private TeamUserEntityRepository teamUserEntityRepository;
+
+	@Mock
+	private TeamReader teamReader;
 
 	@Test
 	@DisplayName("MAKER가 STUDY 모드 BEFORE 상태 문제 셋을 시작하면 ONGOING으로 전환된다")
@@ -148,6 +154,7 @@ class QuestionSetStudyControlServiceTest {
 			.build();
 
 		when(questionSetReader.getQuestionSet(QUESTION_SET_ID)).thenReturn(questionSet);
+		when(teamReader.getTeam(TEAM_ID)).thenReturn(TeamEntity.ofGroup("팀", 1L));
 
 		// when
 		questionSetStudyControlService.endStudyQuestionSet(MAIT_USER, QUESTION_SET_ID);
@@ -202,6 +209,7 @@ class QuestionSetStudyControlServiceTest {
 			.build();
 
 		when(questionSetReader.getQuestionSet(QUESTION_SET_ID)).thenReturn(questionSet);
+		when(teamReader.getTeam(TEAM_ID)).thenReturn(TeamEntity.ofGroup("팀", 1L));
 
 		// when & then
 		assertThatThrownBy(() ->
@@ -220,6 +228,7 @@ class QuestionSetStudyControlServiceTest {
 			.build();
 
 		when(questionSetReader.getQuestionSet(QUESTION_SET_ID)).thenReturn(questionSet);
+		when(teamReader.getTeam(TEAM_ID)).thenReturn(TeamEntity.ofGroup("팀", 1L));
 
 		// when & then
 		assertThatThrownBy(() ->
@@ -278,6 +287,7 @@ class QuestionSetStudyControlServiceTest {
 			.build();
 
 		when(questionSetReader.getQuestionSet(QUESTION_SET_ID)).thenReturn(questionSet);
+		when(teamReader.getTeam(TEAM_ID)).thenReturn(TeamEntity.ofGroup("팀", 1L));
 		when(solvingSessionEntityRepository.countByQuestionSetIdAndSolveModeAndStatus(
 			QUESTION_SET_ID, QuestionSetSolveMode.STUDY, SolvingStatus.PROGRESSING))
 			.thenReturn(1L);
@@ -301,6 +311,7 @@ class QuestionSetStudyControlServiceTest {
 			.build();
 
 		when(questionSetReader.getQuestionSet(QUESTION_SET_ID)).thenReturn(questionSet);
+		when(teamReader.getTeam(TEAM_ID)).thenReturn(TeamEntity.ofGroup("팀", 1L));
 		when(solvingSessionEntityRepository.countByQuestionSetIdAndSolveModeAndStatus(
 			QUESTION_SET_ID, QuestionSetSolveMode.STUDY, SolvingStatus.PROGRESSING))
 			.thenReturn(0L);
@@ -327,6 +338,7 @@ class QuestionSetStudyControlServiceTest {
 			.build();
 
 		when(questionSetReader.getQuestionSet(QUESTION_SET_ID)).thenReturn(questionSet);
+		when(teamReader.getTeam(TEAM_ID)).thenReturn(TeamEntity.ofGroup("팀", 1L));
 		when(solvingSessionEntityRepository.countByQuestionSetIdAndSolveModeAndStatus(
 			QUESTION_SET_ID, QuestionSetSolveMode.STUDY, SolvingStatus.PROGRESSING))
 			.thenReturn(0L);
@@ -341,5 +353,51 @@ class QuestionSetStudyControlServiceTest {
 		// then
 		assertThat(questionSet.getStatus()).isEqualTo(QuestionSetStatus.AFTER);
 		assertThat(questionSet.getEndTime()).isNotNull();
+	}
+
+	@Test
+	@DisplayName("개인 워크스페이스의 학습 문제 셋은 수동 종료할 수 없다")
+	void endStudyQuestionSet_PersonalTeam_ThrowsException() {
+		// given
+		QuestionSetEntity questionSet = QuestionSetEntity.builder()
+			.teamId(TEAM_ID)
+			.solveMode(QuestionSetSolveMode.STUDY)
+			.status(QuestionSetStatus.ONGOING)
+			.build();
+
+		when(questionSetReader.getQuestionSet(QUESTION_SET_ID)).thenReturn(questionSet);
+		when(teamReader.getTeam(TEAM_ID)).thenReturn(TeamEntity.ofPersonal("개인 워크스페이스", 1L));
+
+		// when & then
+		assertThatThrownBy(() ->
+			questionSetStudyControlService.endStudyQuestionSet(MAIT_USER, QUESTION_SET_ID))
+			.isInstanceOfSatisfying(QuestionSetStatusException.class, ex -> {
+				assertThat(ex.getExceptionCode())
+					.isEqualTo(QuestionSetStatusExceptionCode.CANNOT_END_STUDY_IN_PERSONAL_TEAM);
+				assertThat(ex.getMessage())
+					.isEqualTo(QuestionSetStatusExceptionCode.CANNOT_END_STUDY_IN_PERSONAL_TEAM.getMessage());
+			});
+		assertThat(questionSet.getStatus()).isEqualTo(QuestionSetStatus.ONGOING);
+	}
+
+	@Test
+	@DisplayName("개인 워크스페이스의 학습 문제 셋은 자동 종료되지 않는다")
+	void evaluateAndAutoEnd_PersonalTeam_DoesNothing() {
+		// given
+		QuestionSetEntity questionSet = QuestionSetEntity.builder()
+			.teamId(TEAM_ID)
+			.solveMode(QuestionSetSolveMode.STUDY)
+			.status(QuestionSetStatus.ONGOING)
+			.build();
+
+		when(questionSetReader.getQuestionSet(QUESTION_SET_ID)).thenReturn(questionSet);
+		when(teamReader.getTeam(TEAM_ID)).thenReturn(TeamEntity.ofPersonal("개인 워크스페이스", 1L));
+
+		// when
+		questionSetStudyControlService.evaluateAndAutoEnd(QUESTION_SET_ID);
+
+		// then
+		assertThat(questionSet.getStatus()).isEqualTo(QuestionSetStatus.ONGOING);
+		verifyNoInteractions(solvingSessionEntityRepository, teamUserEntityRepository);
 	}
 }
