@@ -1,4 +1,4 @@
-package com.coniv.mait.web.solve.controller;
+package com.coniv.mait.web.statistic.controller;
 
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -7,10 +7,10 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.coniv.mait.domain.solve.service.SolvingResultService;
+import com.coniv.mait.domain.statistic.service.SolvingResultService;
 import com.coniv.mait.global.auth.model.MaitUser;
 import com.coniv.mait.global.response.ApiResponse;
-import com.coniv.mait.web.solve.dto.UserSolvingResultApiResponse;
+import com.coniv.mait.web.statistic.dto.UserSolvingResultApiResponse;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
