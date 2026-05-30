@@ -154,6 +154,11 @@ public class QuestionSetEntity extends BaseTimeEntity {
 		this.visibility = visibility;
 	}
 
+	public void markOngoingOnComplete() {
+		this.status = QuestionSetStatus.ONGOING;
+		this.startTime = LocalDateTime.now();
+	}
+
 	public void updateTitle(String title) {
 		this.title = title;
 	}
