@@ -1,9 +1,10 @@
-package com.coniv.mait.web.solve.dto;
+package com.coniv.mait.web.statistic.dto;
 
 import java.util.List;
 
 import com.coniv.mait.domain.question.enums.QuestionSetSolveMode;
-import com.coniv.mait.domain.solve.service.dto.MySolveRecordDto;
+import com.coniv.mait.domain.statistic.service.dto.MySolveRecordDto;
+import com.coniv.mait.web.solve.dto.QuestionSolveResultApiResponse;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Builder;

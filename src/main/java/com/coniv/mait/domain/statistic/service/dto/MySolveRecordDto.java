@@ -1,10 +1,11 @@
-package com.coniv.mait.domain.solve.service.dto;
+package com.coniv.mait.domain.statistic.service.dto;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.List;
 
 import com.coniv.mait.domain.question.enums.QuestionSetSolveMode;
+import com.coniv.mait.domain.solve.service.dto.QuestionSolveResultDto;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;

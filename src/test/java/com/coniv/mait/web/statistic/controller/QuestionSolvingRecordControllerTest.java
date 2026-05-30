@@ -1,4 +1,4 @@
-package com.coniv.mait.web.solve.controller;
+package com.coniv.mait.web.statistic.controller;
 
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.BDDMockito.*;
@@ -16,11 +16,12 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
 import com.coniv.mait.domain.question.enums.QuestionSetSolveMode;
-import com.coniv.mait.domain.solve.service.SolvingResultService;
-import com.coniv.mait.domain.solve.service.dto.MySolveRecordDto;
 import com.coniv.mait.domain.solve.service.dto.QuestionSolveResultDto;
+import com.coniv.mait.domain.statistic.service.SolvingResultService;
+import com.coniv.mait.domain.statistic.service.dto.MySolveRecordDto;
 import com.coniv.mait.global.filter.JwtAuthorizationFilter;
 import com.coniv.mait.global.interceptor.idempotency.IdempotencyInterceptor;
+import com.coniv.mait.web.statistic.controller.QuestionSolvingRecordController;
 
 @WebMvcTest(controllers = QuestionSolvingRecordController.class)
 @AutoConfigureMockMvc(addFilters = false)

@@ -7,6 +7,7 @@ import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Component;
 
+import com.coniv.mait.domain.question.entity.QuestionEntity;
 import com.coniv.mait.domain.solve.entity.AnswerSubmitRecordEntity;
 import com.coniv.mait.domain.solve.repository.AnswerSubmitRecordEntityRepository;
 
@@ -31,5 +32,14 @@ public class AnswerSubmitRecordReader {
 			.min(Comparator.comparing(AnswerSubmitRecordEntity::getSubmitOrder,
 				Comparator.nullsFirst(Comparator.naturalOrder())))
 			.orElseThrow();
+	}
+
+	public Map<Long, List<AnswerSubmitRecordEntity>> getFirstSubmitsByQuestionId(final List<QuestionEntity> questions) {
+		List<Long> questionIds = questions.stream().map(QuestionEntity::getId).toList();
+		return answerSubmitRecordEntityRepository.findAllByQuestionIdIn(questionIds).stream()
+			.collect(Collectors.groupingBy(record -> Map.entry(record.getUserId(), record.getQuestionId())))
+			.values().stream()
+			.map(this::pickEarliest)
+			.collect(Collectors.groupingBy(AnswerSubmitRecordEntity::getQuestionId));
 	}
 }
