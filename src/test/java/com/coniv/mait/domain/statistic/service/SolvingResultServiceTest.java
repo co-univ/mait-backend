@@ -1,4 +1,4 @@
-package com.coniv.mait.domain.solve.service;
+package com.coniv.mait.domain.statistic.service;
 
 import static org.assertj.core.api.Assertions.*;
 import static org.mockito.Mockito.*;
@@ -22,7 +22,8 @@ import com.coniv.mait.domain.solve.entity.AnswerSubmitRecordEntity;
 import com.coniv.mait.domain.solve.exception.QuestionSolveExceptionCode;
 import com.coniv.mait.domain.solve.exception.QuestionSolvingException;
 import com.coniv.mait.domain.solve.service.component.AnswerSubmitRecordReader;
-import com.coniv.mait.domain.solve.service.dto.MySolveRecordDto;
+import com.coniv.mait.domain.statistic.service.SolvingResultService;
+import com.coniv.mait.domain.statistic.service.dto.MySolveRecordDto;
 import com.coniv.mait.domain.user.exception.UserRoleException;
 import com.coniv.mait.domain.user.service.component.TeamRoleValidator;
 import com.coniv.mait.global.auth.model.MaitUser;
