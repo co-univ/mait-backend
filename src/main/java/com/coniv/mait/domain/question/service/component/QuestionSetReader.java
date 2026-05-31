@@ -23,8 +23,9 @@ public class QuestionSetReader {
 			.orElseThrow(() -> new EntityNotFoundException(questionSetId + " : 해당 문제 셋을 찾을 수 없습니다."));
 	}
 
-	public List<QuestionSetEntity> getFinishedLiveQuestionSetsInTeam(final Long teamId) {
+	public List<QuestionSetEntity> getFinishedLiveQuestionSetsBySolveModeInTeam(final Long teamId,
+		final QuestionSetSolveMode solveMode) {
 		return questionSetEntityRepository.findAllByTeamIdAndSolveModeAndStatusIn(teamId,
-			QuestionSetSolveMode.LIVE_TIME, List.of(QuestionSetStatus.AFTER, QuestionSetStatus.REVIEW));
+			solveMode, List.of(QuestionSetStatus.AFTER, QuestionSetStatus.REVIEW));
 	}
 }
