@@ -3,6 +3,8 @@ package com.coniv.mait.domain.statistic.service;
 import static org.assertj.core.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
+import java.time.LocalDateTime;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -15,15 +17,21 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import com.coniv.mait.domain.question.entity.QuestionEntity;
 import com.coniv.mait.domain.question.entity.QuestionSetEntity;
+import com.coniv.mait.domain.question.entity.QuestionSetParticipantEntity;
 import com.coniv.mait.domain.question.enums.QuestionSetSolveMode;
+import com.coniv.mait.domain.question.repository.QuestionEntityRepository;
 import com.coniv.mait.domain.question.service.component.QuestionReader;
 import com.coniv.mait.domain.question.service.component.QuestionSetReader;
 import com.coniv.mait.domain.solve.entity.AnswerSubmitRecordEntity;
 import com.coniv.mait.domain.solve.exception.QuestionSolveExceptionCode;
 import com.coniv.mait.domain.solve.exception.QuestionSolvingException;
 import com.coniv.mait.domain.solve.service.component.AnswerSubmitRecordReader;
+import com.coniv.mait.domain.solve.service.component.QuestionParticipantReader;
 import com.coniv.mait.domain.statistic.service.SolvingResultService;
+import com.coniv.mait.domain.statistic.service.component.QuestionSetStatisticCalculator;
 import com.coniv.mait.domain.statistic.service.dto.MySolveRecordDto;
+import com.coniv.mait.domain.statistic.service.dto.QuestionSetStatisticDto;
+import com.coniv.mait.domain.user.entity.UserEntity;
 import com.coniv.mait.domain.user.exception.UserRoleException;
 import com.coniv.mait.domain.user.service.component.TeamRoleValidator;
 import com.coniv.mait.global.auth.model.MaitUser;
@@ -52,6 +60,15 @@ class SolvingResultServiceTest {
 
 	@Mock
 	private AnswerSubmitRecordReader answerSubmitRecordReader;
+
+	@Mock
+	private QuestionParticipantReader questionParticipantReader;
+
+	@Mock
+	private QuestionEntityRepository questionEntityRepository;
+
+	@Mock
+	private QuestionSetStatisticCalculator questionSetStatisticCalculator;
 
 	@Test
 	@DisplayName("getMySolveRecord - 문제당 1건 기록(학습모드 형태)이면 전 문제가 결과에 포함되고 점수를 계산한다")
@@ -164,6 +181,99 @@ class SolvingResultServiceTest {
 		// when & then
 		assertThatThrownBy(() -> solvingResultService.getSolvingResults(MAIT_USER, QUESTION_SET_ID))
 			.isInstanceOf(UserRoleException.class);
+	}
+
+	@Test
+	@DisplayName("getTeamQuestionSetStatistics - 완료된 LIVE/STUDY 문제셋을 풀이날짜 최신순으로 우승자/내 정답률/평균과 함께 반환한다")
+	void getTeamQuestionSetStatistics_success() {
+		// given
+		QuestionSetEntity liveQs = mockStatQuestionSet(100L, "실시간", QuestionSetSolveMode.LIVE_TIME,
+			LocalDateTime.of(2026, 5, 31, 12, 0));
+		QuestionSetEntity studyQs = mockStatQuestionSet(200L, "학습", QuestionSetSolveMode.STUDY,
+			LocalDateTime.of(2026, 5, 30, 12, 0));
+		when(questionSetReader.getFinishedLiveQuestionSetsBySolveModeInTeam(TEAM_ID, QuestionSetSolveMode.LIVE_TIME))
+			.thenReturn(List.of(liveQs));
+		when(questionSetReader.getFinishedLiveQuestionSetsBySolveModeInTeam(TEAM_ID, QuestionSetSolveMode.STUDY))
+			.thenReturn(List.of(studyQs));
+
+		QuestionEntity liveQuestion = mockQuestionOfSet(liveQs);
+		QuestionEntity studyQuestion = mockQuestionOfSet(studyQs);
+		when(questionEntityRepository.findAllByQuestionSetIdIn(anyList()))
+			.thenReturn(List.of(liveQuestion, studyQuestion));
+
+		QuestionSetParticipantEntity winner = mockWinner(5L, "위너", "winner");
+		when(questionParticipantReader.getWinnersByQuestionSetId(anyList()))
+			.thenReturn(Map.of(100L, List.of(winner)));
+
+		Map<Long, Double> myRates = new HashMap<>();
+		myRates.put(100L, 80.0);
+		myRates.put(200L, null);
+		when(questionSetStatisticCalculator.calculateUserCorrectRates(eq(USER_ID), anyMap())).thenReturn(myRates);
+		when(questionSetStatisticCalculator.calculateOverallCorrectRates(anyMap()))
+			.thenReturn(Map.of(100L, 50.0, 200L, 70.0));
+
+		// when
+		List<QuestionSetStatisticDto> result = solvingResultService.getTeamQuestionSetStatistics(MAIT_USER, TEAM_ID);
+
+		// then: 풀이날짜 최신순 → LIVE(5/31)가 먼저
+		assertThat(result).hasSize(2);
+		QuestionSetStatisticDto live = result.get(0);
+		assertThat(live.getQuestionSetId()).isEqualTo(100L);
+		assertThat(live.getSolveMode()).isEqualTo(QuestionSetSolveMode.LIVE_TIME);
+		assertThat(live.getWinners()).hasSize(1);
+		assertThat(live.getWinners().get(0).getName()).isEqualTo("위너");
+		assertThat(live.getWinners().get(0).getNickname()).isEqualTo("winner");
+		assertThat(live.getMyCorrectRate()).isEqualTo(80.0);
+		assertThat(live.getAverageCorrectRate()).isEqualTo(50.0);
+
+		QuestionSetStatisticDto study = result.get(1);
+		assertThat(study.getQuestionSetId()).isEqualTo(200L);
+		assertThat(study.getWinners()).isEmpty();
+		assertThat(study.getMyCorrectRate()).isNull();
+		assertThat(study.getAverageCorrectRate()).isEqualTo(70.0);
+	}
+
+	@Test
+	@DisplayName("getTeamQuestionSetStatistics - 완료된 문제셋이 없으면 빈 리스트를 반환한다")
+	void getTeamQuestionSetStatistics_empty() {
+		// given
+		when(questionSetReader.getFinishedLiveQuestionSetsBySolveModeInTeam(TEAM_ID, QuestionSetSolveMode.LIVE_TIME))
+			.thenReturn(List.of());
+		when(questionSetReader.getFinishedLiveQuestionSetsBySolveModeInTeam(TEAM_ID, QuestionSetSolveMode.STUDY))
+			.thenReturn(List.of());
+
+		// when
+		List<QuestionSetStatisticDto> result = solvingResultService.getTeamQuestionSetStatistics(MAIT_USER, TEAM_ID);
+
+		// then
+		assertThat(result).isEmpty();
+		verifyNoInteractions(questionSetStatisticCalculator, questionParticipantReader, questionEntityRepository);
+	}
+
+	private QuestionSetEntity mockStatQuestionSet(final Long id, final String title, final QuestionSetSolveMode mode,
+		final LocalDateTime endTime) {
+		QuestionSetEntity questionSet = mock(QuestionSetEntity.class);
+		lenient().when(questionSet.getId()).thenReturn(id);
+		lenient().when(questionSet.getTitle()).thenReturn(title);
+		lenient().when(questionSet.getSolveMode()).thenReturn(mode);
+		lenient().when(questionSet.getEndTime()).thenReturn(endTime);
+		return questionSet;
+	}
+
+	private QuestionEntity mockQuestionOfSet(final QuestionSetEntity questionSet) {
+		QuestionEntity question = mock(QuestionEntity.class);
+		lenient().when(question.getQuestionSet()).thenReturn(questionSet);
+		return question;
+	}
+
+	private QuestionSetParticipantEntity mockWinner(final Long userId, final String name, final String nickname) {
+		UserEntity user = mock(UserEntity.class);
+		lenient().when(user.getId()).thenReturn(userId);
+		lenient().when(user.getName()).thenReturn(name);
+		lenient().when(user.getNickname()).thenReturn(nickname);
+		QuestionSetParticipantEntity participant = mock(QuestionSetParticipantEntity.class);
+		lenient().when(participant.getUser()).thenReturn(user);
+		return participant;
 	}
 
 	private QuestionSetEntity mockQuestionSet(final QuestionSetSolveMode solveMode) {

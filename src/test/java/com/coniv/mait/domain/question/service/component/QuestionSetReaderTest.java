@@ -27,38 +27,42 @@ class QuestionSetReaderTest {
 	private QuestionSetEntityRepository questionSetEntityRepository;
 
 	@Test
-	@DisplayName("LIVE_TIME 모드이면서 AFTER 상태인 문제셋 목록을 반환한다")
-	void getFinishedLiveQuestionSetsInTeam_Success() {
+	@DisplayName("지정한 풀이 모드이면서 AFTER 또는 REVIEW 상태인 문제셋 목록을 반환한다")
+	void getFinishedLiveQuestionSetsBySolveModeInTeam_Success() {
 		// given
 		Long teamId = 1L;
+		QuestionSetSolveMode solveMode = QuestionSetSolveMode.LIVE_TIME;
 		QuestionSetEntity qs1 = mock(QuestionSetEntity.class);
 		QuestionSetEntity qs2 = mock(QuestionSetEntity.class);
 
 		when(questionSetEntityRepository.findAllByTeamIdAndSolveModeAndStatusIn(
-			teamId, QuestionSetSolveMode.LIVE_TIME, List.of(QuestionSetStatus.AFTER, QuestionSetStatus.REVIEW)))
+			teamId, solveMode, List.of(QuestionSetStatus.AFTER, QuestionSetStatus.REVIEW)))
 			.thenReturn(List.of(qs1, qs2));
 
 		// when
-		List<QuestionSetEntity> result = questionSetReader.getFinishedLiveQuestionSetsInTeam(teamId);
+		List<QuestionSetEntity> result = questionSetReader.getFinishedLiveQuestionSetsBySolveModeInTeam(teamId,
+			solveMode);
 
 		// then
 		assertThat(result).hasSize(2);
 		verify(questionSetEntityRepository).findAllByTeamIdAndSolveModeAndStatusIn(
-			teamId, QuestionSetSolveMode.LIVE_TIME, List.of(QuestionSetStatus.AFTER, QuestionSetStatus.REVIEW));
+			teamId, solveMode, List.of(QuestionSetStatus.AFTER, QuestionSetStatus.REVIEW));
 	}
 
 	@Test
 	@DisplayName("조건에 맞는 문제셋이 없으면 빈 리스트를 반환한다")
-	void getFinishedLiveQuestionSetsInTeam_Empty() {
+	void getFinishedLiveQuestionSetsBySolveModeInTeam_Empty() {
 		// given
 		Long teamId = 1L;
+		QuestionSetSolveMode solveMode = QuestionSetSolveMode.LIVE_TIME;
 
 		when(questionSetEntityRepository.findAllByTeamIdAndSolveModeAndStatusIn(
-			teamId, QuestionSetSolveMode.LIVE_TIME, List.of(QuestionSetStatus.AFTER, QuestionSetStatus.REVIEW)))
+			teamId, solveMode, List.of(QuestionSetStatus.AFTER, QuestionSetStatus.REVIEW)))
 			.thenReturn(List.of());
 
 		// when
-		List<QuestionSetEntity> result = questionSetReader.getFinishedLiveQuestionSetsInTeam(teamId);
+		List<QuestionSetEntity> result = questionSetReader.getFinishedLiveQuestionSetsBySolveModeInTeam(teamId,
+			solveMode);
 
 		// then
 		assertThat(result).isEmpty();
