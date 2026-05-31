@@ -39,7 +39,7 @@ public class QuestionSolvingRecordController {
 
 	@Operation(summary = "본인이 특정 팀에서 풀었던 문제 셋 정보")
 	@GetMapping("/statistics")
-	public ResponseEntity<ApiResponse<List<QuestionSetStatisticApiResponse>>> getSolvedQuestionSet(
+	public ResponseEntity<ApiResponse<List<QuestionSetStatisticApiResponse>>> getQuestionStatistics(
 		@AuthenticationPrincipal MaitUser maitUser, @RequestParam("teamId") Long teamId) {
 		List<QuestionSetStatisticApiResponse> response = solvingResultService.getTeamQuestionSetStatistics(
 				maitUser, teamId).stream()
