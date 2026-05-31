@@ -25,6 +25,13 @@ public class QuestionSolveResultDto {
 			.build();
 	}
 
+	public static QuestionSolveResultDto of(final Long questionId, final AnswerSubmitRecordEntity record) {
+		if (record == null) {
+			return unanswered(questionId);
+		}
+		return from(record);
+	}
+
 	public static QuestionSolveResultDto unanswered(final Long questionId) {
 		return QuestionSolveResultDto.builder()
 			.questionId(questionId)

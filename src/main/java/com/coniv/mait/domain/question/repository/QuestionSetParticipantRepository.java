@@ -3,6 +3,7 @@ package com.coniv.mait.domain.question.repository;
 import java.util.List;
 import java.util.Optional;
 
+import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
@@ -30,4 +31,7 @@ public interface QuestionSetParticipantRepository extends JpaRepository<Question
 	boolean existsByQuestionSetAndUserId(QuestionSetEntity questionSet, Long userId);
 
 	Optional<QuestionSetParticipantEntity> findByQuestionSetAndUserId(QuestionSetEntity questionSet, Long userId);
+
+	@EntityGraph(attributePaths = "user")
+	List<QuestionSetParticipantEntity> findAllByQuestionSetIdIn(List<Long> questionSetIds);
 }

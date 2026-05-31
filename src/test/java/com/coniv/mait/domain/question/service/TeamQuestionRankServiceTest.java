@@ -549,7 +549,8 @@ class TeamQuestionRankServiceTest {
 
 			QuestionSetEntity liveQs = mock(QuestionSetEntity.class);
 			when(liveQs.getId()).thenReturn(100L);
-			when(questionSetReader.getFinishedLiveQuestionSetsInTeam(teamId)).thenReturn(List.of(liveQs));
+			when(questionSetReader.getFinishedLiveQuestionSetsBySolveModeInTeam(teamId, QuestionSetSolveMode.LIVE_TIME))
+				.thenReturn(List.of(liveQs));
 
 			when(solvingSessionEntityRepository.findAllByUserIdAndStatusAndSolveModeAndQuestionSetTeamId(
 				userId, SolvingStatus.COMPLETE, QuestionSetSolveMode.STUDY, teamId)).thenReturn(List.of());
@@ -598,7 +599,8 @@ class TeamQuestionRankServiceTest {
 
 			QuestionSetEntity liveQs = mock(QuestionSetEntity.class);
 			when(liveQs.getId()).thenReturn(100L);
-			when(questionSetReader.getFinishedLiveQuestionSetsInTeam(teamId)).thenReturn(List.of(liveQs));
+			when(questionSetReader.getFinishedLiveQuestionSetsBySolveModeInTeam(teamId, QuestionSetSolveMode.LIVE_TIME))
+				.thenReturn(List.of(liveQs));
 
 			QuestionSetEntity studyQs = mock(QuestionSetEntity.class);
 			when(studyQs.getId()).thenReturn(200L);
@@ -650,7 +652,8 @@ class TeamQuestionRankServiceTest {
 			when(team.getId()).thenReturn(teamId);
 			when(teamReader.getTeam(teamId)).thenReturn(team);
 
-			when(questionSetReader.getFinishedLiveQuestionSetsInTeam(teamId)).thenReturn(List.of());
+			when(questionSetReader.getFinishedLiveQuestionSetsBySolveModeInTeam(teamId, QuestionSetSolveMode.LIVE_TIME))
+				.thenReturn(List.of());
 
 			QuestionSetEntity studyQs = mock(QuestionSetEntity.class);
 			when(studyQs.getId()).thenReturn(200L);
@@ -692,7 +695,8 @@ class TeamQuestionRankServiceTest {
 			when(team.getId()).thenReturn(teamId);
 			when(teamReader.getTeam(teamId)).thenReturn(team);
 
-			when(questionSetReader.getFinishedLiveQuestionSetsInTeam(teamId)).thenReturn(List.of());
+			when(questionSetReader.getFinishedLiveQuestionSetsBySolveModeInTeam(teamId, QuestionSetSolveMode.LIVE_TIME))
+				.thenReturn(List.of());
 			when(solvingSessionEntityRepository.findAllByUserIdAndStatusAndSolveModeAndQuestionSetTeamId(
 				userId, SolvingStatus.COMPLETE, QuestionSetSolveMode.STUDY, teamId)).thenReturn(List.of());
 			when(questionEntityRepository.findAllByQuestionSetIdIn(anyList())).thenReturn(List.of());
@@ -719,7 +723,8 @@ class TeamQuestionRankServiceTest {
 
 			QuestionSetEntity liveQs = mock(QuestionSetEntity.class);
 			when(liveQs.getId()).thenReturn(100L);
-			when(questionSetReader.getFinishedLiveQuestionSetsInTeam(teamId)).thenReturn(List.of(liveQs));
+			when(questionSetReader.getFinishedLiveQuestionSetsBySolveModeInTeam(teamId, QuestionSetSolveMode.LIVE_TIME))
+				.thenReturn(List.of(liveQs));
 			when(solvingSessionEntityRepository.findAllByUserIdAndStatusAndSolveModeAndQuestionSetTeamId(
 				userId, SolvingStatus.COMPLETE, QuestionSetSolveMode.STUDY, teamId)).thenReturn(List.of());
 
@@ -751,7 +756,8 @@ class TeamQuestionRankServiceTest {
 
 			QuestionSetEntity liveQs = mock(QuestionSetEntity.class);
 			when(liveQs.getId()).thenReturn(100L);
-			when(questionSetReader.getFinishedLiveQuestionSetsInTeam(teamId)).thenReturn(List.of(liveQs));
+			when(questionSetReader.getFinishedLiveQuestionSetsBySolveModeInTeam(teamId, QuestionSetSolveMode.LIVE_TIME))
+				.thenReturn(List.of(liveQs));
 			when(solvingSessionEntityRepository.findAllByUserIdAndStatusAndSolveModeAndQuestionSetTeamId(
 				userId, SolvingStatus.COMPLETE, QuestionSetSolveMode.STUDY, teamId)).thenReturn(List.of());
 
@@ -793,7 +799,8 @@ class TeamQuestionRankServiceTest {
 
 			QuestionSetEntity liveQs = mock(QuestionSetEntity.class);
 			when(liveQs.getId()).thenReturn(100L);
-			when(questionSetReader.getFinishedLiveQuestionSetsInTeam(teamId)).thenReturn(List.of(liveQs));
+			when(questionSetReader.getFinishedLiveQuestionSetsBySolveModeInTeam(teamId, QuestionSetSolveMode.LIVE_TIME))
+				.thenReturn(List.of(liveQs));
 			when(solvingSessionEntityRepository.findAllByUserIdAndStatusAndSolveModeAndQuestionSetTeamId(
 				userId, SolvingStatus.COMPLETE, QuestionSetSolveMode.STUDY, teamId)).thenReturn(List.of());
 
@@ -838,7 +845,8 @@ class TeamQuestionRankServiceTest {
 
 			QuestionSetEntity liveQs = mock(QuestionSetEntity.class);
 			when(liveQs.getId()).thenReturn(100L);
-			when(questionSetReader.getFinishedLiveQuestionSetsInTeam(teamId)).thenReturn(List.of(liveQs));
+			when(questionSetReader.getFinishedLiveQuestionSetsBySolveModeInTeam(teamId, QuestionSetSolveMode.LIVE_TIME))
+				.thenReturn(List.of(liveQs));
 			when(solvingSessionEntityRepository.findAllByUserIdAndStatusAndSolveModeAndQuestionSetTeamId(
 				userId, SolvingStatus.COMPLETE, QuestionSetSolveMode.STUDY, teamId)).thenReturn(List.of());
 
