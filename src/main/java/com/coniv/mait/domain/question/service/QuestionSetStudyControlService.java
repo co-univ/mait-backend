@@ -61,10 +61,6 @@ public class QuestionSetStudyControlService {
 			return;
 		}
 
-		if (teamReader.getTeam(questionSet.getTeamId()).getType() == TeamType.PERSONAL) {
-			return;
-		}
-
 		long progressingSessionCount = solvingSessionEntityRepository.countByQuestionSetIdAndSolveModeAndStatus(
 			questionSetId, QuestionSetSolveMode.STUDY, SolvingStatus.PROGRESSING);
 		if (progressingSessionCount > 0) {

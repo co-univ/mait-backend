@@ -287,7 +287,6 @@ class QuestionSetStudyControlServiceTest {
 			.build();
 
 		when(questionSetReader.getQuestionSet(QUESTION_SET_ID)).thenReturn(questionSet);
-		when(teamReader.getTeam(TEAM_ID)).thenReturn(TeamEntity.ofGroup("팀", 1L));
 		when(solvingSessionEntityRepository.countByQuestionSetIdAndSolveModeAndStatus(
 			QUESTION_SET_ID, QuestionSetSolveMode.STUDY, SolvingStatus.PROGRESSING))
 			.thenReturn(1L);
@@ -311,7 +310,6 @@ class QuestionSetStudyControlServiceTest {
 			.build();
 
 		when(questionSetReader.getQuestionSet(QUESTION_SET_ID)).thenReturn(questionSet);
-		when(teamReader.getTeam(TEAM_ID)).thenReturn(TeamEntity.ofGroup("팀", 1L));
 		when(solvingSessionEntityRepository.countByQuestionSetIdAndSolveModeAndStatus(
 			QUESTION_SET_ID, QuestionSetSolveMode.STUDY, SolvingStatus.PROGRESSING))
 			.thenReturn(0L);
@@ -338,7 +336,6 @@ class QuestionSetStudyControlServiceTest {
 			.build();
 
 		when(questionSetReader.getQuestionSet(QUESTION_SET_ID)).thenReturn(questionSet);
-		when(teamReader.getTeam(TEAM_ID)).thenReturn(TeamEntity.ofGroup("팀", 1L));
 		when(solvingSessionEntityRepository.countByQuestionSetIdAndSolveModeAndStatus(
 			QUESTION_SET_ID, QuestionSetSolveMode.STUDY, SolvingStatus.PROGRESSING))
 			.thenReturn(0L);
@@ -378,26 +375,5 @@ class QuestionSetStudyControlServiceTest {
 					.isEqualTo(QuestionSetStatusExceptionCode.CANNOT_END_STUDY_IN_PERSONAL_TEAM.getMessage());
 			});
 		assertThat(questionSet.getStatus()).isEqualTo(QuestionSetStatus.ONGOING);
-	}
-
-	@Test
-	@DisplayName("개인 워크스페이스의 학습 문제 셋은 자동 종료되지 않는다")
-	void evaluateAndAutoEnd_PersonalTeam_DoesNothing() {
-		// given
-		QuestionSetEntity questionSet = QuestionSetEntity.builder()
-			.teamId(TEAM_ID)
-			.solveMode(QuestionSetSolveMode.STUDY)
-			.status(QuestionSetStatus.ONGOING)
-			.build();
-
-		when(questionSetReader.getQuestionSet(QUESTION_SET_ID)).thenReturn(questionSet);
-		when(teamReader.getTeam(TEAM_ID)).thenReturn(TeamEntity.ofPersonal("개인 워크스페이스", 1L));
-
-		// when
-		questionSetStudyControlService.evaluateAndAutoEnd(QUESTION_SET_ID);
-
-		// then
-		assertThat(questionSet.getStatus()).isEqualTo(QuestionSetStatus.ONGOING);
-		verifyNoInteractions(solvingSessionEntityRepository, teamUserEntityRepository);
 	}
 }
