@@ -68,7 +68,10 @@ public class QuestionSetCategoryService {
 
 		String trimmedKeyword = keyword == null ? "" : keyword.trim();
 		if (trimmedKeyword.isBlank()) {
-			return List.of();
+			return questionSetCategoryEntityRepository.findAllByTeamIdAndDeletedAtIsNullOrderByCreatedAtAsc(teamId)
+				.stream()
+				.map(QuestionSetCategoryDto::from)
+				.toList();
 		}
 
 		return questionSetCategoryEntityRepository
