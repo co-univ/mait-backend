@@ -324,4 +324,38 @@ class QuestionSetCategoryControllerTest {
 
 		verify(questionSetCategoryService).searchCategories(teamId, USER_ID, keyword);
 	}
+
+	@Test
+	@DisplayName("카테고리 검색 성공 - keyword 파라미터 없이 호출하면 200 OK 와 전체 목록 반환")
+	void searchCategoriesWithoutKeywordSuccess() throws Exception {
+		// given
+		Long teamId = 1L;
+
+		QuestionSetCategoryDto first = QuestionSetCategoryDto.builder()
+			.id(100L)
+			.teamId(teamId)
+			.name("알고리즘")
+			.build();
+		QuestionSetCategoryDto second = QuestionSetCategoryDto.builder()
+			.id(101L)
+			.teamId(teamId)
+			.name("자료구조")
+			.build();
+
+		when(questionSetCategoryService.searchCategories(teamId, USER_ID, null))
+			.thenReturn(List.of(first, second));
+
+		// when & then
+		mockMvc.perform(get("/api/v1/question-sets/categories/search")
+				.param("teamId", String.valueOf(teamId)))
+			.andExpectAll(
+				status().isOk(),
+				jsonPath("$.data.length()").value(2),
+				jsonPath("$.data[0].id").value(100L),
+				jsonPath("$.data[0].name").value("알고리즘"),
+				jsonPath("$.data[1].id").value(101L),
+				jsonPath("$.data[1].name").value("자료구조"));
+
+		verify(questionSetCategoryService).searchCategories(teamId, USER_ID, null);
+	}
 }

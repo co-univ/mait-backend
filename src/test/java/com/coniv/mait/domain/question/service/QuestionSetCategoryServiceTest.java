@@ -185,17 +185,46 @@ class QuestionSetCategoryServiceTest {
 	}
 
 	@Test
-	@DisplayName("카테고리 검색 성공 - 검색어가 공백이면 빈 목록 반환")
-	void searchCategories_blankKeyword_returnsEmpty() {
+	@DisplayName("카테고리 검색 성공 - 검색어가 공백이면 팀의 전체 활성 카테고리 반환")
+	void searchCategories_blankKeyword_returnsAllActiveCategories() {
 		// given
 		Long teamId = 1L;
 		Long userId = 10L;
+
+		QuestionSetCategoryEntity first = QuestionSetCategoryEntity.of(teamId, "알고리즘");
+		QuestionSetCategoryEntity second = QuestionSetCategoryEntity.of(teamId, "자료구조");
+		when(questionSetCategoryEntityRepository.findAllByTeamIdAndDeletedAtIsNullOrderByCreatedAtAsc(teamId))
+			.thenReturn(List.of(first, second));
 
 		// when
 		List<QuestionSetCategoryDto> result = questionSetCategoryService.searchCategories(teamId, userId, "   ");
 
 		// then
-		assertThat(result).isEmpty();
+		assertThat(result).extracting(QuestionSetCategoryDto::getName)
+			.containsExactly("알고리즘", "자료구조");
+
+		verify(teamRoleValidator).checkIsTeamMember(teamId, userId);
+		verify(questionSetCategoryEntityRepository, never())
+			.findAllByTeamIdAndNameContainingAndDeletedAtIsNullOrderByCreatedAtAsc(anyLong(), anyString());
+	}
+
+	@Test
+	@DisplayName("카테고리 검색 성공 - 검색어가 null 이면 팀의 전체 활성 카테고리 반환")
+	void searchCategories_nullKeyword_returnsAllActiveCategories() {
+		// given
+		Long teamId = 1L;
+		Long userId = 10L;
+
+		QuestionSetCategoryEntity category = QuestionSetCategoryEntity.of(teamId, "알고리즘");
+		when(questionSetCategoryEntityRepository.findAllByTeamIdAndDeletedAtIsNullOrderByCreatedAtAsc(teamId))
+			.thenReturn(List.of(category));
+
+		// when
+		List<QuestionSetCategoryDto> result = questionSetCategoryService.searchCategories(teamId, userId, null);
+
+		// then
+		assertThat(result).extracting(QuestionSetCategoryDto::getName)
+			.containsExactly("알고리즘");
 
 		verify(teamRoleValidator).checkIsTeamMember(teamId, userId);
 		verify(questionSetCategoryEntityRepository, never())
