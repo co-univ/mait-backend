@@ -5,6 +5,8 @@ import static org.springframework.security.test.web.servlet.request.SecurityMock
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
+import java.util.List;
+
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -16,17 +18,33 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.coniv.mait.domain.auth.dto.OauthPendingPayload;
+import com.coniv.mait.domain.team.entity.TeamEntity;
+import com.coniv.mait.domain.team.entity.TeamUserEntity;
+import com.coniv.mait.domain.team.enums.TeamType;
+import com.coniv.mait.domain.team.enums.TeamUserRole;
+import com.coniv.mait.domain.team.repository.TeamEntityRepository;
+import com.coniv.mait.domain.team.repository.TeamUserEntityRepository;
+import com.coniv.mait.domain.user.entity.PolicyEntity;
 import com.coniv.mait.domain.user.entity.UserEntity;
+import com.coniv.mait.domain.user.enums.PolicyCategory;
+import com.coniv.mait.domain.user.enums.PolicyTiming;
+import com.coniv.mait.domain.user.enums.PolicyType;
+import com.coniv.mait.domain.user.repository.PolicyEntityRepository;
 import com.coniv.mait.domain.user.repository.UserEntityRepository;
+import com.coniv.mait.global.auth.jwt.cache.OauthPendingRedisRepository;
 import com.coniv.mait.global.filter.JwtAuthorizationFilter;
 import com.coniv.mait.login.WithCustomUser;
 import com.coniv.mait.web.integration.BaseIntegrationTest;
+import com.coniv.mait.web.user.dto.PolicyCheckRequest;
+import com.coniv.mait.web.user.dto.SignUpApiRequest;
 import com.coniv.mait.web.user.dto.UpdateNicknameRequest;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletRequest;
 import jakarta.servlet.ServletResponse;
+import jakarta.servlet.http.Cookie;
 
 public class UserApiIntegrationTest extends BaseIntegrationTest {
 
@@ -41,6 +59,18 @@ public class UserApiIntegrationTest extends BaseIntegrationTest {
 
 	@Autowired
 	private UserEntityRepository userEntityRepository;
+
+	@Autowired
+	private PolicyEntityRepository policyEntityRepository;
+
+	@Autowired
+	private TeamEntityRepository teamEntityRepository;
+
+	@Autowired
+	private TeamUserEntityRepository teamUserEntityRepository;
+
+	@Autowired
+	private OauthPendingRedisRepository oauthPendingRedisRepository;
 
 	@AfterEach
 	void clear() {
@@ -111,5 +141,61 @@ public class UserApiIntegrationTest extends BaseIntegrationTest {
 			.andExpect(jsonPath("$.data.nickname").exists())
 			.andExpect(jsonPath("$.data.nickname").isNotEmpty());
 	}
-}
 
+	@Test
+	@Transactional
+	@DisplayName("회원가입 API 통합 테스트 - 가입 완료 시 개인 워크스페이스가 함께 생성된다")
+	void signup_Success_CreatesPersonalWorkspace() throws Exception {
+		// given
+		PolicyEntity policy = PolicyEntity.builder()
+			.title("서비스 이용약관")
+			.policyType(PolicyType.ESSENTIAL)
+			.category(PolicyCategory.TERMS_OF_SERVICE)
+			.timing(PolicyTiming.SIGN_UP)
+			.code("TERMS_SERVICE")
+			.version(1)
+			.content("내용")
+			.build();
+		policyEntityRepository.save(policy);
+
+		String signupToken = "test-signup-token";
+		OauthPendingPayload payload = OauthPendingPayload.builder()
+			.provider("google")
+			.providerId("provider-id-123")
+			.email("newuser@example.com")
+			.name("신규유저")
+			.build();
+		oauthPendingRedisRepository.save(signupToken, objectMapper.writeValueAsString(payload));
+
+		SignUpApiRequest request = new SignUpApiRequest(
+			"신규닉네임",
+			List.of(new PolicyCheckRequest(policy.getId(), true))
+		);
+
+		// when
+		mockMvc.perform(post("/api/v1/users/sign-up")
+				.contentType(MediaType.APPLICATION_JSON)
+				.content(objectMapper.writeValueAsString(request))
+				.cookie(new Cookie("OAUTH_SIGNUP_KEY", signupToken))
+				.with(csrf()))
+			.andExpect(status().isOk())
+			.andExpect(jsonPath("$.isSuccess").value(true));
+
+		// then
+		UserEntity savedUser = userEntityRepository.findByEmail("newuser@example.com").orElseThrow();
+		assertThat(savedUser.getNickname()).isEqualTo("신규닉네임");
+
+		List<TeamUserEntity> joinedTeams = teamUserEntityRepository.findAllByUserFetchJoinActiveTeam(savedUser);
+		assertThat(joinedTeams).hasSize(1);
+
+		TeamUserEntity personalMembership = joinedTeams.get(0);
+		assertThat(personalMembership.getUserRole()).isEqualTo(TeamUserRole.OWNER);
+
+		TeamEntity personalTeam = personalMembership.getTeam();
+		assertThat(personalTeam.getType()).isEqualTo(TeamType.PERSONAL);
+		assertThat(personalTeam.getCreatorId()).isEqualTo(savedUser.getId());
+		assertThat(personalTeam.getName()).isEqualTo(savedUser.getNickname() + "의 워크스페이스");
+
+		assertThat(teamEntityRepository.findById(personalTeam.getId())).isPresent();
+	}
+}

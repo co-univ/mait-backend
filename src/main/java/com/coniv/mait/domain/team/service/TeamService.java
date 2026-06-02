@@ -19,6 +19,7 @@ import com.coniv.mait.domain.team.entity.TeamInvitationLinkEntity;
 import com.coniv.mait.domain.team.entity.TeamUserEntity;
 import com.coniv.mait.domain.team.enums.InvitationApplicationStatus;
 import com.coniv.mait.domain.team.enums.JoinedImmediate;
+import com.coniv.mait.domain.team.enums.TeamType;
 import com.coniv.mait.domain.team.enums.TeamUserRole;
 import com.coniv.mait.domain.team.event.MemberEmailInfo;
 import com.coniv.mait.domain.team.event.TeamDeletedEvent;
@@ -62,11 +63,20 @@ public class TeamService {
 	private final QuestionSetEntityRepository questionSetEntityRepository;
 	private final TeamRoleValidator teamRoleValidator;
 
+	private static final String PERSONAL_WORKSPACE_NAME_SUFFIX = "의 워크스페이스";
+
 	@Transactional
 	public void createTeam(final String teamName, final Long ownerId) {
 		UserEntity owner = userEntityRepository.findById(ownerId)
 			.orElseThrow(() -> new EntityNotFoundException("Owner user not found with id: " + ownerId));
-		TeamEntity teamEntity = teamEntityRepository.save(TeamEntity.of(teamName, owner.getId()));
+		TeamEntity teamEntity = teamEntityRepository.save(TeamEntity.ofGroup(teamName, owner.getId()));
+		teamUserEntityRepository.save(TeamUserEntity.createOwnerUser(owner, teamEntity));
+	}
+
+	@Transactional
+	public void createPersonalWorkspace(final UserEntity owner) {
+		String workspaceName = owner.getNickname() + PERSONAL_WORKSPACE_NAME_SUFFIX;
+		TeamEntity teamEntity = teamEntityRepository.save(TeamEntity.ofPersonal(workspaceName, owner.getId()));
 		teamUserEntityRepository.save(TeamUserEntity.createOwnerUser(owner, teamEntity));
 	}
 
@@ -119,6 +129,9 @@ public class TeamService {
 			throw new TeamInvitationFailException(InvitationErrorCode.CANNOT_CREATE_WITH_OWNER_ROLE);
 		}
 		TeamEntity team = teamReader.getActiveTeam(teamId);
+		if (team.getType() == TeamType.PERSONAL) {
+			throw new TeamInvitationFailException(InvitationErrorCode.CANNOT_INVITE_IN_PERSONAL_WORKSPACE);
+		}
 		UserEntity invitor = userEntityRepository.findById(invitorId)
 			.orElseThrow(
 				() -> new EntityNotFoundException("Owner user not found with id: " + invitorId));

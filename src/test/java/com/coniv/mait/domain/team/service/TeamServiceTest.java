@@ -93,7 +93,7 @@ class TeamServiceTest {
 		UserEntity owner = mock(UserEntity.class);
 		when(owner.getId()).thenReturn(ownerId);
 
-		TeamEntity mockTeamEntity = TeamEntity.of(teamName, ownerId);
+		TeamEntity mockTeamEntity = TeamEntity.ofGroup(teamName, ownerId);
 		TeamUserEntity ownerTeamUser = TeamUserEntity.createOwnerUser(owner, mockTeamEntity);
 
 		when(userEntityRepository.findById(ownerId)).thenReturn(Optional.of(owner));
@@ -110,10 +110,44 @@ class TeamServiceTest {
 	}
 
 	@Test
+	@DisplayName("개인 워크스페이스 생성 시 닉네임 기반 이름의 PERSONAL 팀과 OWNER TeamUser가 저장된다")
+	void createPersonalWorkspace_SavesPersonalTeamAndOwner() {
+		// given
+		Long ownerId = 1L;
+		String ownerNickname = "길동닉";
+		UserEntity owner = mock(UserEntity.class);
+		when(owner.getId()).thenReturn(ownerId);
+		when(owner.getNickname()).thenReturn(ownerNickname);
+
+		ArgumentCaptor<TeamEntity> teamCaptor = ArgumentCaptor.forClass(TeamEntity.class);
+		ArgumentCaptor<TeamUserEntity> teamUserCaptor = ArgumentCaptor.forClass(TeamUserEntity.class);
+
+		when(teamEntityRepository.save(any(TeamEntity.class))).thenAnswer(invocation -> invocation.getArgument(0));
+		when(teamUserEntityRepository.save(any(TeamUserEntity.class))).thenAnswer(
+			invocation -> invocation.getArgument(0));
+
+		// when
+		teamService.createPersonalWorkspace(owner);
+
+		// then
+		verify(teamEntityRepository).save(teamCaptor.capture());
+		verify(teamUserEntityRepository).save(teamUserCaptor.capture());
+
+		TeamEntity savedTeam = teamCaptor.getValue();
+		assertThat(savedTeam.getType()).isEqualTo(com.coniv.mait.domain.team.enums.TeamType.PERSONAL);
+		assertThat(savedTeam.getCreatorId()).isEqualTo(ownerId);
+		assertThat(savedTeam.getName()).isEqualTo(ownerNickname + "의 워크스페이스");
+
+		TeamUserEntity savedTeamUser = teamUserCaptor.getValue();
+		assertThat(savedTeamUser.getUser()).isSameAs(owner);
+		assertThat(savedTeamUser.getUserRole()).isEqualTo(TeamUserRole.OWNER);
+	}
+
+	@Test
 	@DisplayName("사용자들과 팀 연결 시 TeamUserEntity들이 저장되는지 확인")
 	void createUsersAndLinkTeam_SavesTeamUserEntities() {
 		// given
-		TeamEntity team = TeamEntity.of("테스트 팀", 1L);
+		TeamEntity team = TeamEntity.ofGroup("테스트 팀", 1L);
 		List<UserEntity> users = List.of(
 			UserEntity.socialLoginUser("user1@test.com", "사용자1", "provider1", LoginProvider.GOOGLE),
 			UserEntity.socialLoginUser("user2@test.com", "사용자2", "provider2", LoginProvider.GOOGLE)
@@ -133,7 +167,7 @@ class TeamServiceTest {
 		Long teamId = 1L;
 		Long ownerId = 1L;
 		UserEntity mockOwner = mock(UserEntity.class);
-		TeamEntity team = TeamEntity.of("테스트 팀", 1L);
+		TeamEntity team = TeamEntity.ofGroup("테스트 팀", 1L);
 		TeamUserEntity ownerTeamUser = TeamUserEntity.createOwnerUser(mockOwner, team);
 		String expectedToken = "test-invite-code";
 		InviteTokenDuration duration = InviteTokenDuration.ONE_DAY;
@@ -191,7 +225,7 @@ class TeamServiceTest {
 		Long userId = 999L;
 		UserEntity mockUser = mock(UserEntity.class);
 		when(mockUser.getId()).thenReturn(userId);
-		TeamEntity team = TeamEntity.of("테스트 팀", 1L);
+		TeamEntity team = TeamEntity.ofGroup("테스트 팀", 1L);
 		InviteTokenDuration duration = InviteTokenDuration.ONE_DAY;
 		TeamUserRole role = TeamUserRole.PLAYER;
 		boolean requiresApproval = false;
@@ -213,13 +247,40 @@ class TeamServiceTest {
 	}
 
 	@Test
+	@DisplayName("팀 초대 코드 생성 실패 - 개인 워크스페이스에서는 초대 링크를 생성할 수 없음")
+	void createTeamInviteCode_Failure_PersonalWorkspace() {
+		// given
+		Long teamId = 1L;
+		Long ownerId = 1L;
+		TeamEntity personalTeam = TeamEntity.ofPersonal("홍길동의 워크스페이스", ownerId);
+		InviteTokenDuration duration = InviteTokenDuration.ONE_DAY;
+		TeamUserRole role = TeamUserRole.PLAYER;
+		boolean requiresApproval = false;
+
+		when(teamReader.getActiveTeam(teamId)).thenReturn(personalTeam);
+
+		// when & then
+		Throwable thrown = catchThrowable(
+			() -> teamService.createTeamInviteCode(teamId, ownerId, duration, role, requiresApproval));
+		assertThat(thrown).isInstanceOf(TeamInvitationFailException.class);
+		assertThat(((TeamInvitationFailException)thrown).getErrorCode()).isEqualTo(
+			InvitationErrorCode.CANNOT_INVITE_IN_PERSONAL_WORKSPACE);
+
+		verify(teamReader).getActiveTeam(teamId);
+		verify(userEntityRepository, never()).findById(any());
+		verify(teamUserEntityRepository, never()).findByTeamAndUser(any(), any());
+		verify(inviteTokenGenerator, never()).generateUniqueInviteToken();
+		verify(teamInvitationEntityRepository, never()).save(any());
+	}
+
+	@Test
 	@DisplayName("팀 초대 코드 생성 실패 - PLAYER는 초대 코드를 생성할 수 없음")
 	void createTeamInviteCode_Failure_PlayerCannotInvite() {
 		// given
 		Long teamId = 1L;
 		Long playerId = 2L;
 		UserEntity mockPlayer = mock(UserEntity.class);
-		TeamEntity team = TeamEntity.of("테스트 팀", 1L);
+		TeamEntity team = TeamEntity.ofGroup("테스트 팀", 1L);
 		TeamUserEntity playerTeamUser = TeamUserEntity.createPlayerUser(mockPlayer, team);
 		InviteTokenDuration duration = InviteTokenDuration.ONE_DAY;
 		TeamUserRole role = TeamUserRole.PLAYER;
@@ -250,7 +311,7 @@ class TeamServiceTest {
 		String token = "TOKEN_APP";
 		UserEntity invitor = mock(UserEntity.class);
 		when(invitor.getId()).thenReturn(10L);
-		TeamEntity team = TeamEntity.of("팀 C", 30L);
+		TeamEntity team = TeamEntity.ofGroup("팀 C", 30L);
 		TeamInvitationLinkEntity invite = TeamInvitationLinkEntity.createInvite(invitor, team, token,
 			InviteTokenDuration.ONE_DAY,
 			TeamUserRole.PLAYER, true);
@@ -290,7 +351,7 @@ class TeamServiceTest {
 		// given
 		String token = "TOKEN_IN_TEAM";
 		UserEntity invitor = mock(UserEntity.class);
-		TeamEntity team = TeamEntity.of("팀 D", 40L);
+		TeamEntity team = TeamEntity.ofGroup("팀 D", 40L);
 		TeamInvitationLinkEntity invite = TeamInvitationLinkEntity.createInvite(invitor, team, token,
 			InviteTokenDuration.ONE_DAY,
 			TeamUserRole.PLAYER, false);
@@ -315,7 +376,7 @@ class TeamServiceTest {
 		// given
 		Long teamId = 1L;
 		Long userId = 2L;
-		TeamEntity team = TeamEntity.of("테스트 팀", 1L);
+		TeamEntity team = TeamEntity.ofGroup("테스트 팀", 1L);
 		UserEntity leaver = mock(UserEntity.class);
 		when(leaver.getName()).thenReturn("홍길동");
 		when(leaver.getEmail()).thenReturn("leaver@example.com");
@@ -353,7 +414,7 @@ class TeamServiceTest {
 		// given
 		Long teamId = 1L;
 		Long userId = 2L;
-		TeamEntity team = TeamEntity.of("테스트 팀", 1L);
+		TeamEntity team = TeamEntity.ofGroup("테스트 팀", 1L);
 		UserEntity user = mock(UserEntity.class);
 
 		when(teamReader.getActiveTeam(teamId)).thenReturn(team);
@@ -375,7 +436,7 @@ class TeamServiceTest {
 		// given
 		Long teamId = 1L;
 		Long userId = 2L;
-		TeamEntity team = TeamEntity.of("테스트 팀", userId);
+		TeamEntity team = TeamEntity.ofGroup("테스트 팀", userId);
 		UserEntity owner = mock(UserEntity.class);
 		TeamUserEntity teamUser = TeamUserEntity.createOwnerUser(owner, team);
 
@@ -398,7 +459,7 @@ class TeamServiceTest {
 		// given
 		Long teamId = 1L;
 		Long ownerId = 10L;
-		TeamEntity team = TeamEntity.of("삭제 대상 팀", ownerId);
+		TeamEntity team = TeamEntity.ofGroup("삭제 대상 팀", ownerId);
 
 		UserEntity owner = mock(UserEntity.class);
 		when(owner.getName()).thenReturn("오너");

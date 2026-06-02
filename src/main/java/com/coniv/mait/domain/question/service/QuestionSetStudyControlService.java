@@ -6,10 +6,14 @@ import org.springframework.transaction.annotation.Transactional;
 import com.coniv.mait.domain.question.entity.QuestionSetEntity;
 import com.coniv.mait.domain.question.enums.QuestionSetSolveMode;
 import com.coniv.mait.domain.question.enums.QuestionSetStatus;
+import com.coniv.mait.domain.question.exception.QuestionSetStatusException;
+import com.coniv.mait.domain.question.exception.code.QuestionSetStatusExceptionCode;
 import com.coniv.mait.domain.question.service.component.QuestionSetReader;
 import com.coniv.mait.domain.solve.enums.SolvingStatus;
 import com.coniv.mait.domain.solve.repository.SolvingSessionEntityRepository;
+import com.coniv.mait.domain.team.enums.TeamType;
 import com.coniv.mait.domain.team.repository.TeamUserEntityRepository;
+import com.coniv.mait.domain.team.service.component.TeamReader;
 import com.coniv.mait.domain.user.service.component.TeamRoleValidator;
 import com.coniv.mait.global.auth.model.MaitUser;
 
@@ -25,6 +29,7 @@ public class QuestionSetStudyControlService {
 	private final TeamRoleValidator teamRoleValidator;
 	private final SolvingSessionEntityRepository solvingSessionEntityRepository;
 	private final TeamUserEntityRepository teamUserEntityRepository;
+	private final TeamReader teamReader;
 
 	@Transactional
 	public void startStudyQuestionSet(final MaitUser user, final Long questionSetId) {
@@ -39,6 +44,9 @@ public class QuestionSetStudyControlService {
 	public void endStudyQuestionSet(final MaitUser user, final Long questionSetId) {
 		QuestionSetEntity questionSet = questionSetReader.getQuestionSet(questionSetId);
 		teamRoleValidator.checkHasCreateQuestionSetAuthority(questionSet.getTeamId(), user.id());
+		if (teamReader.getTeam(questionSet.getTeamId()).getType() == TeamType.PERSONAL) {
+			throw new QuestionSetStatusException(QuestionSetStatusExceptionCode.CANNOT_END_STUDY_IN_PERSONAL_TEAM);
+		}
 		questionSet.endStudyQuestionSet();
 		log.info("[학습 문제 셋 종료] questionSetId={}, teamId={}, endedBy={}",
 			questionSetId, questionSet.getTeamId(), user.id());

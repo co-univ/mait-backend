@@ -80,7 +80,7 @@ public class StudyModeApiIntegrationTest extends BaseIntegrationTest {
 		// given
 		UserEntity user = userEntityRepository.findByEmail("user@example.com").orElseThrow();
 		TeamEntity team = teamEntityRepository.save(
-			TeamEntity.builder().name("testTeam").creatorId(user.getId()).build());
+			TeamEntity.ofGroup("testTeam", user.getId()));
 		teamUserEntityRepository.save(TeamUserEntity.createPlayerUser(user, team));
 
 		QuestionSetEntity questionSet = questionSetEntityRepository.save(
@@ -119,7 +119,7 @@ public class StudyModeApiIntegrationTest extends BaseIntegrationTest {
 		// given
 		UserEntity user = userEntityRepository.findByEmail("user@example.com").orElseThrow();
 		TeamEntity team = teamEntityRepository.save(
-			TeamEntity.builder().name("testTeam2").creatorId(user.getId()).build());
+			TeamEntity.ofGroup("testTeam2", user.getId()));
 		teamUserEntityRepository.save(TeamUserEntity.createPlayerUser(user, team));
 
 		QuestionSetEntity questionSet = questionSetEntityRepository.save(
@@ -150,7 +150,7 @@ public class StudyModeApiIntegrationTest extends BaseIntegrationTest {
 		// given
 		UserEntity user = userEntityRepository.findByEmail("user@example.com").orElseThrow();
 		TeamEntity team = teamEntityRepository.save(
-			TeamEntity.builder().name("testTeam3").creatorId(user.getId()).build());
+			TeamEntity.ofGroup("testTeam3", user.getId()));
 		teamUserEntityRepository.save(TeamUserEntity.createPlayerUser(user, team));
 
 		QuestionSetEntity questionSet = questionSetEntityRepository.save(
@@ -186,7 +186,7 @@ public class StudyModeApiIntegrationTest extends BaseIntegrationTest {
 		// given
 		UserEntity user = userEntityRepository.findByEmail("user@example.com").orElseThrow();
 		TeamEntity team = teamEntityRepository.save(
-			TeamEntity.builder().name("gradeTeam").creatorId(user.getId()).build());
+			TeamEntity.ofGroup("gradeTeam", user.getId()));
 		teamUserEntityRepository.save(TeamUserEntity.createPlayerUser(user, team));
 
 		QuestionSetEntity questionSet = questionSetEntityRepository.save(
@@ -249,7 +249,7 @@ public class StudyModeApiIntegrationTest extends BaseIntegrationTest {
 		// given
 		UserEntity user = userEntityRepository.findByEmail("user@example.com").orElseThrow();
 		TeamEntity team = teamEntityRepository.save(
-			TeamEntity.builder().name("testTeam4").creatorId(user.getId()).build());
+			TeamEntity.ofGroup("testTeam4", user.getId()));
 		teamUserEntityRepository.save(TeamUserEntity.createPlayerUser(user, team));
 
 		QuestionSetEntity questionSet = questionSetEntityRepository.save(
@@ -292,7 +292,7 @@ public class StudyModeApiIntegrationTest extends BaseIntegrationTest {
 		// given
 		UserEntity user = userEntityRepository.findByEmail("user@example.com").orElseThrow();
 		TeamEntity team = teamEntityRepository.save(
-			TeamEntity.builder().name("studyStartTeam").creatorId(user.getId()).build());
+			TeamEntity.ofGroup("studyStartTeam", user.getId()));
 		teamUserEntityRepository.save(TeamUserEntity.createTeamUser(user, team, TeamUserRole.MAKER));
 
 		QuestionSetEntity questionSet = questionSetEntityRepository.save(
@@ -320,7 +320,7 @@ public class StudyModeApiIntegrationTest extends BaseIntegrationTest {
 		// given
 		UserEntity user = userEntityRepository.findByEmail("user@example.com").orElseThrow();
 		TeamEntity team = teamEntityRepository.save(
-			TeamEntity.builder().name("studyEndTeam").creatorId(user.getId()).build());
+			TeamEntity.ofGroup("studyEndTeam", user.getId()));
 		teamUserEntityRepository.save(TeamUserEntity.createTeamUser(user, team, TeamUserRole.MAKER));
 
 		QuestionSetEntity questionSet = questionSetEntityRepository.save(
