@@ -13,6 +13,10 @@ public interface QuestionSetCategoryLinkEntityRepository
 
 	List<QuestionSetCategoryLinkEntity> findAllByQuestionSetId(Long questionSetId);
 
+	List<QuestionSetCategoryLinkEntity> findAllByCategoryId(Long categoryId);
+
+	List<QuestionSetCategoryLinkEntity> findAllByCategoryIdIn(Collection<Long> categoryIds);
+
 	boolean existsByQuestionSetIdAndCategoryId(Long questionSetId, Long categoryId);
 
 	@Modifying(clearAutomatically = true)
