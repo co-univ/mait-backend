@@ -23,13 +23,20 @@ public class AnswerSubmitDto {
 
 	private String submittedAnswer;
 
+	private Long timeGapMillis;
+
 	public static AnswerSubmitDto from(final AnswerSubmitRecordEntity submitAnswer) {
+		return from(submitAnswer, null);
+	}
+
+	public static AnswerSubmitDto from(final AnswerSubmitRecordEntity submitAnswer, final Long timeGapMillis) {
 		return AnswerSubmitDto.builder()
 			.id(submitAnswer.getId())
 			.userId(submitAnswer.getUserId())
 			.questionId(submitAnswer.getQuestionId())
 			.isCorrect(submitAnswer.isCorrect())
 			.submittedAnswer(submitAnswer.getSubmittedAnswer())
+			.timeGapMillis(timeGapMillis)
 			.build();
 	}
 }
