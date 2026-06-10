@@ -129,6 +129,7 @@ class QuestionAnswerSubmitServiceTest {
 			// then
 			assertThat(result).isNotNull();
 			assertThat(result.isCorrect()).isTrue();
+			assertThat(result.getTimeGapMillis()).isEqualTo(0L);
 			verify(answerSubmitRecordEntityRepository).save(any(AnswerSubmitRecordEntity.class));
 			verify(scorerGenerator).updateScorer(questionId, userId, submitOrder);
 		}
@@ -357,6 +358,7 @@ class QuestionAnswerSubmitServiceTest {
 			// then
 			assertThat(result).isNotNull();
 			assertThat(result.isCorrect()).isFalse();
+			assertThat(result.getTimeGapMillis()).isNull();
 			verify(answerSubmitRecordEntityRepository).save(any(AnswerSubmitRecordEntity.class));
 			verify(scorerGenerator, never()).updateScorer(any(), any(), any());
 		}
