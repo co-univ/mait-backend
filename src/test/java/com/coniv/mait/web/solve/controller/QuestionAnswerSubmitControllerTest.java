@@ -79,6 +79,7 @@ class QuestionAnswerSubmitControllerTest {
 			.userId(userId)
 			.questionId(questionId)
 			.isCorrect(true)
+			.timeGapMillis(1500L)
 			.build();
 
 		// When & Then
@@ -95,7 +96,8 @@ class QuestionAnswerSubmitControllerTest {
 				jsonPath("$.data.id").value(1),
 				jsonPath("$.data.userId").value(userId),
 				jsonPath("$.data.questionId").value(questionId),
-				jsonPath("$.data.isCorrect").value(true));
+				jsonPath("$.data.isCorrect").value(true),
+				jsonPath("$.data.timeGapMillis").value(1500));
 	}
 
 	@Test

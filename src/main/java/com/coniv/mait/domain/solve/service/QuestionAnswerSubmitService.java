@@ -22,10 +22,11 @@ import com.coniv.mait.domain.solve.service.component.AnswerGrader;
 import com.coniv.mait.domain.solve.service.component.QuestionSetParticipantManager;
 import com.coniv.mait.domain.solve.service.component.ScorerGenerator;
 import com.coniv.mait.domain.solve.service.component.ScorerProcessor;
-import com.coniv.mait.domain.solve.service.component.SubmitOrderGenerator;
+import com.coniv.mait.domain.solve.service.component.SubmitTimingProcessor;
 import com.coniv.mait.domain.solve.service.dto.AnswerSubmitDto;
 import com.coniv.mait.domain.solve.service.dto.AnswerSubmitRecordDto;
 import com.coniv.mait.domain.solve.service.dto.SubmitAnswerDto;
+import com.coniv.mait.domain.solve.service.dto.SubmitTimingDto;
 import com.coniv.mait.domain.user.entity.UserEntity;
 import com.coniv.mait.domain.user.repository.UserEntityRepository;
 import com.coniv.mait.domain.user.service.component.TeamRoleValidator;
@@ -47,7 +48,7 @@ public class QuestionAnswerSubmitService {
 
 	private final AnswerGrader answerGrader;
 
-	private final SubmitOrderGenerator submitOrderGenerator;
+	private final SubmitTimingProcessor submitTimingProcessor;
 
 	private final ScorerProcessor scorerProcessor;
 
@@ -62,7 +63,6 @@ public class QuestionAnswerSubmitService {
 	@Transactional
 	public AnswerSubmitDto submitAnswer(final Long questionSetId, final Long questionId, final Long userId,
 		final SubmitAnswerDto<?> submitAnswer) throws JsonProcessingException {
-		final Long submitOrder = submitOrderGenerator.generateSubmitOrder(questionId);
 		final UserEntity user = userEntityRepository.findById(userId)
 			.orElseThrow(() -> new EntityNotFoundException("사용자를 찾을 수 없습니다."));
 
@@ -88,6 +88,9 @@ public class QuestionAnswerSubmitService {
 			throw new QuestionSolvingException(QuestionSolveExceptionCode.ALREADY);
 		}
 
+		final SubmitTimingDto submitTiming = submitTimingProcessor.process(questionId);
+		final Long submitOrder = submitTiming.submitOrder();
+
 		final boolean isCorrect = answerGrader.gradeAnswer(question, submitAnswer);
 
 		if (isCorrect && user.getId().equals(scorerProcessor.getScorer(questionId, user.getId(), submitOrder))) {
@@ -104,7 +107,9 @@ public class QuestionAnswerSubmitService {
 
 		answerSubmitRecordEntityRepository.save(submitRecord);
 
-		return AnswerSubmitDto.from(submitRecord);
+		final Long timeGapMillis = isCorrect ? submitTiming.timeGapMillis() : null;
+
+		return AnswerSubmitDto.from(submitRecord, timeGapMillis);
 	}
 
 	public List<AnswerSubmitRecordDto> getSubmitRecords(final Long questionSetId, final Long questionId) {

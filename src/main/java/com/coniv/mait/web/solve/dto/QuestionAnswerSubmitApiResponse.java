@@ -16,7 +16,10 @@ public record QuestionAnswerSubmitApiResponse(
 	@Schema(description = "정/오답 여부", requiredMode = Schema.RequiredMode.REQUIRED)
 	boolean isCorrect,
 	@Schema(description = "제출한 답안", requiredMode = Schema.RequiredMode.NOT_REQUIRED)
-	String submittedAnswer
+	String submittedAnswer,
+	@Schema(description = "첫 제출과 본인 정답 제출의 시간차(ms). 정답일 때만 채워지며 본인이 첫 제출이면 0",
+		requiredMode = Schema.RequiredMode.NOT_REQUIRED)
+	Long timeGapMillis
 ) {
 
 	public static QuestionAnswerSubmitApiResponse from(AnswerSubmitDto answerSubmitDto) {
@@ -26,6 +29,7 @@ public record QuestionAnswerSubmitApiResponse(
 			.questionId(answerSubmitDto.getQuestionId())
 			.isCorrect(answerSubmitDto.isCorrect())
 			.submittedAnswer(answerSubmitDto.getSubmittedAnswer())
+			.timeGapMillis(answerSubmitDto.getTimeGapMillis())
 			.build();
 	}
 }

@@ -1,5 +1,6 @@
 package com.coniv.mait.web.solve.controller;
 
+import static org.hamcrest.Matchers.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
@@ -9,6 +10,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
@@ -27,6 +29,7 @@ import com.coniv.mait.domain.question.repository.QuestionEntityRepository;
 import com.coniv.mait.domain.question.repository.QuestionSetEntityRepository;
 import com.coniv.mait.domain.question.repository.QuestionSetParticipantRepository;
 import com.coniv.mait.domain.question.repository.ShortAnswerEntityRepository;
+import com.coniv.mait.domain.question.service.component.QuestionRedisKeys;
 import com.coniv.mait.domain.solve.entity.AnswerSubmitRecordEntity;
 import com.coniv.mait.domain.solve.entity.QuestionScorerEntity;
 import com.coniv.mait.domain.solve.repository.AnswerSubmitRecordEntityRepository;
@@ -88,6 +91,9 @@ public class QuestionAnswerSubmitApiIntegrationTest extends BaseIntegrationTest 
 
 	@Autowired
 	private AnswerSubmitRecordEntityRepository answerSubmitRecordEntityRepository;
+
+	@Autowired
+	private StringRedisTemplate stringRedisTemplate;
 
 	@BeforeEach
 	void clear() {
@@ -349,5 +355,71 @@ public class QuestionAnswerSubmitApiIntegrationTest extends BaseIntegrationTest 
 				jsonPath("$.data.submitRecords[1].isCorrect").value(false),
 				jsonPath("$.data.submitRecords[1].submitOrder").value(2)
 			);
+	}
+
+	@Test
+	@DisplayName("정답 제출 시 첫 제출과의 시간차 반환 - 첫 제출은 0, 이후 제출은 0 이상")
+	void submitAnswer_ReturnsTimeGapMillis() throws Exception {
+		// Given
+		UserEntity firstUser = userEntityRepository.save(
+			UserEntity.localLoginUser("first@test.com", "password", "유저1", "first"));
+		UserEntity secondUser = userEntityRepository.save(
+			UserEntity.localLoginUser("second@test.com", "password", "유저2", "second"));
+
+		TeamEntity team = teamEntityRepository.save(TeamEntity.ofGroup("coniv", firstUser.getId()));
+		teamUserEntityRepository.save(TeamUserEntity.createPlayerUser(firstUser, team));
+		teamUserEntityRepository.save(TeamUserEntity.createPlayerUser(secondUser, team));
+
+		QuestionSetEntity questionSet = questionSetEntityRepository.save(
+			QuestionSetEntity.builder().teamId(team.getId()).build());
+
+		questionSetParticipantRepository.save(QuestionSetParticipantEntity.builder()
+			.status(ParticipantStatus.ACTIVE).questionSet(questionSet).user(firstUser).winner(false).build());
+		questionSetParticipantRepository.save(QuestionSetParticipantEntity.builder()
+			.status(ParticipantStatus.ACTIVE).questionSet(questionSet).user(secondUser).winner(false).build());
+
+		MultipleQuestionEntity question = questionEntityRepository.save(
+			MultipleQuestionEntity.builder()
+				.number(1L)
+				.questionSet(questionSet)
+				.questionStatus(QuestionStatusType.SOLVE_PERMISSION)
+				.lexoRank("m")
+				.build());
+
+		multipleChoiceEntityRepository.saveAll(List.of(
+			MultipleChoiceEntity.builder().question(question).number(1).isCorrect(true).build(),
+			MultipleChoiceEntity.builder().question(question).number(2).isCorrect(false).build()));
+
+		// 임베디드 Redis는 테스트 클래스 간 공유되어 동일 questionId의 키가 남을 수 있으므로 비운다
+		stringRedisTemplate.delete(QuestionRedisKeys.submitOrder(question.getId()));
+		stringRedisTemplate.delete(QuestionRedisKeys.submitFirstTime(question.getId()));
+
+		// When & Then - 첫 제출(firstUser)은 기준점이라 시간차 0
+		mockMvc.perform(post("/api/v1/question-sets/{questionSetId}/questions/{questionId}/submit",
+				questionSet.getId(), question.getId())
+				.contentType(MediaType.APPLICATION_JSON)
+				.content(multipleSubmitBody(firstUser.getId())))
+			.andExpect(status().isOk())
+			.andExpectAll(
+				jsonPath("$.data.isCorrect").value(true),
+				jsonPath("$.data.timeGapMillis").value(0));
+
+		// 이후 제출(secondUser)은 첫 제출과의 시간차가 0 이상
+		mockMvc.perform(post("/api/v1/question-sets/{questionSetId}/questions/{questionId}/submit",
+				questionSet.getId(), question.getId())
+				.contentType(MediaType.APPLICATION_JSON)
+				.content(multipleSubmitBody(secondUser.getId())))
+			.andExpect(status().isOk())
+			.andExpectAll(
+				jsonPath("$.data.isCorrect").value(true),
+				jsonPath("$.data.timeGapMillis", greaterThanOrEqualTo(0)));
+	}
+
+	private String multipleSubmitBody(Long userId) throws Exception {
+		ObjectNode node = objectMapper.createObjectNode();
+		node.put("type", "MULTIPLE");
+		node.put("userId", userId);
+		node.set("submitAnswers", objectMapper.valueToTree(List.of(1L)));
+		return objectMapper.writeValueAsString(node);
 	}
 }
