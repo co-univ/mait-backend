@@ -29,8 +29,9 @@ import com.coniv.mait.domain.solve.service.component.AnswerGrader;
 import com.coniv.mait.domain.solve.service.component.QuestionSetParticipantManager;
 import com.coniv.mait.domain.solve.service.component.ScorerGenerator;
 import com.coniv.mait.domain.solve.service.component.ScorerProcessor;
-import com.coniv.mait.domain.solve.service.component.SubmitOrderGenerator;
+import com.coniv.mait.domain.solve.service.component.SubmitTimingProcessor;
 import com.coniv.mait.domain.solve.service.dto.MultipleQuestionSubmitAnswer;
+import com.coniv.mait.domain.solve.service.dto.SubmitTimingDto;
 import com.coniv.mait.domain.user.entity.UserEntity;
 import com.coniv.mait.domain.user.exception.UserRoleException;
 import com.coniv.mait.domain.user.repository.UserEntityRepository;
@@ -57,7 +58,7 @@ class QuestionAnswerSubmitServiceTest {
 	private AnswerGrader answerGrader;
 
 	@Mock
-	private SubmitOrderGenerator submitOrderGenerator;
+	private SubmitTimingProcessor submitTimingProcessor;
 
 	@Mock
 	private ScorerProcessor scorerProcessor;
@@ -99,7 +100,8 @@ class QuestionAnswerSubmitServiceTest {
 			when(mockQuestion.canSolve()).thenReturn(true);
 			when(mockQuestion.getId()).thenReturn(questionId);
 
-			when(submitOrderGenerator.generateSubmitOrder(questionId)).thenReturn(submitOrder);
+			lenient().when(submitTimingProcessor.process(questionId))
+				.thenReturn(new SubmitTimingDto(submitOrder, 0L));
 			when(userEntityRepository.findById(userId)).thenReturn(Optional.of(mockUser));
 			when(questionReader.getQuestion(questionId, questionSetId)).thenReturn(mockQuestion);
 			doNothing().when(teamRoleValidator).checkHasSolveQuestionAuthorityInTeam(teamId, userId);
@@ -127,6 +129,7 @@ class QuestionAnswerSubmitServiceTest {
 			// then
 			assertThat(result).isNotNull();
 			assertThat(result.isCorrect()).isTrue();
+			assertThat(result.getTimeGapMillis()).isEqualTo(0L);
 			verify(answerSubmitRecordEntityRepository).save(any(AnswerSubmitRecordEntity.class));
 			verify(scorerGenerator).updateScorer(questionId, userId, submitOrder);
 		}
@@ -149,7 +152,8 @@ class QuestionAnswerSubmitServiceTest {
 			when(mockQuestionSet.getTeamId()).thenReturn(teamId);
 			when(mockQuestionSet.getVisibility()).thenReturn(QuestionSetVisibility.GROUP);
 			when(mockQuestion.getQuestionSet()).thenReturn(mockQuestionSet);
-			when(submitOrderGenerator.generateSubmitOrder(questionId)).thenReturn(submitOrder);
+			lenient().when(submitTimingProcessor.process(questionId))
+				.thenReturn(new SubmitTimingDto(submitOrder, 0L));
 			when(userEntityRepository.findById(userId)).thenReturn(Optional.of(mockUser));
 			when(questionReader.getQuestion(questionId, questionSetId)).thenReturn(mockQuestion);
 			doNothing().when(teamRoleValidator).checkHasSolveQuestionAuthorityInTeam(teamId, userId);
@@ -184,7 +188,8 @@ class QuestionAnswerSubmitServiceTest {
 			when(mockQuestionSet.getTeamId()).thenReturn(teamId);
 			when(mockQuestion.getQuestionSet()).thenReturn(mockQuestionSet);
 
-			when(submitOrderGenerator.generateSubmitOrder(questionId)).thenReturn(submitOrder);
+			lenient().when(submitTimingProcessor.process(questionId))
+				.thenReturn(new SubmitTimingDto(submitOrder, 0L));
 			when(userEntityRepository.findById(userId)).thenReturn(Optional.of(mockUser));
 			when(questionReader.getQuestion(questionId, questionSetId)).thenReturn(mockQuestion);
 			doThrow(new UserRoleException("해당 문제를 풀 수 있는 권한이 없습니다."))
@@ -218,7 +223,8 @@ class QuestionAnswerSubmitServiceTest {
 			when(mockQuestionSet.getVisibility()).thenReturn(QuestionSetVisibility.GROUP);
 			when(mockQuestion.getQuestionSet()).thenReturn(mockQuestionSet);
 
-			when(submitOrderGenerator.generateSubmitOrder(questionId)).thenReturn(submitOrder);
+			lenient().when(submitTimingProcessor.process(questionId))
+				.thenReturn(new SubmitTimingDto(submitOrder, 0L));
 			when(userEntityRepository.findById(userId)).thenReturn(Optional.of(mockUser));
 			when(questionReader.getQuestion(questionId, questionSetId)).thenReturn(mockQuestion);
 			doNothing().when(teamRoleValidator).checkHasSolveQuestionAuthorityInTeam(teamId, userId);
@@ -253,7 +259,8 @@ class QuestionAnswerSubmitServiceTest {
 			when(mockQuestionSet.getVisibility()).thenReturn(QuestionSetVisibility.PRIVATE);
 			when(mockQuestion.getQuestionSet()).thenReturn(mockQuestionSet);
 
-			when(submitOrderGenerator.generateSubmitOrder(questionId)).thenReturn(submitOrder);
+			lenient().when(submitTimingProcessor.process(questionId))
+				.thenReturn(new SubmitTimingDto(submitOrder, 0L));
 			when(userEntityRepository.findById(userId)).thenReturn(Optional.of(mockUser));
 			when(questionReader.getQuestion(questionId, questionSetId)).thenReturn(mockQuestion);
 			doNothing().when(teamRoleValidator).checkHasSolveQuestionAuthorityInTeam(teamId, userId);
@@ -291,7 +298,8 @@ class QuestionAnswerSubmitServiceTest {
 			when(mockQuestion.getQuestionSet()).thenReturn(mockQuestionSet);
 			when(mockQuestion.canSolve()).thenReturn(true);
 
-			when(submitOrderGenerator.generateSubmitOrder(questionId)).thenReturn(submitOrder);
+			lenient().when(submitTimingProcessor.process(questionId))
+				.thenReturn(new SubmitTimingDto(submitOrder, 0L));
 			when(userEntityRepository.findById(userId)).thenReturn(Optional.of(mockUser));
 			when(questionReader.getQuestion(questionId, questionSetId)).thenReturn(mockQuestion);
 			doNothing().when(teamRoleValidator).checkHasSolveQuestionAuthorityInTeam(teamId, userId);
@@ -331,7 +339,8 @@ class QuestionAnswerSubmitServiceTest {
 			when(mockQuestion.canSolve()).thenReturn(true);
 			when(mockQuestion.getId()).thenReturn(questionId);
 
-			when(submitOrderGenerator.generateSubmitOrder(questionId)).thenReturn(submitOrder);
+			lenient().when(submitTimingProcessor.process(questionId))
+				.thenReturn(new SubmitTimingDto(submitOrder, 0L));
 			when(userEntityRepository.findById(userId)).thenReturn(Optional.of(mockUser));
 			when(questionReader.getQuestion(questionId, questionSetId)).thenReturn(mockQuestion);
 			doNothing().when(teamRoleValidator).checkHasSolveQuestionAuthorityInTeam(teamId, userId);
@@ -349,6 +358,7 @@ class QuestionAnswerSubmitServiceTest {
 			// then
 			assertThat(result).isNotNull();
 			assertThat(result.isCorrect()).isFalse();
+			assertThat(result.getTimeGapMillis()).isNull();
 			verify(answerSubmitRecordEntityRepository).save(any(AnswerSubmitRecordEntity.class));
 			verify(scorerGenerator, never()).updateScorer(any(), any(), any());
 		}
