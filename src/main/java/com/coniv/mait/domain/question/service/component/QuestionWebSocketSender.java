@@ -4,6 +4,7 @@ import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 
 import com.coniv.mait.domain.question.dto.ParticipantDto;
+import com.coniv.mait.domain.question.dto.QuestionSetParticipantCountMessage;
 import com.coniv.mait.domain.question.dto.QuestionSetParticipationStatusMessage;
 import com.coniv.mait.domain.question.dto.QuestionSetStatusMessage;
 import com.coniv.mait.domain.question.dto.QuestionStatusMessage;
@@ -34,6 +35,13 @@ public class QuestionWebSocketSender {
 		messagingTemplate.convertAndSend(destination, message);
 
 		log.info("Broadcasting question set status to {}: {}", destination, message);
+	}
+
+	public void broadcastParticipantCount(Long questionSetId, long count) {
+		String destination = WebSocketConstants.getQuestionSetParticipateTopic(questionSetId);
+		messagingTemplate.convertAndSend(destination, QuestionSetParticipantCountMessage.of(questionSetId, count));
+
+		log.info("Broadcasting participant count to {}: {}", destination, count);
 	}
 
 	public void broadcastNewParticipantToMaker(Long questionSetId, ParticipantDto participant) {
