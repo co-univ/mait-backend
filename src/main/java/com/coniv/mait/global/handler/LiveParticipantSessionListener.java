@@ -1,0 +1,80 @@
+package com.coniv.mait.global.handler;
+
+import java.security.Principal;
+
+import org.springframework.context.event.EventListener;
+import org.springframework.messaging.simp.stomp.StompHeaderAccessor;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.stereotype.Component;
+import org.springframework.web.socket.messaging.SessionDisconnectEvent;
+import org.springframework.web.socket.messaging.SessionSubscribeEvent;
+import org.springframework.web.socket.messaging.SessionUnsubscribeEvent;
+
+import com.coniv.mait.domain.question.service.component.LiveParticipantRedisRepository;
+import com.coniv.mait.domain.question.service.component.QuestionWebSocketSender;
+import com.coniv.mait.global.constant.WebSocketConstants;
+
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+
+@Slf4j
+@Component
+@RequiredArgsConstructor
+public class LiveParticipantSessionListener {
+
+	private final LiveParticipantRedisRepository liveParticipantRedisRepository;
+	private final QuestionWebSocketSender questionWebSocketSender;
+
+	@EventListener
+	public void onSubscribe(final SessionSubscribeEvent event) {
+		StompHeaderAccessor accessor = StompHeaderAccessor.wrap(event.getMessage());
+		Long questionSetId = WebSocketConstants.parseParticipateQuestionSetId(accessor.getDestination());
+		if (questionSetId == null) {
+			return;
+		}
+
+		Long userId = extractUserId(accessor.getUser());
+		if (userId == null) {
+			log.warn("[참가자 입장 무시] 인증되지 않은 구독: destination={}", accessor.getDestination());
+			return;
+		}
+
+		boolean changed = liveParticipantRedisRepository.enter(
+			questionSetId, userId, accessor.getSessionId(), accessor.getSubscriptionId());
+		if (changed) {
+			broadcastCount(questionSetId);
+		}
+	}
+
+	@EventListener
+	public void onUnsubscribe(final SessionUnsubscribeEvent event) {
+		StompHeaderAccessor accessor = StompHeaderAccessor.wrap(event.getMessage());
+		Long questionSetId = liveParticipantRedisRepository.leaveBySubscription(
+			accessor.getSessionId(), accessor.getSubscriptionId());
+		if (questionSetId != null) {
+			broadcastCount(questionSetId);
+		}
+	}
+
+	@EventListener
+	public void onDisconnect(final SessionDisconnectEvent event) {
+		StompHeaderAccessor accessor = StompHeaderAccessor.wrap(event.getMessage());
+		Long questionSetId = liveParticipantRedisRepository.leaveBySession(accessor.getSessionId());
+		if (questionSetId != null) {
+			broadcastCount(questionSetId);
+		}
+	}
+
+	private void broadcastCount(final Long questionSetId) {
+		long count = liveParticipantRedisRepository.getParticipantCount(questionSetId);
+		questionWebSocketSender.broadcastParticipantCount(questionSetId, count);
+	}
+
+	private Long extractUserId(final Principal principal) {
+		if (principal instanceof UsernamePasswordAuthenticationToken token
+			&& token.getPrincipal() instanceof Long userId) {
+			return userId;
+		}
+		return null;
+	}
+}

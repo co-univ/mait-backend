@@ -9,6 +9,10 @@ public final class QuestionRedisKeys {
 	private static final String REVIEW_PREFIX = "review:last_viewed:question_set:";
 	private static final String USER_PREFIX = "user:";
 
+	private static final String LIVE_PARTICIPANTS_PREFIX = "$ws:live:participants:question-set:";
+	private static final String LIVE_USER_SESSIONS_PREFIX = "$ws:live:user-sessions:question-set:";
+	private static final String LIVE_SESSION_PREFIX = "$ws:live:session:";
+
 	private QuestionRedisKeys() {
 	}
 
@@ -34,5 +38,17 @@ public final class QuestionRedisKeys {
 
 	public static String reviewLastViewedPattern(final Long questionSetId) {
 		return REVIEW_PREFIX + questionSetId + USER_PREFIX + "*";
+	}
+
+	public static String liveParticipants(final Long questionSetId) {
+		return LIVE_PARTICIPANTS_PREFIX + questionSetId;
+	}
+
+	public static String liveUserSessions(final Long questionSetId, final Long userId) {
+		return LIVE_USER_SESSIONS_PREFIX + questionSetId + ":" + USER_PREFIX + userId;
+	}
+
+	public static String liveSession(final String sessionId) {
+		return LIVE_SESSION_PREFIX + sessionId;
 	}
 }
