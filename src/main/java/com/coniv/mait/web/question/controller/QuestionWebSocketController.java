@@ -10,6 +10,7 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.stereotype.Controller;
 
 import com.coniv.mait.domain.question.service.QuestionSetLiveControlService;
+import com.coniv.mait.domain.question.service.component.LiveParticipantBroadcaster;
 import com.coniv.mait.global.response.WebSocketErrorResponse;
 
 import lombok.RequiredArgsConstructor;
@@ -21,6 +22,7 @@ import lombok.extern.slf4j.Slf4j;
 public class QuestionWebSocketController {
 
 	private final QuestionSetLiveControlService questionSetLiveControlService;
+	private final LiveParticipantBroadcaster liveParticipantBroadcaster;
 
 	@MessageMapping("/question-sets/{questionSetId}/participation-status")
 	public void requestParticipationStatus(
@@ -34,6 +36,11 @@ public class QuestionWebSocketController {
 		}
 
 		questionSetLiveControlService.handleParticipation(questionSetId, userId);
+	}
+
+	@MessageMapping("/question-sets/{questionSetId}/participant-count/sync")
+	public void syncParticipantCount(@DestinationVariable Long questionSetId) {
+		liveParticipantBroadcaster.broadcastCount(questionSetId);
 	}
 
 	@MessageExceptionHandler
