@@ -107,7 +107,7 @@ public class QuestionAnswerSubmitService {
 
 		answerSubmitRecordEntityRepository.save(submitRecord);
 
-		final Long timeGapMillis = isCorrect ? submitTiming.timeGapMillis() : null;
+		final Long timeGapMillis = submitTiming.timeGapMillis();
 
 		return AnswerSubmitDto.from(submitRecord, timeGapMillis);
 	}
