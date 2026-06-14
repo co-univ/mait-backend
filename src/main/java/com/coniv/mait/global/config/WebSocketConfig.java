@@ -19,7 +19,7 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
 
-	private static final long[] HEARTBEAT_INTERVALS = {10_000L, 10_000L};
+	private static final long[] HEARTBEAT_INTERVALS = {5_000L, 5_000L};
 
 	private final WebSocketAuthInterceptor webSocketAuthInterceptor;
 

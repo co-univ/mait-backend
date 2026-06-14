@@ -1,6 +1,5 @@
 package com.coniv.mait.global.handler;
 
-import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.BDDMockito.*;
 
 import java.security.Principal;
@@ -21,8 +20,8 @@ import org.springframework.web.socket.messaging.SessionDisconnectEvent;
 import org.springframework.web.socket.messaging.SessionSubscribeEvent;
 import org.springframework.web.socket.messaging.SessionUnsubscribeEvent;
 
+import com.coniv.mait.domain.question.service.component.LiveParticipantBroadcaster;
 import com.coniv.mait.domain.question.service.component.LiveParticipantRedisRepository;
-import com.coniv.mait.domain.question.service.component.QuestionWebSocketSender;
 
 @ExtendWith(MockitoExtension.class)
 class LiveParticipantSessionListenerTest {
@@ -34,18 +33,17 @@ class LiveParticipantSessionListenerTest {
 	private LiveParticipantRedisRepository liveParticipantRedisRepository;
 
 	@Mock
-	private QuestionWebSocketSender questionWebSocketSender;
+	private LiveParticipantBroadcaster liveParticipantBroadcaster;
 
 	@Test
 	@DisplayName("participate 토픽 구독 시 참가자 수가 변하면 현재 인원을 전파한다")
 	void onSubscribe_participantChanged_broadcastsCount() {
 		given(liveParticipantRedisRepository.enter(7L, 42L, "sess-A", "sub-0")).willReturn(true);
-		given(liveParticipantRedisRepository.getParticipantCount(7L)).willReturn(5L);
 
 		liveParticipantSessionListener.onSubscribe(
 			subscribeEvent("/topic/question-sets/7/participate", "sess-A", "sub-0", token(42L)));
 
-		then(questionWebSocketSender).should().broadcastParticipantCount(7L, 5L);
+		then(liveParticipantBroadcaster).should().broadcastCount(7L);
 	}
 
 	@Test
@@ -56,8 +54,7 @@ class LiveParticipantSessionListenerTest {
 		liveParticipantSessionListener.onSubscribe(
 			subscribeEvent("/topic/question-sets/7/participate", "sess-A", "sub-0", token(42L)));
 
-		then(questionWebSocketSender).shouldHaveNoInteractions();
-		then(liveParticipantRedisRepository).should(never()).getParticipantCount(anyLong());
+		then(liveParticipantBroadcaster).shouldHaveNoInteractions();
 	}
 
 	@Test
@@ -67,7 +64,7 @@ class LiveParticipantSessionListenerTest {
 			subscribeEvent("/topic/question-sets/7/manage", "sess-A", "sub-0", token(42L)));
 
 		then(liveParticipantRedisRepository).shouldHaveNoInteractions();
-		then(questionWebSocketSender).shouldHaveNoInteractions();
+		then(liveParticipantBroadcaster).shouldHaveNoInteractions();
 	}
 
 	@Test
@@ -77,18 +74,17 @@ class LiveParticipantSessionListenerTest {
 			subscribeEvent("/topic/question-sets/7/participate", "sess-A", "sub-0", null));
 
 		then(liveParticipantRedisRepository).shouldHaveNoInteractions();
-		then(questionWebSocketSender).shouldHaveNoInteractions();
+		then(liveParticipantBroadcaster).shouldHaveNoInteractions();
 	}
 
 	@Test
 	@DisplayName("구독해제로 참가자가 빠지면 현재 인원을 전파한다")
 	void onUnsubscribe_participantLeft_broadcastsCount() {
 		given(liveParticipantRedisRepository.leaveBySubscription("sess-A", "sub-0")).willReturn(7L);
-		given(liveParticipantRedisRepository.getParticipantCount(7L)).willReturn(4L);
 
 		liveParticipantSessionListener.onUnsubscribe(unsubscribeEvent("sess-A", "sub-0"));
 
-		then(questionWebSocketSender).should().broadcastParticipantCount(7L, 4L);
+		then(liveParticipantBroadcaster).should().broadcastCount(7L);
 	}
 
 	@Test
@@ -98,18 +94,17 @@ class LiveParticipantSessionListenerTest {
 
 		liveParticipantSessionListener.onUnsubscribe(unsubscribeEvent("sess-A", "sub-0"));
 
-		then(questionWebSocketSender).shouldHaveNoInteractions();
+		then(liveParticipantBroadcaster).shouldHaveNoInteractions();
 	}
 
 	@Test
 	@DisplayName("연결 종료로 참가자가 빠지면 현재 인원을 전파한다")
 	void onDisconnect_participantLeft_broadcastsCount() {
 		given(liveParticipantRedisRepository.leaveBySession("sess-A")).willReturn(7L);
-		given(liveParticipantRedisRepository.getParticipantCount(7L)).willReturn(2L);
 
 		liveParticipantSessionListener.onDisconnect(disconnectEvent("sess-A"));
 
-		then(questionWebSocketSender).should().broadcastParticipantCount(7L, 2L);
+		then(liveParticipantBroadcaster).should().broadcastCount(7L);
 	}
 
 	@Test
@@ -119,7 +114,7 @@ class LiveParticipantSessionListenerTest {
 
 		liveParticipantSessionListener.onDisconnect(disconnectEvent("sess-A"));
 
-		then(questionWebSocketSender).shouldHaveNoInteractions();
+		then(liveParticipantBroadcaster).shouldHaveNoInteractions();
 	}
 
 	private Principal token(Long userId) {
