@@ -10,7 +10,8 @@ public enum QuestionSetCommandType {
 	LIVE_END("실시간 문제셋 종료"),
 	ACTIVE_PARTICIPANTS("다음 진출자 선정"),
 	WINNER("우승자 선정"),
-	TEAM_DELETED("팀 삭제로 인한 실시간 문제셋 종료");
+	TEAM_DELETED("팀 삭제로 인한 실시간 문제셋 종료"),
+	PARTICIPANT_COUNT("실시간 참가자 수");
 
 	private final String description;
 }

@@ -11,6 +11,7 @@ import org.springframework.web.socket.messaging.SessionSubscribeEvent;
 import org.springframework.web.socket.messaging.SessionUnsubscribeEvent;
 
 import com.coniv.mait.domain.question.service.component.LiveParticipantRedisRepository;
+import com.coniv.mait.domain.question.service.component.QuestionWebSocketSender;
 import com.coniv.mait.global.constant.WebSocketConstants;
 
 import lombok.RequiredArgsConstructor;
@@ -22,6 +23,7 @@ import lombok.extern.slf4j.Slf4j;
 public class LiveParticipantSessionListener {
 
 	private final LiveParticipantRedisRepository liveParticipantRedisRepository;
+	private final QuestionWebSocketSender questionWebSocketSender;
 
 	@EventListener
 	public void onSubscribe(final SessionSubscribeEvent event) {
@@ -37,22 +39,35 @@ public class LiveParticipantSessionListener {
 			return;
 		}
 
-		String sessionId = accessor.getSessionId();
-		liveParticipantRedisRepository.enter(questionSetId, userId, sessionId, accessor.getSubscriptionId());
-		log.info("[참가자 입장] questionSetId={} userId={} sessionId={} count={}",
-			questionSetId, userId, sessionId, liveParticipantRedisRepository.getParticipantCount(questionSetId));
+		boolean changed = liveParticipantRedisRepository.enter(
+			questionSetId, userId, accessor.getSessionId(), accessor.getSubscriptionId());
+		if (changed) {
+			broadcastCount(questionSetId);
+		}
 	}
 
 	@EventListener
 	public void onUnsubscribe(final SessionUnsubscribeEvent event) {
 		StompHeaderAccessor accessor = StompHeaderAccessor.wrap(event.getMessage());
-		liveParticipantRedisRepository.leaveBySubscription(accessor.getSessionId(), accessor.getSubscriptionId());
+		Long questionSetId = liveParticipantRedisRepository.leaveBySubscription(
+			accessor.getSessionId(), accessor.getSubscriptionId());
+		if (questionSetId != null) {
+			broadcastCount(questionSetId);
+		}
 	}
 
 	@EventListener
 	public void onDisconnect(final SessionDisconnectEvent event) {
 		StompHeaderAccessor accessor = StompHeaderAccessor.wrap(event.getMessage());
-		liveParticipantRedisRepository.leaveBySession(accessor.getSessionId());
+		Long questionSetId = liveParticipantRedisRepository.leaveBySession(accessor.getSessionId());
+		if (questionSetId != null) {
+			broadcastCount(questionSetId);
+		}
+	}
+
+	private void broadcastCount(final Long questionSetId) {
+		long count = liveParticipantRedisRepository.getParticipantCount(questionSetId);
+		questionWebSocketSender.broadcastParticipantCount(questionSetId, count);
 	}
 
 	private Long extractUserId(final Principal principal) {

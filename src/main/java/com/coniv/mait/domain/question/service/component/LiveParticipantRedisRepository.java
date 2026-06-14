@@ -19,7 +19,7 @@ public class LiveParticipantRedisRepository {
 
 	private final StringRedisTemplate redisTemplate;
 
-	public void enter(final Long questionSetId, final Long userId, final String sessionId,
+	public boolean enter(final Long questionSetId, final Long userId, final String sessionId,
 		final String subscriptionId) {
 		String sessionValue = questionSetId + VALUE_DELIMITER + userId + VALUE_DELIMITER + subscriptionId;
 		redisTemplate.opsForValue().set(QuestionRedisKeys.liveSession(sessionId), sessionValue, SESSION_TTL);
@@ -28,25 +28,29 @@ public class LiveParticipantRedisRepository {
 		redisTemplate.opsForSet().add(userSessionsKey, sessionId);
 		redisTemplate.expire(userSessionsKey, SESSION_TTL);
 
-		redisTemplate.opsForSet().add(QuestionRedisKeys.liveParticipants(questionSetId), String.valueOf(userId));
+		Long added = redisTemplate.opsForSet()
+			.add(QuestionRedisKeys.liveParticipants(questionSetId), String.valueOf(userId));
+		return added != null && added > 0L;
 	}
 
-	public void leaveBySubscription(final String sessionId, final String subscriptionId) {
+	public Long leaveBySubscription(final String sessionId, final String subscriptionId) {
 		SessionInfo info = readSession(sessionId);
 		if (info == null || !info.subscriptionId().equals(subscriptionId)) {
-			return;
+			return null;
 		}
-		doLeave(sessionId, info);
+		boolean removed = doLeave(sessionId, info);
 		redisTemplate.delete(QuestionRedisKeys.liveSession(sessionId));
+		return removed ? info.questionSetId() : null;
 	}
 
-	public void leaveBySession(final String sessionId) {
+	public Long leaveBySession(final String sessionId) {
 		SessionInfo info = readSession(sessionId);
 		if (info == null) {
-			return;
+			return null;
 		}
-		doLeave(sessionId, info);
+		boolean removed = doLeave(sessionId, info);
 		redisTemplate.delete(QuestionRedisKeys.liveSession(sessionId));
+		return removed ? info.questionSetId() : null;
 	}
 
 	public long getParticipantCount(final Long questionSetId) {
@@ -54,18 +58,20 @@ public class LiveParticipantRedisRepository {
 		return size == null ? 0L : size;
 	}
 
-	private void doLeave(final String sessionId, final SessionInfo info) {
+	private boolean doLeave(final String sessionId, final SessionInfo info) {
 		String userSessionsKey = QuestionRedisKeys.liveUserSessions(info.questionSetId(), info.userId());
 		Long removed = redisTemplate.opsForSet().remove(userSessionsKey, sessionId);
 		if (removed == null || removed == 0L) {
-			return;
+			return false;
 		}
 
 		Long remaining = redisTemplate.opsForSet().size(userSessionsKey);
 		if (remaining == null || remaining == 0L) {
 			redisTemplate.opsForSet().remove(
 				QuestionRedisKeys.liveParticipants(info.questionSetId()), String.valueOf(info.userId()));
+			return true;
 		}
+		return false;
 	}
 
 	private SessionInfo readSession(final String sessionId) {
