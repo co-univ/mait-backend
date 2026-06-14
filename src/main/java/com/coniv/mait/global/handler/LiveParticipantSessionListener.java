@@ -10,8 +10,8 @@ import org.springframework.web.socket.messaging.SessionDisconnectEvent;
 import org.springframework.web.socket.messaging.SessionSubscribeEvent;
 import org.springframework.web.socket.messaging.SessionUnsubscribeEvent;
 
+import com.coniv.mait.domain.question.service.component.LiveParticipantBroadcaster;
 import com.coniv.mait.domain.question.service.component.LiveParticipantRedisRepository;
-import com.coniv.mait.domain.question.service.component.QuestionWebSocketSender;
 import com.coniv.mait.global.constant.WebSocketConstants;
 
 import lombok.RequiredArgsConstructor;
@@ -23,7 +23,7 @@ import lombok.extern.slf4j.Slf4j;
 public class LiveParticipantSessionListener {
 
 	private final LiveParticipantRedisRepository liveParticipantRedisRepository;
-	private final QuestionWebSocketSender questionWebSocketSender;
+	private final LiveParticipantBroadcaster liveParticipantBroadcaster;
 
 	@EventListener
 	public void onSubscribe(final SessionSubscribeEvent event) {
@@ -42,7 +42,7 @@ public class LiveParticipantSessionListener {
 		boolean changed = liveParticipantRedisRepository.enter(
 			questionSetId, userId, accessor.getSessionId(), accessor.getSubscriptionId());
 		if (changed) {
-			broadcastCount(questionSetId);
+			liveParticipantBroadcaster.broadcastCount(questionSetId);
 		}
 	}
 
@@ -52,7 +52,7 @@ public class LiveParticipantSessionListener {
 		Long questionSetId = liveParticipantRedisRepository.leaveBySubscription(
 			accessor.getSessionId(), accessor.getSubscriptionId());
 		if (questionSetId != null) {
-			broadcastCount(questionSetId);
+			liveParticipantBroadcaster.broadcastCount(questionSetId);
 		}
 	}
 
@@ -61,13 +61,8 @@ public class LiveParticipantSessionListener {
 		StompHeaderAccessor accessor = StompHeaderAccessor.wrap(event.getMessage());
 		Long questionSetId = liveParticipantRedisRepository.leaveBySession(accessor.getSessionId());
 		if (questionSetId != null) {
-			broadcastCount(questionSetId);
+			liveParticipantBroadcaster.broadcastCount(questionSetId);
 		}
-	}
-
-	private void broadcastCount(final Long questionSetId) {
-		long count = liveParticipantRedisRepository.getParticipantCount(questionSetId);
-		questionWebSocketSender.broadcastParticipantCount(questionSetId, count);
 	}
 
 	private Long extractUserId(final Principal principal) {
