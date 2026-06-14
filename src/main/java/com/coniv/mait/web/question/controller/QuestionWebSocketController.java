@@ -39,7 +39,11 @@ public class QuestionWebSocketController {
 	}
 
 	@MessageMapping("/question-sets/{questionSetId}/participant-count/sync")
-	public void syncParticipantCount(@DestinationVariable Long questionSetId) {
+	public void syncParticipantCount(@DestinationVariable Long questionSetId, Principal principal) {
+		if (extractUserId(principal) == null) {
+			log.warn("인증되지 않은 participant-count sync 요청: principal={}", principal);
+			return;
+		}
 		liveParticipantBroadcaster.broadcastCount(questionSetId);
 	}
 

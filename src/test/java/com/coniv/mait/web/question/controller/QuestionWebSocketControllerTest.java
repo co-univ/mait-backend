@@ -30,9 +30,20 @@ class QuestionWebSocketControllerTest {
 	@Test
 	@DisplayName("participant-count sync 요청 시 현재 인원을 전파한다")
 	void syncParticipantCount_broadcastsCount() {
-		questionWebSocketController.syncParticipantCount(42L);
+		UsernamePasswordAuthenticationToken principal =
+			new UsernamePasswordAuthenticationToken(10L, null, null);
+
+		questionWebSocketController.syncParticipantCount(42L, principal);
 
 		then(liveParticipantBroadcaster).should().broadcastCount(42L);
+	}
+
+	@Test
+	@DisplayName("인증되지 않은 participant-count sync 요청은 무시한다")
+	void syncParticipantCount_unauthenticated_ignored() {
+		questionWebSocketController.syncParticipantCount(42L, null);
+
+		then(liveParticipantBroadcaster).shouldHaveNoInteractions();
 	}
 
 	@Test
