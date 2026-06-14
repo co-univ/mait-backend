@@ -319,14 +319,14 @@ class QuestionAnswerSubmitServiceTest {
 		}
 
 		@Test
-		@DisplayName("오답 제출 시 scorer 업데이트 안됨")
+		@DisplayName("오답 제출 시 시간차 반환하고 scorer 업데이트 안됨")
 		void submitAnswer_WrongAnswer_NoScorerUpdate() throws JsonProcessingException {
 			// given
 			Long questionSetId = 1L;
 			Long questionId = 1L;
 			Long userId = 1L;
 			Long teamId = 1L;
-			Long submitOrder = 1L;
+			Long submitOrder = 2L;
 			MultipleQuestionSubmitAnswer submitAnswer = new MultipleQuestionSubmitAnswer(List.of(1L));
 
 			UserEntity mockUser = mock(UserEntity.class);
@@ -340,7 +340,7 @@ class QuestionAnswerSubmitServiceTest {
 			when(mockQuestion.getId()).thenReturn(questionId);
 
 			lenient().when(submitTimingProcessor.process(questionId))
-				.thenReturn(new SubmitTimingDto(submitOrder, 0L));
+				.thenReturn(new SubmitTimingDto(submitOrder, 1500L));
 			when(userEntityRepository.findById(userId)).thenReturn(Optional.of(mockUser));
 			when(questionReader.getQuestion(questionId, questionSetId)).thenReturn(mockQuestion);
 			doNothing().when(teamRoleValidator).checkHasSolveQuestionAuthorityInTeam(teamId, userId);
@@ -358,7 +358,7 @@ class QuestionAnswerSubmitServiceTest {
 			// then
 			assertThat(result).isNotNull();
 			assertThat(result.isCorrect()).isFalse();
-			assertThat(result.getTimeGapMillis()).isNull();
+			assertThat(result.getTimeGapMillis()).isEqualTo(1500L);
 			verify(answerSubmitRecordEntityRepository).save(any(AnswerSubmitRecordEntity.class));
 			verify(scorerGenerator, never()).updateScorer(any(), any(), any());
 		}

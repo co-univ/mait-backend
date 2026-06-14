@@ -358,9 +358,9 @@ public class QuestionAnswerSubmitApiIntegrationTest extends BaseIntegrationTest 
 	}
 
 	@Test
-	@DisplayName("정답 제출 시 첫 제출과의 시간차 반환 - 첫 제출은 0, 이후 제출은 0 이상")
+	@DisplayName("제출 시간차 반환 API 통합 테스트 - 정오답 무관")
 	void submitAnswer_ReturnsTimeGapMillis() throws Exception {
-		// Given
+		// given
 		UserEntity firstUser = userEntityRepository.save(
 			UserEntity.localLoginUser("first@test.com", "password", "유저1", "first"));
 		UserEntity secondUser = userEntityRepository.save(
@@ -394,32 +394,32 @@ public class QuestionAnswerSubmitApiIntegrationTest extends BaseIntegrationTest 
 		stringRedisTemplate.delete(QuestionRedisKeys.submitOrder(question.getId()));
 		stringRedisTemplate.delete(QuestionRedisKeys.submitFirstTime(question.getId()));
 
-		// When & Then - 첫 제출(firstUser)은 기준점이라 시간차 0
+		// when & then - 첫 제출(firstUser)은 오답이어도 기준점이라 시간차 0
 		mockMvc.perform(post("/api/v1/question-sets/{questionSetId}/questions/{questionId}/submit",
 				questionSet.getId(), question.getId())
 				.contentType(MediaType.APPLICATION_JSON)
-				.content(multipleSubmitBody(firstUser.getId())))
+				.content(multipleSubmitBody(firstUser.getId(), List.of(2L))))
 			.andExpect(status().isOk())
 			.andExpectAll(
-				jsonPath("$.data.isCorrect").value(true),
+				jsonPath("$.data.isCorrect").value(false),
 				jsonPath("$.data.timeGapMillis").value(0));
 
-		// 이후 제출(secondUser)은 첫 제출과의 시간차가 0 이상
+		// when & then - 이후 제출(secondUser)은 정답 여부와 관계없이 첫 제출과의 시간차가 0 이상
 		mockMvc.perform(post("/api/v1/question-sets/{questionSetId}/questions/{questionId}/submit",
 				questionSet.getId(), question.getId())
 				.contentType(MediaType.APPLICATION_JSON)
-				.content(multipleSubmitBody(secondUser.getId())))
+				.content(multipleSubmitBody(secondUser.getId(), List.of(1L))))
 			.andExpect(status().isOk())
 			.andExpectAll(
 				jsonPath("$.data.isCorrect").value(true),
 				jsonPath("$.data.timeGapMillis", greaterThanOrEqualTo(0)));
 	}
 
-	private String multipleSubmitBody(Long userId) throws Exception {
+	private String multipleSubmitBody(Long userId, List<Long> submitAnswers) throws Exception {
 		ObjectNode node = objectMapper.createObjectNode();
 		node.put("type", "MULTIPLE");
 		node.put("userId", userId);
-		node.set("submitAnswers", objectMapper.valueToTree(List.of(1L)));
+		node.set("submitAnswers", objectMapper.valueToTree(submitAnswers));
 		return objectMapper.writeValueAsString(node);
 	}
 }
