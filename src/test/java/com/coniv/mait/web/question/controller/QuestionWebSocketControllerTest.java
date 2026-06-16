@@ -12,6 +12,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 
 import com.coniv.mait.domain.question.service.QuestionSetLiveControlService;
+import com.coniv.mait.domain.question.service.component.LiveParticipantBroadcaster;
 import com.coniv.mait.global.response.WebSocketErrorResponse;
 
 @ExtendWith(MockitoExtension.class)
@@ -22,6 +23,28 @@ class QuestionWebSocketControllerTest {
 
 	@Mock
 	private QuestionSetLiveControlService questionSetLiveControlService;
+
+	@Mock
+	private LiveParticipantBroadcaster liveParticipantBroadcaster;
+
+	@Test
+	@DisplayName("participant-count sync 요청 시 현재 인원을 전파한다")
+	void syncParticipantCount_broadcastsCount() {
+		UsernamePasswordAuthenticationToken principal =
+			new UsernamePasswordAuthenticationToken(10L, null, null);
+
+		questionWebSocketController.syncParticipantCount(42L, principal);
+
+		then(liveParticipantBroadcaster).should().broadcastCount(42L);
+	}
+
+	@Test
+	@DisplayName("인증되지 않은 participant-count sync 요청은 무시한다")
+	void syncParticipantCount_unauthenticated_ignored() {
+		questionWebSocketController.syncParticipantCount(42L, null);
+
+		then(liveParticipantBroadcaster).shouldHaveNoInteractions();
+	}
 
 	@Test
 	@DisplayName("participation-status 요청 시 서비스에 위임한다")

@@ -125,8 +125,8 @@ public class TeamQuestionRankService {
 
 		TeamEntity team = teamReader.getTeam(teamId);
 
-		List<Long> finishedLiveQuestionSetIds = questionSetReader.getFinishedLiveQuestionSetsInTeam(
-			team.getId()).stream().map(QuestionSetEntity::getId).toList();
+		List<Long> finishedLiveQuestionSetIds = questionSetReader.getFinishedLiveQuestionSetsBySolveModeInTeam(
+			team.getId(), QuestionSetSolveMode.LIVE_TIME).stream().map(QuestionSetEntity::getId).toList();
 
 		List<Long> userCompletedQuestionSetIds = solvingSessionEntityRepository
 			.findAllByUserIdAndStatusAndSolveModeAndQuestionSetTeamId(userId, SolvingStatus.COMPLETE,

@@ -37,6 +37,7 @@ public class QuestionSetDeletedEventListener {
 
 			for (Long questionId : event.questionIds()) {
 				keys.add(QuestionRedisKeys.submitOrder(questionId));
+				keys.add(QuestionRedisKeys.submitFirstTime(questionId));
 				keys.add(QuestionRedisKeys.scorer(questionId));
 			}
 

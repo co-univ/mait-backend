@@ -12,6 +12,8 @@ import org.springframework.data.redis.serializer.Jackson2JsonRedisSerializer;
 import org.springframework.data.redis.serializer.StringRedisSerializer;
 
 import com.coniv.mait.domain.solve.service.component.ScorerLuaScript;
+import com.coniv.mait.domain.solve.service.component.SubmitTimingLuaScript;
+import com.coniv.mait.domain.solve.service.dto.SubmitTimingDto;
 
 @Configuration
 public class RedisConfig {
@@ -55,6 +57,14 @@ public class RedisConfig {
 		DefaultRedisScript<String> script = new DefaultRedisScript<>();
 		script.setScriptText(ScorerLuaScript.SCORER_CHECK_LUA_SCRIPT);
 		script.setResultType(String.class);
+		return script;
+	}
+
+	@Bean
+	public DefaultRedisScript<SubmitTimingDto> submitTimingLuaScript() {
+		DefaultRedisScript<SubmitTimingDto> script = new DefaultRedisScript<>();
+		script.setScriptText(SubmitTimingLuaScript.SUBMIT_TIMING_LUA_SCRIPT);
+		script.setResultType(SubmitTimingDto.class);
 		return script;
 	}
 }

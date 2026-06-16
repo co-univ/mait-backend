@@ -41,6 +41,7 @@ import com.coniv.mait.login.WithCustomUser;
 import com.coniv.mait.web.integration.BaseIntegrationTest;
 import com.coniv.mait.web.team.dto.CreateTeamApiRequest;
 import com.coniv.mait.web.team.dto.CreateTeamInviteApiRequest;
+import com.coniv.mait.web.team.dto.UpdateTeamNameApiRequest;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import jakarta.servlet.FilterChain;
@@ -133,6 +134,142 @@ public class TeamApiIntegrationTest extends BaseIntegrationTest {
 		assertThat(savedTeamUser.getUser().getId()).isEqualTo(user.getId());
 		assertThat(savedTeamUser.getTeam().getId()).isEqualTo(savedTeam.getId());
 		assertThat(savedTeamUser.getUserRole()).isEqualTo(TeamUserRole.OWNER);
+	}
+
+	@Test
+	@Transactional
+	@WithCustomUser(email = "team-name-owner@example.com", name = "오너")
+	@DisplayName("팀 이름 변경 API 통합 테스트 - OWNER는 본인 팀 이름을 변경할 수 있다")
+	void updateTeamName_Success_Owner() throws Exception {
+		// given
+		UserEntity owner = userEntityRepository.findByEmail("team-name-owner@example.com").orElseThrow();
+		TeamEntity team = createTeamWithOwner("기존 팀", owner);
+		UpdateTeamNameApiRequest request = new UpdateTeamNameApiRequest("변경된 팀");
+
+		// when & then
+		mockMvc.perform(patch("/api/v1/teams/{teamId}/name", team.getId())
+				.contentType(MediaType.APPLICATION_JSON)
+				.content(objectMapper.writeValueAsString(request))
+				.with(csrf()))
+			.andExpectAll(
+				status().isOk(),
+				jsonPath("$.isSuccess").value(true),
+				jsonPath("$.data").doesNotExist()
+			);
+
+		TeamEntity updatedTeam = teamEntityRepository.findById(team.getId()).orElseThrow();
+		assertThat(updatedTeam.getName()).isEqualTo("변경된 팀");
+	}
+
+	@Test
+	@Transactional
+	@WithCustomUser(email = "team-name-maker@example.com", name = "메이커")
+	@DisplayName("팀 이름 변경 API 통합 테스트 - MAKER는 팀 이름을 변경할 수 없다")
+	void updateTeamName_Failure_MakerCannotUpdate() throws Exception {
+		// given
+		UserEntity owner = UserEntity.socialLoginUser("team-name-owner2@example.com", "오너", "owner-provider2",
+			null);
+		userEntityRepository.save(owner);
+		UserEntity maker = userEntityRepository.findByEmail("team-name-maker@example.com").orElseThrow();
+		TeamEntity team = createTeamWithOwner("기존 팀", owner);
+		teamUserEntityRepository.save(TeamUserEntity.createTeamUser(maker, team, TeamUserRole.MAKER));
+		UpdateTeamNameApiRequest request = new UpdateTeamNameApiRequest("변경된 팀");
+
+		// when & then
+		mockMvc.perform(patch("/api/v1/teams/{teamId}/name", team.getId())
+				.contentType(MediaType.APPLICATION_JSON)
+				.content(objectMapper.writeValueAsString(request))
+				.with(csrf()))
+			.andExpectAll(
+				status().isForbidden(),
+				jsonPath("$.isSuccess").value(false),
+				jsonPath("$.code").value("C-008"),
+				jsonPath("$.reasons[0]").value("해당 팀의 OWNER가 아닙니다.")
+			);
+
+		TeamEntity unchangedTeam = teamEntityRepository.findById(team.getId()).orElseThrow();
+		assertThat(unchangedTeam.getName()).isEqualTo("기존 팀");
+	}
+
+	@Test
+	@Transactional
+	@WithCustomUser(email = "team-name-outsider@example.com", name = "외부인")
+	@DisplayName("팀 이름 변경 API 통합 테스트 - 팀 멤버가 아니면 팀 이름을 변경할 수 없다")
+	void updateTeamName_Failure_NotTeamMember() throws Exception {
+		// given
+		UserEntity owner = UserEntity.socialLoginUser("team-name-owner3@example.com", "오너", "owner-provider3",
+			null);
+		userEntityRepository.save(owner);
+		TeamEntity team = createTeamWithOwner("기존 팀", owner);
+		UpdateTeamNameApiRequest request = new UpdateTeamNameApiRequest("변경된 팀");
+
+		// when & then
+		mockMvc.perform(patch("/api/v1/teams/{teamId}/name", team.getId())
+				.contentType(MediaType.APPLICATION_JSON)
+				.content(objectMapper.writeValueAsString(request))
+				.with(csrf()))
+			.andExpectAll(
+				status().isNotFound(),
+				jsonPath("$.isSuccess").value(false),
+				jsonPath("$.code").value("C-002"),
+				jsonPath("$.reasons[0]").value("해당 팀의 멤버가 아닙니다.")
+			);
+
+		TeamEntity unchangedTeam = teamEntityRepository.findById(team.getId()).orElseThrow();
+		assertThat(unchangedTeam.getName()).isEqualTo("기존 팀");
+	}
+
+	@Test
+	@Transactional
+	@WithCustomUser(email = "team-name-deleted-owner@example.com", name = "오너")
+	@DisplayName("팀 이름 변경 API 통합 테스트 - 삭제된 팀 이름은 변경할 수 없다")
+	void updateTeamName_Failure_DeletedTeam() throws Exception {
+		// given
+		UserEntity owner = userEntityRepository.findByEmail("team-name-deleted-owner@example.com").orElseThrow();
+		TeamEntity team = createTeamWithOwner("삭제된 팀", owner);
+		team.updateDeletedAt(LocalDateTime.now());
+		UpdateTeamNameApiRequest request = new UpdateTeamNameApiRequest("변경된 팀");
+
+		// when & then
+		mockMvc.perform(patch("/api/v1/teams/{teamId}/name", team.getId())
+				.contentType(MediaType.APPLICATION_JSON)
+				.content(objectMapper.writeValueAsString(request))
+				.with(csrf()))
+			.andExpectAll(
+				status().isBadRequest(),
+				jsonPath("$.isSuccess").value(false),
+				jsonPath("$.code").value("T-001"),
+				jsonPath("$.reasons[0]").value("삭제된 팀입니다.")
+			);
+
+		TeamEntity unchangedTeam = teamEntityRepository.findById(team.getId()).orElseThrow();
+		assertThat(unchangedTeam.getName()).isEqualTo("삭제된 팀");
+	}
+
+	@Test
+	@Transactional
+	@WithCustomUser(email = "team-name-blank-owner@example.com", name = "오너")
+	@DisplayName("팀 이름 변경 API 통합 테스트 - 팀 이름이 비어 있으면 400을 반환한다")
+	void updateTeamName_Failure_BlankName() throws Exception {
+		// given
+		UserEntity owner = userEntityRepository.findByEmail("team-name-blank-owner@example.com").orElseThrow();
+		TeamEntity team = createTeamWithOwner("기존 팀", owner);
+		UpdateTeamNameApiRequest request = new UpdateTeamNameApiRequest("");
+
+		// when & then
+		mockMvc.perform(patch("/api/v1/teams/{teamId}/name", team.getId())
+				.contentType(MediaType.APPLICATION_JSON)
+				.content(objectMapper.writeValueAsString(request))
+				.with(csrf()))
+			.andExpectAll(
+				status().isBadRequest(),
+				jsonPath("$.isSuccess").value(false),
+				jsonPath("$.code").value("C-001"),
+				jsonPath("$.reasons[0]").value("팀 이름은 필수입니다.")
+			);
+
+		TeamEntity unchangedTeam = teamEntityRepository.findById(team.getId()).orElseThrow();
+		assertThat(unchangedTeam.getName()).isEqualTo("기존 팀");
 	}
 
 	@Test

@@ -26,6 +26,18 @@ public interface SolvingSessionEntityRepository extends JpaRepository<SolvingSes
 	List<SolvingSessionEntity> findAllByUserIdAndSolveModeAndQuestionSetTeamId(Long userId,
 		QuestionSetSolveMode solveMode, Long teamId);
 
+	@Query("SELECT s FROM SolvingSessionEntity s JOIN FETCH s.questionSet qs "
+		+ "WHERE s.user.id = :userId AND qs.teamId = :teamId AND s.solveMode = :solveMode AND s.status = :status")
+	List<SolvingSessionEntity> findAllByUserAndTeamAndSolveModeAndStatusFetchQuestionSet(
+		@Param("userId") Long userId, @Param("teamId") Long teamId,
+		@Param("solveMode") QuestionSetSolveMode solveMode, @Param("status") SolvingStatus status);
+
+	@Query("SELECT s FROM SolvingSessionEntity s "
+		+ "WHERE s.questionSet.id IN :questionSetIds AND s.solveMode = :solveMode AND s.status = :status")
+	List<SolvingSessionEntity> findAllByQuestionSetIdInAndSolveModeAndStatus(
+		@Param("questionSetIds") List<Long> questionSetIds,
+		@Param("solveMode") QuestionSetSolveMode solveMode, @Param("status") SolvingStatus status);
+
 	@Query("SELECT s.id FROM SolvingSessionEntity s WHERE s.questionSet.id = :questionSetId")
 	List<Long> findSessionIdsByQuestionSetId(@Param("questionSetId") Long questionSetId);
 

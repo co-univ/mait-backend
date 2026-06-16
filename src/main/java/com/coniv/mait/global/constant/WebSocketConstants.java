@@ -6,11 +6,27 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
 public final class WebSocketConstants {
 
-	// Topic Patterns (Regex)
-	public static final String QUESTION_SET_PARTICIPATE_TOPIC_PATTERN = "^/topic/question-sets/(\\d+)/participate$";
-	// Topic Builders
+	private static final String PARTICIPATE_TOPIC_PREFIX = "/topic/question-sets/";
+	private static final String PARTICIPATE_TOPIC_SUFFIX = "/participate";
+
 	public static String getQuestionSetParticipateTopic(Long questionSetId) {
-		return "/topic/question-sets/" + questionSetId + "/participate";
+		return PARTICIPATE_TOPIC_PREFIX + questionSetId + PARTICIPATE_TOPIC_SUFFIX;
+	}
+
+	public static Long parseParticipateQuestionSetId(String destination) {
+		if (destination == null
+			|| !destination.startsWith(PARTICIPATE_TOPIC_PREFIX)
+			|| !destination.endsWith(PARTICIPATE_TOPIC_SUFFIX)) {
+			return null;
+		}
+		String rawId = destination.substring(
+			PARTICIPATE_TOPIC_PREFIX.length(),
+			destination.length() - PARTICIPATE_TOPIC_SUFFIX.length());
+		try {
+			return Long.valueOf(rawId);
+		} catch (NumberFormatException e) {
+			return null;
+		}
 	}
 
 	public static String getQuestionSetManageTopic(Long questionSetId) {

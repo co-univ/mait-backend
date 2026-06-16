@@ -165,6 +165,14 @@ public class TeamService {
 	}
 
 	@Transactional
+	public void updateTeamName(final Long teamId, final String teamName, final Long userId) {
+		TeamEntity team = teamReader.getActiveTeam(teamId);
+		teamRoleValidator.checkIsTeamOwner(teamId, userId);
+
+		team.updateName(teamName);
+	}
+
+	@Transactional
 	public void approveTeamApplication(Long teamId, Long applicationId, final InvitationApplicationStatus newStatus,
 		Long approverId) {
 		if (newStatus == InvitationApplicationStatus.PENDING) {

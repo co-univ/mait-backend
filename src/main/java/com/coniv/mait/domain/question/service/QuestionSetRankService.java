@@ -15,38 +15,41 @@ import com.coniv.mait.domain.question.entity.QuestionEntity;
 import com.coniv.mait.domain.question.entity.QuestionSetEntity;
 import com.coniv.mait.domain.question.entity.QuestionSetParticipantEntity;
 import com.coniv.mait.domain.question.enums.ParticipantStatus;
+import com.coniv.mait.domain.question.enums.QuestionSetSolveMode;
+import com.coniv.mait.domain.question.exception.QuestionSetStatusException;
+import com.coniv.mait.domain.question.exception.code.QuestionSetStatusExceptionCode;
 import com.coniv.mait.domain.question.repository.QuestionEntityRepository;
-import com.coniv.mait.domain.question.repository.QuestionSetEntityRepository;
 import com.coniv.mait.domain.question.repository.QuestionSetParticipantRepository;
 import com.coniv.mait.domain.question.service.component.QuestionReader;
+import com.coniv.mait.domain.question.service.component.QuestionSetReader;
 import com.coniv.mait.domain.question.service.dto.ParticipantCorrectAnswerRankDto;
 import com.coniv.mait.domain.question.service.dto.ParticipantCorrectAnswersDto;
 import com.coniv.mait.domain.solve.entity.AnswerSubmitRecordEntity;
 import com.coniv.mait.domain.solve.entity.QuestionScorerEntity;
 import com.coniv.mait.domain.solve.repository.AnswerSubmitRecordEntityRepository;
 import com.coniv.mait.domain.solve.repository.QuestionScorerEntityRepository;
+import com.coniv.mait.domain.solve.service.dto.RankDto;
 import com.coniv.mait.domain.team.service.component.TeamReader;
 import com.coniv.mait.domain.user.service.component.UserReader;
 import com.coniv.mait.domain.user.service.dto.UserDto;
 
-import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 @Service
 @RequiredArgsConstructor
 @Slf4j
-public class QuestionRankService {
+public class QuestionSetRankService {
 
 	private final UserReader userReader;
 
 	private final TeamReader teamReader;
 
+	private final QuestionSetReader questionSetReader;
+
 	private final QuestionReader questionReader;
 
 	private final QuestionSetParticipantRepository questionSetParticipantRepository;
-
-	private final QuestionSetEntityRepository questionSetEntityRepository;
 
 	private final QuestionEntityRepository questionEntityRepository;
 
@@ -54,7 +57,7 @@ public class QuestionRankService {
 	private final QuestionScorerEntityRepository questionScorerEntityRepository;
 
 	public ParticipantCorrectAnswerRankDto getParticipantCorrectRank(Long questionSetId) {
-		QuestionSetEntity questionSet = findQuestionSetById(questionSetId);
+		QuestionSetEntity questionSet = questionSetReader.getQuestionSet(questionSetId);
 		List<QuestionSetParticipantEntity> allParticipants =
 			questionSetParticipantRepository.findAllByQuestionSetWithFetchJoinUser(questionSet);
 
@@ -104,14 +107,9 @@ public class QuestionRankService {
 		return ParticipantCorrectAnswerRankDto.of(activeParticipants, eliminateParticipants);
 	}
 
-	private QuestionSetEntity findQuestionSetById(Long questionSetId) {
-		return questionSetEntityRepository.findById(questionSetId)
-			.orElseThrow(() -> new EntityNotFoundException("해당 문제 세트가 존재하지 않습니다."));
-	}
-
 	@Transactional(readOnly = true)
 	public List<AnswerRankDto> getCorrectorsByQuestionSetId(final Long questionSetId) {
-		QuestionSetEntity questionSet = findQuestionSetById(questionSetId);
+		QuestionSetEntity questionSet = questionSetReader.getQuestionSet(questionSetId);
 
 		List<Long> questionIds = questionReader.getQuestionsByQuestionSet(questionSet).stream()
 			.map(QuestionEntity::getId).toList();
@@ -139,7 +137,7 @@ public class QuestionRankService {
 
 	@Transactional(readOnly = true)
 	public List<AnswerRankDto> getScorersByQuestionSetId(final Long questionSetId) {
-		QuestionSetEntity questionSet = findQuestionSetById(questionSetId);
+		QuestionSetEntity questionSet = questionSetReader.getQuestionSet(questionSetId);
 
 		List<Long> questionIds = questionReader.getQuestionsByQuestionSet(questionSet).stream()
 			.map(QuestionEntity::getId).toList();
@@ -162,5 +160,56 @@ public class QuestionRankService {
 				.build())
 			.sorted(Comparator.comparing(AnswerRankDto::getCount).reversed())
 			.toList();
+	}
+
+	@Transactional(readOnly = true)
+	public List<RankDto> getScorerRankByQuestionSetId(final Long questionSetId) {
+		QuestionSetEntity questionSet = questionSetReader.getQuestionSet(questionSetId);
+		if (questionSet.getSolveMode() != QuestionSetSolveMode.LIVE_TIME) {
+			throw new QuestionSetStatusException(QuestionSetStatusExceptionCode.ONLY_LIVE_TIME);
+		}
+		if (!questionSet.getStatus().isCompleted()) {
+			throw new QuestionSetStatusException(QuestionSetStatusExceptionCode.ONLY_AFTER);
+		}
+
+		List<Long> questionIds = questionReader.getQuestionsByQuestionSet(questionSet).stream()
+			.map(QuestionEntity::getId).toList();
+		if (questionIds.isEmpty()) {
+			return List.of();
+		}
+
+		List<UserDto> participants =
+			questionSetParticipantRepository.findAllByQuestionSetWithFetchJoinUser(questionSet).stream()
+				.map(QuestionSetParticipantEntity::getUser)
+				.map(UserDto::from)
+				.toList();
+		if (participants.isEmpty()) {
+			return List.of();
+		}
+
+		Map<Long, Long> scorerCountByUserId = questionScorerEntityRepository.findAllByQuestionIdIn(questionIds).stream()
+			.collect(Collectors.groupingBy(QuestionScorerEntity::getUserId, Collectors.counting()));
+
+		List<RankDto> ranks = participants.stream()
+			.map(participant -> RankDto.builder()
+				.user(participant)
+				.count(scorerCountByUserId.getOrDefault(participant.getId(), 0L))
+				.build())
+			.sorted()
+			.toList();
+
+		calculateRanks(ranks);
+
+		return ranks;
+	}
+
+	private void calculateRanks(List<RankDto> sortedRanks) {
+		int rank = 1;
+		for (int i = 0; i < sortedRanks.size(); i++) {
+			if (i > 0 && sortedRanks.get(i).getCount() != sortedRanks.get(i - 1).getCount()) {
+				rank++;
+			}
+			sortedRanks.get(i).setRank(rank);
+		}
 	}
 }

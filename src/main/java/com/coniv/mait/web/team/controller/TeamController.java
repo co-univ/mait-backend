@@ -33,6 +33,7 @@ import com.coniv.mait.web.team.dto.TeamApiResponse;
 import com.coniv.mait.web.team.dto.TeamInvitationApplyApiResponse;
 import com.coniv.mait.web.team.dto.TeamInvitationLinksApiResponse;
 import com.coniv.mait.web.team.dto.TeamInviteApiResponse;
+import com.coniv.mait.web.team.dto.UpdateTeamNameApiRequest;
 import com.coniv.mait.web.team.dto.UpdateTeamUserRoleApiRequest;
 
 import io.swagger.v3.oas.annotations.Operation;
@@ -51,6 +52,14 @@ public class TeamController {
 	public ResponseEntity<ApiResponse<Void>> createTeam(@AuthenticationPrincipal MaitUser ownerUser,
 		@Valid @RequestBody CreateTeamApiRequest request) {
 		teamService.createTeam(request.name(), ownerUser.id());
+		return ResponseEntity.ok(ApiResponse.noContent());
+	}
+
+	@Operation(summary = "팀 이름 변경 API")
+	@PatchMapping("/{teamId}/name")
+	public ResponseEntity<ApiResponse<Void>> updateTeamName(@PathVariable Long teamId,
+		@Valid @RequestBody UpdateTeamNameApiRequest request, @AuthenticationPrincipal MaitUser userPrincipal) {
+		teamService.updateTeamName(teamId, request.name(), userPrincipal.id());
 		return ResponseEntity.ok(ApiResponse.noContent());
 	}
 
