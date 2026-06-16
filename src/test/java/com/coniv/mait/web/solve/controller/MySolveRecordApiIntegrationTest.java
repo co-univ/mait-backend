@@ -150,4 +150,44 @@ public class MySolveRecordApiIntegrationTest extends BaseIntegrationTest {
 				jsonPath("$.data.results[2].isCorrect").value(false),
 				jsonPath("$.data.results[2].submittedAnswer").doesNotExist());
 	}
+
+	@Test
+	@DisplayName("풀이 기록이 없으면 전 문제를 미응답 오답으로 조회한다")
+	void getMySolveRecord_noRecords_ReturnsUnansweredResults() throws Exception {
+		// given
+		UserEntity user = userEntityRepository.findByEmail("user@example.com").orElseThrow();
+		TeamEntity team = teamEntityRepository.save(TeamEntity.ofGroup("noRecordTeam", user.getId()));
+		teamUserEntityRepository.save(TeamUserEntity.createPlayerUser(user, team));
+
+		QuestionSetEntity questionSet = questionSetEntityRepository.save(
+			QuestionSetEntity.builder()
+				.teamId(team.getId())
+				.solveMode(QuestionSetSolveMode.STUDY)
+				.status(QuestionSetStatus.AFTER)
+				.build());
+
+		MultipleQuestionEntity q1 = questionEntityRepository.save(
+			MultipleQuestionEntity.builder().questionSet(questionSet).number(1L).lexoRank("a").build());
+		MultipleQuestionEntity q2 = questionEntityRepository.save(
+			MultipleQuestionEntity.builder().questionSet(questionSet).number(2L).lexoRank("b").build());
+
+		// when & then
+		mockMvc.perform(
+				get("/api/v1/question-sets/{questionSetId}/user/result", questionSet.getId()))
+			.andExpectAll(
+				status().isOk(),
+				jsonPath("$.isSuccess").value(true),
+				jsonPath("$.data.questionSetId").value(questionSet.getId()),
+				jsonPath("$.data.solveMode").value("STUDY"),
+				jsonPath("$.data.totalCount").value(2),
+				jsonPath("$.data.correctCount").value(0),
+				jsonPath("$.data.score").value(0.0),
+				jsonPath("$.data.results.length()").value(2),
+				jsonPath("$.data.results[0].questionId").value(q1.getId()),
+				jsonPath("$.data.results[0].isCorrect").value(false),
+				jsonPath("$.data.results[0].submittedAnswer").doesNotExist(),
+				jsonPath("$.data.results[1].questionId").value(q2.getId()),
+				jsonPath("$.data.results[1].isCorrect").value(false),
+				jsonPath("$.data.results[1].submittedAnswer").doesNotExist());
+	}
 }
