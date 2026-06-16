@@ -23,8 +23,6 @@ import com.coniv.mait.domain.question.repository.QuestionEntityRepository;
 import com.coniv.mait.domain.question.service.component.QuestionReader;
 import com.coniv.mait.domain.question.service.component.QuestionSetReader;
 import com.coniv.mait.domain.solve.entity.AnswerSubmitRecordEntity;
-import com.coniv.mait.domain.solve.exception.QuestionSolveExceptionCode;
-import com.coniv.mait.domain.solve.exception.QuestionSolvingException;
 import com.coniv.mait.domain.solve.service.component.AnswerSubmitRecordReader;
 import com.coniv.mait.domain.solve.service.component.QuestionParticipantReader;
 import com.coniv.mait.domain.statistic.service.SolvingResultService;
@@ -139,22 +137,32 @@ class SolvingResultServiceTest {
 	}
 
 	@Test
-	@DisplayName("getMySolveRecord - 제출 기록이 없으면 NO_SOLVE_RECORD 예외가 발생한다")
-	void getSolvingResults_throwsWhenNoRecords() {
+	@DisplayName("getMySolveRecord - 제출 기록이 없으면 전 문제를 미응답 오답으로 반환한다")
+	void getSolvingResults_returnsUnansweredResultsWhenNoRecords() {
 		// given
 		QuestionSetEntity questionSet = mockQuestionSet(QuestionSetSolveMode.STUDY);
 		QuestionEntity question1 = mockQuestion(101L);
+		QuestionEntity question2 = mockQuestion(102L);
 
 		when(questionSetReader.getQuestionSet(QUESTION_SET_ID)).thenReturn(questionSet);
-		when(questionReader.getOrderedQuestions(QUESTION_SET_ID)).thenReturn(List.of(question1));
-		when(answerSubmitRecordReader.getEarliestByQuestionId(USER_ID, List.of(101L)))
+		when(questionReader.getOrderedQuestions(QUESTION_SET_ID)).thenReturn(List.of(question1, question2));
+		when(answerSubmitRecordReader.getEarliestByQuestionId(USER_ID, List.of(101L, 102L)))
 			.thenReturn(Map.of());
 
-		// when & then
-		assertThatThrownBy(() -> solvingResultService.getSolvingResults(MAIT_USER, QUESTION_SET_ID))
-			.isInstanceOf(QuestionSolvingException.class)
-			.satisfies(ex -> assertThat(((QuestionSolvingException)ex).getExceptionCode())
-				.isEqualTo(QuestionSolveExceptionCode.NO_SOLVE_RECORD));
+		// when
+		MySolveRecordDto result = solvingResultService.getSolvingResults(MAIT_USER, QUESTION_SET_ID);
+
+		// then
+		assertThat(result.getSolveMode()).isEqualTo(QuestionSetSolveMode.STUDY);
+		assertThat(result.getTotalCount()).isEqualTo(2);
+		assertThat(result.getCorrectCount()).isZero();
+		assertThat(result.getScore()).isEqualTo(0.0);
+		assertThat(result.getResults()).hasSize(2);
+		assertThat(result.getResults()).allSatisfy(questionResult -> {
+			assertThat(questionResult.isCorrect()).isFalse();
+			assertThat(questionResult.getSubmittedAnswer()).isNull();
+		});
+		assertThat(result.getResults()).extracting("questionId").containsExactly(101L, 102L);
 	}
 
 	@Test
