@@ -17,8 +17,6 @@ import com.coniv.mait.domain.question.repository.QuestionEntityRepository;
 import com.coniv.mait.domain.question.service.component.QuestionReader;
 import com.coniv.mait.domain.question.service.component.QuestionSetReader;
 import com.coniv.mait.domain.solve.entity.AnswerSubmitRecordEntity;
-import com.coniv.mait.domain.solve.exception.QuestionSolveExceptionCode;
-import com.coniv.mait.domain.solve.exception.QuestionSolvingException;
 import com.coniv.mait.domain.solve.service.component.AnswerSubmitRecordReader;
 import com.coniv.mait.domain.solve.service.component.QuestionParticipantReader;
 import com.coniv.mait.domain.solve.service.dto.QuestionSolveResultDto;
@@ -53,10 +51,6 @@ public class SolvingResultService {
 
 		Map<Long, AnswerSubmitRecordEntity> earliestByQuestionId =
 			answerSubmitRecordReader.getEarliestByQuestionId(user.id(), orderedQuestionIds);
-
-		if (earliestByQuestionId.isEmpty()) {
-			throw new QuestionSolvingException(QuestionSolveExceptionCode.NO_SOLVE_RECORD);
-		}
 
 		List<QuestionSolveResultDto> results = orderedQuestionIds.stream()
 			.map(questionId -> QuestionSolveResultDto.of(questionId, earliestByQuestionId.get(questionId)))
