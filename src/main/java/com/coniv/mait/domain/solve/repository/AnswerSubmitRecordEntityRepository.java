@@ -1,6 +1,7 @@
 package com.coniv.mait.domain.solve.repository;
 
 import java.util.List;
+import java.util.Optional;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
@@ -15,6 +16,8 @@ public interface AnswerSubmitRecordEntityRepository extends JpaRepository<Answer
 	List<AnswerSubmitRecordEntity> findAllByQuestionIdIn(List<Long> questionIds);
 
 	List<AnswerSubmitRecordEntity> findAllByQuestionIdInAndIsCorrect(List<Long> questionIds, boolean isCorrect);
+
+	Optional<AnswerSubmitRecordEntity> findFirstByQuestionIdAndIsCorrectTrueOrderBySubmitOrderAsc(Long questionId);
 
 	boolean existsByUserIdAndQuestionIdAndIsCorrectTrue(Long id, Long questionId);
 

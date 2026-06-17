@@ -12,4 +12,6 @@ public interface TeamEntityRepository extends JpaRepository<TeamEntity, Long> {
 	Optional<TeamEntity> findByIdAndDeletedAtIsNull(Long id);
 
 	List<TeamEntity> findAllByType(TeamType type);
+
+	List<TeamEntity> findAllByDeletedAtIsNull();
 }
