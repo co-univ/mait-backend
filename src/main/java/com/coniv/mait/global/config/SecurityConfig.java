@@ -64,6 +64,8 @@ public class SecurityConfig {
 					"/error"
 				).permitAll()
 				.requestMatchers("/ws/**").permitAll()
+				// TODO: 어드민 인증/인가 도입 전까지 임시로 전체 허용
+				.requestMatchers("/api/v1/admin/**").permitAll()
 				.anyRequest().authenticated()
 			)
 			.exceptionHandling(exception -> exception.authenticationEntryPoint(jwtAuthenticationEntryPoint))
