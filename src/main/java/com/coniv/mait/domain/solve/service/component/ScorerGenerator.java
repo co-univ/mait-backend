@@ -10,6 +10,7 @@ import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.coniv.mait.domain.solve.entity.QuestionScorerEntity;
+import com.coniv.mait.domain.solve.repository.AnswerSubmitRecordEntityRepository;
 import com.coniv.mait.domain.solve.repository.QuestionScorerEntityRepository;
 
 import lombok.RequiredArgsConstructor;
@@ -23,6 +24,10 @@ public class ScorerGenerator {
 	private static final String KEY_PREFIX = "$scorer:update:questionId:";
 
 	private final QuestionScorerEntityRepository questionScorerEntityRepository;
+
+	private final AnswerSubmitRecordEntityRepository answerSubmitRecordEntityRepository;
+
+	private final ScorerProcessor scorerProcessor;
 
 	private final RedissonClient redissonClient;
 
@@ -46,6 +51,53 @@ public class ScorerGenerator {
 				lock.unlock();
 			}
 		}
+	}
+
+	@Transactional(propagation = Propagation.REQUIRES_NEW)
+	public void recalculateScorer(Long questionId) {
+		RLock lock = redissonClient.getLock(generateKey(questionId));
+		try {
+			boolean available = lock.tryLock(30, 1, TimeUnit.SECONDS);
+
+			if (!available) {
+				log.error("[락 획득 실패] 득점자 재계산 questionId: {}", questionId);
+				throw new RuntimeException("Scorer lock error");
+			}
+
+			answerSubmitRecordEntityRepository
+				.findFirstByQuestionIdAndIsCorrectTrueOrderBySubmitOrderAsc(questionId)
+				.ifPresentOrElse(
+					record -> applyScorer(questionId, record.getUserId(), record.getSubmitOrder()),
+					() -> removeScorer(questionId));
+
+		} catch (InterruptedException e) {
+			Thread.currentThread().interrupt();
+			throw new RuntimeException(e);
+		} finally {
+			if (lock.isLocked() && lock.isHeldByCurrentThread()) {
+				lock.unlock();
+			}
+		}
+	}
+
+	private void applyScorer(Long questionId, Long userId, Long submitOrder) {
+		questionScorerEntityRepository.findByQuestionId(questionId).ifPresentOrElse(scorer -> {
+			scorer.updateScorer(userId, submitOrder);
+			questionScorerEntityRepository.save(scorer);
+		}, () -> questionScorerEntityRepository.save(QuestionScorerEntity.builder()
+			.questionId(questionId)
+			.userId(userId)
+			.submitOrder(submitOrder)
+			.build()));
+
+		scorerProcessor.setScorer(questionId, userId, submitOrder);
+	}
+
+	private void removeScorer(Long questionId) {
+		questionScorerEntityRepository.findByQuestionId(questionId)
+			.ifPresent(questionScorerEntityRepository::delete);
+
+		scorerProcessor.clearScorer(questionId);
 	}
 
 	private void updateOrInsertScorer(Long questionId, Long userId, Long submitOrder) {

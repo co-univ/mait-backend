@@ -32,4 +32,19 @@ public class LuaScorerProcessor implements ScorerProcessor {
 
 		return Long.parseLong(result);
 	}
+
+	@Override
+	public void setScorer(Long questionId, Long userId, Long submitOrder) {
+		if (submitOrder == null) {
+			throw new IllegalArgumentException("submitOrder cannot be null");
+		}
+		String key = QuestionRedisKeys.scorer(questionId);
+		stringRedisTemplate.opsForValue().set(key, userId + ":" + submitOrder);
+	}
+
+	@Override
+	public void clearScorer(Long questionId) {
+		String key = QuestionRedisKeys.scorer(questionId);
+		stringRedisTemplate.delete(key);
+	}
 }
