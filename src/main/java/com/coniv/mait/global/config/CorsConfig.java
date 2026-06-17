@@ -19,6 +19,7 @@ public class CorsConfig {
 		configuration.addAllowedOrigin("https://alpha.mait.kr");
 		configuration.addAllowedOrigin("https://mait.kr");
 		configuration.addAllowedOrigin("https://www.mait.kr");
+		configuration.addAllowedOrigin("https://admin.mait.kr");
 
 		configuration.addAllowedOrigin("http://localhost:3000"); // todo 삭제 예정
 
