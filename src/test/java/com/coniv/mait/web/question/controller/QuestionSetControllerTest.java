@@ -42,6 +42,7 @@ import com.coniv.mait.domain.solve.service.StudyModeService;
 import com.coniv.mait.global.auth.model.MaitUser;
 import com.coniv.mait.global.filter.JwtAuthorizationFilter;
 import com.coniv.mait.global.interceptor.idempotency.IdempotencyInterceptor;
+import com.coniv.mait.web.question.dto.CreateQuestionSetApiRequest;
 import com.coniv.mait.web.question.dto.QuestionSetGroup;
 import com.coniv.mait.web.question.dto.QuestionSetList;
 import com.coniv.mait.web.question.dto.StudyQuestionSetDto;
@@ -100,89 +101,104 @@ class QuestionSetControllerTest {
 		SecurityContextHolder.clearContext();
 	}
 
-	// @Test
-	// @DisplayName("문제 셋 생성 테스트")
-	// void createQuestionSetTest() throws Exception {
-	// 	// given
-	// 	final Long questionSetId = 1L;
-	// 	String subject = "Sample Subject";
-	// 	QuestionSetCreationType creationType = QuestionSetCreationType.MANUAL;
-	// 	CreateQuestionSetApiRequest request = new CreateQuestionSetApiRequest(subject,
-	// 		creationType);
-	//
-	// 	QuestionSetDto questionSetDto = QuestionSetDto.builder()
-	// 		.id(questionSetId)
-	// 		.subject(subject)
-	// 		.build();
-	//
-	// 	when(questionSetService.createQuestionSet(subject, creationType)).thenReturn(questionSetDto);
-	//
-	// 	// when & then
-	// 	mockMvc.perform(post("/api/v1/question-sets")
-	// 			.contentType(MediaType.APPLICATION_JSON)
-	// 			.content(objectMapper.writeValueAsString(request)))
-	// 		.andExpect(status().isCreated())
-	// 		.andExpect(jsonPath("$.data.questionSetId").value(questionSetId))
-	// 		.andExpect(jsonPath("$.data.subject").value(subject));
-	//
-	// 	// then
-	// 	verify(questionSetService).createQuestionSet(request.subject(), request.creationType());
-	// }
+	@Test
+	@DisplayName("문제 셋 생성 API 성공 테스트")
+	void createQuestionSetTest() throws Exception {
+		// given
+		final Long questionSetId = 1L;
+		CreateQuestionSetApiRequest request = new CreateQuestionSetApiRequest(1L, "Sample Title",
+			QuestionSetCreationType.MANUAL, QuestionSetSolveMode.STUDY, QuestionSetVisibility.GROUP,
+			null, null, null, null, null);
 
-	// @ParameterizedTest(name = "{index} - {0}")
-	// @DisplayName("문제 셋 생성 실패 테스트 - 유효하지 않은 요청")
-	// @MethodSource("invalidCreateQuestionSetRequests")
-	// void createQuestionSetInvalidRequestTest(String testName, String subject, QuestionSetCreationType creationType,
-	// 	String expectedMessage) throws Exception {
-	// 	// given
-	// 	CreateQuestionSetApiRequest request = new CreateQuestionSetApiRequest(subject, creationType);
-	//
-	// 	// when & then
-	// 	mockMvc.perform(post("/api/v1/question-sets")
-	// 			.contentType(MediaType.APPLICATION_JSON)
-	// 			.content(objectMapper.writeValueAsString(request)))
-	// 		.andExpectAll(
-	// 			status().isBadRequest(),
-	// 			jsonPath("$.isSuccess").value(false),
-	// 			jsonPath("$.code").value("C-001"),
-	// 			jsonPath("$.message").value("사용자 입력 오류입니다."),
-	// 			jsonPath("$.reasons").isArray(),
-	// 			jsonPath("$.reasons[0]").value(expectedMessage));
-	//
-	// 	verify(questionSetService, never()).createQuestionSet(anyString(), any());
-	// }
+		QuestionSetDto questionSetDto = QuestionSetDto.builder()
+			.id(questionSetId)
+			.title("Sample Title")
+			.subject("Sample Title")
+			.build();
+
+		when(questionSetService.createQuestionSet(any(), any(), any(), any(), any(), any(), eq(USER_ID)))
+			.thenReturn(questionSetDto);
+
+		// when & then
+		mockMvc.perform(post("/api/v1/question-sets")
+				.contentType(MediaType.APPLICATION_JSON)
+				.content(objectMapper.writeValueAsString(request)))
+			.andExpect(status().isOk())
+			.andExpect(jsonPath("$.data.questionSetId").value(questionSetId));
+
+		// then
+		verify(questionSetService).createQuestionSet(any(), any(), any(), any(), any(), any(), eq(USER_ID));
+	}
+
+	@ParameterizedTest(name = "{index} - {0}")
+	@DisplayName("문제 셋 생성 실패 테스트 - 유효하지 않은 요청")
+	@MethodSource("invalidCreateQuestionSetRequests")
+	void createQuestionSetInvalidRequestTest(String testName, CreateQuestionSetApiRequest request,
+		String expectedMessage) throws Exception {
+		// when & then
+		mockMvc.perform(post("/api/v1/question-sets")
+				.contentType(MediaType.APPLICATION_JSON)
+				.content(objectMapper.writeValueAsString(request)))
+			.andExpectAll(
+				status().isBadRequest(),
+				jsonPath("$.isSuccess").value(false),
+				jsonPath("$.code").value("C-001"),
+				jsonPath("$.message").value("사용자 입력 오류입니다."),
+				jsonPath("$.reasons").isArray(),
+				jsonPath("$.reasons[0]").value(expectedMessage));
+
+		verify(questionSetService, never()).createQuestionSet(any(), any(), any(), any(), any(), any(), any());
+	}
 
 	static Stream<Arguments> invalidCreateQuestionSetRequests() {
 		return Stream.of(
-			Arguments.of("빈 제목", "", QuestionSetCreationType.MANUAL, "교육 주제를 입력해주세요."),
-			Arguments.of("null 제목", null, QuestionSetCreationType.MANUAL, "교육 주제를 입력해주세요."),
-			Arguments.of("공백만 있는 제목", "   ", QuestionSetCreationType.MANUAL, "교육 주제를 입력해주세요."),
-			Arguments.of("빈 생성 타입", "Valid Subject", null, "문제 셋 생성 유형을 선택해주세요."));
+			Arguments.of("팀 ID 누락", new CreateQuestionSetApiRequest(null, "제목", QuestionSetCreationType.MANUAL,
+				QuestionSetSolveMode.STUDY, QuestionSetVisibility.GROUP, null, null, null, null, null),
+				"팀 정보는 필수 입니다."),
+			Arguments.of("빈 제목", new CreateQuestionSetApiRequest(1L, "", QuestionSetCreationType.MANUAL,
+				QuestionSetSolveMode.STUDY, QuestionSetVisibility.GROUP, null, null, null, null, null),
+				"문제 셋 제목을 입력해주세요."),
+			Arguments.of("공백만 있는 제목", new CreateQuestionSetApiRequest(1L, "   ", QuestionSetCreationType.MANUAL,
+				QuestionSetSolveMode.STUDY, QuestionSetVisibility.GROUP, null, null, null, null, null),
+				"문제 셋 제목을 입력해주세요."),
+			Arguments.of("생성 유형 누락", new CreateQuestionSetApiRequest(1L, "제목", null,
+				QuestionSetSolveMode.STUDY, QuestionSetVisibility.GROUP, null, null, null, null, null),
+				"문제 셋 생성 유형을 선택해주세요."),
+			Arguments.of("풀이 방식 누락", new CreateQuestionSetApiRequest(1L, "제목", QuestionSetCreationType.MANUAL,
+				null, QuestionSetVisibility.GROUP, null, null, null, null, null),
+				"문제 풀이 방식을 선택해주세요."),
+			Arguments.of("공개 범위 누락", new CreateQuestionSetApiRequest(1L, "제목", QuestionSetCreationType.MANUAL,
+				QuestionSetSolveMode.STUDY, null, null, null, null, null, null),
+				"문제 셋 공개 범위를 입력해주세요."));
 	}
 
-	// @Test
-	// @DisplayName("문제 셋 생성 실패 테스트 - 여러 필드 동시 유효성 검증 실패")
-	// void createQuestionSetMultipleValidationFailuresTest() throws Exception {
-	// 	// given
-	// 	CreateQuestionSetApiRequest request = new CreateQuestionSetApiRequest(null, null);
-	//
-	// 	// when & then
-	// 	mockMvc.perform(post("/api/v1/question-sets")
-	// 			.contentType(MediaType.APPLICATION_JSON)
-	// 			.content(objectMapper.writeValueAsString(request)))
-	// 		.andExpectAll(
-	// 			status().isBadRequest(),
-	// 			jsonPath("$.isSuccess").value(false),
-	// 			jsonPath("$.code").value("C-001"),
-	// 			jsonPath("$.message").value("사용자 입력 오류입니다."),
-	// 			jsonPath("$.reasons").isArray(),
-	// 			jsonPath("$.reasons.length()").value(2),
-	// 			jsonPath("$.reasons[*]").value(org.hamcrest.Matchers.hasItems(
-	// 				"교육 주제를 입력해주세요.",
-	// 				"문제 셋 생성 유형을 선택해주세요.")));
-	//
-	// 	verify(questionSetService, never()).createQuestionSet(anyString(), any());
-	// }
+	@Test
+	@DisplayName("문제 셋 생성 실패 테스트 - 여러 필드 동시 유효성 검증 실패")
+	void createQuestionSetMultipleValidationFailuresTest() throws Exception {
+		// given
+		CreateQuestionSetApiRequest request = new CreateQuestionSetApiRequest(null, null, null, null, null,
+			null, null, null, null, null);
+
+		// when & then
+		mockMvc.perform(post("/api/v1/question-sets")
+				.contentType(MediaType.APPLICATION_JSON)
+				.content(objectMapper.writeValueAsString(request)))
+			.andExpectAll(
+				status().isBadRequest(),
+				jsonPath("$.isSuccess").value(false),
+				jsonPath("$.code").value("C-001"),
+				jsonPath("$.message").value("사용자 입력 오류입니다."),
+				jsonPath("$.reasons").isArray(),
+				jsonPath("$.reasons.length()").value(5),
+				jsonPath("$.reasons[*]").value(org.hamcrest.Matchers.hasItems(
+					"팀 정보는 필수 입니다.",
+					"문제 셋 제목을 입력해주세요.",
+					"문제 셋 생성 유형을 선택해주세요.",
+					"문제 풀이 방식을 선택해주세요.",
+					"문제 셋 공개 범위를 입력해주세요.")));
+
+		verify(questionSetService, never()).createQuestionSet(any(), any(), any(), any(), any(), any(), any());
+	}
 
 	@Test
 	@DisplayName("문제 셋 목록 조회 테스트 - MAKING 모드는 List 구조 반환")
