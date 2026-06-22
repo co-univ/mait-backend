@@ -14,9 +14,6 @@ public record UpdateQuestionSetApiRequest(
 	@Schema(description = "문제 셋 제목")
 	@NotBlank(message = "제목을 입력해주세요")
 	String title,
-	@Schema(description = "문제 셋 주제")
-	@NotBlank(message = "주제를 입력해주세요")
-	String subject,
 
 	@Schema(description = "문제 풀이 방식", enumAsRef = true, examples = {"STUDY", "LIVE_TIME"})
 	@NotNull(message = "문제 풀이 방식을 입력해주세요")
