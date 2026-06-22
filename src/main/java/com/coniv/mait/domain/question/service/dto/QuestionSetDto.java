@@ -21,6 +21,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 public class QuestionSetDto {
 	private Long id;
+	@Deprecated
 	private String subject;
 	private String title;
 	private QuestionSetCreationType creationType;

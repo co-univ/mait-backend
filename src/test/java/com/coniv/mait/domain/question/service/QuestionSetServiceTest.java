@@ -368,15 +368,12 @@ class QuestionSetServiceTest {
 		// given
 		final Long questionSetId = 1L;
 		final Long teamId = 100L;
-		final String originalSubject = "원래 주제";
 		final String newTitle = "변경할 제목";
-		final String newSubject = "변경할 주제";
 		final QuestionSetSolveMode newSolveMode = QuestionSetSolveMode.LIVE_TIME;
 		final String difficulty = "난이도 설명";
 		final QuestionSetVisibility newVisibility = QuestionSetVisibility.GROUP;
 
 		QuestionSetEntity questionSetEntity = QuestionSetEntity.builder()
-			.subject(originalSubject)
 			.title("원래 제목")
 			.teamId(teamId)
 			.visibility(QuestionSetVisibility.GROUP)
@@ -389,7 +386,6 @@ class QuestionSetServiceTest {
 		QuestionSetDto result = questionSetService.completeQuestionSet(
 			questionSetId,
 			newTitle,
-			newSubject,
 			newSolveMode,
 			difficulty,
 			newVisibility,
@@ -399,7 +395,6 @@ class QuestionSetServiceTest {
 		verify(questionSetEntityRepository, times(1)).findById(questionSetId);
 
 		assertThat(questionSetEntity.getTitle()).isEqualTo(newTitle);
-		assertThat(questionSetEntity.getSubject()).isEqualTo(newSubject);
 		assertThat(questionSetEntity.getSolveMode()).isEqualTo(QuestionSetSolveMode.LIVE_TIME);
 		assertThat(questionSetEntity.getStatus()).isEqualTo(QuestionSetStatus.BEFORE);
 		assertThat(questionSetEntity.getDifficulty()).isEqualTo(difficulty);
@@ -407,7 +402,6 @@ class QuestionSetServiceTest {
 
 		assertThat(result).isNotNull();
 		assertThat(result.getTitle()).isEqualTo(newTitle);
-		assertThat(result.getSubject()).isEqualTo(newSubject);
 		assertThat(result.getSolveMode()).isEqualTo(QuestionSetSolveMode.LIVE_TIME);
 		assertThat(result.getStatus()).isEqualTo(QuestionSetStatus.BEFORE);
 		assertThat(result.getDifficulty()).isEqualTo(difficulty);
@@ -438,7 +432,6 @@ class QuestionSetServiceTest {
 		questionSetService.completeQuestionSet(
 			questionSetId,
 			"새 제목",
-			"새 주제",
 			QuestionSetSolveMode.LIVE_TIME,
 			"난이도",
 			QuestionSetVisibility.GROUP,
@@ -469,7 +462,6 @@ class QuestionSetServiceTest {
 		assertThatThrownBy(() -> questionSetService.completeQuestionSet(
 			questionSetId,
 			"제목",
-			"주제",
 			QuestionSetSolveMode.LIVE_TIME,
 			"난이도",
 			QuestionSetVisibility.GROUP,
@@ -507,7 +499,6 @@ class QuestionSetServiceTest {
 		questionSetService.completeQuestionSet(
 			questionSetId,
 			"제목",
-			"주제",
 			QuestionSetSolveMode.STUDY,
 			"난이도",
 			QuestionSetVisibility.GROUP,
@@ -531,7 +522,6 @@ class QuestionSetServiceTest {
 		assertThatThrownBy(() -> questionSetService.completeQuestionSet(
 			questionSetId,
 			"제목",
-			"주제",
 			QuestionSetSolveMode.LIVE_TIME,
 			"설명",
 			QuestionSetVisibility.GROUP,

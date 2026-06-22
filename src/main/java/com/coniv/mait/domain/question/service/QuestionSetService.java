@@ -154,7 +154,6 @@ public class QuestionSetService {
 	public QuestionSetDto completeQuestionSet(
 		final Long questionSetId,
 		final String title,
-		final String subject,
 		final QuestionSetSolveMode solveMode,
 		final String difficulty,
 		final QuestionSetVisibility visibility,
@@ -177,7 +176,7 @@ public class QuestionSetService {
 			question.updateNumber(number++);
 		}
 
-		questionSet.completeQuestionSet(title, subject, solveMode, difficulty, visibility);
+		questionSet.completeQuestionSet(title, solveMode, difficulty, visibility);
 		if (team.getType() == TeamType.PERSONAL) {
 			questionSet.markOngoingOnComplete();
 		}

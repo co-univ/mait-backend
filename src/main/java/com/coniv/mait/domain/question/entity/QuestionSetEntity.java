@@ -135,14 +135,13 @@ public class QuestionSetEntity extends BaseTimeEntity {
 		}
 	}
 
-	public void completeQuestionSet(String title, String subject, QuestionSetSolveMode solveMode, String difficulty,
+	public void completeQuestionSet(String title, QuestionSetSolveMode solveMode, String difficulty,
 		QuestionSetVisibility visibility) {
 		if (solveMode == null) {
 			throw new IllegalArgumentException("문제 셋 완료 시 solveMode는 필수입니다.");
 		}
 
 		this.title = title;
-		this.subject = subject;
 		this.solveMode = solveMode;
 		this.status = QuestionSetStatus.BEFORE;
 		this.difficulty = difficulty;
