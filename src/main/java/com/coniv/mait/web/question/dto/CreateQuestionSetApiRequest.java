@@ -5,6 +5,8 @@ import java.util.List;
 
 import com.coniv.mait.domain.question.dto.MaterialDto;
 import com.coniv.mait.domain.question.enums.QuestionSetCreationType;
+import com.coniv.mait.domain.question.enums.QuestionSetSolveMode;
+import com.coniv.mait.domain.question.enums.QuestionSetVisibility;
 import com.coniv.mait.domain.question.service.dto.QuestionCount;
 import com.coniv.mait.domain.question.service.dto.QuestionSetDto;
 
@@ -16,10 +18,16 @@ import jakarta.validation.constraints.NotNull;
 public record CreateQuestionSetApiRequest(
 	@NotNull(message = "팀 정보는 필수 입니다.")
 	Long teamId,
-	@NotBlank(message = "교육 주제를 입력해주세요.")
-	String subject,
+	@NotBlank(message = "문제 셋 제목을 입력해주세요.")
+	String title,
 	@NotNull(message = "문제 셋 생성 유형을 선택해주세요.")
 	QuestionSetCreationType creationType,
+	@Schema(description = "문제 풀이 방식 (실시간/학습)", enumAsRef = true, examples = {"STUDY", "LIVE_TIME"})
+	@NotNull(message = "문제 풀이 방식을 선택해주세요.")
+	QuestionSetSolveMode solveMode,
+	@Schema(description = "문제 셋 공개 단위, 미지정 시 GROUP", enumAsRef = true)
+	@NotNull(message = "문제 셋 공개 범위를 입력해주세요.")
+	QuestionSetVisibility visibility,
 	@Schema(description = "업로드한 해당 문제 셋의 파일 목록")
 	List<MaterialDto> materials,
 	@Schema(description = "제작 요청할 문제 개수")
@@ -41,8 +49,10 @@ public record CreateQuestionSetApiRequest(
 	public QuestionSetDto toQuestionSetDto() {
 		return QuestionSetDto.builder()
 			.teamId(teamId)
-			.subject(subject)
+			.title(title)
 			.creationType(creationType)
+			.solveMode(solveMode)
+			.visibility(visibility)
 			.materials(materials)
 			.build();
 	}

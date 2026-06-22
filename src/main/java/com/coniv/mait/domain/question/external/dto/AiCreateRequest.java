@@ -7,7 +7,7 @@ import lombok.Builder;
 
 @Builder
 public record AiCreateRequest(
-	String subject,
+	String title,
 
 	String difficulty,
 

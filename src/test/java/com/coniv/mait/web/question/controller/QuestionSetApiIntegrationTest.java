@@ -39,6 +39,7 @@ import com.coniv.mait.domain.user.entity.UserEntity;
 import com.coniv.mait.domain.user.repository.UserEntityRepository;
 import com.coniv.mait.login.WithCustomUser;
 import com.coniv.mait.web.integration.BaseIntegrationTest;
+import com.coniv.mait.web.question.dto.CreateQuestionSetApiRequest;
 import com.coniv.mait.web.question.dto.UpdateQuestionSetApiRequest;
 import com.coniv.mait.web.question.dto.UpdateQuestionSetFieldApiRequest;
 
@@ -83,28 +84,34 @@ public class QuestionSetApiIntegrationTest extends BaseIntegrationTest {
 		multipleChoiceEntityRepository.deleteAll();
 	}
 
-	// @Test
-	// @DisplayName("문제 셋 생성 API 성공 테스트")
-	// void createQuestionSetApiSuccess() throws Exception {
-	// 	// given
-	// 	String subject = "Sample Subject";
-	// 	QuestionSetCreationType creationType = QuestionSetCreationType.MANUAL;
-	//
-	// 	CreateQuestionSetApiRequest request = new CreateQuestionSetApiRequest(subject, creationType);
-	//
-	// 	// when
-	// 	mockMvc.perform(post("/api/v1/question-sets").contentType(MediaType.APPLICATION_JSON)
-	// 			.content(objectMapper.writeValueAsString(request)))
-	// 		.andExpect(status().isCreated())
-	// 		.andExpect(jsonPath("$.data.subject").value(subject));
-	//
-	// 	// then
-	// 	QuestionSetEntity questionSetEntity = questionSetEntityRepository.findAll().get(0);
-	//
-	// 	assertThat(questionSetEntityRepository.count()).isEqualTo(1);
-	// 	assertThat(questionSetEntity.getSubject()).isEqualTo(subject);
-	// 	assertThat(questionSetEntity.getCreationType()).isEqualTo(creationType);
-	// }
+	@Test
+	@DisplayName("문제 셋 생성 API 성공 테스트 - 제목·풀이방식·공개범위가 DB에 반영된다")
+	void createQuestionSetApiSuccess() throws Exception {
+		// given
+		UserEntity currentUser = userEntityRepository.findByEmail("user@example.com").orElseThrow();
+		TeamEntity team = teamEntityRepository.save(TeamEntity.ofGroup("코니브", 1L));
+		teamUserEntityRepository.save(TeamUserEntity.createTeamUser(currentUser, team, TeamUserRole.MAKER));
+
+		String title = "샘플 제목";
+		CreateQuestionSetApiRequest request = new CreateQuestionSetApiRequest(team.getId(), title,
+			QuestionSetCreationType.MANUAL, QuestionSetSolveMode.STUDY, QuestionSetVisibility.GROUP,
+			List.of(), List.of(), null, null, List.of());
+
+		// when
+		mockMvc.perform(post("/api/v1/question-sets").contentType(MediaType.APPLICATION_JSON)
+				.content(objectMapper.writeValueAsString(request)))
+			.andExpect(status().isOk())
+			.andExpect(jsonPath("$.data.questionSetId").isNumber());
+
+		// then
+		QuestionSetEntity questionSetEntity = questionSetEntityRepository.findAll().get(0);
+
+		assertThat(questionSetEntityRepository.count()).isEqualTo(1);
+		assertThat(questionSetEntity.getTitle()).isEqualTo(title);
+		assertThat(questionSetEntity.getCreationType()).isEqualTo(QuestionSetCreationType.MANUAL);
+		assertThat(questionSetEntity.getSolveMode()).isEqualTo(QuestionSetSolveMode.STUDY);
+		assertThat(questionSetEntity.getVisibility()).isEqualTo(QuestionSetVisibility.GROUP);
+	}
 
 	@Test
 	@DisplayName("문제 셋 목록 조회 API 성공 테스트 - MAKING 모드 (List 구조)")

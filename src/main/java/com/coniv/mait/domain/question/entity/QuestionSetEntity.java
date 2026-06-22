@@ -38,10 +38,10 @@ public class QuestionSetEntity extends BaseTimeEntity {
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	private Long id;
 
+	@Deprecated
 	private String subject;
 
-	@Builder.Default
-	private String title = "문제 셋";
+	private String title;
 
 	@Enumerated(EnumType.STRING)
 	@Column(nullable = false)
@@ -76,14 +76,9 @@ public class QuestionSetEntity extends BaseTimeEntity {
 
 	private LocalDateTime endTime;
 
-	private QuestionSetEntity(String subject, QuestionSetCreationType creationType) {
-		this.subject = subject;
-		this.creationType = creationType;
-	}
-
-	public static QuestionSetEntity of(String subject, QuestionSetCreationType creationType) {
+	public static QuestionSetEntity of(String title, QuestionSetCreationType creationType) {
 		return QuestionSetEntity.builder()
-			.subject(subject)
+			.title(title)
 			.creationType(creationType)
 			.build();
 	}
