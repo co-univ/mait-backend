@@ -10,6 +10,7 @@ import java.util.Optional;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -17,10 +18,12 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import com.coniv.mait.domain.question.entity.QuestionEntity;
 import com.coniv.mait.domain.question.entity.QuestionSetEntity;
 import com.coniv.mait.domain.question.enums.DeliveryMode;
+import com.coniv.mait.domain.question.enums.QuestionSetCreationType;
 import com.coniv.mait.domain.question.enums.QuestionSetSolveMode;
 import com.coniv.mait.domain.question.enums.QuestionSetStatus;
 import com.coniv.mait.domain.question.enums.QuestionSetVisibility;
 import com.coniv.mait.domain.question.enums.QuestionValidationResult;
+import com.coniv.mait.domain.question.event.AiQuestionGenerationRequestedEvent;
 import com.coniv.mait.domain.question.exception.QuestionSetStatusException;
 import com.coniv.mait.domain.question.exception.code.QuestionSetStatusExceptionCode;
 import com.coniv.mait.domain.question.repository.AiRequestStatusManager;
@@ -30,8 +33,10 @@ import com.coniv.mait.domain.question.service.dto.QuestionSetDto;
 import com.coniv.mait.domain.question.service.dto.QuestionValidateDto;
 import com.coniv.mait.domain.team.entity.TeamEntity;
 import com.coniv.mait.domain.team.service.component.TeamReader;
+import com.coniv.mait.domain.user.exception.UserRoleException;
 import com.coniv.mait.domain.user.service.component.TeamRoleValidator;
 import com.coniv.mait.global.auth.model.MaitUser;
+import com.coniv.mait.global.event.MaitEventPublisher;
 import com.coniv.mait.web.question.dto.QuestionSetContainer;
 import com.coniv.mait.web.question.dto.QuestionSetGroup;
 import com.coniv.mait.web.question.dto.QuestionSetList;
@@ -70,24 +75,86 @@ class QuestionSetServiceTest {
 	@Mock
 	private QuestionSetCategoryService questionSetCategoryService;
 
-	// Todo: 생성 관련 feature가 최종 완성 시에 수정
-	// @Test
-	// @DisplayName("문제 셋 생성 테스트")
-	// void createQuestionSetTest() {
-	// 	// given
-	// 	String subject = "Sample Subject";
-	// 	var creationType = QuestionSetCreationType.MANUAL;
-	// 	final Long questionSetId = 1L;
-	//
-	// 	// when
-	// 	QuestionSetDto questionSetDto = questionSetService.createQuestionSet(subject, creationType);
-	//
-	// 	// then
-	// 	assertThat(questionSetDto).isNotNull();
-	// 	assertThat(questionSetDto.getSubject()).isEqualTo(subject);
-	// 	verify(questionSetEntityRepository).save(any());
-	// 	verify(questionService).createDefaultQuestion(any());
-	// }
+	@Mock
+	private QuestionSetMaterialService questionSetMaterialService;
+
+	@Mock
+	private MaitEventPublisher maitEventPublisher;
+
+	@Test
+	@DisplayName("문제 셋 생성 테스트 - MANUAL 타입은 입력값으로 저장하고 기본 문제를 생성하며 AI 이벤트는 발행하지 않는다")
+	void createQuestionSetManualTest() {
+		// given
+		QuestionSetDto request = QuestionSetDto.builder()
+			.teamId(1L)
+			.title("제목")
+			.creationType(QuestionSetCreationType.MANUAL)
+			.solveMode(QuestionSetSolveMode.STUDY)
+			.visibility(QuestionSetVisibility.GROUP)
+			.build();
+
+		// when
+		questionSetService.createQuestionSet(request, List.of(), List.of(), null, "쉬움", List.of(), USER_ID);
+
+		// then
+		ArgumentCaptor<QuestionSetEntity> captor = ArgumentCaptor.forClass(QuestionSetEntity.class);
+		verify(questionSetEntityRepository).save(captor.capture());
+		QuestionSetEntity saved = captor.getValue();
+		assertThat(saved.getTitle()).isEqualTo("제목");
+		assertThat(saved.getCreationType()).isEqualTo(QuestionSetCreationType.MANUAL);
+		assertThat(saved.getSolveMode()).isEqualTo(QuestionSetSolveMode.STUDY);
+		assertThat(saved.getVisibility()).isEqualTo(QuestionSetVisibility.GROUP);
+		assertThat(saved.getCreatorId()).isEqualTo(USER_ID);
+
+		verify(teamRoleValidator).checkHasCreateQuestionSetAuthority(1L, USER_ID);
+		verify(questionService).createDefaultQuestions(any(), eq(List.of()));
+		verify(maitEventPublisher, never()).publishEvent(any());
+		verify(questionSetCategoryService).attachCategories(any(), eq(1L), eq(List.of()));
+	}
+
+	@Test
+	@DisplayName("문제 셋 생성 테스트 - AI_GENERATED 타입은 AI 생성 이벤트를 발행하고 기본 문제를 생성하지 않는다")
+	void createQuestionSetAiGeneratedTest() {
+		// given
+		QuestionSetDto request = QuestionSetDto.builder()
+			.teamId(1L)
+			.title("AI 제목")
+			.creationType(QuestionSetCreationType.AI_GENERATED)
+			.solveMode(QuestionSetSolveMode.LIVE_TIME)
+			.visibility(QuestionSetVisibility.PUBLIC)
+			.build();
+
+		// when
+		questionSetService.createQuestionSet(request, List.of(), List.of(), "보충 설명", "어려움", List.of(), USER_ID);
+
+		// then
+		verify(questionSetEntityRepository).save(any());
+		verify(maitEventPublisher).publishEvent(any(AiQuestionGenerationRequestedEvent.class));
+		verify(questionService, never()).createDefaultQuestions(any(), any());
+	}
+
+	@Test
+	@DisplayName("문제 셋 생성 테스트 - 생성 권한이 없으면 예외가 발생하고 저장하지 않는다")
+	void createQuestionSetWithoutAuthorityTest() {
+		// given
+		QuestionSetDto request = QuestionSetDto.builder()
+			.teamId(1L)
+			.title("제목")
+			.creationType(QuestionSetCreationType.MANUAL)
+			.solveMode(QuestionSetSolveMode.STUDY)
+			.visibility(QuestionSetVisibility.GROUP)
+			.build();
+		doThrow(new UserRoleException("문제 세트 생성 권한이 없습니다."))
+			.when(teamRoleValidator).checkHasCreateQuestionSetAuthority(1L, USER_ID);
+
+		// when & then
+		assertThatThrownBy(() ->
+			questionSetService.createQuestionSet(request, List.of(), List.of(), null, null, List.of(), USER_ID))
+			.isInstanceOf(UserRoleException.class)
+			.hasMessage("문제 세트 생성 권한이 없습니다.");
+
+		verify(questionSetEntityRepository, never()).save(any());
+	}
 
 	@Test
 	@DisplayName("문제 셋 목록 조회 테스트 - MAKING 모드는 QuestionSetList 반환")

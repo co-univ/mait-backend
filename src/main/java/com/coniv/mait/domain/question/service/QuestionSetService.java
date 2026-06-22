@@ -3,7 +3,6 @@ package com.coniv.mait.domain.question.service;
 import java.util.Comparator;
 import java.util.List;
 
-import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -14,7 +13,6 @@ import com.coniv.mait.domain.question.enums.AiRequestStatus;
 import com.coniv.mait.domain.question.enums.DeliveryMode;
 import com.coniv.mait.domain.question.enums.QuestionSetCreationType;
 import com.coniv.mait.domain.question.enums.QuestionSetSolveMode;
-import com.coniv.mait.domain.question.enums.QuestionSetStatus;
 import com.coniv.mait.domain.question.enums.QuestionSetVisibility;
 import com.coniv.mait.domain.question.event.AiQuestionGenerationRequestedEvent;
 import com.coniv.mait.domain.question.exception.QuestionSetStatusException;
@@ -46,9 +44,6 @@ import lombok.extern.slf4j.Slf4j;
 @RequiredArgsConstructor
 public class QuestionSetService {
 
-	private static final String DEFAULT_SET_TITLE = "문제 셋 ";
-	private static final String SET_TITLE_PREFIX = "team:question:title:";
-
 	private final QuestionService questionService;
 
 	private final MaitEventPublisher maitEventPublisher;
@@ -67,8 +62,6 @@ public class QuestionSetService {
 
 	private final AiRequestStatusManager aiRequestStatusManager;
 
-	private final RedisTemplate<String, String> redisTemplate;
-
 	private final QuestionSetCategoryService questionSetCategoryService;
 
 	@Transactional
@@ -78,11 +71,12 @@ public class QuestionSetService {
 		teamRoleValidator.checkHasCreateQuestionSetAuthority(questionSetDto.getTeamId(), userId);
 
 		QuestionSetEntity questionSetEntity = QuestionSetEntity.builder()
-			.subject(questionSetDto.getSubject())
+			.title(questionSetDto.getTitle())
 			.creationType(questionSetDto.getCreationType())
 			.teamId(questionSetDto.getTeamId())
 			.difficulty(difficulty)
-			.title(DEFAULT_SET_TITLE + redisTemplate.opsForValue().increment(SET_TITLE_PREFIX))
+			.solveMode(questionSetDto.getSolveMode())
+			.visibility(questionSetDto.getVisibility())
 			.creatorId(userId)
 			.build();
 		questionSetEntityRepository.save(questionSetEntity);
