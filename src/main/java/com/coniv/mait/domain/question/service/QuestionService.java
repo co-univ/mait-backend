@@ -299,7 +299,7 @@ public class QuestionService {
 			.orElseThrow(() -> new EntityNotFoundException("QuestionSet not found with id: " + questionSetId));
 
 		AiCreateRequest aiRequest = AiCreateRequest.builder()
-			.subject(questionSetEntity.getSubject())
+			.title(questionSetEntity.getTitle())
 			.urls(materials.stream().map(MaterialDto::getUrl).toList())
 			.instruction(instruction)
 			.difficulty(difficulty)
