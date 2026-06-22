@@ -336,7 +336,6 @@ public class QuestionSetApiIntegrationTest extends BaseIntegrationTest {
 
 		UpdateQuestionSetApiRequest request = new UpdateQuestionSetApiRequest(
 			"Updated Title",
-			"Updated Subject",
 			QuestionSetSolveMode.LIVE_TIME,
 			"중급",
 			QuestionSetVisibility.GROUP,
@@ -357,7 +356,6 @@ public class QuestionSetApiIntegrationTest extends BaseIntegrationTest {
 				status().isOk(),
 				jsonPath("$.data.id").value(questionSet.getId()),
 				jsonPath("$.data.title").value("Updated Title"),
-				jsonPath("$.data.subject").value("Updated Subject"),
 				jsonPath("$.data.deliveryMode").value(DeliveryMode.LIVE_TIME.name()));
 	}
 
@@ -390,7 +388,6 @@ public class QuestionSetApiIntegrationTest extends BaseIntegrationTest {
 
 		UpdateQuestionSetApiRequest request = new UpdateQuestionSetApiRequest(
 			"Updated Title",
-			"Updated Subject",
 			QuestionSetSolveMode.LIVE_TIME,
 			"중급",
 			QuestionSetVisibility.GROUP,

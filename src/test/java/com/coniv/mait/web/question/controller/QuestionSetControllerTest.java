@@ -419,18 +419,16 @@ class QuestionSetControllerTest {
 	void updateQuestionSets() throws Exception {
 		// given
 		final Long questionSetId = 1L;
-		final String subject = "Updated Subject";
 		final String title = "Updated Title";
 		final QuestionSetSolveMode solveMode = QuestionSetSolveMode.LIVE_TIME;
 		final String difficulty = "Intermediate";
 		final QuestionSetVisibility visibility = QuestionSetVisibility.PRIVATE;
 		final List<Long> categoryIds = List.of(11L, 12L);
 
-		var request = new UpdateQuestionSetApiRequest(title, subject, solveMode, difficulty, visibility, categoryIds);
+		var request = new UpdateQuestionSetApiRequest(title, solveMode, difficulty, visibility, categoryIds);
 
 		QuestionSetDto questionSetDto = QuestionSetDto.builder()
 			.id(questionSetId)
-			.subject(subject)
 			.title(title)
 			.solveMode(solveMode)
 			.status(QuestionSetStatus.BEFORE)
@@ -438,7 +436,7 @@ class QuestionSetControllerTest {
 			.visibility(visibility)
 			.build();
 
-		when(questionSetService.completeQuestionSet(questionSetId, title, subject, solveMode, difficulty, visibility,
+		when(questionSetService.completeQuestionSet(questionSetId, title, solveMode, difficulty, visibility,
 			categoryIds))
 			.thenReturn(questionSetDto);
 
@@ -449,13 +447,12 @@ class QuestionSetControllerTest {
 			.andExpectAll(
 				status().isOk(),
 				jsonPath("$.data.id").value(questionSetId),
-				jsonPath("$.data.subject").value(subject),
 				jsonPath("$.data.title").value(title),
 				jsonPath("$.data.deliveryMode").value(DeliveryMode.LIVE_TIME.name()),
 				jsonPath("$.data.difficulty").value(difficulty),
 				jsonPath("$.data.visibility").value(visibility.name()));
 
-		verify(questionSetService).completeQuestionSet(questionSetId, title, subject, solveMode, difficulty,
+		verify(questionSetService).completeQuestionSet(questionSetId, title, solveMode, difficulty,
 			visibility, categoryIds);
 	}
 
@@ -511,50 +508,30 @@ class QuestionSetControllerTest {
 				jsonPath("$.reasons[*]").value(org.hamcrest.Matchers.hasItems(
 					expectedErrorMessages.toArray(new String[0]))));
 
-		verify(questionSetService, never()).completeQuestionSet(anyLong(), anyString(), anyString(), any(), anyString(),
+		verify(questionSetService, never()).completeQuestionSet(anyLong(), anyString(), any(), anyString(),
 			any(), any());
 	}
 
 	static Stream<Arguments> invalidUpdateQuestionSetRequests() {
 		return Stream.of(
 			Arguments.of(
-				"제목과 주제가 빈 문자열",
-				new UpdateQuestionSetApiRequest("", "", QuestionSetSolveMode.LIVE_TIME, "설명",
+				"제목이 빈 문자열",
+				new UpdateQuestionSetApiRequest("", QuestionSetSolveMode.LIVE_TIME, "설명",
 					QuestionSetVisibility.GROUP, null),
-				List.of("제목을 입력해주세요", "주제를 입력해주세요")),
-			Arguments.of(
-				"제목만 빈 문자열",
-				new UpdateQuestionSetApiRequest("", "유효한 주제", QuestionSetSolveMode.LIVE_TIME, "설명",
-					QuestionSetVisibility.PRIVATE, null),
 				List.of("제목을 입력해주세요")),
 			Arguments.of(
-				"주제만 빈 문자열",
-				new UpdateQuestionSetApiRequest("유효한 제목", "", QuestionSetSolveMode.LIVE_TIME, "설명",
+				"제목이 null",
+				new UpdateQuestionSetApiRequest(null, QuestionSetSolveMode.LIVE_TIME, "설명",
 					QuestionSetVisibility.GROUP, null),
-				List.of("주제를 입력해주세요")),
-			Arguments.of(
-				"제목과 주제가 null",
-				new UpdateQuestionSetApiRequest(null, null, QuestionSetSolveMode.LIVE_TIME, "설명",
-					QuestionSetVisibility.GROUP, null),
-				List.of("제목을 입력해주세요", "주제를 입력해주세요")),
+				List.of("제목을 입력해주세요")),
 			Arguments.of(
 				"제목이 공백만 포함",
-				new UpdateQuestionSetApiRequest("   ", "유효한 주제", QuestionSetSolveMode.LIVE_TIME, "설명",
+				new UpdateQuestionSetApiRequest("   ", QuestionSetSolveMode.LIVE_TIME, "설명",
 					QuestionSetVisibility.PRIVATE, null),
 				List.of("제목을 입력해주세요")),
 			Arguments.of(
-				"주제가 공백만 포함",
-				new UpdateQuestionSetApiRequest("유효한 제목", "   ", QuestionSetSolveMode.LIVE_TIME, "설명",
-					QuestionSetVisibility.GROUP, null),
-				List.of("주제를 입력해주세요")),
-			Arguments.of(
-				"허용되지 않은 문제 풀이 방식",
-				new UpdateQuestionSetApiRequest("유효한 제목", "유효한 주제", null, "설명",
-					QuestionSetVisibility.GROUP, null),
-				List.of("문제 풀이 방식을 입력해주세요", "문제 풀이 방식은 STUDY 또는 LIVE_TIME만 가능합니다")),
-			Arguments.of(
 				"문제 풀이 방식이 null",
-				new UpdateQuestionSetApiRequest("유효한 제목", "유효한 주제", null, "설명",
+				new UpdateQuestionSetApiRequest("유효한 제목", null, "설명",
 					QuestionSetVisibility.GROUP, null),
 				List.of("문제 풀이 방식을 입력해주세요", "문제 풀이 방식은 STUDY 또는 LIVE_TIME만 가능합니다")));
 	}
