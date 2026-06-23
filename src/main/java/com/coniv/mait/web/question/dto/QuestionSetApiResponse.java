@@ -18,10 +18,12 @@ import lombok.Builder;
 public record QuestionSetApiResponse(
 	@Schema(requiredMode = Schema.RequiredMode.REQUIRED)
 	Long id,
-	@Schema(description = "문제 셋에서 다루는 주제", requiredMode = Schema.RequiredMode.NOT_REQUIRED)
-	String subject,
 	@Schema(description = "문제 셋 제목", requiredMode = Schema.RequiredMode.NOT_REQUIRED)
 	String title,
+	@Deprecated
+	@Schema(description = "문제 셋 제목(deprecated, title과 동일)", requiredMode = Schema.RequiredMode.NOT_REQUIRED,
+		deprecated = true)
+	String subject,
 	@Schema(description = "문제 셋 생성 유형", requiredMode = Schema.RequiredMode.REQUIRED, enumAsRef = true)
 	QuestionSetCreationType creationType,
 	@Schema(description = "문제 셋 노출 단위", requiredMode = Schema.RequiredMode.REQUIRED, enumAsRef = true)
@@ -49,8 +51,8 @@ public record QuestionSetApiResponse(
 	public static QuestionSetApiResponse from(final QuestionSetDto questionSetDto) {
 		return QuestionSetApiResponse.builder()
 			.id(questionSetDto.getId())
-			.subject(questionSetDto.getSubject())
 			.title(questionSetDto.getTitle())
+			.subject(questionSetDto.getTitle())
 			.creationType(questionSetDto.getCreationType())
 			.visibility(questionSetDto.getVisibility())
 			.deliveryMode(resolveDeliveryMode(questionSetDto.getStatus(), questionSetDto.getSolveMode()))
