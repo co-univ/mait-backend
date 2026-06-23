@@ -69,7 +69,7 @@ class AdminLookupControllerTest {
 		Long teamId = 10L;
 		given(adminLookupService.getQuestionSets(teamId)).willReturn(List.of(
 			AdminQuestionSetDto.builder()
-				.id(5L).title("셋1").subject("주제1")
+				.id(5L).title("셋1")
 				.status(QuestionSetStatus.AFTER).solveMode(QuestionSetSolveMode.LIVE_TIME).teamId(teamId)
 				.createdAt(LocalDateTime.now()).updatedAt(LocalDateTime.now())
 				.build()));

@@ -113,7 +113,6 @@ class QuestionSetControllerTest {
 		QuestionSetDto questionSetDto = QuestionSetDto.builder()
 			.id(questionSetId)
 			.title("Sample Title")
-			.subject("Sample Title")
 			.build();
 
 		when(questionSetService.createQuestionSet(any(), any(), any(), any(), any(), any(), eq(USER_ID)))
@@ -124,7 +123,8 @@ class QuestionSetControllerTest {
 				.contentType(MediaType.APPLICATION_JSON)
 				.content(objectMapper.writeValueAsString(request)))
 			.andExpect(status().isOk())
-			.andExpect(jsonPath("$.data.questionSetId").value(questionSetId));
+			.andExpect(jsonPath("$.data.questionSetId").value(questionSetId))
+			.andExpect(jsonPath("$.data.title").value("Sample Title"));
 
 		// then
 		verify(questionSetService).createQuestionSet(any(), any(), any(), any(), any(), any(), eq(USER_ID));
@@ -208,11 +208,11 @@ class QuestionSetControllerTest {
 		final DeliveryMode mode = DeliveryMode.MAKING;
 		QuestionSetDto questionSet1 = QuestionSetDto.builder()
 			.id(1L)
-			.subject("Subject 1")
+			.title("Title 1")
 			.build();
 		QuestionSetDto questionSet2 = QuestionSetDto.builder()
 			.id(2L)
-			.subject("Subject 2")
+			.title("Title 2")
 			.build();
 
 		QuestionSetList questionSetList = QuestionSetList.of(List.of(questionSet1, questionSet2));
@@ -222,14 +222,14 @@ class QuestionSetControllerTest {
 		mockMvc.perform(get("/api/v1/question-sets")
 				.param("teamId", String.valueOf(teamId))
 				.param("mode", mode.name()))
-			.andExpectAll(
-				status().isOk(),
-				jsonPath("$.data.mode").value("MAKING"),
-				jsonPath("$.data.content.questionSets.length()").value(2),
-				jsonPath("$.data.content.questionSets[0].id").value(1L),
-				jsonPath("$.data.content.questionSets[0].subject").value("Subject 1"),
-				jsonPath("$.data.content.questionSets[1].id").value(2L),
-				jsonPath("$.data.content.questionSets[1].subject").value("Subject 2"));
+				.andExpectAll(
+					status().isOk(),
+					jsonPath("$.data.mode").value("MAKING"),
+					jsonPath("$.data.content.questionSets.length()").value(2),
+					jsonPath("$.data.content.questionSets[0].id").value(1L),
+					jsonPath("$.data.content.questionSets[0].title").value("Title 1"),
+					jsonPath("$.data.content.questionSets[1].id").value(2L),
+					jsonPath("$.data.content.questionSets[1].title").value("Title 2"));
 
 		verify(questionSetService).getQuestionSets(eq(teamId), eq(mode), any(MaitUser.class));
 	}
@@ -242,12 +242,12 @@ class QuestionSetControllerTest {
 		final DeliveryMode mode = DeliveryMode.LIVE_TIME;
 		QuestionSetDto beforeSet = QuestionSetDto.builder()
 			.id(1L)
-			.subject("Subject 1")
+			.title("Title 1")
 			.status(QuestionSetStatus.BEFORE)
 			.build();
 		QuestionSetDto ongoingSet = QuestionSetDto.builder()
 			.id(2L)
-			.subject("Subject 2")
+			.title("Title 2")
 			.status(QuestionSetStatus.ONGOING)
 			.build();
 
@@ -259,17 +259,17 @@ class QuestionSetControllerTest {
 		mockMvc.perform(get("/api/v1/question-sets")
 				.param("teamId", String.valueOf(teamId))
 				.param("mode", mode.name()))
-			.andExpectAll(
-				status().isOk(),
-				jsonPath("$.data.mode").value("LIVE_TIME"),
-				jsonPath("$.data.content.questionSets.BEFORE").isArray(),
-				jsonPath("$.data.content.questionSets.BEFORE.length()").value(1),
-				jsonPath("$.data.content.questionSets.BEFORE[0].id").value(1L),
-				jsonPath("$.data.content.questionSets.BEFORE[0].subject").value("Subject 1"),
-				jsonPath("$.data.content.questionSets.ONGOING").isArray(),
-				jsonPath("$.data.content.questionSets.ONGOING.length()").value(1),
-				jsonPath("$.data.content.questionSets.ONGOING[0].id").value(2L),
-				jsonPath("$.data.content.questionSets.ONGOING[0].subject").value("Subject 2"));
+				.andExpectAll(
+					status().isOk(),
+					jsonPath("$.data.mode").value("LIVE_TIME"),
+					jsonPath("$.data.content.questionSets.BEFORE").isArray(),
+					jsonPath("$.data.content.questionSets.BEFORE.length()").value(1),
+					jsonPath("$.data.content.questionSets.BEFORE[0].id").value(1L),
+					jsonPath("$.data.content.questionSets.BEFORE[0].title").value("Title 1"),
+					jsonPath("$.data.content.questionSets.ONGOING").isArray(),
+					jsonPath("$.data.content.questionSets.ONGOING.length()").value(1),
+					jsonPath("$.data.content.questionSets.ONGOING[0].id").value(2L),
+					jsonPath("$.data.content.questionSets.ONGOING[0].title").value("Title 2"));
 
 		verify(questionSetService).getQuestionSets(eq(teamId), eq(mode), any(MaitUser.class));
 	}
@@ -281,12 +281,12 @@ class QuestionSetControllerTest {
 		Long teamId = 1L;
 		QuestionSetDto beforeSet = QuestionSetDto.builder()
 			.id(1L)
-			.subject("시작 전 학습")
+			.title("시작 전 학습")
 			.status(QuestionSetStatus.BEFORE)
 			.build();
 		QuestionSetDto afterSet = QuestionSetDto.builder()
 			.id(2L)
-			.subject("종료된 학습")
+			.title("종료된 학습")
 			.status(QuestionSetStatus.AFTER)
 			.build();
 
@@ -301,10 +301,10 @@ class QuestionSetControllerTest {
 				status().isOk(),
 				jsonPath("$.data.questionSets.BEFORE").isArray(),
 				jsonPath("$.data.questionSets.BEFORE.length()").value(1),
-				jsonPath("$.data.questionSets.BEFORE[0].subject").value("시작 전 학습"),
+				jsonPath("$.data.questionSets.BEFORE[0].title").value("시작 전 학습"),
 				jsonPath("$.data.questionSets.AFTER").isArray(),
 				jsonPath("$.data.questionSets.AFTER.length()").value(1),
-				jsonPath("$.data.questionSets.AFTER[0].subject").value("종료된 학습"));
+				jsonPath("$.data.questionSets.AFTER[0].title").value("종료된 학습"));
 
 		verify(questionSetService).getStudyManagementQuestionSets(eq(teamId), any(MaitUser.class));
 	}
@@ -316,18 +316,18 @@ class QuestionSetControllerTest {
 		Long teamId = 1L;
 		StudyQuestionSetDto beforeSet = StudyQuestionSetDto.builder()
 			.id(1L)
-			.subject("아직 안 푼 문제")
+			.title("아직 안 푼 문제")
 			.userStudyStatus(UserStudyStatus.BEFORE)
 			.build();
 		StudyQuestionSetDto ongoingSet = StudyQuestionSetDto.builder()
 			.id(2L)
-			.subject("풀고 있는 문제")
+			.title("풀고 있는 문제")
 			.userStudyStatus(UserStudyStatus.ONGOING)
 			.solvingSessionId(100L)
 			.build();
 		StudyQuestionSetDto afterSet = StudyQuestionSetDto.builder()
 			.id(3L)
-			.subject("채점 완료 문제")
+			.title("채점 완료 문제")
 			.userStudyStatus(UserStudyStatus.AFTER)
 			.solvingSessionId(101L)
 			.build();
@@ -343,17 +343,17 @@ class QuestionSetControllerTest {
 				status().isOk(),
 				jsonPath("$.data.questionSets.BEFORE").isArray(),
 				jsonPath("$.data.questionSets.BEFORE.length()").value(1),
-				jsonPath("$.data.questionSets.BEFORE[0].subject").value("아직 안 푼 문제"),
+				jsonPath("$.data.questionSets.BEFORE[0].title").value("아직 안 푼 문제"),
 				jsonPath("$.data.questionSets.BEFORE[0].userStudyStatus").value("BEFORE"),
 				jsonPath("$.data.questionSets.BEFORE[0].solvingSessionId").doesNotExist(),
 				jsonPath("$.data.questionSets.ONGOING").isArray(),
 				jsonPath("$.data.questionSets.ONGOING.length()").value(1),
-				jsonPath("$.data.questionSets.ONGOING[0].subject").value("풀고 있는 문제"),
+				jsonPath("$.data.questionSets.ONGOING[0].title").value("풀고 있는 문제"),
 				jsonPath("$.data.questionSets.ONGOING[0].userStudyStatus").value("ONGOING"),
 				jsonPath("$.data.questionSets.ONGOING[0].solvingSessionId").value(100L),
 				jsonPath("$.data.questionSets.AFTER").isArray(),
 				jsonPath("$.data.questionSets.AFTER.length()").value(1),
-				jsonPath("$.data.questionSets.AFTER[0].subject").value("채점 완료 문제"),
+				jsonPath("$.data.questionSets.AFTER[0].title").value("채점 완료 문제"),
 				jsonPath("$.data.questionSets.AFTER[0].userStudyStatus").value("AFTER"),
 				jsonPath("$.data.questionSets.AFTER[0].solvingSessionId").value(101L));
 
@@ -396,10 +396,10 @@ class QuestionSetControllerTest {
 	void getQuestionSetTest() throws Exception {
 		// given
 		final Long questionSetId = 1L;
-		final String subject = "Test Subject";
+		final String title = "Test Title";
 		QuestionSetDto questionSetDto = QuestionSetDto.builder()
 			.id(questionSetId)
-			.subject(subject)
+			.title(title)
 			.build();
 
 		when(questionSetService.getQuestionSet(eq(questionSetId), any(MaitUser.class))).thenReturn(questionSetDto);
@@ -409,7 +409,7 @@ class QuestionSetControllerTest {
 			.andExpectAll(
 				status().isOk(),
 				jsonPath("$.data.id").value(questionSetId),
-				jsonPath("$.data.subject").value(subject));
+				jsonPath("$.data.title").value(title));
 
 		verify(questionSetService).getQuestionSet(eq(questionSetId), any(MaitUser.class));
 	}

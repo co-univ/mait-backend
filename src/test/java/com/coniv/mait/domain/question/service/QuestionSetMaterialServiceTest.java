@@ -53,7 +53,6 @@ class QuestionSetMaterialServiceTest {
 
 		QuestionSetEntity questionSet = QuestionSetEntity.builder()
 			.id(questionSetId)
-			.subject("수학")
 			.title("중간고사 문제")
 			.build();
 
@@ -121,4 +120,3 @@ class QuestionSetMaterialServiceTest {
 		verify(questionSetMaterialEntityRepository).save(any(QuestionSetMaterialEntity.class));
 	}
 }
-

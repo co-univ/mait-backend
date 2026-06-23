@@ -84,7 +84,6 @@ class SubmitAnswerConcurrencyTest {
 	private void setupTestData() {
 		// 1. QuestionSet 생성
 		QuestionSetEntity questionSet = QuestionSetEntity.builder()
-			.subject("테스트 과목")
 			.title("동시성 테스트 문제집")
 			.teamId(1L)
 			.build();
