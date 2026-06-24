@@ -15,7 +15,6 @@ public class AdminQuestionSetDto {
 
 	private final Long id;
 	private final String title;
-	private final String subject;
 	private final QuestionSetStatus status;
 	private final QuestionSetSolveMode solveMode;
 	private final Long teamId;
@@ -26,7 +25,6 @@ public class AdminQuestionSetDto {
 		return AdminQuestionSetDto.builder()
 			.id(questionSet.getId())
 			.title(questionSet.getTitle())
-			.subject(questionSet.getSubject())
 			.status(questionSet.getStatus())
 			.solveMode(questionSet.getSolveMode())
 			.teamId(questionSet.getTeamId())

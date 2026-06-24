@@ -9,7 +9,9 @@ import com.coniv.mait.domain.question.enums.QuestionSetCreationType;
 import com.coniv.mait.domain.question.enums.QuestionSetSolveMode;
 import com.coniv.mait.domain.question.enums.QuestionSetStatus;
 import com.coniv.mait.domain.question.enums.QuestionSetVisibility;
+import com.fasterxml.jackson.annotation.JsonProperty;
 
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -21,8 +23,6 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 public class QuestionSetDto {
 	private Long id;
-	@Deprecated
-	private String subject;
 	private String title;
 	private QuestionSetCreationType creationType;
 	private QuestionSetVisibility visibility;
@@ -38,7 +38,6 @@ public class QuestionSetDto {
 	public static QuestionSetDto from(final QuestionSetEntity questionSetEntity) {
 		return QuestionSetDto.builder()
 			.id(questionSetEntity.getId())
-			.subject(questionSetEntity.getSubject())
 			.title(questionSetEntity.getTitle())
 			.creationType(questionSetEntity.getCreationType())
 			.visibility(questionSetEntity.getVisibility())
@@ -55,7 +54,6 @@ public class QuestionSetDto {
 		List<QuestionSetCategoryDto> categories) {
 		return QuestionSetDto.builder()
 			.id(questionSetEntity.getId())
-			.subject(questionSetEntity.getSubject())
 			.title(questionSetEntity.getTitle())
 			.creationType(questionSetEntity.getCreationType())
 			.visibility(questionSetEntity.getVisibility())
@@ -67,5 +65,12 @@ public class QuestionSetDto {
 			.questionCount(questionCount)
 			.categories(categories)
 			.build();
+	}
+
+	@Deprecated
+	@JsonProperty("subject")
+	@Schema(description = "문제 셋 제목(deprecated, title과 동일)", deprecated = true)
+	public String getSubject() {
+		return title;
 	}
 }

@@ -78,7 +78,7 @@ public class TeamQuestionRankApiIntegrationTest extends BaseIntegrationTest {
 
 		QuestionSetEntity questionSet = questionSetEntityRepository.save(
 			QuestionSetEntity.builder()
-				.subject("테스트 문제집")
+				.title("테스트 문제집")
 				.teamId(team.getId())
 				.solveMode(QuestionSetSolveMode.LIVE_TIME)
 				.status(QuestionSetStatus.AFTER)
@@ -133,7 +133,7 @@ public class TeamQuestionRankApiIntegrationTest extends BaseIntegrationTest {
 
 		QuestionSetEntity questionSet = questionSetEntityRepository.save(
 			QuestionSetEntity.builder()
-				.subject("테스트 문제집")
+				.title("테스트 문제집")
 				.teamId(team.getId())
 				.solveMode(QuestionSetSolveMode.LIVE_TIME)
 				.status(QuestionSetStatus.AFTER)
@@ -177,7 +177,7 @@ public class TeamQuestionRankApiIntegrationTest extends BaseIntegrationTest {
 
 		QuestionSetEntity studyQuestionSet = questionSetEntityRepository.save(
 			QuestionSetEntity.builder()
-				.subject("학습 문제집")
+				.title("학습 문제집")
 				.teamId(team.getId())
 				.solveMode(QuestionSetSolveMode.STUDY)
 				.status(QuestionSetStatus.BEFORE)
@@ -229,7 +229,7 @@ public class TeamQuestionRankApiIntegrationTest extends BaseIntegrationTest {
 		// 실시간 문제셋 (AFTER)
 		QuestionSetEntity liveQuestionSet = questionSetEntityRepository.save(
 			QuestionSetEntity.builder()
-				.subject("실시간 문제집")
+				.title("실시간 문제집")
 				.teamId(team.getId())
 				.solveMode(QuestionSetSolveMode.LIVE_TIME)
 				.status(QuestionSetStatus.AFTER)
@@ -246,7 +246,7 @@ public class TeamQuestionRankApiIntegrationTest extends BaseIntegrationTest {
 		// 학습모드 문제셋 (COMPLETE 세션)
 		QuestionSetEntity studyQuestionSet = questionSetEntityRepository.save(
 			QuestionSetEntity.builder()
-				.subject("학습 문제집")
+				.title("학습 문제집")
 				.teamId(team.getId())
 				.solveMode(QuestionSetSolveMode.STUDY)
 				.status(QuestionSetStatus.BEFORE)
@@ -310,7 +310,7 @@ public class TeamQuestionRankApiIntegrationTest extends BaseIntegrationTest {
 
 		QuestionSetEntity questionSet = questionSetEntityRepository.save(
 			QuestionSetEntity.builder()
-				.subject("랭킹 문제집")
+				.title("랭킹 문제집")
 				.teamId(team.getId())
 				.solveMode(QuestionSetSolveMode.LIVE_TIME)
 				.status(QuestionSetStatus.AFTER)
@@ -342,7 +342,7 @@ public class TeamQuestionRankApiIntegrationTest extends BaseIntegrationTest {
 
 		QuestionSetEntity liveQuestionSet = questionSetEntityRepository.save(
 			QuestionSetEntity.builder()
-				.subject("실시간 문제집")
+				.title("실시간 문제집")
 				.teamId(team.getId())
 				.solveMode(QuestionSetSolveMode.LIVE_TIME)
 				.status(QuestionSetStatus.AFTER)
@@ -366,7 +366,7 @@ public class TeamQuestionRankApiIntegrationTest extends BaseIntegrationTest {
 
 		QuestionSetEntity studyQuestionSet = questionSetEntityRepository.save(
 			QuestionSetEntity.builder()
-				.subject("학습 문제집")
+				.title("학습 문제집")
 				.teamId(team.getId())
 				.solveMode(QuestionSetSolveMode.STUDY)
 				.status(QuestionSetStatus.AFTER)
