@@ -93,7 +93,7 @@ public class QuestionSetRankApiIntegrationTest extends BaseIntegrationTest {
 
 		QuestionSetEntity questionSet = questionSetEntityRepository.save(
 			QuestionSetEntity.builder()
-				.subject("테스트 문제집")
+				.title("테스트 문제집")
 				.teamId(team.getId())
 				.build());
 
@@ -232,7 +232,7 @@ public class QuestionSetRankApiIntegrationTest extends BaseIntegrationTest {
 
 		QuestionSetEntity questionSet = questionSetEntityRepository.save(
 			QuestionSetEntity.builder()
-				.subject("실시간 문제집")
+				.title("실시간 문제집")
 				.teamId(team.getId())
 				.solveMode(QuestionSetSolveMode.LIVE_TIME)
 				.status(QuestionSetStatus.AFTER)

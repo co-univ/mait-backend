@@ -118,7 +118,7 @@ public class QuestionSetDeleteApiIntegrationTest extends BaseIntegrationTest {
 
 		QuestionSetEntity questionSet = questionSetEntityRepository.save(
 			QuestionSetEntity.builder()
-				.subject("BEFORE 문제셋")
+				.title("BEFORE 문제셋")
 				.teamId(team.getId())
 				.status(QuestionSetStatus.BEFORE)
 				.build());
@@ -176,7 +176,7 @@ public class QuestionSetDeleteApiIntegrationTest extends BaseIntegrationTest {
 
 		QuestionSetEntity questionSet = questionSetEntityRepository.save(
 			QuestionSetEntity.builder()
-				.subject("LIVE_TIME AFTER 문제셋")
+				.title("LIVE_TIME AFTER 문제셋")
 				.teamId(team.getId())
 				.solveMode(QuestionSetSolveMode.LIVE_TIME)
 				.status(QuestionSetStatus.AFTER)
@@ -226,7 +226,7 @@ public class QuestionSetDeleteApiIntegrationTest extends BaseIntegrationTest {
 
 		QuestionSetEntity questionSet = questionSetEntityRepository.save(
 			QuestionSetEntity.builder()
-				.subject("STUDY ONGOING 문제셋")
+				.title("STUDY ONGOING 문제셋")
 				.teamId(team.getId())
 				.solveMode(QuestionSetSolveMode.STUDY)
 				.status(QuestionSetStatus.ONGOING)
@@ -273,7 +273,7 @@ public class QuestionSetDeleteApiIntegrationTest extends BaseIntegrationTest {
 
 		QuestionSetEntity questionSet = questionSetEntityRepository.save(
 			QuestionSetEntity.builder()
-				.subject("진행중 문제셋")
+				.title("진행중 문제셋")
 				.teamId(team.getId())
 				.solveMode(QuestionSetSolveMode.LIVE_TIME)
 				.status(QuestionSetStatus.ONGOING)

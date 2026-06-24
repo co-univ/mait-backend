@@ -70,7 +70,6 @@ class AdminLookupServiceTest {
 		when(questionSetEntityRepository.findAllByTeamId(TEAM_ID)).thenReturn(List.of(
 			QuestionSetEntity.builder()
 				.title("셋1")
-				.subject("주제1")
 				.status(QuestionSetStatus.AFTER)
 				.solveMode(QuestionSetSolveMode.LIVE_TIME)
 				.teamId(TEAM_ID)
@@ -82,7 +81,6 @@ class AdminLookupServiceTest {
 		// then
 		assertThat(result).hasSize(1);
 		assertThat(result.get(0).getTitle()).isEqualTo("셋1");
-		assertThat(result.get(0).getSubject()).isEqualTo("주제1");
 		assertThat(result.get(0).getStatus()).isEqualTo(QuestionSetStatus.AFTER);
 		assertThat(result.get(0).getSolveMode()).isEqualTo(QuestionSetSolveMode.LIVE_TIME);
 		assertThat(result.get(0).getTeamId()).isEqualTo(TEAM_ID);

@@ -327,7 +327,7 @@ class QuestionSetServiceTest {
 		final MaitUser user = MaitUser.builder().id(USER_ID).build();
 		final QuestionSetEntity questionSetEntity = mock(QuestionSetEntity.class);
 		when(questionSetEntity.getId()).thenReturn(questionSetId);
-		when(questionSetEntity.getSubject()).thenReturn("Test Subject");
+		when(questionSetEntity.getTitle()).thenReturn("Test Title");
 
 		when(questionSetEntityRepository.findById(questionSetId))
 			.thenReturn(Optional.of(questionSetEntity));
@@ -340,7 +340,7 @@ class QuestionSetServiceTest {
 		// then
 		assertThat(result).isNotNull();
 		assertThat(result.getId()).isEqualTo(questionSetId);
-		assertThat(result.getSubject()).isEqualTo("Test Subject");
+		assertThat(result.getTitle()).isEqualTo("Test Title");
 
 		verify(questionSetEntityRepository, times(1)).findById(questionSetId);
 	}
@@ -419,7 +419,6 @@ class QuestionSetServiceTest {
 		final List<Long> categoryIds = List.of(11L, 12L);
 
 		QuestionSetEntity questionSetEntity = QuestionSetEntity.builder()
-			.subject("주제")
 			.title("제목")
 			.teamId(teamId)
 			.visibility(QuestionSetVisibility.GROUP)
@@ -449,7 +448,6 @@ class QuestionSetServiceTest {
 		final Long teamId = 100L;
 
 		QuestionSetEntity questionSetEntity = QuestionSetEntity.builder()
-			.subject("주제")
 			.title("제목")
 			.teamId(teamId)
 			.visibility(QuestionSetVisibility.GROUP)
@@ -484,7 +482,6 @@ class QuestionSetServiceTest {
 		final Long teamId = 100L;
 
 		QuestionSetEntity questionSetEntity = QuestionSetEntity.builder()
-			.subject("주제")
 			.title("제목")
 			.teamId(teamId)
 			.visibility(QuestionSetVisibility.GROUP)
@@ -541,7 +538,6 @@ class QuestionSetServiceTest {
 		final String newTitle = "새로운 제목";
 
 		QuestionSetEntity questionSetEntity = QuestionSetEntity.builder()
-			.subject("주제")
 			.title(originalTitle)
 			.visibility(QuestionSetVisibility.GROUP)
 			.build();

@@ -453,7 +453,7 @@ public class TeamApiIntegrationTest extends BaseIntegrationTest {
 		UserEntity owner = userEntityRepository.findByEmail("team-delete-owner@example.com").orElseThrow();
 		TeamEntity team = createTeamWithOwner("삭제팀", owner);
 		QuestionSetEntity questionSet = questionSetEntityRepository.save(QuestionSetEntity.builder()
-			.subject("진행 중 실시간 문제셋")
+			.title("진행 중 실시간 문제셋")
 			.teamId(team.getId())
 			.solveMode(QuestionSetSolveMode.LIVE_TIME)
 			.status(QuestionSetStatus.ONGOING)

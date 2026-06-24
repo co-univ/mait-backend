@@ -15,7 +15,9 @@ public record AdminQuestionSetApiResponse(
 	@Schema(description = "문제 셋 제목", requiredMode = Schema.RequiredMode.NOT_REQUIRED)
 	String title,
 
-	@Schema(description = "문제 셋 주제", requiredMode = Schema.RequiredMode.NOT_REQUIRED)
+	@Deprecated
+	@Schema(description = "문제 셋 제목(deprecated, title과 동일)", requiredMode = Schema.RequiredMode.NOT_REQUIRED,
+		deprecated = true)
 	String subject,
 
 	@Schema(description = "문제 셋 상태", requiredMode = Schema.RequiredMode.REQUIRED, enumAsRef = true)
@@ -37,7 +39,7 @@ public record AdminQuestionSetApiResponse(
 		return new AdminQuestionSetApiResponse(
 			questionSet.getId(),
 			questionSet.getTitle(),
-			questionSet.getSubject(),
+			questionSet.getTitle(),
 			questionSet.getStatus(),
 			questionSet.getSolveMode(),
 			questionSet.getTeamId(),

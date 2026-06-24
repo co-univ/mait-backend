@@ -297,7 +297,6 @@ public class QuestionAnswerSubmitApiIntegrationTest extends BaseIntegrationTest 
 
 		QuestionSetEntity questionSet = questionSetEntityRepository.save(QuestionSetEntity.builder()
 			.title("테스트 문제집")
-			.subject("테스트 과목")
 			.build());
 
 		MultipleQuestionEntity multipleQuestion = questionEntityRepository.save(

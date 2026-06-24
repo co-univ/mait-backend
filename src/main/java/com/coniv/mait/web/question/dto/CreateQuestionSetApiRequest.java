@@ -12,14 +12,17 @@ import com.coniv.mait.domain.question.service.dto.QuestionSetDto;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.Valid;
-import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.AssertTrue;
 import jakarta.validation.constraints.NotNull;
 
 public record CreateQuestionSetApiRequest(
 	@NotNull(message = "팀 정보는 필수 입니다.")
 	Long teamId,
-	@NotBlank(message = "문제 셋 제목을 입력해주세요.")
+	@Schema(description = "문제 셋 제목")
 	String title,
+	@Deprecated
+	@Schema(description = "문제 셋 제목(deprecated, title로 대체)", deprecated = true)
+	String subject,
 	@NotNull(message = "문제 셋 생성 유형을 선택해주세요.")
 	QuestionSetCreationType creationType,
 	@Schema(description = "문제 풀이 방식 (실시간/학습)", enumAsRef = true, examples = {"STUDY", "LIVE_TIME"})
@@ -40,6 +43,22 @@ public record CreateQuestionSetApiRequest(
 	List<Long> categoryIds
 ) {
 
+	public CreateQuestionSetApiRequest(
+		final Long teamId,
+		final String title,
+		final QuestionSetCreationType creationType,
+		final QuestionSetSolveMode solveMode,
+		final QuestionSetVisibility visibility,
+		final List<MaterialDto> materials,
+		final List<@Valid QuestionCount> counts,
+		final String difficulty,
+		final String instruction,
+		final List<Long> categoryIds
+	) {
+		this(teamId, title, null, creationType, solveMode, visibility, materials, counts, difficulty, instruction,
+			categoryIds);
+	}
+
 	public CreateQuestionSetApiRequest {
 		if (creationType == QuestionSetCreationType.AI_GENERATED && materials == null) {
 			materials = Collections.emptyList();
@@ -49,11 +68,27 @@ public record CreateQuestionSetApiRequest(
 	public QuestionSetDto toQuestionSetDto() {
 		return QuestionSetDto.builder()
 			.teamId(teamId)
-			.title(title)
+			.title(resolvedTitle())
 			.creationType(creationType)
 			.solveMode(solveMode)
 			.visibility(visibility)
 			.materials(materials)
 			.build();
+	}
+
+	@AssertTrue(message = "문제 셋 제목을 입력해주세요.")
+	private boolean isTitleProvided() {
+		return hasText(title) || hasText(subject);
+	}
+
+	private String resolvedTitle() {
+		if (hasText(title)) {
+			return title;
+		}
+		return subject;
+	}
+
+	private static boolean hasText(final String value) {
+		return value != null && !value.isBlank();
 	}
 }
