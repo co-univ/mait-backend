@@ -149,7 +149,7 @@ public class QuestionSetController {
 	public ResponseEntity<ApiResponse<Void>> updateQuestionSet(
 		@RequestBody @Valid UpdateQuestionSetFieldApiRequest request,
 		@PathVariable Long questionSetId) {
-		questionSetService.updateQuestionSetField(questionSetId, request.title());
+		questionSetService.updateQuestionSetField(questionSetId, request.resolvedTitle());
 		return ResponseEntity.ok(ApiResponse.noContent());
 	}
 
