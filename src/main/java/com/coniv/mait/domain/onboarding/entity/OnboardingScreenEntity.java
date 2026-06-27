@@ -41,17 +41,17 @@ public class OnboardingScreenEntity extends BaseTimeEntity {
 	private String title;
 
 	@Column(nullable = false)
-	private Boolean isExposed;
+	private boolean exposed;
 
 	@Enumerated(EnumType.STRING)
 	private TeamUserRole targetTeamRole;
 
 	@Builder
-	private OnboardingScreenEntity(OnboardingScreenCode code, String title, Boolean isExposed,
+	private OnboardingScreenEntity(OnboardingScreenCode code, String title, boolean exposed,
 		TeamUserRole targetTeamRole) {
 		this.code = code;
 		this.title = title;
-		this.isExposed = isExposed;
+		this.exposed = exposed;
 		this.targetTeamRole = targetTeamRole;
 	}
 
@@ -59,7 +59,8 @@ public class OnboardingScreenEntity extends BaseTimeEntity {
 		return this.targetTeamRole == null;
 	}
 
-	public void updateExposed(final Boolean isExposed) {
-		this.isExposed = isExposed;
+	public void update(final String title, final TeamUserRole targetTeamRole) {
+		this.title = title;
+		this.targetTeamRole = targetTeamRole;
 	}
 }
