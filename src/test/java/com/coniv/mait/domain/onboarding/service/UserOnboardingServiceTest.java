@@ -95,6 +95,22 @@ class UserOnboardingServiceTest {
 	}
 
 	@Test
+	@DisplayName("관리 역할(OWNER)이라도 PLAYER 대상 화면은 보지 않는다")
+	void managerRoleDoesNotCoverPlayerGatedScreen() {
+		// given
+		OnboardingScreenEntity playerOnly = screen(1L, OnboardingScreenCode.QUESTION_SOLVE, TeamUserRole.PLAYER);
+		given(onboardingScreenRepository.findAllByExposedTrue()).willReturn(List.of(playerOnly));
+		given(userOnboardingViewRepository.findAllByUserId(USER_ID)).willReturn(List.of());
+		given(teamUserEntityRepository.findDistinctUserRolesByUserId(USER_ID)).willReturn(List.of(TeamUserRole.OWNER));
+
+		// when
+		List<OnboardingScreenDto> result = userOnboardingService.getUnviewedScreens(USER_ID);
+
+		// then
+		assertThat(result).isEmpty();
+	}
+
+	@Test
 	@DisplayName("역할 대상 화면은 유저가 해당 역할 이상을 보유하지 않으면 제외한다")
 	void excludesRoleGatedScreenWhenUserLacksRole() {
 		// given
