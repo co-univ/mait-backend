@@ -6,11 +6,16 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 import java.util.List;
+import java.util.stream.Stream;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 import org.mockito.Mockito;
+import org.springframework.http.MediaType;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
 import com.coniv.mait.domain.onboarding.enums.OnboardingScreenCode;
@@ -84,5 +89,58 @@ public class OnboardingControllerTest extends BaseIntegrationTest {
 				jsonPath("$.isSuccess").value(true),
 				jsonPath("$.data.viewed").value(true),
 				jsonPath("$.data.dismissed").value(true));
+	}
+
+	@Test
+	@DisplayName("특정 온보딩 화면 열람 기록에 성공한다")
+	void recordView_success() throws Exception {
+		// when & then
+		mockMvc.perform(post("/api/v1/onboarding/screens/view")
+				.contentType(MediaType.APPLICATION_JSON)
+				.content("""
+					{
+						"code": "HOME_GUIDE",
+						"dismissed": true
+					}
+					"""))
+			.andExpectAll(
+				status().isOk(),
+				jsonPath("$.isSuccess").value(true),
+				jsonPath("$.data").doesNotExist());
+
+		then(userOnboardingService).should().recordView(anyLong(), eq(OnboardingScreenCode.HOME_GUIDE), eq(true));
+	}
+
+	@ParameterizedTest
+	@MethodSource("recordViewValidationFailureCases")
+	@DisplayName("특정 온보딩 화면 열람 기록 요청값이 유효하지 않으면 400 을 응답한다")
+	void recordView_validationFail(String body, String expectedReason) throws Exception {
+		// when & then
+		mockMvc.perform(post("/api/v1/onboarding/screens/view")
+				.contentType(MediaType.APPLICATION_JSON)
+				.content(body))
+			.andExpectAll(
+				status().isBadRequest(),
+				jsonPath("$.isSuccess").value(false),
+				jsonPath("$.code").value("C-001"),
+				jsonPath("$.message").value("사용자 입력 오류입니다."),
+				jsonPath("$.reasons[0]").value(expectedReason));
+
+		then(userOnboardingService).should(never()).recordView(anyLong(), any(), anyBoolean());
+	}
+
+	private static Stream<Arguments> recordViewValidationFailureCases() {
+		return Stream.of(
+			Arguments.of("""
+				{
+					"dismissed": true
+				}
+				""", "온보딩 화면 코드는 필수입니다."),
+			Arguments.of("""
+				{
+					"code": "HOME_GUIDE"
+				}
+				""", "다시 보지 않기 선택 여부는 필수입니다.")
+		);
 	}
 }

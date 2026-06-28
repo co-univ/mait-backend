@@ -43,16 +43,22 @@ public class UserOnboardingViewEntity extends BaseTimeEntity {
 	private boolean dismissed;
 
 	private UserOnboardingViewEntity(UserEntity user, OnboardingScreenEntity onboardingScreen,
-		LocalDateTime viewedAt) {
+		LocalDateTime viewedAt, boolean dismissed) {
 		this.id = UserOnboardingViewId.of(onboardingScreen.getId(), user.getId());
 		this.user = user;
 		this.onboardingScreen = onboardingScreen;
 		this.viewedAt = viewedAt;
+		this.dismissed = dismissed;
 	}
 
 	public static UserOnboardingViewEntity of(UserEntity user, OnboardingScreenEntity onboardingScreen,
 		LocalDateTime viewedAt) {
-		return new UserOnboardingViewEntity(user, onboardingScreen, viewedAt);
+		return new UserOnboardingViewEntity(user, onboardingScreen, viewedAt, false);
+	}
+
+	public static UserOnboardingViewEntity of(UserEntity user, OnboardingScreenEntity onboardingScreen,
+		LocalDateTime viewedAt, boolean dismissed) {
+		return new UserOnboardingViewEntity(user, onboardingScreen, viewedAt, dismissed);
 	}
 
 	public void updateDismissed(final boolean dismissed) {
