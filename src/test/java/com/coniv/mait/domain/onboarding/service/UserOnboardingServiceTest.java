@@ -226,6 +226,16 @@ class UserOnboardingServiceTest {
 	}
 
 	@Test
+	@DisplayName("온보딩 열람 이력 초기화 시 해당 유저의 전체 열람 기록을 삭제한다")
+	void resetViewHistory_deletesAllViews() {
+		// when
+		userOnboardingService.resetViewHistory(USER_ID);
+
+		// then
+		then(userOnboardingViewRepository).should().deleteAllByUserId(USER_ID);
+	}
+
+	@Test
 	@DisplayName("열람 기록 저장 시 온보딩 화면 ID가 존재하지 않으면 예외가 발생한다")
 	void recordView_throwsExceptionWhenScreenNotFound() {
 		// given
