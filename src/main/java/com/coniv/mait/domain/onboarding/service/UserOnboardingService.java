@@ -12,7 +12,6 @@ import org.springframework.transaction.annotation.Transactional;
 import com.coniv.mait.domain.onboarding.entity.OnboardingScreenEntity;
 import com.coniv.mait.domain.onboarding.entity.UserOnboardingViewEntity;
 import com.coniv.mait.domain.onboarding.entity.UserOnboardingViewId;
-import com.coniv.mait.domain.onboarding.enums.OnboardingScreenCode;
 import com.coniv.mait.domain.onboarding.repository.OnboardingScreenRepository;
 import com.coniv.mait.domain.onboarding.repository.UserOnboardingViewRepository;
 import com.coniv.mait.domain.onboarding.service.dto.OnboardingScreenDto;
@@ -47,21 +46,21 @@ public class UserOnboardingService {
 			.toList();
 	}
 
-	public OnboardingViewStatusDto getViewStatus(final Long userId, final OnboardingScreenCode code) {
-		OnboardingScreenEntity screen = onboardingScreenRepository.findByCode(code)
-			.orElseThrow(() -> new EntityNotFoundException("온보딩 화면을 찾을 수 없습니다."));
-
-		return userOnboardingViewRepository.findById(UserOnboardingViewId.of(screen.getId(), userId))
+	public OnboardingViewStatusDto getViewStatus(final Long userId, final Long screenId) {
+		if (!onboardingScreenRepository.existsById(screenId)) {
+			throw new EntityNotFoundException("온보딩 화면을 찾을 수 없습니다.");
+		}
+		return userOnboardingViewRepository.findById(UserOnboardingViewId.of(screenId, userId))
 			.map(OnboardingViewStatusDto::from)
 			.orElseGet(OnboardingViewStatusDto::notViewed);
 	}
 
 	@Transactional
-	public void recordView(final Long userId, final OnboardingScreenCode code, final boolean dismissed) {
-		OnboardingScreenEntity screen = onboardingScreenRepository.findByCode(code)
+	public void recordView(final Long userId, final Long screenId, final boolean dismissed) {
+		OnboardingScreenEntity screen = onboardingScreenRepository.findById(screenId)
 			.orElseThrow(() -> new EntityNotFoundException("온보딩 화면을 찾을 수 없습니다."));
 
-		UserOnboardingViewId id = UserOnboardingViewId.of(screen.getId(), userId);
+		UserOnboardingViewId id = UserOnboardingViewId.of(screenId, userId);
 		Optional<UserOnboardingViewEntity> existingView = userOnboardingViewRepository.findById(id);
 		if (existingView.isPresent()) {
 			existingView.get().updateDismissed(dismissed);
