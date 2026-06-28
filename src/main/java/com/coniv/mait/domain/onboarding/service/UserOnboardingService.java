@@ -6,7 +6,6 @@ import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Service;
 
-import com.coniv.mait.domain.onboarding.entity.OnboardingScreenEntity;
 import com.coniv.mait.domain.onboarding.repository.OnboardingScreenRepository;
 import com.coniv.mait.domain.onboarding.repository.UserOnboardingViewRepository;
 import com.coniv.mait.domain.onboarding.service.dto.OnboardingScreenDto;
@@ -31,12 +30,8 @@ public class UserOnboardingService {
 
 		return onboardingScreenRepository.findAllByExposedTrue().stream()
 			.filter(screen -> !viewedScreenIds.contains(screen.getId()))
-			.filter(screen -> isVisibleToUser(screen, userRoles))
+			.filter(screen -> screen.isVisibleTo(userRoles))
 			.map(OnboardingScreenDto::from)
 			.toList();
-	}
-
-	private boolean isVisibleToUser(final OnboardingScreenEntity screen, final Set<TeamUserRole> userRoles) {
-		return screen.isTargetedToAllUsers() || userRoles.contains(screen.getTargetTeamRole());
 	}
 }

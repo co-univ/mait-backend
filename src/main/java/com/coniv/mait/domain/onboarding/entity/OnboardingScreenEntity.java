@@ -1,5 +1,7 @@
 package com.coniv.mait.domain.onboarding.entity;
 
+import java.util.Set;
+
 import com.coniv.mait.domain.onboarding.enums.OnboardingScreenCode;
 import com.coniv.mait.domain.team.enums.TeamUserRole;
 import com.coniv.mait.global.entity.BaseTimeEntity;
@@ -57,6 +59,10 @@ public class OnboardingScreenEntity extends BaseTimeEntity {
 
 	public boolean isTargetedToAllUsers() {
 		return this.targetTeamRole == null;
+	}
+
+	public boolean isVisibleTo(final Set<TeamUserRole> userRoles) {
+		return isTargetedToAllUsers() || userRoles.contains(this.targetTeamRole);
 	}
 
 	public void update(final String title, final TeamUserRole targetTeamRole) {
