@@ -20,6 +20,10 @@ public enum TeamUserRole {
 	}
 
 	public boolean covers(final TeamUserRole required) {
-		return this == required || (this == OWNER && required == MAKER);
+		return switch (this) {
+			case OWNER -> true;
+			case MAKER -> required == MAKER || required == PLAYER;
+			case PLAYER -> required == PLAYER;
+		};
 	}
 }
