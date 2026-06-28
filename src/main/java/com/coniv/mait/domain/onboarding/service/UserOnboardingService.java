@@ -6,12 +6,17 @@ import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Service;
 
+import com.coniv.mait.domain.onboarding.entity.OnboardingScreenEntity;
+import com.coniv.mait.domain.onboarding.entity.UserOnboardingViewId;
+import com.coniv.mait.domain.onboarding.enums.OnboardingScreenCode;
 import com.coniv.mait.domain.onboarding.repository.OnboardingScreenRepository;
 import com.coniv.mait.domain.onboarding.repository.UserOnboardingViewRepository;
 import com.coniv.mait.domain.onboarding.service.dto.OnboardingScreenDto;
+import com.coniv.mait.domain.onboarding.service.dto.OnboardingViewStatusDto;
 import com.coniv.mait.domain.team.enums.TeamUserRole;
 import com.coniv.mait.domain.team.repository.TeamUserEntityRepository;
 
+import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 
 @Service
@@ -33,5 +38,14 @@ public class UserOnboardingService {
 			.filter(screen -> screen.isVisibleTo(userRoles))
 			.map(OnboardingScreenDto::from)
 			.toList();
+	}
+
+	public OnboardingViewStatusDto getViewStatus(final Long userId, final OnboardingScreenCode code) {
+		OnboardingScreenEntity screen = onboardingScreenRepository.findByCode(code)
+			.orElseThrow(() -> new EntityNotFoundException("온보딩 화면을 찾을 수 없습니다."));
+
+		return userOnboardingViewRepository.findById(UserOnboardingViewId.of(screen.getId(), userId))
+			.map(OnboardingViewStatusDto::from)
+			.orElseGet(OnboardingViewStatusDto::notViewed);
 	}
 }

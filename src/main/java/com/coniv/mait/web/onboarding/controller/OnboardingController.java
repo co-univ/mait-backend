@@ -6,12 +6,15 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.coniv.mait.domain.onboarding.enums.OnboardingScreenCode;
 import com.coniv.mait.domain.onboarding.service.UserOnboardingService;
 import com.coniv.mait.domain.onboarding.service.dto.OnboardingScreenDto;
 import com.coniv.mait.global.auth.model.MaitUser;
 import com.coniv.mait.global.response.ApiResponse;
+import com.coniv.mait.web.onboarding.dto.OnboardingViewStatusApiResponse;
 import com.coniv.mait.web.onboarding.dto.UnviewedOnboardingScreenApiResponse;
 
 import io.swagger.v3.oas.annotations.Operation;
@@ -34,5 +37,15 @@ public class OnboardingController {
 		List<OnboardingScreenDto> screens = userOnboardingService.getUnviewedScreens(maitUser.id());
 		return ResponseEntity.ok(
 			ApiResponse.ok(screens.stream().map(UnviewedOnboardingScreenApiResponse::from).toList()));
+	}
+
+	@Operation(summary = "특정 온보딩 화면 열람 여부 확인",
+		description = "해당 코드의 온보딩 화면을 본인이 열람했는지와 다시 보지 않기 선택 여부를 반환합니다.")
+	@GetMapping("/screens/view-status")
+	public ResponseEntity<ApiResponse<OnboardingViewStatusApiResponse>> getViewStatus(
+		@RequestParam final OnboardingScreenCode code,
+		@AuthenticationPrincipal MaitUser maitUser) {
+		return ResponseEntity.ok(ApiResponse.ok(OnboardingViewStatusApiResponse.from(
+			userOnboardingService.getViewStatus(maitUser.id(), code))));
 	}
 }
