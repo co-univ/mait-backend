@@ -11,6 +11,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
+import org.springframework.http.MediaType;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
 import com.coniv.mait.domain.onboarding.enums.OnboardingScreenCode;
@@ -91,12 +92,18 @@ public class OnboardingControllerTest extends BaseIntegrationTest {
 	void recordView_success() throws Exception {
 		// when & then
 		mockMvc.perform(post("/api/v1/onboarding/screens/view")
-				.param("code", "HOME_GUIDE"))
+				.contentType(MediaType.APPLICATION_JSON)
+				.content("""
+					{
+						"code": "HOME_GUIDE",
+						"dismissed": true
+					}
+					"""))
 			.andExpectAll(
 				status().isOk(),
 				jsonPath("$.isSuccess").value(true),
 				jsonPath("$.data").doesNotExist());
 
-		then(userOnboardingService).should().recordView(anyLong(), eq(OnboardingScreenCode.HOME_GUIDE));
+		then(userOnboardingService).should().recordView(anyLong(), eq(OnboardingScreenCode.HOME_GUIDE), eq(true));
 	}
 }

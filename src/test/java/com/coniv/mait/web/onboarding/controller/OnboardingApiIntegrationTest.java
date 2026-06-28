@@ -15,6 +15,7 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
 import com.coniv.mait.domain.onboarding.entity.OnboardingScreenEntity;
 import com.coniv.mait.domain.onboarding.entity.UserOnboardingViewEntity;
+import com.coniv.mait.domain.onboarding.entity.UserOnboardingViewId;
 import com.coniv.mait.domain.onboarding.enums.OnboardingScreenCode;
 import com.coniv.mait.domain.onboarding.repository.OnboardingScreenRepository;
 import com.coniv.mait.domain.onboarding.repository.UserOnboardingViewRepository;
@@ -189,28 +190,44 @@ public class OnboardingApiIntegrationTest extends BaseIntegrationTest {
 	}
 
 	@Test
-	@DisplayName("특정 온보딩 화면 열람 기록을 저장하고, 중복 요청은 멱등 처리한다")
-	void recordView_savesViewHistoryIdempotently() throws Exception {
+	@DisplayName("특정 온보딩 화면 열람 기록을 저장하고, 다시 보지 않기 여부를 갱신한다")
+	void recordView_savesViewHistoryAndUpdatesDismissed() throws Exception {
 		// given
+		UserEntity user = userEntityRepository.findByEmail("user@example.com").orElseThrow();
 		OnboardingScreenEntity homeGuide = onboardingScreenRepository.save(
 			screen(OnboardingScreenCode.HOME_GUIDE, true, null));
 
 		// when & then
 		mockMvc.perform(post("/api/v1/onboarding/screens/view")
-				.param("code", "HOME_GUIDE"))
+				.contentType("application/json")
+				.content("""
+					{
+						"code": "HOME_GUIDE",
+						"dismissed": false
+					}
+					"""))
 			.andExpectAll(
 				status().isOk(),
 				jsonPath("$.isSuccess").value(true),
 				jsonPath("$.data").doesNotExist());
 
 		mockMvc.perform(post("/api/v1/onboarding/screens/view")
-				.param("code", "HOME_GUIDE"))
+				.contentType("application/json")
+				.content("""
+					{
+						"code": "HOME_GUIDE",
+						"dismissed": true
+					}
+					"""))
 			.andExpectAll(
 				status().isOk(),
 				jsonPath("$.isSuccess").value(true),
 				jsonPath("$.data").doesNotExist());
 
 		assertThat(userOnboardingViewRepository.countByOnboardingScreen_Id(homeGuide.getId())).isEqualTo(1);
+		UserOnboardingViewEntity view = userOnboardingViewRepository.findById(
+			UserOnboardingViewId.of(homeGuide.getId(), user.getId())).orElseThrow();
+		assertThat(view.isDismissed()).isTrue();
 	}
 
 	private OnboardingScreenEntity screen(final OnboardingScreenCode code, final boolean exposed,
