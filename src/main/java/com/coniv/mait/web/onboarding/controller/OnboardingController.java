@@ -5,6 +5,7 @@ import java.util.List;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
@@ -47,5 +48,14 @@ public class OnboardingController {
 		@AuthenticationPrincipal MaitUser maitUser) {
 		return ResponseEntity.ok(ApiResponse.ok(OnboardingViewStatusApiResponse.from(
 			userOnboardingService.getViewStatus(maitUser.id(), code))));
+	}
+
+	@Operation(summary = "특정 온보딩 화면 열람 기록",
+		description = "해당 코드의 온보딩 화면을 본인이 열람했음을 기록합니다. 이미 열람한 화면이면 중복 저장하지 않고 성공으로 응답합니다.")
+	@PostMapping("/screens/view")
+	public ResponseEntity<ApiResponse<Void>> recordView(@RequestParam final OnboardingScreenCode code,
+		@AuthenticationPrincipal MaitUser maitUser) {
+		userOnboardingService.recordView(maitUser.id(), code);
+		return ResponseEntity.ok(ApiResponse.noContent());
 	}
 }
