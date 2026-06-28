@@ -16,6 +16,7 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import com.coniv.mait.domain.onboarding.enums.OnboardingScreenCode;
 import com.coniv.mait.domain.onboarding.service.UserOnboardingService;
 import com.coniv.mait.domain.onboarding.service.dto.OnboardingScreenDto;
+import com.coniv.mait.domain.onboarding.service.dto.OnboardingViewStatusDto;
 import com.coniv.mait.global.filter.JwtAuthorizationFilter;
 import com.coniv.mait.login.WithCustomUser;
 import com.coniv.mait.web.integration.BaseIntegrationTest;
@@ -66,5 +67,22 @@ public class OnboardingControllerTest extends BaseIntegrationTest {
 				jsonPath("$.data[0].id").value(1),
 				jsonPath("$.data[0].code").value("QUESTION_SOLVE"),
 				jsonPath("$.data[0].title").value("문제 풀기 가이드"));
+	}
+
+	@Test
+	@DisplayName("특정 온보딩 화면 열람 상태 조회에 성공한다")
+	void getViewStatus_success() throws Exception {
+		// given
+		given(userOnboardingService.getViewStatus(anyLong(), eq(OnboardingScreenCode.HOME_GUIDE)))
+			.willReturn(new OnboardingViewStatusDto(true, true));
+
+		// when & then
+		mockMvc.perform(get("/api/v1/onboarding/screens/view-status")
+				.param("code", "HOME_GUIDE"))
+			.andExpectAll(
+				status().isOk(),
+				jsonPath("$.isSuccess").value(true),
+				jsonPath("$.data.viewed").value(true),
+				jsonPath("$.data.dismissed").value(true));
 	}
 }

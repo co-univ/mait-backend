@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.*;
 import static org.mockito.BDDMockito.*;
 
 import java.util.List;
+import java.util.Optional;
 
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -20,8 +21,11 @@ import com.coniv.mait.domain.onboarding.enums.OnboardingScreenCode;
 import com.coniv.mait.domain.onboarding.repository.OnboardingScreenRepository;
 import com.coniv.mait.domain.onboarding.repository.UserOnboardingViewRepository;
 import com.coniv.mait.domain.onboarding.service.dto.OnboardingScreenDto;
+import com.coniv.mait.domain.onboarding.service.dto.OnboardingViewStatusDto;
 import com.coniv.mait.domain.team.enums.TeamUserRole;
 import com.coniv.mait.domain.team.repository.TeamUserEntityRepository;
+
+import jakarta.persistence.EntityNotFoundException;
 
 @ExtendWith(MockitoExtension.class)
 class UserOnboardingServiceTest {
@@ -128,6 +132,53 @@ class UserOnboardingServiceTest {
 			.containsExactly(OnboardingScreenCode.HOME_GUIDE);
 	}
 
+	@Test
+	@DisplayName("온보딩 화면을 열람한 경우 열람 상태를 반환한다")
+	void getViewStatus_returnsViewedStatus() {
+		// given
+		OnboardingScreenEntity screen = screen(1L, OnboardingScreenCode.HOME_GUIDE, null);
+		UserOnboardingViewEntity view = dismissedViewOf(true);
+		given(onboardingScreenRepository.findByCode(OnboardingScreenCode.HOME_GUIDE)).willReturn(Optional.of(screen));
+		given(userOnboardingViewRepository.findById(UserOnboardingViewId.of(1L, USER_ID)))
+			.willReturn(Optional.of(view));
+
+		// when
+		OnboardingViewStatusDto result = userOnboardingService.getViewStatus(USER_ID, OnboardingScreenCode.HOME_GUIDE);
+
+		// then
+		assertThat(result.viewed()).isTrue();
+		assertThat(result.dismissed()).isTrue();
+	}
+
+	@Test
+	@DisplayName("온보딩 화면을 열람하지 않은 경우 미열람 상태를 반환한다")
+	void getViewStatus_returnsNotViewedStatus() {
+		// given
+		OnboardingScreenEntity screen = screen(1L, OnboardingScreenCode.HOME_GUIDE, null);
+		given(onboardingScreenRepository.findByCode(OnboardingScreenCode.HOME_GUIDE)).willReturn(Optional.of(screen));
+		given(userOnboardingViewRepository.findById(UserOnboardingViewId.of(1L, USER_ID))).willReturn(Optional.empty());
+
+		// when
+		OnboardingViewStatusDto result = userOnboardingService.getViewStatus(USER_ID, OnboardingScreenCode.HOME_GUIDE);
+
+		// then
+		assertThat(result.viewed()).isFalse();
+		assertThat(result.dismissed()).isFalse();
+	}
+
+	@Test
+	@DisplayName("온보딩 화면 코드가 존재하지 않으면 예외가 발생한다")
+	void getViewStatus_throwsExceptionWhenScreenNotFound() {
+		// given
+		given(onboardingScreenRepository.findByCode(OnboardingScreenCode.HOME_GUIDE)).willReturn(Optional.empty());
+
+		// when & then
+		assertThatThrownBy(() -> userOnboardingService.getViewStatus(USER_ID, OnboardingScreenCode.HOME_GUIDE))
+			.isInstanceOf(EntityNotFoundException.class)
+			.hasMessage("온보딩 화면을 찾을 수 없습니다.");
+		then(userOnboardingViewRepository).should(never()).findById(any());
+	}
+
 	private OnboardingScreenEntity screen(final Long id, final OnboardingScreenCode code, final TeamUserRole role) {
 		OnboardingScreenEntity screen = OnboardingScreenEntity.builder()
 			.code(code)
@@ -142,6 +193,12 @@ class UserOnboardingServiceTest {
 	private UserOnboardingViewEntity viewOf(final Long screenId) {
 		UserOnboardingViewEntity view = mock(UserOnboardingViewEntity.class);
 		given(view.getId()).willReturn(UserOnboardingViewId.of(screenId, USER_ID));
+		return view;
+	}
+
+	private UserOnboardingViewEntity dismissedViewOf(final boolean dismissed) {
+		UserOnboardingViewEntity view = mock(UserOnboardingViewEntity.class);
+		given(view.isDismissed()).willReturn(dismissed);
 		return view;
 	}
 }

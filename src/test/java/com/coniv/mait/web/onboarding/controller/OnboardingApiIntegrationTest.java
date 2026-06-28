@@ -112,6 +112,43 @@ public class OnboardingApiIntegrationTest extends BaseIntegrationTest {
 				jsonPath("$.data[0].code").value("HOME_GUIDE"));
 	}
 
+	@Test
+	@DisplayName("특정 온보딩 화면을 열람한 경우 열람 상태를 조회한다")
+	void getViewStatus_returnsViewedStatus() throws Exception {
+		// given
+		UserEntity user = userEntityRepository.findByEmail("user@example.com").orElseThrow();
+		OnboardingScreenEntity homeGuide = onboardingScreenRepository.save(
+			screen(OnboardingScreenCode.HOME_GUIDE, true, null));
+		UserOnboardingViewEntity view = UserOnboardingViewEntity.of(user, homeGuide, LocalDateTime.now());
+		view.updateDismissed(true);
+		userOnboardingViewRepository.save(view);
+
+		// when & then
+		mockMvc.perform(get("/api/v1/onboarding/screens/view-status")
+				.param("code", "HOME_GUIDE"))
+			.andExpectAll(
+				status().isOk(),
+				jsonPath("$.isSuccess").value(true),
+				jsonPath("$.data.viewed").value(true),
+				jsonPath("$.data.dismissed").value(true));
+	}
+
+	@Test
+	@DisplayName("특정 온보딩 화면을 열람하지 않은 경우 미열람 상태를 조회한다")
+	void getViewStatus_returnsNotViewedStatus() throws Exception {
+		// given
+		onboardingScreenRepository.save(screen(OnboardingScreenCode.HOME_GUIDE, true, null));
+
+		// when & then
+		mockMvc.perform(get("/api/v1/onboarding/screens/view-status")
+				.param("code", "HOME_GUIDE"))
+			.andExpectAll(
+				status().isOk(),
+				jsonPath("$.isSuccess").value(true),
+				jsonPath("$.data.viewed").value(false),
+				jsonPath("$.data.dismissed").value(false));
+	}
+
 	private OnboardingScreenEntity screen(final OnboardingScreenCode code, final boolean exposed,
 		final TeamUserRole targetTeamRole) {
 		return OnboardingScreenEntity.builder()
