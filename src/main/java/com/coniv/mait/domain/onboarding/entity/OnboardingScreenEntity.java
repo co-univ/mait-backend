@@ -62,7 +62,8 @@ public class OnboardingScreenEntity extends BaseTimeEntity {
 	}
 
 	public boolean isVisibleTo(final Set<TeamUserRole> userRoles) {
-		return isTargetedToAllUsers() || userRoles.contains(this.targetTeamRole);
+		return isTargetedToAllUsers()
+			|| userRoles.stream().anyMatch(role -> role.covers(this.targetTeamRole));
 	}
 
 	public void update(final String title, final TeamUserRole targetTeamRole) {
