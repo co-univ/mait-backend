@@ -1,5 +1,6 @@
 package com.coniv.mait.web.onboarding.controller;
 
+import static org.assertj.core.api.Assertions.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
@@ -185,6 +186,31 @@ public class OnboardingApiIntegrationTest extends BaseIntegrationTest {
 				jsonPath("$.isSuccess").value(true),
 				jsonPath("$.data.viewed").value(false),
 				jsonPath("$.data.dismissed").value(false));
+	}
+
+	@Test
+	@DisplayName("특정 온보딩 화면 열람 기록을 저장하고, 중복 요청은 멱등 처리한다")
+	void recordView_savesViewHistoryIdempotently() throws Exception {
+		// given
+		OnboardingScreenEntity homeGuide = onboardingScreenRepository.save(
+			screen(OnboardingScreenCode.HOME_GUIDE, true, null));
+
+		// when & then
+		mockMvc.perform(post("/api/v1/onboarding/screens/view")
+				.param("code", "HOME_GUIDE"))
+			.andExpectAll(
+				status().isOk(),
+				jsonPath("$.isSuccess").value(true),
+				jsonPath("$.data").doesNotExist());
+
+		mockMvc.perform(post("/api/v1/onboarding/screens/view")
+				.param("code", "HOME_GUIDE"))
+			.andExpectAll(
+				status().isOk(),
+				jsonPath("$.isSuccess").value(true),
+				jsonPath("$.data").doesNotExist());
+
+		assertThat(userOnboardingViewRepository.countByOnboardingScreen_Id(homeGuide.getId())).isEqualTo(1);
 	}
 
 	private OnboardingScreenEntity screen(final OnboardingScreenCode code, final boolean exposed,

@@ -85,4 +85,18 @@ public class OnboardingControllerTest extends BaseIntegrationTest {
 				jsonPath("$.data.viewed").value(true),
 				jsonPath("$.data.dismissed").value(true));
 	}
+
+	@Test
+	@DisplayName("특정 온보딩 화면 열람 기록에 성공한다")
+	void recordView_success() throws Exception {
+		// when & then
+		mockMvc.perform(post("/api/v1/onboarding/screens/view")
+				.param("code", "HOME_GUIDE"))
+			.andExpectAll(
+				status().isOk(),
+				jsonPath("$.isSuccess").value(true),
+				jsonPath("$.data").doesNotExist());
+
+		then(userOnboardingService).should().recordView(anyLong(), eq(OnboardingScreenCode.HOME_GUIDE));
+	}
 }
