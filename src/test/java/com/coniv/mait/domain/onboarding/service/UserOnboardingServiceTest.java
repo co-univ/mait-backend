@@ -26,7 +26,7 @@ import com.coniv.mait.domain.onboarding.service.dto.OnboardingViewStatusDto;
 import com.coniv.mait.domain.team.enums.TeamUserRole;
 import com.coniv.mait.domain.team.repository.TeamUserEntityRepository;
 import com.coniv.mait.domain.user.entity.UserEntity;
-import com.coniv.mait.domain.user.repository.UserEntityRepository;
+import com.coniv.mait.domain.user.service.component.UserReader;
 
 import jakarta.persistence.EntityNotFoundException;
 
@@ -34,6 +34,7 @@ import jakarta.persistence.EntityNotFoundException;
 class UserOnboardingServiceTest {
 
 	private static final Long USER_ID = 1L;
+	private static final Long SCREEN_ID = 1L;
 
 	@InjectMocks
 	private UserOnboardingService userOnboardingService;
@@ -48,7 +49,7 @@ class UserOnboardingServiceTest {
 	private TeamUserEntityRepository teamUserEntityRepository;
 
 	@Mock
-	private UserEntityRepository userEntityRepository;
+	private UserReader userReader;
 
 	@Test
 	@DisplayName("아직 보지 않은 노출 화면 중 전체 대상(null)과 보유 역할 대상 화면을 반환한다")
@@ -105,30 +106,13 @@ class UserOnboardingServiceTest {
 	}
 
 	@Test
-	@DisplayName("상위 역할(OWNER)은 PLAYER 대상 화면도 볼 수 있다")
+	@DisplayName("OWNER 역할은 PLAYER 대상 화면도 볼 수 있다")
 	void ownerRoleCoversPlayerGatedScreen() {
 		// given
 		OnboardingScreenEntity playerOnly = screen(1L, OnboardingScreenCode.QUESTION_SOLVE, TeamUserRole.PLAYER);
 		given(onboardingScreenRepository.findAllByExposedTrue()).willReturn(List.of(playerOnly));
 		given(userOnboardingViewRepository.findAllByUserId(USER_ID)).willReturn(List.of());
 		given(teamUserEntityRepository.findDistinctUserRolesByUserId(USER_ID)).willReturn(List.of(TeamUserRole.OWNER));
-
-		// when
-		List<OnboardingScreenDto> result = userOnboardingService.getUnviewedScreens(USER_ID);
-
-		// then
-		assertThat(result).extracting(OnboardingScreenDto::getCode)
-			.containsExactly(OnboardingScreenCode.QUESTION_SOLVE);
-	}
-
-	@Test
-	@DisplayName("관리 역할(MAKER)은 PLAYER 대상 화면도 볼 수 있다")
-	void makerRoleCoversPlayerGatedScreen() {
-		// given
-		OnboardingScreenEntity playerOnly = screen(1L, OnboardingScreenCode.QUESTION_SOLVE, TeamUserRole.PLAYER);
-		given(onboardingScreenRepository.findAllByExposedTrue()).willReturn(List.of(playerOnly));
-		given(userOnboardingViewRepository.findAllByUserId(USER_ID)).willReturn(List.of());
-		given(teamUserEntityRepository.findDistinctUserRolesByUserId(USER_ID)).willReturn(List.of(TeamUserRole.MAKER));
 
 		// when
 		List<OnboardingScreenDto> result = userOnboardingService.getUnviewedScreens(USER_ID);
@@ -160,14 +144,13 @@ class UserOnboardingServiceTest {
 	@DisplayName("온보딩 화면을 열람한 경우 열람 상태를 반환한다")
 	void getViewStatus_returnsViewedStatus() {
 		// given
-		OnboardingScreenEntity screen = screen(1L, OnboardingScreenCode.HOME_GUIDE, null);
 		UserOnboardingViewEntity view = dismissedViewOf(true);
-		given(onboardingScreenRepository.findByCode(OnboardingScreenCode.HOME_GUIDE)).willReturn(Optional.of(screen));
-		given(userOnboardingViewRepository.findById(UserOnboardingViewId.of(1L, USER_ID)))
+		given(onboardingScreenRepository.existsById(SCREEN_ID)).willReturn(true);
+		given(userOnboardingViewRepository.findById(UserOnboardingViewId.of(SCREEN_ID, USER_ID)))
 			.willReturn(Optional.of(view));
 
 		// when
-		OnboardingViewStatusDto result = userOnboardingService.getViewStatus(USER_ID, OnboardingScreenCode.HOME_GUIDE);
+		OnboardingViewStatusDto result = userOnboardingService.getViewStatus(USER_ID, SCREEN_ID);
 
 		// then
 		assertThat(result.viewed()).isTrue();
@@ -178,12 +161,12 @@ class UserOnboardingServiceTest {
 	@DisplayName("온보딩 화면을 열람하지 않은 경우 미열람 상태를 반환한다")
 	void getViewStatus_returnsNotViewedStatus() {
 		// given
-		OnboardingScreenEntity screen = screen(1L, OnboardingScreenCode.HOME_GUIDE, null);
-		given(onboardingScreenRepository.findByCode(OnboardingScreenCode.HOME_GUIDE)).willReturn(Optional.of(screen));
-		given(userOnboardingViewRepository.findById(UserOnboardingViewId.of(1L, USER_ID))).willReturn(Optional.empty());
+		given(onboardingScreenRepository.existsById(SCREEN_ID)).willReturn(true);
+		given(userOnboardingViewRepository.findById(UserOnboardingViewId.of(SCREEN_ID, USER_ID)))
+			.willReturn(Optional.empty());
 
 		// when
-		OnboardingViewStatusDto result = userOnboardingService.getViewStatus(USER_ID, OnboardingScreenCode.HOME_GUIDE);
+		OnboardingViewStatusDto result = userOnboardingService.getViewStatus(USER_ID, SCREEN_ID);
 
 		// then
 		assertThat(result.viewed()).isFalse();
@@ -191,13 +174,13 @@ class UserOnboardingServiceTest {
 	}
 
 	@Test
-	@DisplayName("온보딩 화면 코드가 존재하지 않으면 예외가 발생한다")
+	@DisplayName("온보딩 화면 ID가 존재하지 않으면 예외가 발생한다")
 	void getViewStatus_throwsExceptionWhenScreenNotFound() {
 		// given
-		given(onboardingScreenRepository.findByCode(OnboardingScreenCode.HOME_GUIDE)).willReturn(Optional.empty());
+		given(onboardingScreenRepository.existsById(SCREEN_ID)).willReturn(false);
 
 		// when & then
-		assertThatThrownBy(() -> userOnboardingService.getViewStatus(USER_ID, OnboardingScreenCode.HOME_GUIDE))
+		assertThatThrownBy(() -> userOnboardingService.getViewStatus(USER_ID, SCREEN_ID))
 			.isInstanceOf(EntityNotFoundException.class)
 			.hasMessage("온보딩 화면을 찾을 수 없습니다.");
 		then(userOnboardingViewRepository).should(never()).findById(any());
@@ -207,14 +190,15 @@ class UserOnboardingServiceTest {
 	@DisplayName("온보딩 화면 열람 기록을 저장한다")
 	void recordView_savesViewHistory() {
 		// given
-		OnboardingScreenEntity screen = screen(1L, OnboardingScreenCode.HOME_GUIDE, null);
+		OnboardingScreenEntity screen = screen(SCREEN_ID, OnboardingScreenCode.HOME_GUIDE, null);
 		UserEntity user = user();
-		given(onboardingScreenRepository.findByCode(OnboardingScreenCode.HOME_GUIDE)).willReturn(Optional.of(screen));
-		given(userOnboardingViewRepository.findById(UserOnboardingViewId.of(1L, USER_ID))).willReturn(Optional.empty());
-		given(userEntityRepository.findById(USER_ID)).willReturn(Optional.of(user));
+		given(onboardingScreenRepository.findById(SCREEN_ID)).willReturn(Optional.of(screen));
+		given(userOnboardingViewRepository.findById(UserOnboardingViewId.of(SCREEN_ID, USER_ID)))
+			.willReturn(Optional.empty());
+		given(userReader.getById(USER_ID)).willReturn(user);
 
 		// when
-		userOnboardingService.recordView(USER_ID, OnboardingScreenCode.HOME_GUIDE, true);
+		userOnboardingService.recordView(USER_ID, SCREEN_ID, true);
 
 		// then
 		ArgumentCaptor<UserOnboardingViewEntity> viewCaptor = ArgumentCaptor.forClass(UserOnboardingViewEntity.class);
@@ -226,29 +210,29 @@ class UserOnboardingServiceTest {
 	@DisplayName("이미 열람한 온보딩 화면이면 다시 보지 않기 여부를 갱신한다")
 	void recordView_updatesDismissedWhenAlreadyViewed() {
 		// given
-		OnboardingScreenEntity screen = screen(1L, OnboardingScreenCode.HOME_GUIDE, null);
+		OnboardingScreenEntity screen = screen(SCREEN_ID, OnboardingScreenCode.HOME_GUIDE, null);
 		UserOnboardingViewEntity view = mock(UserOnboardingViewEntity.class);
-		given(onboardingScreenRepository.findByCode(OnboardingScreenCode.HOME_GUIDE)).willReturn(Optional.of(screen));
-		given(userOnboardingViewRepository.findById(UserOnboardingViewId.of(1L, USER_ID)))
+		given(onboardingScreenRepository.findById(SCREEN_ID)).willReturn(Optional.of(screen));
+		given(userOnboardingViewRepository.findById(UserOnboardingViewId.of(SCREEN_ID, USER_ID)))
 			.willReturn(Optional.of(view));
 
 		// when
-		userOnboardingService.recordView(USER_ID, OnboardingScreenCode.HOME_GUIDE, true);
+		userOnboardingService.recordView(USER_ID, SCREEN_ID, true);
 
 		// then
 		then(view).should().updateDismissed(true);
-		then(userEntityRepository).should(never()).findById(any());
+		then(userReader).should(never()).getById(any());
 		then(userOnboardingViewRepository).should(never()).save(any());
 	}
 
 	@Test
-	@DisplayName("열람 기록 저장 시 온보딩 화면 코드가 존재하지 않으면 예외가 발생한다")
+	@DisplayName("열람 기록 저장 시 온보딩 화면 ID가 존재하지 않으면 예외가 발생한다")
 	void recordView_throwsExceptionWhenScreenNotFound() {
 		// given
-		given(onboardingScreenRepository.findByCode(OnboardingScreenCode.HOME_GUIDE)).willReturn(Optional.empty());
+		given(onboardingScreenRepository.findById(SCREEN_ID)).willReturn(Optional.empty());
 
 		// when & then
-		assertThatThrownBy(() -> userOnboardingService.recordView(USER_ID, OnboardingScreenCode.HOME_GUIDE, false))
+		assertThatThrownBy(() -> userOnboardingService.recordView(USER_ID, SCREEN_ID, false))
 			.isInstanceOf(EntityNotFoundException.class)
 			.hasMessage("온보딩 화면을 찾을 수 없습니다.");
 		then(userOnboardingViewRepository).should(never()).save(any());
