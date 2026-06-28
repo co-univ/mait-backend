@@ -56,6 +56,11 @@ public class UserOnboardingService {
 	}
 
 	@Transactional
+	public void resetViewHistory(final Long userId) {
+		userOnboardingViewRepository.deleteAllByUserId(userId);
+	}
+
+	@Transactional
 	public void recordView(final Long userId, final Long screenId, final boolean dismissed) {
 		OnboardingScreenEntity screen = onboardingScreenRepository.findById(screenId)
 			.orElseThrow(() -> new EntityNotFoundException("온보딩 화면을 찾을 수 없습니다."));
