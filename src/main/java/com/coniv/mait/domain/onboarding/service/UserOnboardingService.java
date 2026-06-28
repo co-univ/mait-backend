@@ -2,6 +2,7 @@ package com.coniv.mait.domain.onboarding.service;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -56,18 +57,20 @@ public class UserOnboardingService {
 	}
 
 	@Transactional
-	public void recordView(final Long userId, final OnboardingScreenCode code) {
+	public void recordView(final Long userId, final OnboardingScreenCode code, final boolean dismissed) {
 		OnboardingScreenEntity screen = onboardingScreenRepository.findByCode(code)
 			.orElseThrow(() -> new EntityNotFoundException("온보딩 화면을 찾을 수 없습니다."));
 
 		UserOnboardingViewId id = UserOnboardingViewId.of(screen.getId(), userId);
-		if (userOnboardingViewRepository.existsById(id)) {
+		Optional<UserOnboardingViewEntity> existingView = userOnboardingViewRepository.findById(id);
+		if (existingView.isPresent()) {
+			existingView.get().updateDismissed(dismissed);
 			return;
 		}
 
 		UserEntity user = userEntityRepository.findById(userId)
 			.orElseThrow(() -> new EntityNotFoundException("User not found with id: " + userId));
 
-		userOnboardingViewRepository.save(UserOnboardingViewEntity.of(user, screen, LocalDateTime.now()));
+		userOnboardingViewRepository.save(UserOnboardingViewEntity.of(user, screen, LocalDateTime.now(), dismissed));
 	}
 }

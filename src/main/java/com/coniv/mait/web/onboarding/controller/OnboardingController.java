@@ -6,6 +6,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
@@ -15,11 +16,13 @@ import com.coniv.mait.domain.onboarding.service.UserOnboardingService;
 import com.coniv.mait.domain.onboarding.service.dto.OnboardingScreenDto;
 import com.coniv.mait.global.auth.model.MaitUser;
 import com.coniv.mait.global.response.ApiResponse;
+import com.coniv.mait.web.onboarding.dto.OnboardingViewRecordApiRequest;
 import com.coniv.mait.web.onboarding.dto.OnboardingViewStatusApiResponse;
 import com.coniv.mait.web.onboarding.dto.UnviewedOnboardingScreenApiResponse;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 
 @Tag(name = "온보딩 API")
@@ -51,11 +54,11 @@ public class OnboardingController {
 	}
 
 	@Operation(summary = "특정 온보딩 화면 열람 기록",
-		description = "해당 코드의 온보딩 화면을 본인이 열람했음을 기록합니다. 이미 열람한 화면이면 중복 저장하지 않고 성공으로 응답합니다.")
+		description = "해당 코드의 온보딩 화면을 본인이 열람했음을 기록합니다. 다시 보지 않기 선택 여부도 함께 저장합니다.")
 	@PostMapping("/screens/view")
-	public ResponseEntity<ApiResponse<Void>> recordView(@RequestParam final OnboardingScreenCode code,
+	public ResponseEntity<ApiResponse<Void>> recordView(@Valid @RequestBody OnboardingViewRecordApiRequest request,
 		@AuthenticationPrincipal MaitUser maitUser) {
-		userOnboardingService.recordView(maitUser.id(), code);
+		userOnboardingService.recordView(maitUser.id(), request.code(), request.dismissed());
 		return ResponseEntity.ok(ApiResponse.noContent());
 	}
 }
