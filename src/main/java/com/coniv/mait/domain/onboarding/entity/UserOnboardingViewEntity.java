@@ -39,6 +39,9 @@ public class UserOnboardingViewEntity extends BaseTimeEntity {
 	@Column(nullable = false)
 	private LocalDateTime viewedAt;
 
+	@Column(nullable = false)
+	private boolean dismissed;
+
 	private UserOnboardingViewEntity(UserEntity user, OnboardingScreenEntity onboardingScreen,
 		LocalDateTime viewedAt) {
 		this.id = UserOnboardingViewId.of(onboardingScreen.getId(), user.getId());
@@ -50,5 +53,9 @@ public class UserOnboardingViewEntity extends BaseTimeEntity {
 	public static UserOnboardingViewEntity of(UserEntity user, OnboardingScreenEntity onboardingScreen,
 		LocalDateTime viewedAt) {
 		return new UserOnboardingViewEntity(user, onboardingScreen, viewedAt);
+	}
+
+	public void updateDismissed(final boolean dismissed) {
+		this.dismissed = dismissed;
 	}
 }
