@@ -78,7 +78,24 @@ class UserOnboardingServiceTest {
 	}
 
 	@Test
-	@DisplayName("역할 대상 화면은 유저가 해당 역할을 보유하지 않으면 제외한다")
+	@DisplayName("상위 역할(OWNER)은 하위 역할(MAKER) 대상 화면도 볼 수 있다")
+	void higherRoleCoversLowerRoleGatedScreen() {
+		// given
+		OnboardingScreenEntity makerOnly = screen(1L, OnboardingScreenCode.QUESTION_MANAGE, TeamUserRole.MAKER);
+		given(onboardingScreenRepository.findAllByExposedTrue()).willReturn(List.of(makerOnly));
+		given(userOnboardingViewRepository.findAllByUserId(USER_ID)).willReturn(List.of());
+		given(teamUserEntityRepository.findDistinctUserRolesByUserId(USER_ID)).willReturn(List.of(TeamUserRole.OWNER));
+
+		// when
+		List<OnboardingScreenDto> result = userOnboardingService.getUnviewedScreens(USER_ID);
+
+		// then
+		assertThat(result).extracting(OnboardingScreenDto::getCode)
+			.containsExactly(OnboardingScreenCode.QUESTION_MANAGE);
+	}
+
+	@Test
+	@DisplayName("역할 대상 화면은 유저가 해당 역할 이상을 보유하지 않으면 제외한다")
 	void excludesRoleGatedScreenWhenUserLacksRole() {
 		// given
 		OnboardingScreenEntity allUsers = screen(1L, OnboardingScreenCode.HOME_GUIDE, null);
