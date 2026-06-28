@@ -1,5 +1,6 @@
 package com.coniv.mait.domain.onboarding.repository;
 
+import java.util.List;
 import java.util.Optional;
 
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -12,4 +13,6 @@ public interface OnboardingScreenRepository extends JpaRepository<OnboardingScre
 	Optional<OnboardingScreenEntity> findByCode(OnboardingScreenCode code);
 
 	boolean existsByCode(OnboardingScreenCode code);
+
+	List<OnboardingScreenEntity> findAllByExposedTrue();
 }
