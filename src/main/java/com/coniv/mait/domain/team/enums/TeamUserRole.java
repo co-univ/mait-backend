@@ -18,4 +18,12 @@ public enum TeamUserRole {
 	public boolean canCreateQuestionSet() {
 		return this == MAKER || this == OWNER;
 	}
+
+	public boolean covers(final TeamUserRole required) {
+		return switch (this) {
+			case OWNER -> true;
+			case MAKER -> required == MAKER || required == PLAYER;
+			case PLAYER -> required == PLAYER;
+		};
+	}
 }
