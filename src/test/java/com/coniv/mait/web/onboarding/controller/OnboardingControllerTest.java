@@ -78,12 +78,11 @@ public class OnboardingControllerTest extends BaseIntegrationTest {
 	@DisplayName("특정 온보딩 화면 열람 상태 조회에 성공한다")
 	void getViewStatus_success() throws Exception {
 		// given
-		given(userOnboardingService.getViewStatus(anyLong(), eq(OnboardingScreenCode.HOME_GUIDE)))
+		given(userOnboardingService.getViewStatus(anyLong(), eq(1L)))
 			.willReturn(new OnboardingViewStatusDto(true, true));
 
 		// when & then
-		mockMvc.perform(get("/api/v1/onboarding/screens/view-status")
-				.param("code", "HOME_GUIDE"))
+		mockMvc.perform(get("/api/v1/onboarding/screens/1/view-status"))
 			.andExpectAll(
 				status().isOk(),
 				jsonPath("$.isSuccess").value(true),
@@ -99,7 +98,7 @@ public class OnboardingControllerTest extends BaseIntegrationTest {
 				.contentType(MediaType.APPLICATION_JSON)
 				.content("""
 					{
-						"code": "HOME_GUIDE",
+						"screenId": 1,
 						"dismissed": true
 					}
 					"""))
@@ -108,7 +107,7 @@ public class OnboardingControllerTest extends BaseIntegrationTest {
 				jsonPath("$.isSuccess").value(true),
 				jsonPath("$.data").doesNotExist());
 
-		then(userOnboardingService).should().recordView(anyLong(), eq(OnboardingScreenCode.HOME_GUIDE), eq(true));
+		then(userOnboardingService).should().recordView(anyLong(), eq(1L), eq(true));
 	}
 
 	@ParameterizedTest
@@ -135,10 +134,10 @@ public class OnboardingControllerTest extends BaseIntegrationTest {
 				{
 					"dismissed": true
 				}
-				""", "온보딩 화면 코드는 필수입니다."),
+				""", "온보딩 화면 ID는 필수입니다."),
 			Arguments.of("""
 				{
-					"code": "HOME_GUIDE"
+					"screenId": 1
 				}
 				""", "다시 보지 않기 선택 여부는 필수입니다.")
 		);

@@ -1,5 +1,6 @@
 package com.coniv.mait.global.config;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.cors.CorsConfiguration;
@@ -11,10 +12,14 @@ import com.coniv.mait.global.auth.jwt.constant.TokenConstants;
 @Configuration
 public class CorsConfig {
 
+	@Value("${server.domain}")
+	private String serverDomain;
+
 	@Bean
 	public CorsConfigurationSource corsConfigurationSource() {
 		CorsConfiguration configuration = new CorsConfiguration();
 
+		configuration.addAllowedOrigin(serverDomain);
 		configuration.addAllowedOrigin("https://dev.mait.kr");
 		configuration.addAllowedOrigin("https://alpha.mait.kr");
 		configuration.addAllowedOrigin("https://mait.kr");

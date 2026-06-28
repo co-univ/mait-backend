@@ -67,6 +67,9 @@ logging:
     org.hibernate.SQL: DEBUG
     org.hibernate.orm.jdbc.bind: TRACE
 
+server:
+  domain: http://localhost:8080
+
 mait:
   base-url: http://localhost:3000
   email:

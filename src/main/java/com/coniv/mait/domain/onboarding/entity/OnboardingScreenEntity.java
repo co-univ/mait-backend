@@ -14,18 +14,12 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
-import jakarta.persistence.UniqueConstraint;
 import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
-@Table(
-	name = "onboarding_screens",
-	uniqueConstraints = {
-		@UniqueConstraint(name = "uk_onboarding_screen_code", columnNames = {"code"})
-	}
-)
+@Table(name = "onboarding_screens")
 @Entity
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
