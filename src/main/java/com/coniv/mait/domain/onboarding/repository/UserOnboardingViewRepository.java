@@ -12,4 +12,6 @@ public interface UserOnboardingViewRepository extends JpaRepository<UserOnboardi
 	long countByOnboardingScreen_Id(Long onboardingScreenId);
 
 	List<UserOnboardingViewEntity> findAllByUserId(Long userId);
+
+	void deleteAllByUserId(Long userId);
 }
