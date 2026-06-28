@@ -99,8 +99,8 @@ class UserOnboardingServiceTest {
 	}
 
 	@Test
-	@DisplayName("관리 역할(OWNER)이라도 PLAYER 대상 화면은 보지 않는다")
-	void managerRoleDoesNotCoverPlayerGatedScreen() {
+	@DisplayName("상위 역할(OWNER)은 PLAYER 대상 화면도 볼 수 있다")
+	void ownerRoleCoversPlayerGatedScreen() {
 		// given
 		OnboardingScreenEntity playerOnly = screen(1L, OnboardingScreenCode.QUESTION_SOLVE, TeamUserRole.PLAYER);
 		given(onboardingScreenRepository.findAllByExposedTrue()).willReturn(List.of(playerOnly));
@@ -111,7 +111,25 @@ class UserOnboardingServiceTest {
 		List<OnboardingScreenDto> result = userOnboardingService.getUnviewedScreens(USER_ID);
 
 		// then
-		assertThat(result).isEmpty();
+		assertThat(result).extracting(OnboardingScreenDto::getCode)
+			.containsExactly(OnboardingScreenCode.QUESTION_SOLVE);
+	}
+
+	@Test
+	@DisplayName("관리 역할(MAKER)은 PLAYER 대상 화면도 볼 수 있다")
+	void makerRoleCoversPlayerGatedScreen() {
+		// given
+		OnboardingScreenEntity playerOnly = screen(1L, OnboardingScreenCode.QUESTION_SOLVE, TeamUserRole.PLAYER);
+		given(onboardingScreenRepository.findAllByExposedTrue()).willReturn(List.of(playerOnly));
+		given(userOnboardingViewRepository.findAllByUserId(USER_ID)).willReturn(List.of());
+		given(teamUserEntityRepository.findDistinctUserRolesByUserId(USER_ID)).willReturn(List.of(TeamUserRole.MAKER));
+
+		// when
+		List<OnboardingScreenDto> result = userOnboardingService.getUnviewedScreens(USER_ID);
+
+		// then
+		assertThat(result).extracting(OnboardingScreenDto::getCode)
+			.containsExactly(OnboardingScreenCode.QUESTION_SOLVE);
 	}
 
 	@Test

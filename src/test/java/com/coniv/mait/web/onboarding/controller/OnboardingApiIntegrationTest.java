@@ -113,6 +113,25 @@ public class OnboardingApiIntegrationTest extends BaseIntegrationTest {
 	}
 
 	@Test
+	@DisplayName("MAKER 권한만 있어도 PLAYER 대상 미열람 화면을 조회한다")
+	void getUnviewedScreens_includesPlayerScreenForMakerRole() throws Exception {
+		// given
+		UserEntity user = userEntityRepository.findByEmail("user@example.com").orElseThrow();
+		TeamEntity team = teamEntityRepository.save(TeamEntity.ofGroup("makerTeam", user.getId()));
+		teamUserEntityRepository.save(TeamUserEntity.createTeamUser(user, team, TeamUserRole.MAKER));
+
+		onboardingScreenRepository.save(screen(OnboardingScreenCode.QUESTION_SOLVE, true, TeamUserRole.PLAYER));
+
+		// when & then
+		mockMvc.perform(get("/api/v1/onboarding/screens/unviewed"))
+			.andExpectAll(
+				status().isOk(),
+				jsonPath("$.isSuccess").value(true),
+				jsonPath("$.data.length()").value(1),
+				jsonPath("$.data[0].code").value("QUESTION_SOLVE"));
+	}
+
+	@Test
 	@DisplayName("특정 온보딩 화면을 열람한 경우 열람 상태를 조회한다")
 	void getViewStatus_returnsViewedStatus() throws Exception {
 		// given
@@ -131,6 +150,25 @@ public class OnboardingApiIntegrationTest extends BaseIntegrationTest {
 				jsonPath("$.isSuccess").value(true),
 				jsonPath("$.data.viewed").value(true),
 				jsonPath("$.data.dismissed").value(true));
+	}
+
+	@Test
+	@DisplayName("MAKER 권한만 있어도 PLAYER 대상 화면의 열람 상태를 조회한다")
+	void getViewStatus_returnsPlayerScreenStatusForMakerRole() throws Exception {
+		// given
+		UserEntity user = userEntityRepository.findByEmail("user@example.com").orElseThrow();
+		TeamEntity team = teamEntityRepository.save(TeamEntity.ofGroup("makerTeam", user.getId()));
+		teamUserEntityRepository.save(TeamUserEntity.createTeamUser(user, team, TeamUserRole.MAKER));
+		onboardingScreenRepository.save(screen(OnboardingScreenCode.QUESTION_SOLVE, true, TeamUserRole.PLAYER));
+
+		// when & then
+		mockMvc.perform(get("/api/v1/onboarding/screens/view-status")
+				.param("code", "QUESTION_SOLVE"))
+			.andExpectAll(
+				status().isOk(),
+				jsonPath("$.isSuccess").value(true),
+				jsonPath("$.data.viewed").value(false),
+				jsonPath("$.data.dismissed").value(false));
 	}
 
 	@Test
