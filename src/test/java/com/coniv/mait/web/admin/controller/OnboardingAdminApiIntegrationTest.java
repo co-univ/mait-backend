@@ -14,7 +14,6 @@ import org.springframework.http.MediaType;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
 import com.coniv.mait.domain.onboarding.entity.OnboardingScreenEntity;
-import com.coniv.mait.domain.onboarding.enums.OnboardingScreenCode;
 import com.coniv.mait.domain.onboarding.repository.OnboardingScreenRepository;
 import com.coniv.mait.domain.team.enums.TeamUserRole;
 import com.coniv.mait.global.filter.JwtAuthorizationFilter;
@@ -65,46 +64,9 @@ public class OnboardingAdminApiIntegrationTest extends BaseIntegrationTest {
 				jsonPath("$.data.exposed").value(true),
 				jsonPath("$.data.targetTeamRole").value("MAKER"));
 
-		OnboardingScreenEntity saved = onboardingScreenRepository
-			.findByCode(OnboardingScreenCode.QUESTION_SOLVE)
-			.orElseThrow();
+		OnboardingScreenEntity saved = onboardingScreenRepository.findAll().get(0);
 		assertThat(saved.getTitle()).isEqualTo("문제 풀기 가이드");
 		assertThat(saved.isExposed()).isTrue();
 		assertThat(saved.getTargetTeamRole()).isEqualTo(TeamUserRole.MAKER);
-	}
-
-	@Test
-	@DisplayName("동일 code 로 다시 등록하면 노출 여부는 유지하고 title/targetTeamRole 만 갱신된다")
-	void uploadScreen_update_success() throws Exception {
-		// given
-		onboardingScreenRepository.save(OnboardingScreenEntity.builder()
-			.code(OnboardingScreenCode.QUESTION_MANAGE)
-			.title("기존 제목")
-			.exposed(false)
-			.targetTeamRole(null)
-			.build());
-
-		String body = """
-			{"code":"QUESTION_MANAGE","title":"수정된 제목","targetTeamRole":"OWNER"}
-			""";
-
-		// when & then
-		mockMvc.perform(post("/api/v1/admin/onboarding/screens")
-				.with(csrf())
-				.contentType(MediaType.APPLICATION_JSON)
-				.content(body))
-			.andExpectAll(
-				status().isOk(),
-				jsonPath("$.data.title").value("수정된 제목"),
-				jsonPath("$.data.exposed").value(false),
-				jsonPath("$.data.targetTeamRole").value("OWNER"));
-
-		assertThat(onboardingScreenRepository.findAll()).hasSize(1);
-		OnboardingScreenEntity updated = onboardingScreenRepository
-			.findByCode(OnboardingScreenCode.QUESTION_MANAGE)
-			.orElseThrow();
-		assertThat(updated.getTitle()).isEqualTo("수정된 제목");
-		assertThat(updated.isExposed()).isFalse();
-		assertThat(updated.getTargetTeamRole()).isEqualTo(TeamUserRole.OWNER);
 	}
 }

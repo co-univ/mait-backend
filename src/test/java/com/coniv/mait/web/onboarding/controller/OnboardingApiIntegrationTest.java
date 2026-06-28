@@ -69,16 +69,18 @@ public class OnboardingApiIntegrationTest extends BaseIntegrationTest {
 	}
 
 	@Test
-	@DisplayName("노출되지 않은 화면과 역할 미보유 화면은 제외하고, 전체 대상 화면만 조회한다")
+	@DisplayName("노출되지 않은 화면은 제외하고, 유저 역할에 맞는 화면을 조회한다")
 	void getUnviewedScreens_filtersExposedAndRole() throws Exception {
 		// given
 		UserEntity user = userEntityRepository.findByEmail("user@example.com").orElseThrow();
 		TeamEntity team = teamEntityRepository.save(TeamEntity.ofGroup("onboardingTeam", user.getId()));
 		teamUserEntityRepository.save(TeamUserEntity.createPlayerUser(user, team));
 
-		onboardingScreenRepository.save(screen(OnboardingScreenCode.HOME_GUIDE, true, null));
+		OnboardingScreenEntity homeGuide = onboardingScreenRepository.save(
+			screen(OnboardingScreenCode.HOME_GUIDE, true, null));
 		onboardingScreenRepository.save(screen(OnboardingScreenCode.QUESTION_SOLVE, false, null));
-		onboardingScreenRepository.save(screen(OnboardingScreenCode.QUESTION_MANAGE, true, TeamUserRole.MAKER));
+		OnboardingScreenEntity questionManage = onboardingScreenRepository.save(
+			screen(OnboardingScreenCode.QUESTION_MANAGE, true, TeamUserRole.MAKER));
 
 		// when & then
 		mockMvc.perform(get("/api/v1/onboarding/screens/unviewed"))
@@ -145,8 +147,7 @@ public class OnboardingApiIntegrationTest extends BaseIntegrationTest {
 		userOnboardingViewRepository.save(view);
 
 		// when & then
-		mockMvc.perform(get("/api/v1/onboarding/screens/view-status")
-				.param("code", "HOME_GUIDE"))
+		mockMvc.perform(get("/api/v1/onboarding/screens/" + homeGuide.getId() + "/view-status"))
 			.andExpectAll(
 				status().isOk(),
 				jsonPath("$.isSuccess").value(true),
@@ -155,33 +156,14 @@ public class OnboardingApiIntegrationTest extends BaseIntegrationTest {
 	}
 
 	@Test
-	@DisplayName("MAKER 권한만 있어도 PLAYER 대상 화면의 열람 상태를 조회한다")
-	void getViewStatus_returnsPlayerScreenStatusForMakerRole() throws Exception {
-		// given
-		UserEntity user = userEntityRepository.findByEmail("user@example.com").orElseThrow();
-		TeamEntity team = teamEntityRepository.save(TeamEntity.ofGroup("makerTeam", user.getId()));
-		teamUserEntityRepository.save(TeamUserEntity.createTeamUser(user, team, TeamUserRole.MAKER));
-		onboardingScreenRepository.save(screen(OnboardingScreenCode.QUESTION_SOLVE, true, TeamUserRole.PLAYER));
-
-		// when & then
-		mockMvc.perform(get("/api/v1/onboarding/screens/view-status")
-				.param("code", "QUESTION_SOLVE"))
-			.andExpectAll(
-				status().isOk(),
-				jsonPath("$.isSuccess").value(true),
-				jsonPath("$.data.viewed").value(false),
-				jsonPath("$.data.dismissed").value(false));
-	}
-
-	@Test
 	@DisplayName("특정 온보딩 화면을 열람하지 않은 경우 미열람 상태를 조회한다")
 	void getViewStatus_returnsNotViewedStatus() throws Exception {
 		// given
-		onboardingScreenRepository.save(screen(OnboardingScreenCode.HOME_GUIDE, true, null));
+		OnboardingScreenEntity homeGuide = onboardingScreenRepository.save(
+			screen(OnboardingScreenCode.HOME_GUIDE, true, null));
 
 		// when & then
-		mockMvc.perform(get("/api/v1/onboarding/screens/view-status")
-				.param("code", "HOME_GUIDE"))
+		mockMvc.perform(get("/api/v1/onboarding/screens/" + homeGuide.getId() + "/view-status"))
 			.andExpectAll(
 				status().isOk(),
 				jsonPath("$.isSuccess").value(true),
@@ -202,10 +184,10 @@ public class OnboardingApiIntegrationTest extends BaseIntegrationTest {
 				.contentType("application/json")
 				.content("""
 					{
-						"code": "HOME_GUIDE",
+						"screenId": %d,
 						"dismissed": false
 					}
-					"""))
+					""".formatted(homeGuide.getId())))
 			.andExpectAll(
 				status().isOk(),
 				jsonPath("$.isSuccess").value(true),
@@ -215,10 +197,10 @@ public class OnboardingApiIntegrationTest extends BaseIntegrationTest {
 				.contentType("application/json")
 				.content("""
 					{
-						"code": "HOME_GUIDE",
+						"screenId": %d,
 						"dismissed": true
 					}
-					"""))
+					""".formatted(homeGuide.getId())))
 			.andExpectAll(
 				status().isOk(),
 				jsonPath("$.isSuccess").value(true),

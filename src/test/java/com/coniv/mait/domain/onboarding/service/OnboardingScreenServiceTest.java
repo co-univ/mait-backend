@@ -3,9 +3,6 @@ package com.coniv.mait.domain.onboarding.service;
 import static org.assertj.core.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.BDDMockito.*;
-import static org.mockito.Mockito.*;
-
-import java.util.Optional;
 
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -31,11 +28,10 @@ class OnboardingScreenServiceTest {
 	private OnboardingScreenService onboardingScreenService;
 
 	@Test
-	@DisplayName("동일 code 가 없으면 기본 노출(true) 상태로 새로 등록한다")
+	@DisplayName("온보딩 화면을 기본 노출(true) 상태로 새로 등록한다")
 	void uploadScreen_create() {
 		// given
 		OnboardingScreenCode code = OnboardingScreenCode.QUESTION_SOLVE;
-		given(onboardingScreenRepository.findByCode(code)).willReturn(Optional.empty());
 		given(onboardingScreenRepository.save(any(OnboardingScreenEntity.class)))
 			.willAnswer(invocation -> invocation.getArgument(0));
 
@@ -55,32 +51,5 @@ class OnboardingScreenServiceTest {
 		assertThat(result.getTitle()).isEqualTo("문제 풀기 가이드");
 		assertThat(result.isExposed()).isTrue();
 		assertThat(result.getTargetTeamRole()).isEqualTo(TeamUserRole.MAKER);
-	}
-
-	@Test
-	@DisplayName("동일 code 가 있으면 노출 여부는 유지한 채 title 과 targetTeamRole 만 갱신한다")
-	void uploadScreen_update() {
-		// given
-		OnboardingScreenCode code = OnboardingScreenCode.QUESTION_MANAGE;
-		OnboardingScreenEntity existing = OnboardingScreenEntity.builder()
-			.code(code)
-			.title("기존 제목")
-			.exposed(false)
-			.targetTeamRole(null)
-			.build();
-		given(onboardingScreenRepository.findByCode(code)).willReturn(Optional.of(existing));
-
-		// when
-		OnboardingScreenDto result = onboardingScreenService.uploadScreen(code, "수정된 제목", TeamUserRole.OWNER);
-
-		// then
-		then(onboardingScreenRepository).should(never()).save(any());
-		assertThat(existing.getTitle()).isEqualTo("수정된 제목");
-		assertThat(existing.getTargetTeamRole()).isEqualTo(TeamUserRole.OWNER);
-		assertThat(existing.isExposed()).isFalse();
-
-		assertThat(result.getTitle()).isEqualTo("수정된 제목");
-		assertThat(result.getTargetTeamRole()).isEqualTo(TeamUserRole.OWNER);
-		assertThat(result.isExposed()).isFalse();
 	}
 }
