@@ -19,7 +19,7 @@ import com.coniv.mait.domain.onboarding.service.dto.OnboardingViewStatusDto;
 import com.coniv.mait.domain.team.enums.TeamUserRole;
 import com.coniv.mait.domain.team.repository.TeamUserEntityRepository;
 import com.coniv.mait.domain.user.entity.UserEntity;
-import com.coniv.mait.domain.user.repository.UserEntityRepository;
+import com.coniv.mait.domain.user.service.component.UserReader;
 
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
@@ -31,7 +31,7 @@ public class UserOnboardingService {
 	private final OnboardingScreenRepository onboardingScreenRepository;
 	private final UserOnboardingViewRepository userOnboardingViewRepository;
 	private final TeamUserEntityRepository teamUserEntityRepository;
-	private final UserEntityRepository userEntityRepository;
+	private final UserReader userReader;
 
 	public List<OnboardingScreenDto> getUnviewedScreens(final Long userId) {
 		Set<Long> viewedScreenIds = userOnboardingViewRepository.findAllByUserId(userId).stream()
@@ -67,9 +67,7 @@ public class UserOnboardingService {
 			return;
 		}
 
-		UserEntity user = userEntityRepository.findById(userId)
-			.orElseThrow(() -> new EntityNotFoundException("User not found with id: " + userId));
-
+		UserEntity user = userReader.getById(userId);
 		userOnboardingViewRepository.save(UserOnboardingViewEntity.of(user, screen, LocalDateTime.now(), dismissed));
 	}
 }

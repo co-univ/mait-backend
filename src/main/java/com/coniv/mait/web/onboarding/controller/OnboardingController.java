@@ -5,10 +5,10 @@ import java.util.List;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.coniv.mait.domain.onboarding.service.UserOnboardingService;
@@ -44,9 +44,9 @@ public class OnboardingController {
 
 	@Operation(summary = "특정 온보딩 화면 열람 여부 확인",
 		description = "해당 ID의 온보딩 화면을 본인이 열람했는지와 다시 보지 않기 선택 여부를 반환합니다.")
-	@GetMapping("/screens/view-status")
+	@GetMapping("/screens/{screenId}/view-status")
 	public ResponseEntity<ApiResponse<OnboardingViewStatusApiResponse>> getViewStatus(
-		@RequestParam final Long screenId, @AuthenticationPrincipal MaitUser maitUser) {
+		@PathVariable final Long screenId, @AuthenticationPrincipal MaitUser maitUser) {
 		return ResponseEntity.ok(ApiResponse.ok(OnboardingViewStatusApiResponse.from(
 			userOnboardingService.getViewStatus(maitUser.id(), screenId))));
 	}
