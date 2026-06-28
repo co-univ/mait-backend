@@ -27,5 +27,9 @@ public interface TeamUserEntityRepository extends JpaRepository<TeamUserEntity, 
 
 	Optional<TeamUserEntity> findByTeamIdAndUserRole(Long teamId, TeamUserRole userRole);
 
+	@Query("select distinct tu.userRole from TeamUserEntity tu "
+		+ "where tu.user.id = :userId and tu.team.deletedAt is null")
+	List<TeamUserRole> findDistinctUserRolesByUserId(@Param("userId") final Long userId);
+
 	long countByTeamId(Long teamId);
 }
