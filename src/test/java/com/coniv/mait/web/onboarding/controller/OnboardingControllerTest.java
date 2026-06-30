@@ -22,6 +22,7 @@ import com.coniv.mait.domain.onboarding.enums.OnboardingScreenCode;
 import com.coniv.mait.domain.onboarding.service.UserOnboardingService;
 import com.coniv.mait.domain.onboarding.service.dto.OnboardingScreenDto;
 import com.coniv.mait.domain.onboarding.service.dto.OnboardingViewStatusDto;
+import com.coniv.mait.domain.team.enums.TeamUserRole;
 import com.coniv.mait.global.filter.JwtAuthorizationFilter;
 import com.coniv.mait.login.WithCustomUser;
 import com.coniv.mait.web.integration.BaseIntegrationTest;
@@ -60,7 +61,7 @@ public class OnboardingControllerTest extends BaseIntegrationTest {
 				.code(OnboardingScreenCode.QUESTION_SOLVE)
 				.title("문제 풀기 가이드")
 				.exposed(true)
-				.targetTeamRole(null)
+				.targetTeamRole(TeamUserRole.MAKER)
 				.build()));
 
 		// when & then
@@ -70,6 +71,7 @@ public class OnboardingControllerTest extends BaseIntegrationTest {
 				jsonPath("$.isSuccess").value(true),
 				jsonPath("$.data.length()").value(1),
 				jsonPath("$.data[0].id").value(1),
+				jsonPath("$.data[0].targetTeamRole").value("MAKER"),
 				jsonPath("$.data[0].code").value("QUESTION_SOLVE"),
 				jsonPath("$.data[0].title").value("문제 풀기 가이드"));
 	}
