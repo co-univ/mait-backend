@@ -1,7 +1,10 @@
 package com.coniv.mait.domain.question.service;
 
+import java.util.Arrays;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -14,6 +17,7 @@ import com.coniv.mait.domain.question.enums.DeliveryMode;
 import com.coniv.mait.domain.question.enums.QuestionSetCreationType;
 import com.coniv.mait.domain.question.enums.QuestionSetSolveMode;
 import com.coniv.mait.domain.question.enums.QuestionSetVisibility;
+import com.coniv.mait.domain.question.enums.QuestionType;
 import com.coniv.mait.domain.question.event.AiQuestionGenerationRequestedEvent;
 import com.coniv.mait.domain.question.exception.QuestionSetStatusException;
 import com.coniv.mait.domain.question.exception.code.QuestionSetStatusExceptionCode;
@@ -21,9 +25,11 @@ import com.coniv.mait.domain.question.repository.AiRequestStatusManager;
 import com.coniv.mait.domain.question.repository.QuestionEntityRepository;
 import com.coniv.mait.domain.question.repository.QuestionSetEntityRepository;
 import com.coniv.mait.domain.question.service.component.QuestionChecker;
+import com.coniv.mait.domain.question.service.component.QuestionSetReader;
 import com.coniv.mait.domain.question.service.dto.QuestionCount;
 import com.coniv.mait.domain.question.service.dto.QuestionSetCategoryDto;
 import com.coniv.mait.domain.question.service.dto.QuestionSetDto;
+import com.coniv.mait.domain.question.service.dto.QuestionTypeCount;
 import com.coniv.mait.domain.question.service.dto.QuestionValidateDto;
 import com.coniv.mait.domain.team.entity.TeamEntity;
 import com.coniv.mait.domain.team.enums.TeamType;
@@ -58,6 +64,8 @@ public class QuestionSetService {
 
 	private final TeamReader teamReader;
 
+	private final QuestionSetReader questionSetReader;
+
 	private final QuestionSetMaterialService questionSetMaterialService;
 
 	private final AiRequestStatusManager aiRequestStatusManager;
@@ -75,6 +83,7 @@ public class QuestionSetService {
 			.creationType(questionSetDto.getCreationType())
 			.teamId(questionSetDto.getTeamId())
 			.difficulty(difficulty)
+			.instruction(instruction)
 			.solveMode(questionSetDto.getSolveMode())
 			.visibility(questionSetDto.getVisibility())
 			.creatorId(userId)
@@ -139,15 +148,24 @@ public class QuestionSetService {
 	}
 
 	public QuestionSetDto getQuestionSet(final Long questionSetId, final MaitUser maitUser) {
-		final QuestionSetEntity questionSetEntity = questionSetEntityRepository.findById(questionSetId)
-			.orElseThrow(() -> new IllegalArgumentException("Question set not found"));
+		final QuestionSetEntity questionSetEntity = questionSetReader.getQuestionSet(questionSetId);
 
-		long questionCount = questionEntityRepository.countByQuestionSetId(questionSetEntity.getId());
+		List<QuestionEntity> questions = questionEntityRepository.findAllByQuestionSetId(questionSetEntity.getId());
+		List<QuestionTypeCount> questionTypeCounts = countByType(questions);
 
 		List<QuestionSetCategoryDto> categories =
 			questionSetCategoryService.getCategoriesByQuestionSetId(questionSetEntity.getId());
 
-		return QuestionSetDto.of(questionSetEntity, questionCount, categories);
+		return QuestionSetDto.of(questionSetEntity, questions.size(), categories, questionTypeCounts);
+	}
+
+	private List<QuestionTypeCount> countByType(final List<QuestionEntity> questions) {
+		Map<QuestionType, Long> countByType = questions.stream()
+			.collect(Collectors.groupingBy(QuestionEntity::getType, Collectors.counting()));
+
+		return Arrays.stream(QuestionType.values())
+			.map(type -> QuestionTypeCount.of(type, countByType.getOrDefault(type, 0L)))
+			.toList();
 	}
 
 	@Transactional
