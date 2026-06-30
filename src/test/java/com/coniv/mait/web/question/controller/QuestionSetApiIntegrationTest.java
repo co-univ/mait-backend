@@ -18,6 +18,7 @@ import com.coniv.mait.domain.question.entity.MultipleQuestionEntity;
 import com.coniv.mait.domain.question.entity.QuestionSetCategoryEntity;
 import com.coniv.mait.domain.question.entity.QuestionSetCategoryLinkEntity;
 import com.coniv.mait.domain.question.entity.QuestionSetEntity;
+import com.coniv.mait.domain.question.entity.ShortQuestionEntity;
 import com.coniv.mait.domain.question.enums.DeliveryMode;
 import com.coniv.mait.domain.question.enums.QuestionSetCreationType;
 import com.coniv.mait.domain.question.enums.QuestionSetSolveMode;
@@ -356,6 +357,41 @@ public class QuestionSetApiIntegrationTest extends BaseIntegrationTest {
 				status().isOk(),
 				jsonPath("$.data.id").value(questionSet.getId()),
 				jsonPath("$.data.title").value(title));
+	}
+
+	@Test
+	@DisplayName("문제 셋 단건 조회 API 성공 테스트 - 유형별 문제 개수와 instruction을 응답에 포함한다")
+	void getQuestionSetApiSuccess_IncludesQuestionTypeCountsAndInstruction() throws Exception {
+		// given
+		QuestionSetEntity questionSet = questionSetEntityRepository.save(
+			QuestionSetEntity.builder()
+				.title("유형별 개수 문제")
+				.instruction("이 문제 셋에 대한 보충 설명")
+				.build());
+
+		questionEntityRepository.save(MultipleQuestionEntity.builder()
+			.questionSet(questionSet).content("객관식 1").number(1L).lexoRank("a").build());
+		questionEntityRepository.save(MultipleQuestionEntity.builder()
+			.questionSet(questionSet).content("객관식 2").number(2L).lexoRank("b").build());
+		questionEntityRepository.save(ShortQuestionEntity.builder()
+			.questionSet(questionSet).content("주관식 1").number(3L).lexoRank("c").answerCount(1).build());
+
+		// when & then
+		mockMvc.perform(get("/api/v1/question-sets/{questionSetId}", questionSet.getId())
+				.accept(MediaType.APPLICATION_JSON))
+			.andExpectAll(
+				status().isOk(),
+				jsonPath("$.data.questionCount").value(3),
+				jsonPath("$.data.instruction").value("이 문제 셋에 대한 보충 설명"),
+				jsonPath("$.data.questionTypeCounts.length()").value(4),
+				jsonPath("$.data.questionTypeCounts[0].type").value("SHORT"),
+				jsonPath("$.data.questionTypeCounts[0].count").value(1),
+				jsonPath("$.data.questionTypeCounts[1].type").value("MULTIPLE"),
+				jsonPath("$.data.questionTypeCounts[1].count").value(2),
+				jsonPath("$.data.questionTypeCounts[2].type").value("ORDERING"),
+				jsonPath("$.data.questionTypeCounts[2].count").value(0),
+				jsonPath("$.data.questionTypeCounts[3].type").value("FILL_BLANK"),
+				jsonPath("$.data.questionTypeCounts[3].count").value(0));
 	}
 
 	@Test

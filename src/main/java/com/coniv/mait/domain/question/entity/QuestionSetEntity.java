@@ -69,6 +69,9 @@ public class QuestionSetEntity extends BaseTimeEntity {
 
 	private String difficulty;
 
+	@Column(columnDefinition = "TEXT")
+	private String instruction;
+
 	@Builder.Default
 	private boolean advancementSelected = false;
 
