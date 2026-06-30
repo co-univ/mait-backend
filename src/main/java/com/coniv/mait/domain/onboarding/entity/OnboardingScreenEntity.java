@@ -2,7 +2,6 @@ package com.coniv.mait.domain.onboarding.entity;
 
 import java.util.Set;
 
-import com.coniv.mait.domain.onboarding.enums.OnboardingScreenCode;
 import com.coniv.mait.domain.team.enums.TeamUserRole;
 import com.coniv.mait.global.entity.BaseTimeEntity;
 
@@ -29,9 +28,8 @@ public class OnboardingScreenEntity extends BaseTimeEntity {
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	private Long id;
 
-	@Column(nullable = false)
-	@Enumerated(EnumType.STRING)
-	private OnboardingScreenCode code;
+	@Column(nullable = false, length = 64)
+	private String code;
 
 	@Column(nullable = false)
 	private String title;
@@ -43,7 +41,7 @@ public class OnboardingScreenEntity extends BaseTimeEntity {
 	private TeamUserRole targetTeamRole;
 
 	@Builder
-	private OnboardingScreenEntity(OnboardingScreenCode code, String title, boolean exposed,
+	private OnboardingScreenEntity(String code, String title, boolean exposed,
 		TeamUserRole targetTeamRole) {
 		this.code = code;
 		this.title = title;

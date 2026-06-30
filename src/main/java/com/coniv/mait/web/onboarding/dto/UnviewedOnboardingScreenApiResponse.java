@@ -1,6 +1,5 @@
 package com.coniv.mait.web.onboarding.dto;
 
-import com.coniv.mait.domain.onboarding.enums.OnboardingScreenCode;
 import com.coniv.mait.domain.onboarding.service.dto.OnboardingScreenDto;
 import com.coniv.mait.domain.team.enums.TeamUserRole;
 
@@ -17,7 +16,7 @@ public record UnviewedOnboardingScreenApiResponse(
 	TeamUserRole targetTeamRole,
 
 	@Schema(description = "온보딩 화면 코드", example = "QUESTION_SOLVE")
-	OnboardingScreenCode code,
+	String code,
 
 	@Schema(description = "온보딩 화면 이름", example = "문제 풀기 가이드")
 	String title

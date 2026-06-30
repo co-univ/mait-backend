@@ -13,7 +13,6 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import com.coniv.mait.domain.onboarding.entity.OnboardingScreenEntity;
-import com.coniv.mait.domain.onboarding.enums.OnboardingScreenCode;
 import com.coniv.mait.domain.onboarding.repository.OnboardingScreenRepository;
 import com.coniv.mait.domain.onboarding.service.dto.OnboardingScreenDto;
 import com.coniv.mait.domain.team.enums.TeamUserRole;
@@ -31,7 +30,7 @@ class OnboardingScreenServiceTest {
 	@DisplayName("온보딩 화면을 기본 노출(true) 상태로 새로 등록한다")
 	void uploadScreen_create() {
 		// given
-		OnboardingScreenCode code = OnboardingScreenCode.QUESTION_SOLVE;
+		String code = "QUESTION_SOLVE";
 		given(onboardingScreenRepository.save(any(OnboardingScreenEntity.class)))
 			.willAnswer(invocation -> invocation.getArgument(0));
 

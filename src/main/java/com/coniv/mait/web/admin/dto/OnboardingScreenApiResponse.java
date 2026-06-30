@@ -2,7 +2,6 @@ package com.coniv.mait.web.admin.dto;
 
 import java.time.LocalDateTime;
 
-import com.coniv.mait.domain.onboarding.enums.OnboardingScreenCode;
 import com.coniv.mait.domain.onboarding.service.dto.OnboardingScreenDto;
 import com.coniv.mait.domain.team.enums.TeamUserRole;
 
@@ -12,8 +11,8 @@ public record OnboardingScreenApiResponse(
 	@Schema(description = "온보딩 화면 PK", requiredMode = Schema.RequiredMode.REQUIRED)
 	Long id,
 
-	@Schema(description = "온보딩 화면 식별 코드", requiredMode = Schema.RequiredMode.REQUIRED, enumAsRef = true)
-	OnboardingScreenCode code,
+	@Schema(description = "온보딩 화면 식별 코드", requiredMode = Schema.RequiredMode.REQUIRED, example = "QUESTION_SOLVE")
+	String code,
 
 	@Schema(description = "어드민 표시용 화면 이름", requiredMode = Schema.RequiredMode.REQUIRED)
 	String title,

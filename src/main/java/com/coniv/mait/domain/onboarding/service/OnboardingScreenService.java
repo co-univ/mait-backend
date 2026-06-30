@@ -4,7 +4,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.coniv.mait.domain.onboarding.entity.OnboardingScreenEntity;
-import com.coniv.mait.domain.onboarding.enums.OnboardingScreenCode;
 import com.coniv.mait.domain.onboarding.repository.OnboardingScreenRepository;
 import com.coniv.mait.domain.onboarding.service.dto.OnboardingScreenDto;
 import com.coniv.mait.domain.team.enums.TeamUserRole;
@@ -18,7 +17,7 @@ public class OnboardingScreenService {
 	private final OnboardingScreenRepository onboardingScreenRepository;
 
 	@Transactional
-	public OnboardingScreenDto uploadScreen(final OnboardingScreenCode code, final String title,
+	public OnboardingScreenDto uploadScreen(final String code, final String title,
 		final TeamUserRole targetTeamRole) {
 		OnboardingScreenEntity screen = onboardingScreenRepository.save(
 			OnboardingScreenEntity.builder()
