@@ -154,6 +154,36 @@ public class QuestionSetApiIntegrationTest extends BaseIntegrationTest {
 	}
 
 	@Test
+	@DisplayName("문제 셋 목록 조회 API 성공 테스트 - 풀이방식이 지정된 제작 중 문제 셋도 MAKING 모드로 조회된다")
+	void getQuestionSetsApiSuccess_MakingMode_WithSolveModeAssigned() throws Exception {
+		// given
+		UserEntity currentUser = userEntityRepository.findByEmail("user@example.com").orElseThrow();
+		TeamEntity team = teamEntityRepository.save(TeamEntity.ofGroup("코니브", 1L));
+		teamUserEntityRepository.save(TeamUserEntity.createTeamUser(currentUser, team, TeamUserRole.MAKER));
+
+		// 생성 시점에 solveMode 가 채워졌지만 아직 최종저장하지 않은(MAKING) 문제 셋
+		QuestionSetEntity makingLiveSet = QuestionSetEntity.builder()
+			.title("제작 중 실시간 문제")
+			.teamId(team.getId())
+			.status(QuestionSetStatus.MAKING)
+			.solveMode(QuestionSetSolveMode.LIVE_TIME)
+			.build();
+		questionSetEntityRepository.save(makingLiveSet);
+
+		// when & then
+		mockMvc.perform(get("/api/v1/question-sets")
+				.param("teamId", String.valueOf(team.getId()))
+				.param("mode", DeliveryMode.MAKING.name())
+				.accept(MediaType.APPLICATION_JSON))
+			.andExpectAll(
+				status().isOk(),
+				jsonPath("$.data.mode").value("MAKING"),
+				jsonPath("$.data.content.questionSets").isArray(),
+				jsonPath("$.data.content.questionSets.length()").value(1),
+				jsonPath("$.data.content.questionSets[0].title").value("제작 중 실시간 문제"));
+	}
+
+	@Test
 	@DisplayName("문제 셋 목록 조회 API 성공 테스트 - LIVE_TIME 모드 (Map 구조)")
 	void getQuestionSetsApiSuccess_LiveTimeMode() throws Exception {
 		// given
