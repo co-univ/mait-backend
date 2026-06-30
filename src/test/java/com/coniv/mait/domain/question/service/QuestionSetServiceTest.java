@@ -22,6 +22,7 @@ import com.coniv.mait.domain.question.enums.QuestionSetCreationType;
 import com.coniv.mait.domain.question.enums.QuestionSetSolveMode;
 import com.coniv.mait.domain.question.enums.QuestionSetStatus;
 import com.coniv.mait.domain.question.enums.QuestionSetVisibility;
+import com.coniv.mait.domain.question.enums.QuestionType;
 import com.coniv.mait.domain.question.enums.QuestionValidationResult;
 import com.coniv.mait.domain.question.event.AiQuestionGenerationRequestedEvent;
 import com.coniv.mait.domain.question.exception.QuestionSetStatusException;
@@ -29,7 +30,9 @@ import com.coniv.mait.domain.question.exception.code.QuestionSetStatusExceptionC
 import com.coniv.mait.domain.question.repository.AiRequestStatusManager;
 import com.coniv.mait.domain.question.repository.QuestionEntityRepository;
 import com.coniv.mait.domain.question.repository.QuestionSetEntityRepository;
+import com.coniv.mait.domain.question.service.component.QuestionSetReader;
 import com.coniv.mait.domain.question.service.dto.QuestionSetDto;
+import com.coniv.mait.domain.question.service.dto.QuestionTypeCount;
 import com.coniv.mait.domain.question.service.dto.QuestionValidateDto;
 import com.coniv.mait.domain.team.entity.TeamEntity;
 import com.coniv.mait.domain.team.service.component.TeamReader;
@@ -68,6 +71,9 @@ class QuestionSetServiceTest {
 
 	@Mock
 	private TeamReader teamReader;
+
+	@Mock
+	private QuestionSetReader questionSetReader;
 
 	@Mock
 	private AiRequestStatusManager aiRequestStatusManager;
@@ -329,10 +335,8 @@ class QuestionSetServiceTest {
 		when(questionSetEntity.getId()).thenReturn(questionSetId);
 		when(questionSetEntity.getTitle()).thenReturn("Test Title");
 
-		when(questionSetEntityRepository.findById(questionSetId))
-			.thenReturn(Optional.of(questionSetEntity));
-		when(questionEntityRepository.countByQuestionSetId(questionSetId))
-			.thenReturn(5L); // 예시로 5개의 문제를 가진다고 가정
+		when(questionSetReader.getQuestionSet(questionSetId)).thenReturn(questionSetEntity);
+		when(questionEntityRepository.findAllByQuestionSetId(questionSetId)).thenReturn(List.of());
 
 		// when
 		QuestionSetDto result = questionSetService.getQuestionSet(questionSetId, user);
@@ -342,7 +346,40 @@ class QuestionSetServiceTest {
 		assertThat(result.getId()).isEqualTo(questionSetId);
 		assertThat(result.getTitle()).isEqualTo("Test Title");
 
-		verify(questionSetEntityRepository, times(1)).findById(questionSetId);
+		verify(questionSetReader, times(1)).getQuestionSet(questionSetId);
+	}
+
+	@Test
+	@DisplayName("문제 셋 단건 조회 테스트 - 유형별 문제 개수를 전체 유형(없는 유형은 0) 기준으로 반환한다")
+	void getQuestionSetTest_ReturnsQuestionTypeCounts() {
+		// given
+		final Long questionSetId = 1L;
+		final MaitUser user = MaitUser.builder().id(USER_ID).build();
+		final QuestionSetEntity questionSetEntity = mock(QuestionSetEntity.class);
+		when(questionSetEntity.getId()).thenReturn(questionSetId);
+
+		final QuestionEntity multiple1 = mock(QuestionEntity.class);
+		final QuestionEntity multiple2 = mock(QuestionEntity.class);
+		final QuestionEntity shortQuestion = mock(QuestionEntity.class);
+		when(multiple1.getType()).thenReturn(QuestionType.MULTIPLE);
+		when(multiple2.getType()).thenReturn(QuestionType.MULTIPLE);
+		when(shortQuestion.getType()).thenReturn(QuestionType.SHORT);
+
+		when(questionSetReader.getQuestionSet(questionSetId)).thenReturn(questionSetEntity);
+		when(questionEntityRepository.findAllByQuestionSetId(questionSetId))
+			.thenReturn(List.of(multiple1, multiple2, shortQuestion));
+
+		// when
+		QuestionSetDto result = questionSetService.getQuestionSet(questionSetId, user);
+
+		// then
+		assertThat(result.getQuestionCount()).isEqualTo(3L);
+		assertThat(result.getQuestionTypeCounts())
+			.containsExactly(
+				QuestionTypeCount.of(QuestionType.SHORT, 1L),
+				QuestionTypeCount.of(QuestionType.MULTIPLE, 2L),
+				QuestionTypeCount.of(QuestionType.ORDERING, 0L),
+				QuestionTypeCount.of(QuestionType.FILL_BLANK, 0L));
 	}
 
 	@Test
@@ -351,15 +388,15 @@ class QuestionSetServiceTest {
 		// given
 		final Long questionSetId = 1L;
 		final MaitUser user = MaitUser.builder().id(USER_ID).build();
-		when(questionSetEntityRepository.findById(questionSetId))
-			.thenReturn(Optional.empty());
+		when(questionSetReader.getQuestionSet(questionSetId))
+			.thenThrow(new EntityNotFoundException(questionSetId + " : 해당 문제 셋을 찾을 수 없습니다."));
 
 		// when & then
 		assertThatThrownBy(() -> questionSetService.getQuestionSet(questionSetId, user))
-			.isInstanceOf(IllegalArgumentException.class)
-			.hasMessage("Question set not found");
+			.isInstanceOf(EntityNotFoundException.class)
+			.hasMessage(questionSetId + " : 해당 문제 셋을 찾을 수 없습니다.");
 
-		verify(questionSetEntityRepository, times(1)).findById(questionSetId);
+		verify(questionSetReader, times(1)).getQuestionSet(questionSetId);
 	}
 
 	@Test
