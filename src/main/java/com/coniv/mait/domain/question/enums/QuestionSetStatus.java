@@ -6,6 +6,7 @@ import lombok.Getter;
 @Getter
 @AllArgsConstructor
 public enum QuestionSetStatus {
+	MAKING("제작 중"),
 	BEFORE("풀이 전"),
 	ONGOING("풀이 중"),
 	AFTER("풀이 완료"),
