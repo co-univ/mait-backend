@@ -10,6 +10,7 @@ import com.coniv.mait.domain.question.enums.QuestionSetStatus;
 import com.coniv.mait.domain.question.enums.QuestionSetVisibility;
 import com.coniv.mait.domain.question.service.dto.QuestionSetCategoryDto;
 import com.coniv.mait.domain.question.service.dto.QuestionSetDto;
+import com.coniv.mait.domain.question.service.dto.QuestionTypeCount;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Builder;
@@ -40,8 +41,12 @@ public record QuestionSetApiResponse(
 
 	@Schema(requiredMode = Schema.RequiredMode.REQUIRED)
 	Long questionCount,
+	@Schema(description = "문제 유형별 개수 (전체 유형 포함, 없는 유형은 0)", requiredMode = Schema.RequiredMode.REQUIRED)
+	List<QuestionTypeCount> questionTypeCounts,
 	@Schema(requiredMode = Schema.RequiredMode.NOT_REQUIRED)
 	String difficulty,
+	@Schema(description = "문제 셋 보충 설명", requiredMode = Schema.RequiredMode.NOT_REQUIRED)
+	String instruction,
 	@Schema(description = "문제 셋에 부착된 카테고리 목록", requiredMode = Schema.RequiredMode.REQUIRED)
 	List<QuestionSetCategoryDto> categories,
 	@Schema(requiredMode = Schema.RequiredMode.REQUIRED)
@@ -60,7 +65,10 @@ public record QuestionSetApiResponse(
 			.status(questionSetDto.getStatus())
 			.teamId(questionSetDto.getTeamId())
 			.questionCount(questionSetDto.getQuestionCount())
+			.questionTypeCounts(
+				questionSetDto.getQuestionTypeCounts() == null ? List.of() : questionSetDto.getQuestionTypeCounts())
 			.difficulty(questionSetDto.getDifficulty())
+			.instruction(questionSetDto.getInstruction())
 			.categories(questionSetDto.getCategories() == null ? List.of() : questionSetDto.getCategories())
 			.updatedAt(questionSetDto.getUpdatedAt())
 			.build();
