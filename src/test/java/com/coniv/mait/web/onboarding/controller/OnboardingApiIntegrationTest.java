@@ -16,7 +16,6 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import com.coniv.mait.domain.onboarding.entity.OnboardingScreenEntity;
 import com.coniv.mait.domain.onboarding.entity.UserOnboardingViewEntity;
 import com.coniv.mait.domain.onboarding.entity.UserOnboardingViewId;
-import com.coniv.mait.domain.onboarding.enums.OnboardingScreenCode;
 import com.coniv.mait.domain.onboarding.repository.OnboardingScreenRepository;
 import com.coniv.mait.domain.onboarding.repository.UserOnboardingViewRepository;
 import com.coniv.mait.domain.team.entity.TeamEntity;
@@ -77,10 +76,10 @@ public class OnboardingApiIntegrationTest extends BaseIntegrationTest {
 		teamUserEntityRepository.save(TeamUserEntity.createPlayerUser(user, team));
 
 		OnboardingScreenEntity homeGuide = onboardingScreenRepository.save(
-			screen(OnboardingScreenCode.HOME_GUIDE, true, null));
-		onboardingScreenRepository.save(screen(OnboardingScreenCode.QUESTION_SOLVE, false, null));
+			screen("HOME_GUIDE", true, null));
+		onboardingScreenRepository.save(screen("QUESTION_SOLVE", false, null));
 		OnboardingScreenEntity questionManage = onboardingScreenRepository.save(
-			screen(OnboardingScreenCode.QUESTION_MANAGE, true, TeamUserRole.MAKER));
+			screen("QUESTION_MANAGE", true, TeamUserRole.MAKER));
 
 		// when & then
 		mockMvc.perform(get("/api/v1/onboarding/screens/unviewed"))
@@ -98,10 +97,10 @@ public class OnboardingApiIntegrationTest extends BaseIntegrationTest {
 		UserEntity user = userEntityRepository.findByEmail("user@example.com").orElseThrow();
 
 		OnboardingScreenEntity homeGuide = onboardingScreenRepository.save(
-			screen(OnboardingScreenCode.HOME_GUIDE, true, null));
+			screen("HOME_GUIDE", true, null));
 		OnboardingScreenEntity questionSolve = onboardingScreenRepository.save(
-			screen(OnboardingScreenCode.QUESTION_SOLVE, true, null));
-		onboardingScreenRepository.save(screen(OnboardingScreenCode.QUESTION_MANAGE, true, TeamUserRole.MAKER));
+			screen("QUESTION_SOLVE", true, null));
+		onboardingScreenRepository.save(screen("QUESTION_MANAGE", true, TeamUserRole.MAKER));
 
 		userOnboardingViewRepository.save(
 			UserOnboardingViewEntity.of(user, questionSolve, LocalDateTime.now()));
@@ -124,7 +123,7 @@ public class OnboardingApiIntegrationTest extends BaseIntegrationTest {
 		TeamEntity team = teamEntityRepository.save(TeamEntity.ofGroup("makerTeam", user.getId()));
 		teamUserEntityRepository.save(TeamUserEntity.createTeamUser(user, team, TeamUserRole.MAKER));
 
-		onboardingScreenRepository.save(screen(OnboardingScreenCode.QUESTION_SOLVE, true, TeamUserRole.PLAYER));
+		onboardingScreenRepository.save(screen("QUESTION_SOLVE", true, TeamUserRole.PLAYER));
 
 		// when & then
 		mockMvc.perform(get("/api/v1/onboarding/screens/unviewed"))
@@ -141,7 +140,7 @@ public class OnboardingApiIntegrationTest extends BaseIntegrationTest {
 		// given
 		UserEntity user = userEntityRepository.findByEmail("user@example.com").orElseThrow();
 		OnboardingScreenEntity homeGuide = onboardingScreenRepository.save(
-			screen(OnboardingScreenCode.HOME_GUIDE, true, null));
+			screen("HOME_GUIDE", true, null));
 		UserOnboardingViewEntity view = UserOnboardingViewEntity.of(user, homeGuide, LocalDateTime.now());
 		view.updateDismissed(true);
 		userOnboardingViewRepository.save(view);
@@ -160,7 +159,7 @@ public class OnboardingApiIntegrationTest extends BaseIntegrationTest {
 	void getViewStatus_returnsNotViewedStatus() throws Exception {
 		// given
 		OnboardingScreenEntity homeGuide = onboardingScreenRepository.save(
-			screen(OnboardingScreenCode.HOME_GUIDE, true, null));
+			screen("HOME_GUIDE", true, null));
 
 		// when & then
 		mockMvc.perform(get("/api/v1/onboarding/screens/" + homeGuide.getId() + "/view-status"))
@@ -177,7 +176,7 @@ public class OnboardingApiIntegrationTest extends BaseIntegrationTest {
 		// given
 		UserEntity user = userEntityRepository.findByEmail("user@example.com").orElseThrow();
 		OnboardingScreenEntity homeGuide = onboardingScreenRepository.save(
-			screen(OnboardingScreenCode.HOME_GUIDE, true, null));
+			screen("HOME_GUIDE", true, null));
 
 		// when & then
 		mockMvc.perform(post("/api/v1/onboarding/screens/view")
@@ -212,11 +211,11 @@ public class OnboardingApiIntegrationTest extends BaseIntegrationTest {
 		assertThat(view.isDismissed()).isTrue();
 	}
 
-	private OnboardingScreenEntity screen(final OnboardingScreenCode code, final boolean exposed,
+	private OnboardingScreenEntity screen(final String code, final boolean exposed,
 		final TeamUserRole targetTeamRole) {
 		return OnboardingScreenEntity.builder()
 			.code(code)
-			.title(code.name())
+			.title(code)
 			.exposed(exposed)
 			.targetTeamRole(targetTeamRole)
 			.build();

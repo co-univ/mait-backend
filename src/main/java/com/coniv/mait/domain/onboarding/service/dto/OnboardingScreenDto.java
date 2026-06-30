@@ -3,7 +3,6 @@ package com.coniv.mait.domain.onboarding.service.dto;
 import java.time.LocalDateTime;
 
 import com.coniv.mait.domain.onboarding.entity.OnboardingScreenEntity;
-import com.coniv.mait.domain.onboarding.enums.OnboardingScreenCode;
 import com.coniv.mait.domain.team.enums.TeamUserRole;
 
 import lombok.Builder;
@@ -14,7 +13,7 @@ import lombok.Getter;
 public class OnboardingScreenDto {
 
 	private final Long id;
-	private final OnboardingScreenCode code;
+	private final String code;
 	private final String title;
 	private final boolean exposed;
 	private final TeamUserRole targetTeamRole;

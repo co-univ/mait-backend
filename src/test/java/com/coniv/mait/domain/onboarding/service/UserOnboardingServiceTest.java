@@ -18,7 +18,6 @@ import org.springframework.test.util.ReflectionTestUtils;
 import com.coniv.mait.domain.onboarding.entity.OnboardingScreenEntity;
 import com.coniv.mait.domain.onboarding.entity.UserOnboardingViewEntity;
 import com.coniv.mait.domain.onboarding.entity.UserOnboardingViewId;
-import com.coniv.mait.domain.onboarding.enums.OnboardingScreenCode;
 import com.coniv.mait.domain.onboarding.repository.OnboardingScreenRepository;
 import com.coniv.mait.domain.onboarding.repository.UserOnboardingViewRepository;
 import com.coniv.mait.domain.onboarding.service.dto.OnboardingScreenDto;
@@ -55,8 +54,8 @@ class UserOnboardingServiceTest {
 	@DisplayName("아직 보지 않은 노출 화면 중 전체 대상(null)과 보유 역할 대상 화면을 반환한다")
 	void returnsUnviewedScreensVisibleToUser() {
 		// given
-		OnboardingScreenEntity allUsers = screen(1L, OnboardingScreenCode.HOME_GUIDE, null);
-		OnboardingScreenEntity makerOnly = screen(2L, OnboardingScreenCode.QUESTION_MANAGE, TeamUserRole.MAKER);
+		OnboardingScreenEntity allUsers = screen(1L, "HOME_GUIDE", null);
+		OnboardingScreenEntity makerOnly = screen(2L, "QUESTION_MANAGE", TeamUserRole.MAKER);
 		given(onboardingScreenRepository.findAllByExposedTrue()).willReturn(List.of(allUsers, makerOnly));
 		given(userOnboardingViewRepository.findAllByUserId(USER_ID)).willReturn(List.of());
 		given(teamUserEntityRepository.findDistinctUserRolesByUserId(USER_ID)).willReturn(List.of(TeamUserRole.MAKER));
@@ -66,15 +65,15 @@ class UserOnboardingServiceTest {
 
 		// then
 		assertThat(result).extracting(OnboardingScreenDto::getCode)
-			.containsExactlyInAnyOrder(OnboardingScreenCode.HOME_GUIDE, OnboardingScreenCode.QUESTION_MANAGE);
+			.containsExactlyInAnyOrder("HOME_GUIDE", "QUESTION_MANAGE");
 	}
 
 	@Test
 	@DisplayName("이미 본 화면은 결과에서 제외한다")
 	void excludesViewedScreens() {
 		// given
-		OnboardingScreenEntity viewed = screen(1L, OnboardingScreenCode.HOME_GUIDE, null);
-		OnboardingScreenEntity unviewed = screen(2L, OnboardingScreenCode.QUESTION_SOLVE, null);
+		OnboardingScreenEntity viewed = screen(1L, "HOME_GUIDE", null);
+		OnboardingScreenEntity unviewed = screen(2L, "QUESTION_SOLVE", null);
 		UserOnboardingViewEntity viewedView = viewOf(1L);
 		given(onboardingScreenRepository.findAllByExposedTrue()).willReturn(List.of(viewed, unviewed));
 		given(userOnboardingViewRepository.findAllByUserId(USER_ID)).willReturn(List.of(viewedView));
@@ -85,14 +84,14 @@ class UserOnboardingServiceTest {
 
 		// then
 		assertThat(result).extracting(OnboardingScreenDto::getCode)
-			.containsExactly(OnboardingScreenCode.QUESTION_SOLVE);
+			.containsExactly("QUESTION_SOLVE");
 	}
 
 	@Test
 	@DisplayName("상위 역할(OWNER)은 하위 역할(MAKER) 대상 화면도 볼 수 있다")
 	void higherRoleCoversLowerRoleGatedScreen() {
 		// given
-		OnboardingScreenEntity makerOnly = screen(1L, OnboardingScreenCode.QUESTION_MANAGE, TeamUserRole.MAKER);
+		OnboardingScreenEntity makerOnly = screen(1L, "QUESTION_MANAGE", TeamUserRole.MAKER);
 		given(onboardingScreenRepository.findAllByExposedTrue()).willReturn(List.of(makerOnly));
 		given(userOnboardingViewRepository.findAllByUserId(USER_ID)).willReturn(List.of());
 		given(teamUserEntityRepository.findDistinctUserRolesByUserId(USER_ID)).willReturn(List.of(TeamUserRole.OWNER));
@@ -102,14 +101,14 @@ class UserOnboardingServiceTest {
 
 		// then
 		assertThat(result).extracting(OnboardingScreenDto::getCode)
-			.containsExactly(OnboardingScreenCode.QUESTION_MANAGE);
+			.containsExactly("QUESTION_MANAGE");
 	}
 
 	@Test
 	@DisplayName("OWNER 역할은 PLAYER 대상 화면도 볼 수 있다")
 	void ownerRoleCoversPlayerGatedScreen() {
 		// given
-		OnboardingScreenEntity playerOnly = screen(1L, OnboardingScreenCode.QUESTION_SOLVE, TeamUserRole.PLAYER);
+		OnboardingScreenEntity playerOnly = screen(1L, "QUESTION_SOLVE", TeamUserRole.PLAYER);
 		given(onboardingScreenRepository.findAllByExposedTrue()).willReturn(List.of(playerOnly));
 		given(userOnboardingViewRepository.findAllByUserId(USER_ID)).willReturn(List.of());
 		given(teamUserEntityRepository.findDistinctUserRolesByUserId(USER_ID)).willReturn(List.of(TeamUserRole.OWNER));
@@ -119,15 +118,15 @@ class UserOnboardingServiceTest {
 
 		// then
 		assertThat(result).extracting(OnboardingScreenDto::getCode)
-			.containsExactly(OnboardingScreenCode.QUESTION_SOLVE);
+			.containsExactly("QUESTION_SOLVE");
 	}
 
 	@Test
 	@DisplayName("역할 대상 화면은 유저가 해당 역할 이상을 보유하지 않으면 제외한다")
 	void excludesRoleGatedScreenWhenUserLacksRole() {
 		// given
-		OnboardingScreenEntity allUsers = screen(1L, OnboardingScreenCode.HOME_GUIDE, null);
-		OnboardingScreenEntity makerOnly = screen(2L, OnboardingScreenCode.QUESTION_MANAGE, TeamUserRole.MAKER);
+		OnboardingScreenEntity allUsers = screen(1L, "HOME_GUIDE", null);
+		OnboardingScreenEntity makerOnly = screen(2L, "QUESTION_MANAGE", TeamUserRole.MAKER);
 		given(onboardingScreenRepository.findAllByExposedTrue()).willReturn(List.of(allUsers, makerOnly));
 		given(userOnboardingViewRepository.findAllByUserId(USER_ID)).willReturn(List.of());
 		given(teamUserEntityRepository.findDistinctUserRolesByUserId(USER_ID)).willReturn(List.of(TeamUserRole.PLAYER));
@@ -137,7 +136,7 @@ class UserOnboardingServiceTest {
 
 		// then
 		assertThat(result).extracting(OnboardingScreenDto::getCode)
-			.containsExactly(OnboardingScreenCode.HOME_GUIDE);
+			.containsExactly("HOME_GUIDE");
 	}
 
 	@Test
@@ -190,7 +189,7 @@ class UserOnboardingServiceTest {
 	@DisplayName("온보딩 화면 열람 기록을 저장한다")
 	void recordView_savesViewHistory() {
 		// given
-		OnboardingScreenEntity screen = screen(SCREEN_ID, OnboardingScreenCode.HOME_GUIDE, null);
+		OnboardingScreenEntity screen = screen(SCREEN_ID, "HOME_GUIDE", null);
 		UserEntity user = user();
 		given(onboardingScreenRepository.findById(SCREEN_ID)).willReturn(Optional.of(screen));
 		given(userOnboardingViewRepository.findById(UserOnboardingViewId.of(SCREEN_ID, USER_ID)))
@@ -210,7 +209,7 @@ class UserOnboardingServiceTest {
 	@DisplayName("이미 열람한 온보딩 화면이면 다시 보지 않기 여부를 갱신한다")
 	void recordView_updatesDismissedWhenAlreadyViewed() {
 		// given
-		OnboardingScreenEntity screen = screen(SCREEN_ID, OnboardingScreenCode.HOME_GUIDE, null);
+		OnboardingScreenEntity screen = screen(SCREEN_ID, "HOME_GUIDE", null);
 		UserOnboardingViewEntity view = mock(UserOnboardingViewEntity.class);
 		given(onboardingScreenRepository.findById(SCREEN_ID)).willReturn(Optional.of(screen));
 		given(userOnboardingViewRepository.findById(UserOnboardingViewId.of(SCREEN_ID, USER_ID)))
@@ -248,10 +247,10 @@ class UserOnboardingServiceTest {
 		then(userOnboardingViewRepository).should(never()).save(any());
 	}
 
-	private OnboardingScreenEntity screen(final Long id, final OnboardingScreenCode code, final TeamUserRole role) {
+	private OnboardingScreenEntity screen(final Long id, final String code, final TeamUserRole role) {
 		OnboardingScreenEntity screen = OnboardingScreenEntity.builder()
 			.code(code)
-			.title(code.name())
+			.title(code)
 			.exposed(true)
 			.targetTeamRole(role)
 			.build();

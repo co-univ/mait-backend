@@ -15,7 +15,6 @@ import org.mockito.Mockito;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
-import com.coniv.mait.domain.onboarding.enums.OnboardingScreenCode;
 import com.coniv.mait.domain.onboarding.service.OnboardingScreenService;
 import com.coniv.mait.domain.onboarding.service.dto.OnboardingScreenDto;
 import com.coniv.mait.global.filter.JwtAuthorizationFilter;
@@ -51,7 +50,7 @@ public class OnboardingAdminControllerTest extends BaseIntegrationTest {
 		given(onboardingScreenService.uploadScreen(any(), any(), any())).willReturn(
 			OnboardingScreenDto.builder()
 				.id(1L)
-				.code(OnboardingScreenCode.QUESTION_SOLVE)
+				.code("QUESTION_SOLVE")
 				.title("문제 풀기 가이드")
 				.exposed(true)
 				.targetTeamRole(null)
