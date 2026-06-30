@@ -19,6 +19,15 @@ public class OnboardingScreenService {
 	@Transactional
 	public OnboardingScreenDto uploadScreen(final String code, final String title,
 		final TeamUserRole targetTeamRole) {
+		return onboardingScreenRepository.findByCode(code)
+			.map(screen -> {
+				screen.update(title, targetTeamRole);
+				return OnboardingScreenDto.from(screen);
+			})
+			.orElseGet(() -> createScreen(code, title, targetTeamRole));
+	}
+
+	private OnboardingScreenDto createScreen(final String code, final String title, final TeamUserRole targetTeamRole) {
 		OnboardingScreenEntity screen = onboardingScreenRepository.save(
 			OnboardingScreenEntity.builder()
 				.code(code)
