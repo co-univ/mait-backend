@@ -183,14 +183,6 @@ public class QuestionSetEntity extends BaseTimeEntity {
 	}
 
 	public DeliveryMode getDisplayMode() {
-		if (status == QuestionSetStatus.MAKING) {
-			return DeliveryMode.MAKING;
-		}
-
-		if (canReview()) {
-			return DeliveryMode.REVIEW;
-		}
-
-		return DeliveryMode.from(solveMode);
+		return DeliveryMode.resolve(status, solveMode);
 	}
 }
