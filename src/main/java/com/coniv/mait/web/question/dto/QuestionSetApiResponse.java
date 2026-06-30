@@ -60,7 +60,7 @@ public record QuestionSetApiResponse(
 			.subject(questionSetDto.getTitle())
 			.creationType(questionSetDto.getCreationType())
 			.visibility(questionSetDto.getVisibility())
-			.deliveryMode(resolveDeliveryMode(questionSetDto.getStatus(), questionSetDto.getSolveMode()))
+			.deliveryMode(DeliveryMode.resolve(questionSetDto.getStatus(), questionSetDto.getSolveMode()))
 			.solveMode(questionSetDto.getSolveMode())
 			.status(questionSetDto.getStatus())
 			.teamId(questionSetDto.getTeamId())
@@ -72,18 +72,5 @@ public record QuestionSetApiResponse(
 			.categories(questionSetDto.getCategories() == null ? List.of() : questionSetDto.getCategories())
 			.updatedAt(questionSetDto.getUpdatedAt())
 			.build();
-	}
-
-	private static DeliveryMode resolveDeliveryMode(final QuestionSetStatus status,
-		final QuestionSetSolveMode solveMode) {
-		if (status == QuestionSetStatus.REVIEW) {
-			return DeliveryMode.REVIEW;
-		}
-
-		if (solveMode == null) {
-			return DeliveryMode.MAKING;
-		}
-
-		return DeliveryMode.from(solveMode);
 	}
 }

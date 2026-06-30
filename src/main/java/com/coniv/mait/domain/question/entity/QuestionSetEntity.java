@@ -65,7 +65,7 @@ public class QuestionSetEntity extends BaseTimeEntity {
 	@Enumerated(EnumType.STRING)
 	@Column(name = "status")
 	@Builder.Default
-	private QuestionSetStatus status = QuestionSetStatus.BEFORE;
+	private QuestionSetStatus status = QuestionSetStatus.MAKING;
 
 	private String difficulty;
 
@@ -186,14 +186,6 @@ public class QuestionSetEntity extends BaseTimeEntity {
 	}
 
 	public DeliveryMode getDisplayMode() {
-		if (canReview()) {
-			return DeliveryMode.REVIEW;
-		}
-
-		if (solveMode == null) {
-			return DeliveryMode.MAKING;
-		}
-
-		return DeliveryMode.from(solveMode);
+		return DeliveryMode.resolve(status, solveMode);
 	}
 }
