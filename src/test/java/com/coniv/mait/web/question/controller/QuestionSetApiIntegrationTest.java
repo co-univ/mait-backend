@@ -359,6 +359,27 @@ public class QuestionSetApiIntegrationTest extends BaseIntegrationTest {
 	}
 
 	@Test
+	@DisplayName("문제 셋 단건 조회 API 성공 테스트 - 풀이방식이 지정된 제작 중 문제 셋은 deliveryMode가 MAKING이다")
+	void getQuestionSetApiSuccess_MakingWithSolveMode_ReturnsMakingDeliveryMode() throws Exception {
+		// given
+		QuestionSetEntity questionSet = questionSetEntityRepository.save(
+			QuestionSetEntity.builder()
+				.title("제작 중 실시간 문제")
+				.status(QuestionSetStatus.MAKING)
+				.solveMode(QuestionSetSolveMode.LIVE_TIME)
+				.build());
+
+		// when & then
+		mockMvc.perform(get("/api/v1/question-sets/{questionSetId}", questionSet.getId())
+				.accept(MediaType.APPLICATION_JSON))
+			.andExpectAll(
+				status().isOk(),
+				jsonPath("$.data.id").value(questionSet.getId()),
+				jsonPath("$.data.deliveryMode").value(DeliveryMode.MAKING.name()),
+				jsonPath("$.data.solveMode").value(QuestionSetSolveMode.LIVE_TIME.name()));
+	}
+
+	@Test
 	@DisplayName("문제 셋 최종 저장 API 성공 테스트")
 	void updateQuestionSetsApiSuccess() throws Exception {
 		// given
