@@ -67,12 +67,13 @@ class OnboardingScreenServiceTest {
 			.targetTeamRole(TeamUserRole.PLAYER)
 			.build();
 		given(onboardingScreenRepository.findByCode(code)).willReturn(Optional.of(existingScreen));
+		given(onboardingScreenRepository.save(existingScreen)).willReturn(existingScreen);
 
 		// when
 		OnboardingScreenDto result = onboardingScreenService.uploadScreen(code, "문제 풀기 가이드", TeamUserRole.MAKER);
 
 		// then
-		then(onboardingScreenRepository).should(never()).save(any());
+		then(onboardingScreenRepository).should().save(existingScreen);
 		assertThat(existingScreen.getTitle()).isEqualTo("문제 풀기 가이드");
 		assertThat(existingScreen.getTargetTeamRole()).isEqualTo(TeamUserRole.MAKER);
 		assertThat(result.getCode()).isEqualTo(code);
