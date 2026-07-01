@@ -38,10 +38,10 @@ public class QuestionSetEntity extends BaseTimeEntity {
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	private Long id;
 
+	@Deprecated
 	private String subject;
 
-	@Builder.Default
-	private String title = "문제 셋";
+	private String title;
 
 	@Enumerated(EnumType.STRING)
 	@Column(nullable = false)
@@ -65,9 +65,12 @@ public class QuestionSetEntity extends BaseTimeEntity {
 	@Enumerated(EnumType.STRING)
 	@Column(name = "status")
 	@Builder.Default
-	private QuestionSetStatus status = QuestionSetStatus.BEFORE;
+	private QuestionSetStatus status = QuestionSetStatus.MAKING;
 
 	private String difficulty;
+
+	@Column(columnDefinition = "TEXT")
+	private String instruction;
 
 	@Builder.Default
 	private boolean advancementSelected = false;
@@ -76,14 +79,9 @@ public class QuestionSetEntity extends BaseTimeEntity {
 
 	private LocalDateTime endTime;
 
-	private QuestionSetEntity(String subject, QuestionSetCreationType creationType) {
-		this.subject = subject;
-		this.creationType = creationType;
-	}
-
-	public static QuestionSetEntity of(String subject, QuestionSetCreationType creationType) {
+	public static QuestionSetEntity of(String title, QuestionSetCreationType creationType) {
 		return QuestionSetEntity.builder()
-			.subject(subject)
+			.title(title)
 			.creationType(creationType)
 			.build();
 	}
@@ -140,14 +138,13 @@ public class QuestionSetEntity extends BaseTimeEntity {
 		}
 	}
 
-	public void completeQuestionSet(String title, String subject, QuestionSetSolveMode solveMode, String difficulty,
+	public void completeQuestionSet(String title, QuestionSetSolveMode solveMode, String difficulty,
 		QuestionSetVisibility visibility) {
 		if (solveMode == null) {
 			throw new IllegalArgumentException("문제 셋 완료 시 solveMode는 필수입니다.");
 		}
 
 		this.title = title;
-		this.subject = subject;
 		this.solveMode = solveMode;
 		this.status = QuestionSetStatus.BEFORE;
 		this.difficulty = difficulty;
@@ -189,14 +186,6 @@ public class QuestionSetEntity extends BaseTimeEntity {
 	}
 
 	public DeliveryMode getDisplayMode() {
-		if (canReview()) {
-			return DeliveryMode.REVIEW;
-		}
-
-		if (solveMode == null) {
-			return DeliveryMode.MAKING;
-		}
-
-		return DeliveryMode.from(solveMode);
+		return DeliveryMode.resolve(status, solveMode);
 	}
 }

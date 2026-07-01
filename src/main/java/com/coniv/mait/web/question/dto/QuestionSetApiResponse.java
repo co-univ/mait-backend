@@ -10,6 +10,7 @@ import com.coniv.mait.domain.question.enums.QuestionSetStatus;
 import com.coniv.mait.domain.question.enums.QuestionSetVisibility;
 import com.coniv.mait.domain.question.service.dto.QuestionSetCategoryDto;
 import com.coniv.mait.domain.question.service.dto.QuestionSetDto;
+import com.coniv.mait.domain.question.service.dto.QuestionTypeCount;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Builder;
@@ -18,10 +19,12 @@ import lombok.Builder;
 public record QuestionSetApiResponse(
 	@Schema(requiredMode = Schema.RequiredMode.REQUIRED)
 	Long id,
-	@Schema(description = "문제 셋에서 다루는 주제", requiredMode = Schema.RequiredMode.NOT_REQUIRED)
-	String subject,
 	@Schema(description = "문제 셋 제목", requiredMode = Schema.RequiredMode.NOT_REQUIRED)
 	String title,
+	@Deprecated
+	@Schema(description = "문제 셋 제목(deprecated, title과 동일)", requiredMode = Schema.RequiredMode.NOT_REQUIRED,
+		deprecated = true)
+	String subject,
 	@Schema(description = "문제 셋 생성 유형", requiredMode = Schema.RequiredMode.REQUIRED, enumAsRef = true)
 	QuestionSetCreationType creationType,
 	@Schema(description = "문제 셋 노출 단위", requiredMode = Schema.RequiredMode.REQUIRED, enumAsRef = true)
@@ -38,8 +41,12 @@ public record QuestionSetApiResponse(
 
 	@Schema(requiredMode = Schema.RequiredMode.REQUIRED)
 	Long questionCount,
+	@Schema(description = "문제 유형별 개수 (전체 유형 포함, 없는 유형은 0)", requiredMode = Schema.RequiredMode.REQUIRED)
+	List<QuestionTypeCount> questionTypeCounts,
 	@Schema(requiredMode = Schema.RequiredMode.NOT_REQUIRED)
 	String difficulty,
+	@Schema(description = "문제 셋 보충 설명", requiredMode = Schema.RequiredMode.NOT_REQUIRED)
+	String instruction,
 	@Schema(description = "문제 셋에 부착된 카테고리 목록", requiredMode = Schema.RequiredMode.REQUIRED)
 	List<QuestionSetCategoryDto> categories,
 	@Schema(requiredMode = Schema.RequiredMode.REQUIRED)
@@ -49,31 +56,21 @@ public record QuestionSetApiResponse(
 	public static QuestionSetApiResponse from(final QuestionSetDto questionSetDto) {
 		return QuestionSetApiResponse.builder()
 			.id(questionSetDto.getId())
-			.subject(questionSetDto.getSubject())
 			.title(questionSetDto.getTitle())
+			.subject(questionSetDto.getTitle())
 			.creationType(questionSetDto.getCreationType())
 			.visibility(questionSetDto.getVisibility())
-			.deliveryMode(resolveDeliveryMode(questionSetDto.getStatus(), questionSetDto.getSolveMode()))
+			.deliveryMode(DeliveryMode.resolve(questionSetDto.getStatus(), questionSetDto.getSolveMode()))
 			.solveMode(questionSetDto.getSolveMode())
 			.status(questionSetDto.getStatus())
 			.teamId(questionSetDto.getTeamId())
 			.questionCount(questionSetDto.getQuestionCount())
+			.questionTypeCounts(
+				questionSetDto.getQuestionTypeCounts() == null ? List.of() : questionSetDto.getQuestionTypeCounts())
 			.difficulty(questionSetDto.getDifficulty())
+			.instruction(questionSetDto.getInstruction())
 			.categories(questionSetDto.getCategories() == null ? List.of() : questionSetDto.getCategories())
 			.updatedAt(questionSetDto.getUpdatedAt())
 			.build();
-	}
-
-	private static DeliveryMode resolveDeliveryMode(final QuestionSetStatus status,
-		final QuestionSetSolveMode solveMode) {
-		if (status == QuestionSetStatus.REVIEW) {
-			return DeliveryMode.REVIEW;
-		}
-
-		if (solveMode == null) {
-			return DeliveryMode.MAKING;
-		}
-
-		return DeliveryMode.from(solveMode);
 	}
 }

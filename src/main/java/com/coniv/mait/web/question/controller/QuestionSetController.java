@@ -122,7 +122,7 @@ public class QuestionSetController {
 	public ResponseEntity<ApiResponse<QuestionSetApiResponse>> completeQuestionSet(
 		@PathVariable Long questionSetId, @Valid @RequestBody UpdateQuestionSetApiRequest request) {
 		return ResponseEntity.ok(ApiResponse.ok(QuestionSetApiResponse.from(
-			questionSetService.completeQuestionSet(questionSetId, request.title(), request.subject(),
+			questionSetService.completeQuestionSet(questionSetId, request.resolvedTitle(),
 				request.solveMode(), request.difficulty(), request.visibility(), request.categoryIds()))));
 	}
 
@@ -149,7 +149,7 @@ public class QuestionSetController {
 	public ResponseEntity<ApiResponse<Void>> updateQuestionSet(
 		@RequestBody @Valid UpdateQuestionSetFieldApiRequest request,
 		@PathVariable Long questionSetId) {
-		questionSetService.updateQuestionSetField(questionSetId, request.title());
+		questionSetService.updateQuestionSetField(questionSetId, request.resolvedTitle());
 		return ResponseEntity.ok(ApiResponse.noContent());
 	}
 

@@ -10,6 +10,7 @@ import java.util.Optional;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -17,21 +18,28 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import com.coniv.mait.domain.question.entity.QuestionEntity;
 import com.coniv.mait.domain.question.entity.QuestionSetEntity;
 import com.coniv.mait.domain.question.enums.DeliveryMode;
+import com.coniv.mait.domain.question.enums.QuestionSetCreationType;
 import com.coniv.mait.domain.question.enums.QuestionSetSolveMode;
 import com.coniv.mait.domain.question.enums.QuestionSetStatus;
 import com.coniv.mait.domain.question.enums.QuestionSetVisibility;
+import com.coniv.mait.domain.question.enums.QuestionType;
 import com.coniv.mait.domain.question.enums.QuestionValidationResult;
+import com.coniv.mait.domain.question.event.AiQuestionGenerationRequestedEvent;
 import com.coniv.mait.domain.question.exception.QuestionSetStatusException;
 import com.coniv.mait.domain.question.exception.code.QuestionSetStatusExceptionCode;
 import com.coniv.mait.domain.question.repository.AiRequestStatusManager;
 import com.coniv.mait.domain.question.repository.QuestionEntityRepository;
 import com.coniv.mait.domain.question.repository.QuestionSetEntityRepository;
+import com.coniv.mait.domain.question.service.component.QuestionSetReader;
 import com.coniv.mait.domain.question.service.dto.QuestionSetDto;
+import com.coniv.mait.domain.question.service.dto.QuestionTypeCount;
 import com.coniv.mait.domain.question.service.dto.QuestionValidateDto;
 import com.coniv.mait.domain.team.entity.TeamEntity;
 import com.coniv.mait.domain.team.service.component.TeamReader;
+import com.coniv.mait.domain.user.exception.UserRoleException;
 import com.coniv.mait.domain.user.service.component.TeamRoleValidator;
 import com.coniv.mait.global.auth.model.MaitUser;
+import com.coniv.mait.global.event.MaitEventPublisher;
 import com.coniv.mait.web.question.dto.QuestionSetContainer;
 import com.coniv.mait.web.question.dto.QuestionSetGroup;
 import com.coniv.mait.web.question.dto.QuestionSetList;
@@ -65,29 +73,94 @@ class QuestionSetServiceTest {
 	private TeamReader teamReader;
 
 	@Mock
+	private QuestionSetReader questionSetReader;
+
+	@Mock
 	private AiRequestStatusManager aiRequestStatusManager;
 
 	@Mock
 	private QuestionSetCategoryService questionSetCategoryService;
 
-	// Todo: 생성 관련 feature가 최종 완성 시에 수정
-	// @Test
-	// @DisplayName("문제 셋 생성 테스트")
-	// void createQuestionSetTest() {
-	// 	// given
-	// 	String subject = "Sample Subject";
-	// 	var creationType = QuestionSetCreationType.MANUAL;
-	// 	final Long questionSetId = 1L;
-	//
-	// 	// when
-	// 	QuestionSetDto questionSetDto = questionSetService.createQuestionSet(subject, creationType);
-	//
-	// 	// then
-	// 	assertThat(questionSetDto).isNotNull();
-	// 	assertThat(questionSetDto.getSubject()).isEqualTo(subject);
-	// 	verify(questionSetEntityRepository).save(any());
-	// 	verify(questionService).createDefaultQuestion(any());
-	// }
+	@Mock
+	private QuestionSetMaterialService questionSetMaterialService;
+
+	@Mock
+	private MaitEventPublisher maitEventPublisher;
+
+	@Test
+	@DisplayName("문제 셋 생성 테스트 - MANUAL 타입은 입력값으로 저장하고 기본 문제를 생성하며 AI 이벤트는 발행하지 않는다")
+	void createQuestionSetManualTest() {
+		// given
+		QuestionSetDto request = QuestionSetDto.builder()
+			.teamId(1L)
+			.title("제목")
+			.creationType(QuestionSetCreationType.MANUAL)
+			.solveMode(QuestionSetSolveMode.STUDY)
+			.visibility(QuestionSetVisibility.GROUP)
+			.build();
+
+		// when
+		questionSetService.createQuestionSet(request, List.of(), List.of(), null, "쉬움", List.of(), USER_ID);
+
+		// then
+		ArgumentCaptor<QuestionSetEntity> captor = ArgumentCaptor.forClass(QuestionSetEntity.class);
+		verify(questionSetEntityRepository).save(captor.capture());
+		QuestionSetEntity saved = captor.getValue();
+		assertThat(saved.getTitle()).isEqualTo("제목");
+		assertThat(saved.getCreationType()).isEqualTo(QuestionSetCreationType.MANUAL);
+		assertThat(saved.getSolveMode()).isEqualTo(QuestionSetSolveMode.STUDY);
+		assertThat(saved.getVisibility()).isEqualTo(QuestionSetVisibility.GROUP);
+		assertThat(saved.getCreatorId()).isEqualTo(USER_ID);
+
+		verify(teamRoleValidator).checkHasCreateQuestionSetAuthority(1L, USER_ID);
+		verify(questionService).createDefaultQuestions(any(), eq(List.of()));
+		verify(maitEventPublisher, never()).publishEvent(any());
+		verify(questionSetCategoryService).attachCategories(any(), eq(1L), eq(List.of()));
+	}
+
+	@Test
+	@DisplayName("문제 셋 생성 테스트 - AI_GENERATED 타입은 AI 생성 이벤트를 발행하고 기본 문제를 생성하지 않는다")
+	void createQuestionSetAiGeneratedTest() {
+		// given
+		QuestionSetDto request = QuestionSetDto.builder()
+			.teamId(1L)
+			.title("AI 제목")
+			.creationType(QuestionSetCreationType.AI_GENERATED)
+			.solveMode(QuestionSetSolveMode.LIVE_TIME)
+			.visibility(QuestionSetVisibility.PUBLIC)
+			.build();
+
+		// when
+		questionSetService.createQuestionSet(request, List.of(), List.of(), "보충 설명", "어려움", List.of(), USER_ID);
+
+		// then
+		verify(questionSetEntityRepository).save(any());
+		verify(maitEventPublisher).publishEvent(any(AiQuestionGenerationRequestedEvent.class));
+		verify(questionService, never()).createDefaultQuestions(any(), any());
+	}
+
+	@Test
+	@DisplayName("문제 셋 생성 테스트 - 생성 권한이 없으면 예외가 발생하고 저장하지 않는다")
+	void createQuestionSetWithoutAuthorityTest() {
+		// given
+		QuestionSetDto request = QuestionSetDto.builder()
+			.teamId(1L)
+			.title("제목")
+			.creationType(QuestionSetCreationType.MANUAL)
+			.solveMode(QuestionSetSolveMode.STUDY)
+			.visibility(QuestionSetVisibility.GROUP)
+			.build();
+		doThrow(new UserRoleException("문제 세트 생성 권한이 없습니다."))
+			.when(teamRoleValidator).checkHasCreateQuestionSetAuthority(1L, USER_ID);
+
+		// when & then
+		assertThatThrownBy(() ->
+			questionSetService.createQuestionSet(request, List.of(), List.of(), null, null, List.of(), USER_ID))
+			.isInstanceOf(UserRoleException.class)
+			.hasMessage("문제 세트 생성 권한이 없습니다.");
+
+		verify(questionSetEntityRepository, never()).save(any());
+	}
 
 	@Test
 	@DisplayName("문제 셋 목록 조회 테스트 - MAKING 모드는 QuestionSetList 반환")
@@ -260,12 +333,10 @@ class QuestionSetServiceTest {
 		final MaitUser user = MaitUser.builder().id(USER_ID).build();
 		final QuestionSetEntity questionSetEntity = mock(QuestionSetEntity.class);
 		when(questionSetEntity.getId()).thenReturn(questionSetId);
-		when(questionSetEntity.getSubject()).thenReturn("Test Subject");
+		when(questionSetEntity.getTitle()).thenReturn("Test Title");
 
-		when(questionSetEntityRepository.findById(questionSetId))
-			.thenReturn(Optional.of(questionSetEntity));
-		when(questionEntityRepository.countByQuestionSetId(questionSetId))
-			.thenReturn(5L); // 예시로 5개의 문제를 가진다고 가정
+		when(questionSetReader.getQuestionSet(questionSetId)).thenReturn(questionSetEntity);
+		when(questionEntityRepository.findAllByQuestionSetId(questionSetId)).thenReturn(List.of());
 
 		// when
 		QuestionSetDto result = questionSetService.getQuestionSet(questionSetId, user);
@@ -273,9 +344,42 @@ class QuestionSetServiceTest {
 		// then
 		assertThat(result).isNotNull();
 		assertThat(result.getId()).isEqualTo(questionSetId);
-		assertThat(result.getSubject()).isEqualTo("Test Subject");
+		assertThat(result.getTitle()).isEqualTo("Test Title");
 
-		verify(questionSetEntityRepository, times(1)).findById(questionSetId);
+		verify(questionSetReader, times(1)).getQuestionSet(questionSetId);
+	}
+
+	@Test
+	@DisplayName("문제 셋 단건 조회 테스트 - 유형별 문제 개수를 전체 유형(없는 유형은 0) 기준으로 반환한다")
+	void getQuestionSetTest_ReturnsQuestionTypeCounts() {
+		// given
+		final Long questionSetId = 1L;
+		final MaitUser user = MaitUser.builder().id(USER_ID).build();
+		final QuestionSetEntity questionSetEntity = mock(QuestionSetEntity.class);
+		when(questionSetEntity.getId()).thenReturn(questionSetId);
+
+		final QuestionEntity multiple1 = mock(QuestionEntity.class);
+		final QuestionEntity multiple2 = mock(QuestionEntity.class);
+		final QuestionEntity shortQuestion = mock(QuestionEntity.class);
+		when(multiple1.getType()).thenReturn(QuestionType.MULTIPLE);
+		when(multiple2.getType()).thenReturn(QuestionType.MULTIPLE);
+		when(shortQuestion.getType()).thenReturn(QuestionType.SHORT);
+
+		when(questionSetReader.getQuestionSet(questionSetId)).thenReturn(questionSetEntity);
+		when(questionEntityRepository.findAllByQuestionSetId(questionSetId))
+			.thenReturn(List.of(multiple1, multiple2, shortQuestion));
+
+		// when
+		QuestionSetDto result = questionSetService.getQuestionSet(questionSetId, user);
+
+		// then
+		assertThat(result.getQuestionCount()).isEqualTo(3L);
+		assertThat(result.getQuestionTypeCounts())
+			.containsExactly(
+				QuestionTypeCount.of(QuestionType.SHORT, 1L),
+				QuestionTypeCount.of(QuestionType.MULTIPLE, 2L),
+				QuestionTypeCount.of(QuestionType.ORDERING, 0L),
+				QuestionTypeCount.of(QuestionType.FILL_BLANK, 0L));
 	}
 
 	@Test
@@ -284,15 +388,15 @@ class QuestionSetServiceTest {
 		// given
 		final Long questionSetId = 1L;
 		final MaitUser user = MaitUser.builder().id(USER_ID).build();
-		when(questionSetEntityRepository.findById(questionSetId))
-			.thenReturn(Optional.empty());
+		when(questionSetReader.getQuestionSet(questionSetId))
+			.thenThrow(new EntityNotFoundException(questionSetId + " : 해당 문제 셋을 찾을 수 없습니다."));
 
 		// when & then
 		assertThatThrownBy(() -> questionSetService.getQuestionSet(questionSetId, user))
-			.isInstanceOf(IllegalArgumentException.class)
-			.hasMessage("Question set not found");
+			.isInstanceOf(EntityNotFoundException.class)
+			.hasMessage(questionSetId + " : 해당 문제 셋을 찾을 수 없습니다.");
 
-		verify(questionSetEntityRepository, times(1)).findById(questionSetId);
+		verify(questionSetReader, times(1)).getQuestionSet(questionSetId);
 	}
 
 	@Test
@@ -301,15 +405,12 @@ class QuestionSetServiceTest {
 		// given
 		final Long questionSetId = 1L;
 		final Long teamId = 100L;
-		final String originalSubject = "원래 주제";
 		final String newTitle = "변경할 제목";
-		final String newSubject = "변경할 주제";
 		final QuestionSetSolveMode newSolveMode = QuestionSetSolveMode.LIVE_TIME;
 		final String difficulty = "난이도 설명";
 		final QuestionSetVisibility newVisibility = QuestionSetVisibility.GROUP;
 
 		QuestionSetEntity questionSetEntity = QuestionSetEntity.builder()
-			.subject(originalSubject)
 			.title("원래 제목")
 			.teamId(teamId)
 			.visibility(QuestionSetVisibility.GROUP)
@@ -322,7 +423,6 @@ class QuestionSetServiceTest {
 		QuestionSetDto result = questionSetService.completeQuestionSet(
 			questionSetId,
 			newTitle,
-			newSubject,
 			newSolveMode,
 			difficulty,
 			newVisibility,
@@ -332,7 +432,6 @@ class QuestionSetServiceTest {
 		verify(questionSetEntityRepository, times(1)).findById(questionSetId);
 
 		assertThat(questionSetEntity.getTitle()).isEqualTo(newTitle);
-		assertThat(questionSetEntity.getSubject()).isEqualTo(newSubject);
 		assertThat(questionSetEntity.getSolveMode()).isEqualTo(QuestionSetSolveMode.LIVE_TIME);
 		assertThat(questionSetEntity.getStatus()).isEqualTo(QuestionSetStatus.BEFORE);
 		assertThat(questionSetEntity.getDifficulty()).isEqualTo(difficulty);
@@ -340,7 +439,6 @@ class QuestionSetServiceTest {
 
 		assertThat(result).isNotNull();
 		assertThat(result.getTitle()).isEqualTo(newTitle);
-		assertThat(result.getSubject()).isEqualTo(newSubject);
 		assertThat(result.getSolveMode()).isEqualTo(QuestionSetSolveMode.LIVE_TIME);
 		assertThat(result.getStatus()).isEqualTo(QuestionSetStatus.BEFORE);
 		assertThat(result.getDifficulty()).isEqualTo(difficulty);
@@ -358,7 +456,6 @@ class QuestionSetServiceTest {
 		final List<Long> categoryIds = List.of(11L, 12L);
 
 		QuestionSetEntity questionSetEntity = QuestionSetEntity.builder()
-			.subject("주제")
 			.title("제목")
 			.teamId(teamId)
 			.visibility(QuestionSetVisibility.GROUP)
@@ -371,7 +468,6 @@ class QuestionSetServiceTest {
 		questionSetService.completeQuestionSet(
 			questionSetId,
 			"새 제목",
-			"새 주제",
 			QuestionSetSolveMode.LIVE_TIME,
 			"난이도",
 			QuestionSetVisibility.GROUP,
@@ -389,7 +485,6 @@ class QuestionSetServiceTest {
 		final Long teamId = 100L;
 
 		QuestionSetEntity questionSetEntity = QuestionSetEntity.builder()
-			.subject("주제")
 			.title("제목")
 			.teamId(teamId)
 			.visibility(QuestionSetVisibility.GROUP)
@@ -402,7 +497,6 @@ class QuestionSetServiceTest {
 		assertThatThrownBy(() -> questionSetService.completeQuestionSet(
 			questionSetId,
 			"제목",
-			"주제",
 			QuestionSetSolveMode.LIVE_TIME,
 			"난이도",
 			QuestionSetVisibility.GROUP,
@@ -425,7 +519,6 @@ class QuestionSetServiceTest {
 		final Long teamId = 100L;
 
 		QuestionSetEntity questionSetEntity = QuestionSetEntity.builder()
-			.subject("주제")
 			.title("제목")
 			.teamId(teamId)
 			.visibility(QuestionSetVisibility.GROUP)
@@ -440,7 +533,6 @@ class QuestionSetServiceTest {
 		questionSetService.completeQuestionSet(
 			questionSetId,
 			"제목",
-			"주제",
 			QuestionSetSolveMode.STUDY,
 			"난이도",
 			QuestionSetVisibility.GROUP,
@@ -464,7 +556,6 @@ class QuestionSetServiceTest {
 		assertThatThrownBy(() -> questionSetService.completeQuestionSet(
 			questionSetId,
 			"제목",
-			"주제",
 			QuestionSetSolveMode.LIVE_TIME,
 			"설명",
 			QuestionSetVisibility.GROUP,
@@ -484,7 +575,6 @@ class QuestionSetServiceTest {
 		final String newTitle = "새로운 제목";
 
 		QuestionSetEntity questionSetEntity = QuestionSetEntity.builder()
-			.subject("주제")
 			.title(originalTitle)
 			.visibility(QuestionSetVisibility.GROUP)
 			.build();

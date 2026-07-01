@@ -573,11 +573,11 @@ class StudyModeServiceTest {
 			.hasMessage("존재하지 않는 답안 초안 입니다.");
 	}
 
-	private QuestionSetEntity mockStudyQuestionSet(final Long id, final String subject,
+	private QuestionSetEntity mockStudyQuestionSet(final Long id, final String title,
 		final QuestionSetStatus status, final LocalDateTime modifiedAt) {
 		QuestionSetEntity questionSet = mock(QuestionSetEntity.class);
 		when(questionSet.getId()).thenReturn(id);
-		when(questionSet.getSubject()).thenReturn(subject);
+		when(questionSet.getTitle()).thenReturn(title);
 		when(questionSet.getStatus()).thenReturn(status);
 		when(questionSet.getModifiedAt()).thenReturn(modifiedAt);
 		return questionSet;

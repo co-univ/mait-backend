@@ -42,4 +42,16 @@ public enum DeliveryMode {
 			case STUDY -> DeliveryMode.STUDY;
 		};
 	}
+
+	public static DeliveryMode resolve(QuestionSetStatus status, QuestionSetSolveMode solveMode) {
+		if (status == QuestionSetStatus.MAKING || solveMode == null) {
+			return MAKING;
+		}
+
+		if (status == QuestionSetStatus.REVIEW) {
+			return REVIEW;
+		}
+
+		return from(solveMode);
+	}
 }

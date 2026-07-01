@@ -6,6 +6,7 @@ import com.coniv.mait.domain.question.entity.QuestionSetEntity;
 import com.coniv.mait.domain.question.enums.QuestionSetStatus;
 import com.coniv.mait.domain.question.enums.UserStudyStatus;
 import com.coniv.mait.domain.solve.entity.SolvingSessionEntity;
+import com.fasterxml.jackson.annotation.JsonProperty;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
@@ -23,8 +24,6 @@ public class StudyQuestionSetDto {
 	private Long id;
 	@Schema(description = "문제 셋 제목")
 	private String title;
-	@Schema(description = "과목")
-	private String subject;
 	@Schema(description = "전역 진행 상태")
 	private QuestionSetStatus status;
 	@Schema(description = "난이도")
@@ -43,11 +42,17 @@ public class StudyQuestionSetDto {
 		return StudyQuestionSetDto.builder()
 			.id(questionSet.getId())
 			.title(questionSet.getTitle())
-			.subject(questionSet.getSubject())
 			.status(questionSet.getStatus())
 			.difficulty(questionSet.getDifficulty())
 			.userStudyStatus(UserStudyStatus.from(solvingSession))
 			.solvingSessionId(solvingSessionId)
 			.updatedAt(questionSet.getModifiedAt()).build();
+	}
+
+	@Deprecated
+	@JsonProperty("subject")
+	@Schema(description = "문제 셋 제목(deprecated, title과 동일)", deprecated = true)
+	public String getSubject() {
+		return title;
 	}
 }

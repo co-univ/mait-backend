@@ -42,6 +42,7 @@ import com.coniv.mait.domain.solve.service.StudyModeService;
 import com.coniv.mait.global.auth.model.MaitUser;
 import com.coniv.mait.global.filter.JwtAuthorizationFilter;
 import com.coniv.mait.global.interceptor.idempotency.IdempotencyInterceptor;
+import com.coniv.mait.web.question.dto.CreateQuestionSetApiRequest;
 import com.coniv.mait.web.question.dto.QuestionSetGroup;
 import com.coniv.mait.web.question.dto.QuestionSetList;
 import com.coniv.mait.web.question.dto.StudyQuestionSetDto;
@@ -100,89 +101,104 @@ class QuestionSetControllerTest {
 		SecurityContextHolder.clearContext();
 	}
 
-	// @Test
-	// @DisplayName("문제 셋 생성 테스트")
-	// void createQuestionSetTest() throws Exception {
-	// 	// given
-	// 	final Long questionSetId = 1L;
-	// 	String subject = "Sample Subject";
-	// 	QuestionSetCreationType creationType = QuestionSetCreationType.MANUAL;
-	// 	CreateQuestionSetApiRequest request = new CreateQuestionSetApiRequest(subject,
-	// 		creationType);
-	//
-	// 	QuestionSetDto questionSetDto = QuestionSetDto.builder()
-	// 		.id(questionSetId)
-	// 		.subject(subject)
-	// 		.build();
-	//
-	// 	when(questionSetService.createQuestionSet(subject, creationType)).thenReturn(questionSetDto);
-	//
-	// 	// when & then
-	// 	mockMvc.perform(post("/api/v1/question-sets")
-	// 			.contentType(MediaType.APPLICATION_JSON)
-	// 			.content(objectMapper.writeValueAsString(request)))
-	// 		.andExpect(status().isCreated())
-	// 		.andExpect(jsonPath("$.data.questionSetId").value(questionSetId))
-	// 		.andExpect(jsonPath("$.data.subject").value(subject));
-	//
-	// 	// then
-	// 	verify(questionSetService).createQuestionSet(request.subject(), request.creationType());
-	// }
+	@Test
+	@DisplayName("문제 셋 생성 API 성공 테스트")
+	void createQuestionSetTest() throws Exception {
+		// given
+		final Long questionSetId = 1L;
+		CreateQuestionSetApiRequest request = new CreateQuestionSetApiRequest(1L, "Sample Title",
+			QuestionSetCreationType.MANUAL, QuestionSetSolveMode.STUDY, QuestionSetVisibility.GROUP,
+			null, null, null, null, null);
 
-	// @ParameterizedTest(name = "{index} - {0}")
-	// @DisplayName("문제 셋 생성 실패 테스트 - 유효하지 않은 요청")
-	// @MethodSource("invalidCreateQuestionSetRequests")
-	// void createQuestionSetInvalidRequestTest(String testName, String subject, QuestionSetCreationType creationType,
-	// 	String expectedMessage) throws Exception {
-	// 	// given
-	// 	CreateQuestionSetApiRequest request = new CreateQuestionSetApiRequest(subject, creationType);
-	//
-	// 	// when & then
-	// 	mockMvc.perform(post("/api/v1/question-sets")
-	// 			.contentType(MediaType.APPLICATION_JSON)
-	// 			.content(objectMapper.writeValueAsString(request)))
-	// 		.andExpectAll(
-	// 			status().isBadRequest(),
-	// 			jsonPath("$.isSuccess").value(false),
-	// 			jsonPath("$.code").value("C-001"),
-	// 			jsonPath("$.message").value("사용자 입력 오류입니다."),
-	// 			jsonPath("$.reasons").isArray(),
-	// 			jsonPath("$.reasons[0]").value(expectedMessage));
-	//
-	// 	verify(questionSetService, never()).createQuestionSet(anyString(), any());
-	// }
+		QuestionSetDto questionSetDto = QuestionSetDto.builder()
+			.id(questionSetId)
+			.title("Sample Title")
+			.build();
+
+		when(questionSetService.createQuestionSet(any(), any(), any(), any(), any(), any(), eq(USER_ID)))
+			.thenReturn(questionSetDto);
+
+		// when & then
+		mockMvc.perform(post("/api/v1/question-sets")
+				.contentType(MediaType.APPLICATION_JSON)
+				.content(objectMapper.writeValueAsString(request)))
+			.andExpect(status().isOk())
+			.andExpect(jsonPath("$.data.questionSetId").value(questionSetId))
+			.andExpect(jsonPath("$.data.title").value("Sample Title"));
+
+		// then
+		verify(questionSetService).createQuestionSet(any(), any(), any(), any(), any(), any(), eq(USER_ID));
+	}
+
+	@ParameterizedTest(name = "{index} - {0}")
+	@DisplayName("문제 셋 생성 실패 테스트 - 유효하지 않은 요청")
+	@MethodSource("invalidCreateQuestionSetRequests")
+	void createQuestionSetInvalidRequestTest(String testName, CreateQuestionSetApiRequest request,
+		String expectedMessage) throws Exception {
+		// when & then
+		mockMvc.perform(post("/api/v1/question-sets")
+				.contentType(MediaType.APPLICATION_JSON)
+				.content(objectMapper.writeValueAsString(request)))
+			.andExpectAll(
+				status().isBadRequest(),
+				jsonPath("$.isSuccess").value(false),
+				jsonPath("$.code").value("C-001"),
+				jsonPath("$.message").value("사용자 입력 오류입니다."),
+				jsonPath("$.reasons").isArray(),
+				jsonPath("$.reasons[0]").value(expectedMessage));
+
+		verify(questionSetService, never()).createQuestionSet(any(), any(), any(), any(), any(), any(), any());
+	}
 
 	static Stream<Arguments> invalidCreateQuestionSetRequests() {
 		return Stream.of(
-			Arguments.of("빈 제목", "", QuestionSetCreationType.MANUAL, "교육 주제를 입력해주세요."),
-			Arguments.of("null 제목", null, QuestionSetCreationType.MANUAL, "교육 주제를 입력해주세요."),
-			Arguments.of("공백만 있는 제목", "   ", QuestionSetCreationType.MANUAL, "교육 주제를 입력해주세요."),
-			Arguments.of("빈 생성 타입", "Valid Subject", null, "문제 셋 생성 유형을 선택해주세요."));
+			Arguments.of("팀 ID 누락", new CreateQuestionSetApiRequest(null, "제목", QuestionSetCreationType.MANUAL,
+				QuestionSetSolveMode.STUDY, QuestionSetVisibility.GROUP, null, null, null, null, null),
+				"팀 정보는 필수 입니다."),
+			Arguments.of("빈 제목", new CreateQuestionSetApiRequest(1L, "", QuestionSetCreationType.MANUAL,
+				QuestionSetSolveMode.STUDY, QuestionSetVisibility.GROUP, null, null, null, null, null),
+				"문제 셋 제목을 입력해주세요."),
+			Arguments.of("공백만 있는 제목", new CreateQuestionSetApiRequest(1L, "   ", QuestionSetCreationType.MANUAL,
+				QuestionSetSolveMode.STUDY, QuestionSetVisibility.GROUP, null, null, null, null, null),
+				"문제 셋 제목을 입력해주세요."),
+			Arguments.of("생성 유형 누락", new CreateQuestionSetApiRequest(1L, "제목", null,
+				QuestionSetSolveMode.STUDY, QuestionSetVisibility.GROUP, null, null, null, null, null),
+				"문제 셋 생성 유형을 선택해주세요."),
+			Arguments.of("풀이 방식 누락", new CreateQuestionSetApiRequest(1L, "제목", QuestionSetCreationType.MANUAL,
+				null, QuestionSetVisibility.GROUP, null, null, null, null, null),
+				"문제 풀이 방식을 선택해주세요."),
+			Arguments.of("공개 범위 누락", new CreateQuestionSetApiRequest(1L, "제목", QuestionSetCreationType.MANUAL,
+				QuestionSetSolveMode.STUDY, null, null, null, null, null, null),
+				"문제 셋 공개 범위를 입력해주세요."));
 	}
 
-	// @Test
-	// @DisplayName("문제 셋 생성 실패 테스트 - 여러 필드 동시 유효성 검증 실패")
-	// void createQuestionSetMultipleValidationFailuresTest() throws Exception {
-	// 	// given
-	// 	CreateQuestionSetApiRequest request = new CreateQuestionSetApiRequest(null, null);
-	//
-	// 	// when & then
-	// 	mockMvc.perform(post("/api/v1/question-sets")
-	// 			.contentType(MediaType.APPLICATION_JSON)
-	// 			.content(objectMapper.writeValueAsString(request)))
-	// 		.andExpectAll(
-	// 			status().isBadRequest(),
-	// 			jsonPath("$.isSuccess").value(false),
-	// 			jsonPath("$.code").value("C-001"),
-	// 			jsonPath("$.message").value("사용자 입력 오류입니다."),
-	// 			jsonPath("$.reasons").isArray(),
-	// 			jsonPath("$.reasons.length()").value(2),
-	// 			jsonPath("$.reasons[*]").value(org.hamcrest.Matchers.hasItems(
-	// 				"교육 주제를 입력해주세요.",
-	// 				"문제 셋 생성 유형을 선택해주세요.")));
-	//
-	// 	verify(questionSetService, never()).createQuestionSet(anyString(), any());
-	// }
+	@Test
+	@DisplayName("문제 셋 생성 실패 테스트 - 여러 필드 동시 유효성 검증 실패")
+	void createQuestionSetMultipleValidationFailuresTest() throws Exception {
+		// given
+		CreateQuestionSetApiRequest request = new CreateQuestionSetApiRequest(null, null, null, null, null,
+			null, null, null, null, null);
+
+		// when & then
+		mockMvc.perform(post("/api/v1/question-sets")
+				.contentType(MediaType.APPLICATION_JSON)
+				.content(objectMapper.writeValueAsString(request)))
+			.andExpectAll(
+				status().isBadRequest(),
+				jsonPath("$.isSuccess").value(false),
+				jsonPath("$.code").value("C-001"),
+				jsonPath("$.message").value("사용자 입력 오류입니다."),
+				jsonPath("$.reasons").isArray(),
+				jsonPath("$.reasons.length()").value(5),
+				jsonPath("$.reasons[*]").value(org.hamcrest.Matchers.hasItems(
+					"팀 정보는 필수 입니다.",
+					"문제 셋 제목을 입력해주세요.",
+					"문제 셋 생성 유형을 선택해주세요.",
+					"문제 풀이 방식을 선택해주세요.",
+					"문제 셋 공개 범위를 입력해주세요.")));
+
+		verify(questionSetService, never()).createQuestionSet(any(), any(), any(), any(), any(), any(), any());
+	}
 
 	@Test
 	@DisplayName("문제 셋 목록 조회 테스트 - MAKING 모드는 List 구조 반환")
@@ -192,11 +208,11 @@ class QuestionSetControllerTest {
 		final DeliveryMode mode = DeliveryMode.MAKING;
 		QuestionSetDto questionSet1 = QuestionSetDto.builder()
 			.id(1L)
-			.subject("Subject 1")
+			.title("Title 1")
 			.build();
 		QuestionSetDto questionSet2 = QuestionSetDto.builder()
 			.id(2L)
-			.subject("Subject 2")
+			.title("Title 2")
 			.build();
 
 		QuestionSetList questionSetList = QuestionSetList.of(List.of(questionSet1, questionSet2));
@@ -206,14 +222,14 @@ class QuestionSetControllerTest {
 		mockMvc.perform(get("/api/v1/question-sets")
 				.param("teamId", String.valueOf(teamId))
 				.param("mode", mode.name()))
-			.andExpectAll(
-				status().isOk(),
-				jsonPath("$.data.mode").value("MAKING"),
-				jsonPath("$.data.content.questionSets.length()").value(2),
-				jsonPath("$.data.content.questionSets[0].id").value(1L),
-				jsonPath("$.data.content.questionSets[0].subject").value("Subject 1"),
-				jsonPath("$.data.content.questionSets[1].id").value(2L),
-				jsonPath("$.data.content.questionSets[1].subject").value("Subject 2"));
+				.andExpectAll(
+					status().isOk(),
+					jsonPath("$.data.mode").value("MAKING"),
+					jsonPath("$.data.content.questionSets.length()").value(2),
+					jsonPath("$.data.content.questionSets[0].id").value(1L),
+					jsonPath("$.data.content.questionSets[0].title").value("Title 1"),
+					jsonPath("$.data.content.questionSets[1].id").value(2L),
+					jsonPath("$.data.content.questionSets[1].title").value("Title 2"));
 
 		verify(questionSetService).getQuestionSets(eq(teamId), eq(mode), any(MaitUser.class));
 	}
@@ -226,12 +242,12 @@ class QuestionSetControllerTest {
 		final DeliveryMode mode = DeliveryMode.LIVE_TIME;
 		QuestionSetDto beforeSet = QuestionSetDto.builder()
 			.id(1L)
-			.subject("Subject 1")
+			.title("Title 1")
 			.status(QuestionSetStatus.BEFORE)
 			.build();
 		QuestionSetDto ongoingSet = QuestionSetDto.builder()
 			.id(2L)
-			.subject("Subject 2")
+			.title("Title 2")
 			.status(QuestionSetStatus.ONGOING)
 			.build();
 
@@ -243,17 +259,17 @@ class QuestionSetControllerTest {
 		mockMvc.perform(get("/api/v1/question-sets")
 				.param("teamId", String.valueOf(teamId))
 				.param("mode", mode.name()))
-			.andExpectAll(
-				status().isOk(),
-				jsonPath("$.data.mode").value("LIVE_TIME"),
-				jsonPath("$.data.content.questionSets.BEFORE").isArray(),
-				jsonPath("$.data.content.questionSets.BEFORE.length()").value(1),
-				jsonPath("$.data.content.questionSets.BEFORE[0].id").value(1L),
-				jsonPath("$.data.content.questionSets.BEFORE[0].subject").value("Subject 1"),
-				jsonPath("$.data.content.questionSets.ONGOING").isArray(),
-				jsonPath("$.data.content.questionSets.ONGOING.length()").value(1),
-				jsonPath("$.data.content.questionSets.ONGOING[0].id").value(2L),
-				jsonPath("$.data.content.questionSets.ONGOING[0].subject").value("Subject 2"));
+				.andExpectAll(
+					status().isOk(),
+					jsonPath("$.data.mode").value("LIVE_TIME"),
+					jsonPath("$.data.content.questionSets.BEFORE").isArray(),
+					jsonPath("$.data.content.questionSets.BEFORE.length()").value(1),
+					jsonPath("$.data.content.questionSets.BEFORE[0].id").value(1L),
+					jsonPath("$.data.content.questionSets.BEFORE[0].title").value("Title 1"),
+					jsonPath("$.data.content.questionSets.ONGOING").isArray(),
+					jsonPath("$.data.content.questionSets.ONGOING.length()").value(1),
+					jsonPath("$.data.content.questionSets.ONGOING[0].id").value(2L),
+					jsonPath("$.data.content.questionSets.ONGOING[0].title").value("Title 2"));
 
 		verify(questionSetService).getQuestionSets(eq(teamId), eq(mode), any(MaitUser.class));
 	}
@@ -265,12 +281,12 @@ class QuestionSetControllerTest {
 		Long teamId = 1L;
 		QuestionSetDto beforeSet = QuestionSetDto.builder()
 			.id(1L)
-			.subject("시작 전 학습")
+			.title("시작 전 학습")
 			.status(QuestionSetStatus.BEFORE)
 			.build();
 		QuestionSetDto afterSet = QuestionSetDto.builder()
 			.id(2L)
-			.subject("종료된 학습")
+			.title("종료된 학습")
 			.status(QuestionSetStatus.AFTER)
 			.build();
 
@@ -285,10 +301,10 @@ class QuestionSetControllerTest {
 				status().isOk(),
 				jsonPath("$.data.questionSets.BEFORE").isArray(),
 				jsonPath("$.data.questionSets.BEFORE.length()").value(1),
-				jsonPath("$.data.questionSets.BEFORE[0].subject").value("시작 전 학습"),
+				jsonPath("$.data.questionSets.BEFORE[0].title").value("시작 전 학습"),
 				jsonPath("$.data.questionSets.AFTER").isArray(),
 				jsonPath("$.data.questionSets.AFTER.length()").value(1),
-				jsonPath("$.data.questionSets.AFTER[0].subject").value("종료된 학습"));
+				jsonPath("$.data.questionSets.AFTER[0].title").value("종료된 학습"));
 
 		verify(questionSetService).getStudyManagementQuestionSets(eq(teamId), any(MaitUser.class));
 	}
@@ -300,18 +316,18 @@ class QuestionSetControllerTest {
 		Long teamId = 1L;
 		StudyQuestionSetDto beforeSet = StudyQuestionSetDto.builder()
 			.id(1L)
-			.subject("아직 안 푼 문제")
+			.title("아직 안 푼 문제")
 			.userStudyStatus(UserStudyStatus.BEFORE)
 			.build();
 		StudyQuestionSetDto ongoingSet = StudyQuestionSetDto.builder()
 			.id(2L)
-			.subject("풀고 있는 문제")
+			.title("풀고 있는 문제")
 			.userStudyStatus(UserStudyStatus.ONGOING)
 			.solvingSessionId(100L)
 			.build();
 		StudyQuestionSetDto afterSet = StudyQuestionSetDto.builder()
 			.id(3L)
-			.subject("채점 완료 문제")
+			.title("채점 완료 문제")
 			.userStudyStatus(UserStudyStatus.AFTER)
 			.solvingSessionId(101L)
 			.build();
@@ -327,17 +343,17 @@ class QuestionSetControllerTest {
 				status().isOk(),
 				jsonPath("$.data.questionSets.BEFORE").isArray(),
 				jsonPath("$.data.questionSets.BEFORE.length()").value(1),
-				jsonPath("$.data.questionSets.BEFORE[0].subject").value("아직 안 푼 문제"),
+				jsonPath("$.data.questionSets.BEFORE[0].title").value("아직 안 푼 문제"),
 				jsonPath("$.data.questionSets.BEFORE[0].userStudyStatus").value("BEFORE"),
 				jsonPath("$.data.questionSets.BEFORE[0].solvingSessionId").doesNotExist(),
 				jsonPath("$.data.questionSets.ONGOING").isArray(),
 				jsonPath("$.data.questionSets.ONGOING.length()").value(1),
-				jsonPath("$.data.questionSets.ONGOING[0].subject").value("풀고 있는 문제"),
+				jsonPath("$.data.questionSets.ONGOING[0].title").value("풀고 있는 문제"),
 				jsonPath("$.data.questionSets.ONGOING[0].userStudyStatus").value("ONGOING"),
 				jsonPath("$.data.questionSets.ONGOING[0].solvingSessionId").value(100L),
 				jsonPath("$.data.questionSets.AFTER").isArray(),
 				jsonPath("$.data.questionSets.AFTER.length()").value(1),
-				jsonPath("$.data.questionSets.AFTER[0].subject").value("채점 완료 문제"),
+				jsonPath("$.data.questionSets.AFTER[0].title").value("채점 완료 문제"),
 				jsonPath("$.data.questionSets.AFTER[0].userStudyStatus").value("AFTER"),
 				jsonPath("$.data.questionSets.AFTER[0].solvingSessionId").value(101L));
 
@@ -380,10 +396,10 @@ class QuestionSetControllerTest {
 	void getQuestionSetTest() throws Exception {
 		// given
 		final Long questionSetId = 1L;
-		final String subject = "Test Subject";
+		final String title = "Test Title";
 		QuestionSetDto questionSetDto = QuestionSetDto.builder()
 			.id(questionSetId)
-			.subject(subject)
+			.title(title)
 			.build();
 
 		when(questionSetService.getQuestionSet(eq(questionSetId), any(MaitUser.class))).thenReturn(questionSetDto);
@@ -393,7 +409,7 @@ class QuestionSetControllerTest {
 			.andExpectAll(
 				status().isOk(),
 				jsonPath("$.data.id").value(questionSetId),
-				jsonPath("$.data.subject").value(subject));
+				jsonPath("$.data.title").value(title));
 
 		verify(questionSetService).getQuestionSet(eq(questionSetId), any(MaitUser.class));
 	}
@@ -403,18 +419,16 @@ class QuestionSetControllerTest {
 	void updateQuestionSets() throws Exception {
 		// given
 		final Long questionSetId = 1L;
-		final String subject = "Updated Subject";
 		final String title = "Updated Title";
 		final QuestionSetSolveMode solveMode = QuestionSetSolveMode.LIVE_TIME;
 		final String difficulty = "Intermediate";
 		final QuestionSetVisibility visibility = QuestionSetVisibility.PRIVATE;
 		final List<Long> categoryIds = List.of(11L, 12L);
 
-		var request = new UpdateQuestionSetApiRequest(title, subject, solveMode, difficulty, visibility, categoryIds);
+		var request = new UpdateQuestionSetApiRequest(title, solveMode, difficulty, visibility, categoryIds);
 
 		QuestionSetDto questionSetDto = QuestionSetDto.builder()
 			.id(questionSetId)
-			.subject(subject)
 			.title(title)
 			.solveMode(solveMode)
 			.status(QuestionSetStatus.BEFORE)
@@ -422,7 +436,7 @@ class QuestionSetControllerTest {
 			.visibility(visibility)
 			.build();
 
-		when(questionSetService.completeQuestionSet(questionSetId, title, subject, solveMode, difficulty, visibility,
+		when(questionSetService.completeQuestionSet(questionSetId, title, solveMode, difficulty, visibility,
 			categoryIds))
 			.thenReturn(questionSetDto);
 
@@ -433,13 +447,12 @@ class QuestionSetControllerTest {
 			.andExpectAll(
 				status().isOk(),
 				jsonPath("$.data.id").value(questionSetId),
-				jsonPath("$.data.subject").value(subject),
 				jsonPath("$.data.title").value(title),
 				jsonPath("$.data.deliveryMode").value(DeliveryMode.LIVE_TIME.name()),
 				jsonPath("$.data.difficulty").value(difficulty),
 				jsonPath("$.data.visibility").value(visibility.name()));
 
-		verify(questionSetService).completeQuestionSet(questionSetId, title, subject, solveMode, difficulty,
+		verify(questionSetService).completeQuestionSet(questionSetId, title, solveMode, difficulty,
 			visibility, categoryIds);
 	}
 
@@ -495,50 +508,30 @@ class QuestionSetControllerTest {
 				jsonPath("$.reasons[*]").value(org.hamcrest.Matchers.hasItems(
 					expectedErrorMessages.toArray(new String[0]))));
 
-		verify(questionSetService, never()).completeQuestionSet(anyLong(), anyString(), anyString(), any(), anyString(),
+		verify(questionSetService, never()).completeQuestionSet(anyLong(), anyString(), any(), anyString(),
 			any(), any());
 	}
 
 	static Stream<Arguments> invalidUpdateQuestionSetRequests() {
 		return Stream.of(
 			Arguments.of(
-				"제목과 주제가 빈 문자열",
-				new UpdateQuestionSetApiRequest("", "", QuestionSetSolveMode.LIVE_TIME, "설명",
+				"제목이 빈 문자열",
+				new UpdateQuestionSetApiRequest("", QuestionSetSolveMode.LIVE_TIME, "설명",
 					QuestionSetVisibility.GROUP, null),
-				List.of("제목을 입력해주세요", "주제를 입력해주세요")),
-			Arguments.of(
-				"제목만 빈 문자열",
-				new UpdateQuestionSetApiRequest("", "유효한 주제", QuestionSetSolveMode.LIVE_TIME, "설명",
-					QuestionSetVisibility.PRIVATE, null),
 				List.of("제목을 입력해주세요")),
 			Arguments.of(
-				"주제만 빈 문자열",
-				new UpdateQuestionSetApiRequest("유효한 제목", "", QuestionSetSolveMode.LIVE_TIME, "설명",
+				"제목이 null",
+				new UpdateQuestionSetApiRequest(null, QuestionSetSolveMode.LIVE_TIME, "설명",
 					QuestionSetVisibility.GROUP, null),
-				List.of("주제를 입력해주세요")),
-			Arguments.of(
-				"제목과 주제가 null",
-				new UpdateQuestionSetApiRequest(null, null, QuestionSetSolveMode.LIVE_TIME, "설명",
-					QuestionSetVisibility.GROUP, null),
-				List.of("제목을 입력해주세요", "주제를 입력해주세요")),
+				List.of("제목을 입력해주세요")),
 			Arguments.of(
 				"제목이 공백만 포함",
-				new UpdateQuestionSetApiRequest("   ", "유효한 주제", QuestionSetSolveMode.LIVE_TIME, "설명",
+				new UpdateQuestionSetApiRequest("   ", QuestionSetSolveMode.LIVE_TIME, "설명",
 					QuestionSetVisibility.PRIVATE, null),
 				List.of("제목을 입력해주세요")),
 			Arguments.of(
-				"주제가 공백만 포함",
-				new UpdateQuestionSetApiRequest("유효한 제목", "   ", QuestionSetSolveMode.LIVE_TIME, "설명",
-					QuestionSetVisibility.GROUP, null),
-				List.of("주제를 입력해주세요")),
-			Arguments.of(
-				"허용되지 않은 문제 풀이 방식",
-				new UpdateQuestionSetApiRequest("유효한 제목", "유효한 주제", null, "설명",
-					QuestionSetVisibility.GROUP, null),
-				List.of("문제 풀이 방식을 입력해주세요", "문제 풀이 방식은 STUDY 또는 LIVE_TIME만 가능합니다")),
-			Arguments.of(
 				"문제 풀이 방식이 null",
-				new UpdateQuestionSetApiRequest("유효한 제목", "유효한 주제", null, "설명",
+				new UpdateQuestionSetApiRequest("유효한 제목", null, "설명",
 					QuestionSetVisibility.GROUP, null),
 				List.of("문제 풀이 방식을 입력해주세요", "문제 풀이 방식은 STUDY 또는 LIVE_TIME만 가능합니다")));
 	}

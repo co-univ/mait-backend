@@ -18,6 +18,7 @@ import com.coniv.mait.domain.question.entity.MultipleQuestionEntity;
 import com.coniv.mait.domain.question.entity.QuestionSetCategoryEntity;
 import com.coniv.mait.domain.question.entity.QuestionSetCategoryLinkEntity;
 import com.coniv.mait.domain.question.entity.QuestionSetEntity;
+import com.coniv.mait.domain.question.entity.ShortQuestionEntity;
 import com.coniv.mait.domain.question.enums.DeliveryMode;
 import com.coniv.mait.domain.question.enums.QuestionSetCreationType;
 import com.coniv.mait.domain.question.enums.QuestionSetSolveMode;
@@ -39,6 +40,7 @@ import com.coniv.mait.domain.user.entity.UserEntity;
 import com.coniv.mait.domain.user.repository.UserEntityRepository;
 import com.coniv.mait.login.WithCustomUser;
 import com.coniv.mait.web.integration.BaseIntegrationTest;
+import com.coniv.mait.web.question.dto.CreateQuestionSetApiRequest;
 import com.coniv.mait.web.question.dto.UpdateQuestionSetApiRequest;
 import com.coniv.mait.web.question.dto.UpdateQuestionSetFieldApiRequest;
 
@@ -83,28 +85,34 @@ public class QuestionSetApiIntegrationTest extends BaseIntegrationTest {
 		multipleChoiceEntityRepository.deleteAll();
 	}
 
-	// @Test
-	// @DisplayName("문제 셋 생성 API 성공 테스트")
-	// void createQuestionSetApiSuccess() throws Exception {
-	// 	// given
-	// 	String subject = "Sample Subject";
-	// 	QuestionSetCreationType creationType = QuestionSetCreationType.MANUAL;
-	//
-	// 	CreateQuestionSetApiRequest request = new CreateQuestionSetApiRequest(subject, creationType);
-	//
-	// 	// when
-	// 	mockMvc.perform(post("/api/v1/question-sets").contentType(MediaType.APPLICATION_JSON)
-	// 			.content(objectMapper.writeValueAsString(request)))
-	// 		.andExpect(status().isCreated())
-	// 		.andExpect(jsonPath("$.data.subject").value(subject));
-	//
-	// 	// then
-	// 	QuestionSetEntity questionSetEntity = questionSetEntityRepository.findAll().get(0);
-	//
-	// 	assertThat(questionSetEntityRepository.count()).isEqualTo(1);
-	// 	assertThat(questionSetEntity.getSubject()).isEqualTo(subject);
-	// 	assertThat(questionSetEntity.getCreationType()).isEqualTo(creationType);
-	// }
+	@Test
+	@DisplayName("문제 셋 생성 API 성공 테스트 - 제목·풀이방식·공개범위가 DB에 반영된다")
+	void createQuestionSetApiSuccess() throws Exception {
+		// given
+		UserEntity currentUser = userEntityRepository.findByEmail("user@example.com").orElseThrow();
+		TeamEntity team = teamEntityRepository.save(TeamEntity.ofGroup("코니브", 1L));
+		teamUserEntityRepository.save(TeamUserEntity.createTeamUser(currentUser, team, TeamUserRole.MAKER));
+
+		String title = "샘플 제목";
+		CreateQuestionSetApiRequest request = new CreateQuestionSetApiRequest(team.getId(), title,
+			QuestionSetCreationType.MANUAL, QuestionSetSolveMode.STUDY, QuestionSetVisibility.GROUP,
+			List.of(), List.of(), null, null, List.of());
+
+		// when
+		mockMvc.perform(post("/api/v1/question-sets").contentType(MediaType.APPLICATION_JSON)
+				.content(objectMapper.writeValueAsString(request)))
+			.andExpect(status().isOk())
+			.andExpect(jsonPath("$.data.questionSetId").isNumber());
+
+		// then
+		QuestionSetEntity questionSetEntity = questionSetEntityRepository.findAll().get(0);
+
+		assertThat(questionSetEntityRepository.count()).isEqualTo(1);
+		assertThat(questionSetEntity.getTitle()).isEqualTo(title);
+		assertThat(questionSetEntity.getCreationType()).isEqualTo(QuestionSetCreationType.MANUAL);
+		assertThat(questionSetEntity.getSolveMode()).isEqualTo(QuestionSetSolveMode.STUDY);
+		assertThat(questionSetEntity.getVisibility()).isEqualTo(QuestionSetVisibility.GROUP);
+	}
 
 	@Test
 	@DisplayName("문제 셋 목록 조회 API 성공 테스트 - MAKING 모드 (List 구조)")
@@ -113,16 +121,16 @@ public class QuestionSetApiIntegrationTest extends BaseIntegrationTest {
 		UserEntity currentUser = userEntityRepository.findByEmail("user@example.com").orElseThrow();
 		TeamEntity team = teamEntityRepository.save(TeamEntity.ofGroup("코니브", 1L));
 		teamUserEntityRepository.save(TeamUserEntity.createTeamUser(currentUser, team, TeamUserRole.MAKER));
-		String subject1 = "Subject 1";
-		String subject2 = "Subject 2";
+		String title1 = "Title 1";
+		String title2 = "Title 2";
 		final DeliveryMode deliveryMode = DeliveryMode.MAKING;
 
 		QuestionSetEntity questionSet1 = QuestionSetEntity.builder()
-			.subject(subject1)
+			.title(title1)
 			.teamId(team.getId())
 			.build();
 		QuestionSetEntity questionSet2 = QuestionSetEntity.builder()
-			.subject(subject2)
+			.title(title2)
 			.teamId(team.getId())
 			.build();
 
@@ -139,11 +147,41 @@ public class QuestionSetApiIntegrationTest extends BaseIntegrationTest {
 				jsonPath("$.data.mode").value("MAKING"),
 				jsonPath("$.data.content.questionSets").isArray(),
 				jsonPath("$.data.content.questionSets.length()").value(2),
-				jsonPath("$.data.content.questionSets[0].subject").value(subject2),
-				jsonPath("$.data.content.questionSets[1].subject").value(subject1));
+				jsonPath("$.data.content.questionSets[0].title").value(title2),
+				jsonPath("$.data.content.questionSets[1].title").value(title1));
 
 		// then
 		assertThat(questionSetEntityRepository.count()).isEqualTo(2);
+	}
+
+	@Test
+	@DisplayName("문제 셋 목록 조회 API 성공 테스트 - 풀이방식이 지정된 제작 중 문제 셋도 MAKING 모드로 조회된다")
+	void getQuestionSetsApiSuccess_MakingMode_WithSolveModeAssigned() throws Exception {
+		// given
+		UserEntity currentUser = userEntityRepository.findByEmail("user@example.com").orElseThrow();
+		TeamEntity team = teamEntityRepository.save(TeamEntity.ofGroup("코니브", 1L));
+		teamUserEntityRepository.save(TeamUserEntity.createTeamUser(currentUser, team, TeamUserRole.MAKER));
+
+		// 생성 시점에 solveMode 가 채워졌지만 아직 최종저장하지 않은(MAKING) 문제 셋
+		QuestionSetEntity makingLiveSet = QuestionSetEntity.builder()
+			.title("제작 중 실시간 문제")
+			.teamId(team.getId())
+			.status(QuestionSetStatus.MAKING)
+			.solveMode(QuestionSetSolveMode.LIVE_TIME)
+			.build();
+		questionSetEntityRepository.save(makingLiveSet);
+
+		// when & then
+		mockMvc.perform(get("/api/v1/question-sets")
+				.param("teamId", String.valueOf(team.getId()))
+				.param("mode", DeliveryMode.MAKING.name())
+				.accept(MediaType.APPLICATION_JSON))
+			.andExpectAll(
+				status().isOk(),
+				jsonPath("$.data.mode").value("MAKING"),
+				jsonPath("$.data.content.questionSets").isArray(),
+				jsonPath("$.data.content.questionSets.length()").value(1),
+				jsonPath("$.data.content.questionSets[0].title").value("제작 중 실시간 문제"));
 	}
 
 	@Test
@@ -157,7 +195,7 @@ public class QuestionSetApiIntegrationTest extends BaseIntegrationTest {
 
 		// BEFORE 상태 문제 셋
 		QuestionSetEntity beforeSet = QuestionSetEntity.builder()
-			.subject("시작 전 문제")
+			.title("시작 전 문제")
 			.teamId(team.getId())
 			.status(QuestionSetStatus.BEFORE)
 			.solveMode(QuestionSetSolveMode.LIVE_TIME)
@@ -165,7 +203,7 @@ public class QuestionSetApiIntegrationTest extends BaseIntegrationTest {
 
 		// ONGOING 상태 문제 셋
 		QuestionSetEntity ongoingSet = QuestionSetEntity.builder()
-			.subject("진행 중 문제")
+			.title("진행 중 문제")
 			.teamId(team.getId())
 			.status(QuestionSetStatus.ONGOING)
 			.solveMode(QuestionSetSolveMode.LIVE_TIME)
@@ -173,7 +211,7 @@ public class QuestionSetApiIntegrationTest extends BaseIntegrationTest {
 
 		// AFTER 상태 문제 셋
 		QuestionSetEntity afterSet = QuestionSetEntity.builder()
-			.subject("종료된 문제")
+			.title("종료된 문제")
 			.teamId(team.getId())
 			.status(QuestionSetStatus.AFTER)
 			.solveMode(QuestionSetSolveMode.LIVE_TIME)
@@ -194,13 +232,13 @@ public class QuestionSetApiIntegrationTest extends BaseIntegrationTest {
 				jsonPath("$.data.content.questionSets").isMap(),
 				jsonPath("$.data.content.questionSets.BEFORE").isArray(),
 				jsonPath("$.data.content.questionSets.BEFORE.length()").value(1),
-				jsonPath("$.data.content.questionSets.BEFORE[0].subject").value("시작 전 문제"),
+				jsonPath("$.data.content.questionSets.BEFORE[0].title").value("시작 전 문제"),
 				jsonPath("$.data.content.questionSets.ONGOING").isArray(),
 				jsonPath("$.data.content.questionSets.ONGOING.length()").value(1),
-				jsonPath("$.data.content.questionSets.ONGOING[0].subject").value("진행 중 문제"),
+				jsonPath("$.data.content.questionSets.ONGOING[0].title").value("진행 중 문제"),
 				jsonPath("$.data.content.questionSets.AFTER").isArray(),
 				jsonPath("$.data.content.questionSets.AFTER.length()").value(1),
-				jsonPath("$.data.content.questionSets.AFTER[0].subject").value("종료된 문제"));
+				jsonPath("$.data.content.questionSets.AFTER[0].title").value("종료된 문제"));
 
 		// then
 		assertThat(questionSetEntityRepository.count()).isEqualTo(3);
@@ -216,7 +254,7 @@ public class QuestionSetApiIntegrationTest extends BaseIntegrationTest {
 
 		questionSetEntityRepository.save(
 			QuestionSetEntity.builder()
-				.subject("아직 안 푼 문제")
+				.title("아직 안 푼 문제")
 				.teamId(team.getId())
 				.solveMode(QuestionSetSolveMode.STUDY)
 				.status(QuestionSetStatus.BEFORE)
@@ -224,7 +262,7 @@ public class QuestionSetApiIntegrationTest extends BaseIntegrationTest {
 
 		QuestionSetEntity progressingSet = questionSetEntityRepository.save(
 			QuestionSetEntity.builder()
-				.subject("풀고 있는 문제")
+				.title("풀고 있는 문제")
 				.teamId(team.getId())
 				.solveMode(QuestionSetSolveMode.STUDY)
 				.status(QuestionSetStatus.BEFORE)
@@ -232,7 +270,7 @@ public class QuestionSetApiIntegrationTest extends BaseIntegrationTest {
 
 		QuestionSetEntity completedSet = questionSetEntityRepository.save(
 			QuestionSetEntity.builder()
-				.subject("채점 완료 문제")
+				.title("채점 완료 문제")
 				.teamId(team.getId())
 				.solveMode(QuestionSetSolveMode.STUDY)
 				.status(QuestionSetStatus.BEFORE)
@@ -253,17 +291,17 @@ public class QuestionSetApiIntegrationTest extends BaseIntegrationTest {
 				jsonPath("$.data.questionSets.BEFORE").isArray(),
 				jsonPath("$.data.questionSets.BEFORE.length()").value(1),
 				jsonPath("$.data.questionSets.BEFORE[0].userStudyStatus").value("BEFORE"),
-				jsonPath("$.data.questionSets.BEFORE[0].subject").value("아직 안 푼 문제"),
+				jsonPath("$.data.questionSets.BEFORE[0].title").value("아직 안 푼 문제"),
 				jsonPath("$.data.questionSets.ONGOING").isArray(),
 				jsonPath("$.data.questionSets.ONGOING.length()").value(1),
 				jsonPath("$.data.questionSets.ONGOING[0].userStudyStatus").value("ONGOING"),
 				jsonPath("$.data.questionSets.ONGOING[0].solvingSessionId").exists(),
-				jsonPath("$.data.questionSets.ONGOING[0].subject").value("풀고 있는 문제"),
+				jsonPath("$.data.questionSets.ONGOING[0].title").value("풀고 있는 문제"),
 				jsonPath("$.data.questionSets.AFTER").isArray(),
 				jsonPath("$.data.questionSets.AFTER.length()").value(1),
 				jsonPath("$.data.questionSets.AFTER[0].userStudyStatus").value("AFTER"),
 				jsonPath("$.data.questionSets.AFTER[0].solvingSessionId").exists(),
-				jsonPath("$.data.questionSets.AFTER[0].subject").value("채점 완료 문제"));
+				jsonPath("$.data.questionSets.AFTER[0].title").value("채점 완료 문제"));
 	}
 
 	@Test
@@ -276,7 +314,7 @@ public class QuestionSetApiIntegrationTest extends BaseIntegrationTest {
 
 		questionSetEntityRepository.save(
 			QuestionSetEntity.builder()
-				.subject("시작 전 학습")
+				.title("시작 전 학습")
 				.teamId(team.getId())
 				.solveMode(QuestionSetSolveMode.STUDY)
 				.status(QuestionSetStatus.BEFORE)
@@ -284,7 +322,7 @@ public class QuestionSetApiIntegrationTest extends BaseIntegrationTest {
 
 		questionSetEntityRepository.save(
 			QuestionSetEntity.builder()
-				.subject("진행 중 학습")
+				.title("진행 중 학습")
 				.teamId(team.getId())
 				.solveMode(QuestionSetSolveMode.STUDY)
 				.status(QuestionSetStatus.ONGOING)
@@ -298,19 +336,19 @@ public class QuestionSetApiIntegrationTest extends BaseIntegrationTest {
 				status().isOk(),
 				jsonPath("$.data.questionSets.BEFORE").isArray(),
 				jsonPath("$.data.questionSets.BEFORE.length()").value(1),
-				jsonPath("$.data.questionSets.BEFORE[0].subject").value("시작 전 학습"),
+				jsonPath("$.data.questionSets.BEFORE[0].title").value("시작 전 학습"),
 				jsonPath("$.data.questionSets.ONGOING").isArray(),
 				jsonPath("$.data.questionSets.ONGOING.length()").value(1),
-				jsonPath("$.data.questionSets.ONGOING[0].subject").value("진행 중 학습"));
+				jsonPath("$.data.questionSets.ONGOING[0].title").value("진행 중 학습"));
 	}
 
 	@Test
 	@DisplayName("문제 셋 단건 조회 API 성공 테스트")
 	void getQuestionSetApiSuccess() throws Exception {
 		// given
-		String subject = "Sample Subject";
+		String title = "Sample Title";
 		QuestionSetEntity questionSet = questionSetEntityRepository.save(
-			QuestionSetEntity.builder().subject(subject).build());
+			QuestionSetEntity.builder().title(title).build());
 
 		// when & then
 		mockMvc.perform(get("/api/v1/question-sets/{questionSetId}", questionSet.getId())
@@ -318,7 +356,63 @@ public class QuestionSetApiIntegrationTest extends BaseIntegrationTest {
 			.andExpectAll(
 				status().isOk(),
 				jsonPath("$.data.id").value(questionSet.getId()),
-				jsonPath("$.data.subject").value(subject));
+				jsonPath("$.data.title").value(title));
+	}
+
+	@Test
+	@DisplayName("문제 셋 단건 조회 API 성공 테스트 - 유형별 문제 개수와 instruction을 응답에 포함한다")
+	void getQuestionSetApiSuccess_IncludesQuestionTypeCountsAndInstruction() throws Exception {
+		// given
+		QuestionSetEntity questionSet = questionSetEntityRepository.save(
+			QuestionSetEntity.builder()
+				.title("유형별 개수 문제")
+				.instruction("이 문제 셋에 대한 보충 설명")
+				.build());
+
+		questionEntityRepository.save(MultipleQuestionEntity.builder()
+			.questionSet(questionSet).content("객관식 1").number(1L).lexoRank("a").build());
+		questionEntityRepository.save(MultipleQuestionEntity.builder()
+			.questionSet(questionSet).content("객관식 2").number(2L).lexoRank("b").build());
+		questionEntityRepository.save(ShortQuestionEntity.builder()
+			.questionSet(questionSet).content("주관식 1").number(3L).lexoRank("c").answerCount(1).build());
+
+		// when & then
+		mockMvc.perform(get("/api/v1/question-sets/{questionSetId}", questionSet.getId())
+				.accept(MediaType.APPLICATION_JSON))
+			.andExpectAll(
+				status().isOk(),
+				jsonPath("$.data.questionCount").value(3),
+				jsonPath("$.data.instruction").value("이 문제 셋에 대한 보충 설명"),
+				jsonPath("$.data.questionTypeCounts.length()").value(4),
+				jsonPath("$.data.questionTypeCounts[0].type").value("SHORT"),
+				jsonPath("$.data.questionTypeCounts[0].count").value(1),
+				jsonPath("$.data.questionTypeCounts[1].type").value("MULTIPLE"),
+				jsonPath("$.data.questionTypeCounts[1].count").value(2),
+				jsonPath("$.data.questionTypeCounts[2].type").value("ORDERING"),
+				jsonPath("$.data.questionTypeCounts[2].count").value(0),
+				jsonPath("$.data.questionTypeCounts[3].type").value("FILL_BLANK"),
+				jsonPath("$.data.questionTypeCounts[3].count").value(0));
+	}
+
+	@Test
+	@DisplayName("문제 셋 단건 조회 API 성공 테스트 - 풀이방식이 지정된 제작 중 문제 셋은 deliveryMode가 MAKING이다")
+	void getQuestionSetApiSuccess_MakingWithSolveMode_ReturnsMakingDeliveryMode() throws Exception {
+		// given
+		QuestionSetEntity questionSet = questionSetEntityRepository.save(
+			QuestionSetEntity.builder()
+				.title("제작 중 실시간 문제")
+				.status(QuestionSetStatus.MAKING)
+				.solveMode(QuestionSetSolveMode.LIVE_TIME)
+				.build());
+
+		// when & then
+		mockMvc.perform(get("/api/v1/question-sets/{questionSetId}", questionSet.getId())
+				.accept(MediaType.APPLICATION_JSON))
+			.andExpectAll(
+				status().isOk(),
+				jsonPath("$.data.id").value(questionSet.getId()),
+				jsonPath("$.data.deliveryMode").value(DeliveryMode.MAKING.name()),
+				jsonPath("$.data.solveMode").value(QuestionSetSolveMode.LIVE_TIME.name()));
 	}
 
 	@Test
@@ -329,7 +423,6 @@ public class QuestionSetApiIntegrationTest extends BaseIntegrationTest {
 
 		UpdateQuestionSetApiRequest request = new UpdateQuestionSetApiRequest(
 			"Updated Title",
-			"Updated Subject",
 			QuestionSetSolveMode.LIVE_TIME,
 			"중급",
 			QuestionSetVisibility.GROUP,
@@ -337,7 +430,7 @@ public class QuestionSetApiIntegrationTest extends BaseIntegrationTest {
 
 		QuestionSetEntity questionSet = questionSetEntityRepository.save(
 			QuestionSetEntity.builder()
-				.subject("Initial Subject")
+				.title("Initial Title")
 				.teamId(team.getId())
 				.creationType(QuestionSetCreationType.MANUAL)
 				.build());
@@ -350,7 +443,6 @@ public class QuestionSetApiIntegrationTest extends BaseIntegrationTest {
 				status().isOk(),
 				jsonPath("$.data.id").value(questionSet.getId()),
 				jsonPath("$.data.title").value("Updated Title"),
-				jsonPath("$.data.subject").value("Updated Subject"),
 				jsonPath("$.data.deliveryMode").value(DeliveryMode.LIVE_TIME.name()));
 	}
 
@@ -371,7 +463,7 @@ public class QuestionSetApiIntegrationTest extends BaseIntegrationTest {
 
 		QuestionSetEntity questionSet = questionSetEntityRepository.save(
 			QuestionSetEntity.builder()
-				.subject("Initial Subject")
+				.title("Initial Title")
 				.teamId(team.getId())
 				.creationType(QuestionSetCreationType.MANUAL)
 				.build());
@@ -383,7 +475,6 @@ public class QuestionSetApiIntegrationTest extends BaseIntegrationTest {
 
 		UpdateQuestionSetApiRequest request = new UpdateQuestionSetApiRequest(
 			"Updated Title",
-			"Updated Subject",
 			QuestionSetSolveMode.LIVE_TIME,
 			"중급",
 			QuestionSetVisibility.GROUP,
@@ -415,7 +506,7 @@ public class QuestionSetApiIntegrationTest extends BaseIntegrationTest {
 
 		QuestionSetEntity questionSet = questionSetEntityRepository.save(
 			QuestionSetEntity.builder()
-				.subject("Initial Subject")
+				.title("Initial Title")
 				.teamId(team.getId())
 				.creationType(QuestionSetCreationType.MANUAL)
 				.build());
@@ -444,7 +535,7 @@ public class QuestionSetApiIntegrationTest extends BaseIntegrationTest {
 
 		QuestionSetEntity questionSet = questionSetEntityRepository.save(
 			QuestionSetEntity.builder()
-				.subject("Initial Subject")
+				.title("Initial Title")
 				.teamId(team.getId())
 				.creationType(QuestionSetCreationType.MANUAL)
 				.build());
@@ -479,7 +570,7 @@ public class QuestionSetApiIntegrationTest extends BaseIntegrationTest {
 
 		QuestionSetEntity questionSet = questionSetEntityRepository.save(
 			QuestionSetEntity.builder()
-				.subject("Sample Subject")
+				.title("Sample Title")
 				.teamId(team.getId())
 				.creationType(QuestionSetCreationType.MANUAL)
 				.build());
@@ -510,7 +601,7 @@ public class QuestionSetApiIntegrationTest extends BaseIntegrationTest {
 		UpdateQuestionSetFieldApiRequest request = new UpdateQuestionSetFieldApiRequest(title);
 		QuestionSetEntity questionSet = questionSetEntityRepository.save(
 			QuestionSetEntity.builder()
-				.subject("Initial Subject")
+				.title("Initial Title")
 				.creationType(QuestionSetCreationType.MANUAL)
 				.build());
 
