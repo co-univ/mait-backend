@@ -172,7 +172,7 @@ public class QuestionService {
 			.orElseThrow(() -> new EntityNotFoundException("QuestionSet not found with id: " + questionSetId));
 
 		Optional<QuestionEntity> mayBeOpenQuestion = questionEntityRepository.findFirstByQuestionSetAndQuestionStatusIn(
-			questionSet, List.of(QuestionStatusType.ACCESS_PERMISSION, QuestionStatusType.SOLVE_PERMISSION));
+			questionSet, QuestionStatusType.openStatuses());
 
 		if (mayBeOpenQuestion.isPresent()) {
 			QuestionEntity question = mayBeOpenQuestion.get();
