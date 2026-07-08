@@ -25,6 +25,9 @@ public interface QuestionEntityRepository extends JpaRepository<QuestionEntity, 
 		List<QuestionStatusType> statuses
 	);
 
+	List<QuestionEntity> findAllByQuestionSetIdAndQuestionStatusIn(Long questionSetId,
+		List<QuestionStatusType> statuses);
+
 	Optional<QuestionEntity> findTopByQuestionSetIdOrderByLexoRankDesc(Long questionSetId);
 
 	Optional<QuestionEntity> findFirstByQuestionSetOrderByNumberAsc(QuestionSetEntity questionSet);
