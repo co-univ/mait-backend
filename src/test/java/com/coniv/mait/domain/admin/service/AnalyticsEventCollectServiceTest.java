@@ -3,6 +3,8 @@ package com.coniv.mait.domain.admin.service;
 import static org.assertj.core.api.Assertions.*;
 import static org.mockito.BDDMockito.*;
 
+import java.util.Optional;
+
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -12,7 +14,11 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import com.coniv.mait.domain.admin.entity.AnalyticsEventEntity;
+import com.coniv.mait.domain.admin.entity.AnalyticsFeatureEntity;
 import com.coniv.mait.domain.admin.repository.AnalyticsEventRepository;
+import com.coniv.mait.domain.admin.repository.AnalyticsFeatureRepository;
+
+import jakarta.persistence.EntityNotFoundException;
 
 @ExtendWith(MockitoExtension.class)
 class AnalyticsEventCollectServiceTest {
@@ -28,12 +34,17 @@ class AnalyticsEventCollectServiceTest {
 	@Mock
 	private AnalyticsEventRepository analyticsEventRepository;
 
+	@Mock
+	private AnalyticsFeatureRepository analyticsFeatureRepository;
+
 	@Test
 	@DisplayName("동일 조합이 존재하지 않으면 이벤트를 저장한다")
 	void collect_savesWhenNotDuplicate() {
 		// given
-		given(analyticsEventRepository.existsByFeatureKeyAndEventNameAndUserIdAndSessionId(
-			FEATURE_KEY, EVENT_NAME, USER_ID, SESSION_ID)).willReturn(false);
+		AnalyticsFeatureEntity feature = AnalyticsFeatureEntity.of(FEATURE_KEY);
+		given(analyticsFeatureRepository.findByFeatureKey(FEATURE_KEY)).willReturn(Optional.of(feature));
+		given(analyticsEventRepository.existsByFeatureAndEventNameAndUserIdAndSessionId(
+			feature, EVENT_NAME, USER_ID, SESSION_ID)).willReturn(false);
 
 		// when
 		analyticsEventCollectService.collect(USER_ID, FEATURE_KEY, EVENT_NAME, SESSION_ID, 2, "context");
@@ -42,7 +53,7 @@ class AnalyticsEventCollectServiceTest {
 		ArgumentCaptor<AnalyticsEventEntity> captor = ArgumentCaptor.forClass(AnalyticsEventEntity.class);
 		then(analyticsEventRepository).should().save(captor.capture());
 		AnalyticsEventEntity saved = captor.getValue();
-		assertThat(saved.getFeatureKey()).isEqualTo(FEATURE_KEY);
+		assertThat(saved.getFeature()).isEqualTo(feature);
 		assertThat(saved.getEventName()).isEqualTo(EVENT_NAME);
 		assertThat(saved.getUserId()).isEqualTo(USER_ID);
 		assertThat(saved.getSessionId()).isEqualTo(SESSION_ID);
@@ -55,8 +66,10 @@ class AnalyticsEventCollectServiceTest {
 	@DisplayName("동일 조합이 이미 존재하면 저장하지 않는다")
 	void collect_skipsWhenDuplicate() {
 		// given
-		given(analyticsEventRepository.existsByFeatureKeyAndEventNameAndUserIdAndSessionId(
-			FEATURE_KEY, EVENT_NAME, USER_ID, SESSION_ID)).willReturn(true);
+		AnalyticsFeatureEntity feature = AnalyticsFeatureEntity.of(FEATURE_KEY);
+		given(analyticsFeatureRepository.findByFeatureKey(FEATURE_KEY)).willReturn(Optional.of(feature));
+		given(analyticsEventRepository.existsByFeatureAndEventNameAndUserIdAndSessionId(
+			feature, EVENT_NAME, USER_ID, SESSION_ID)).willReturn(true);
 
 		// when
 		analyticsEventCollectService.collect(USER_ID, FEATURE_KEY, EVENT_NAME, SESSION_ID, 2, null);
@@ -69,8 +82,10 @@ class AnalyticsEventCollectServiceTest {
 	@DisplayName("step 이 null 이면 0 으로 저장한다")
 	void collect_defaultsStepToZeroWhenNull() {
 		// given
-		given(analyticsEventRepository.existsByFeatureKeyAndEventNameAndUserIdAndSessionId(
-			FEATURE_KEY, EVENT_NAME, USER_ID, SESSION_ID)).willReturn(false);
+		AnalyticsFeatureEntity feature = AnalyticsFeatureEntity.of(FEATURE_KEY);
+		given(analyticsFeatureRepository.findByFeatureKey(FEATURE_KEY)).willReturn(Optional.of(feature));
+		given(analyticsEventRepository.existsByFeatureAndEventNameAndUserIdAndSessionId(
+			feature, EVENT_NAME, USER_ID, SESSION_ID)).willReturn(false);
 
 		// when
 		analyticsEventCollectService.collect(USER_ID, FEATURE_KEY, EVENT_NAME, SESSION_ID, null, null);
@@ -79,5 +94,18 @@ class AnalyticsEventCollectServiceTest {
 		ArgumentCaptor<AnalyticsEventEntity> captor = ArgumentCaptor.forClass(AnalyticsEventEntity.class);
 		then(analyticsEventRepository).should().save(captor.capture());
 		assertThat(captor.getValue().getStep()).isZero();
+	}
+
+	@Test
+	@DisplayName("등록되지 않은 feature_key 면 EntityNotFoundException 을 던진다")
+	void collect_throwsWhenFeatureNotRegistered() {
+		// given
+		given(analyticsFeatureRepository.findByFeatureKey(FEATURE_KEY)).willReturn(Optional.empty());
+
+		// when & then
+		assertThatThrownBy(() ->
+			analyticsEventCollectService.collect(USER_ID, FEATURE_KEY, EVENT_NAME, SESSION_ID, 2, null))
+			.isInstanceOf(EntityNotFoundException.class);
+		then(analyticsEventRepository).should(never()).save(any());
 	}
 }
