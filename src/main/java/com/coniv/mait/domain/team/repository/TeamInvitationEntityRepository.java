@@ -17,9 +17,8 @@ public interface TeamInvitationEntityRepository extends JpaRepository<TeamInvita
 	@Query("select ti from TeamInvitationLinkEntity ti join fetch ti.team where ti.token = :token")
 	Optional<TeamInvitationLinkEntity> findByTokenFetchJoinTeam(@Param("token") String token);
 
-	@Query("select t from TeamInvitationLinkEntity t where t.team = :team and (t.expiredAt > :now)")
-	List<TeamInvitationLinkEntity> findActiveLinksByTeam(
-		@Param("team") TeamEntity team,
-		@Param("now") LocalDateTime now
-	);
+	@Query("select t from TeamInvitationLinkEntity t "
+		+ "where t.team = :team and (t.expiredAt is null or t.expiredAt > :now)")
+	List<TeamInvitationLinkEntity> findActiveLinksByTeam(@Param("team") TeamEntity team,
+		@Param("now") LocalDateTime now);
 }
