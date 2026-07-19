@@ -15,7 +15,9 @@ import org.springframework.http.MediaType;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
 import com.coniv.mait.domain.admin.entity.AnalyticsEventEntity;
+import com.coniv.mait.domain.admin.entity.AnalyticsFeatureEntity;
 import com.coniv.mait.domain.admin.repository.AnalyticsEventRepository;
+import com.coniv.mait.domain.admin.repository.AnalyticsFeatureRepository;
 import com.coniv.mait.domain.user.entity.UserEntity;
 import com.coniv.mait.domain.user.repository.UserEntityRepository;
 import com.coniv.mait.global.filter.JwtAuthorizationFilter;
@@ -35,6 +37,9 @@ public class AnalyticsEventIntegrationTest extends BaseIntegrationTest {
 	private AnalyticsEventRepository analyticsEventRepository;
 
 	@Autowired
+	private AnalyticsFeatureRepository analyticsFeatureRepository;
+
+	@Autowired
 	private UserEntityRepository userEntityRepository;
 
 	@MockitoBean
@@ -43,6 +48,8 @@ public class AnalyticsEventIntegrationTest extends BaseIntegrationTest {
 	@BeforeEach
 	void setUp() throws Exception {
 		analyticsEventRepository.deleteAll();
+		analyticsFeatureRepository.deleteAll();
+		analyticsFeatureRepository.save(AnalyticsFeatureEntity.of("onboarding"));
 		Mockito.doAnswer(inv -> {
 			ServletRequest request = inv.getArgument(0);
 			ServletResponse response = inv.getArgument(1);
@@ -78,7 +85,7 @@ public class AnalyticsEventIntegrationTest extends BaseIntegrationTest {
 		assertThat(events).hasSize(1);
 		AnalyticsEventEntity saved = events.get(0);
 		assertThat(saved.getUserId()).isEqualTo(user.getId());
-		assertThat(saved.getFeatureKey()).isEqualTo("onboarding");
+		assertThat(saved.getFeature().getFeatureKey()).isEqualTo("onboarding");
 		assertThat(saved.getEventName()).isEqualTo("player_set_list_view");
 		assertThat(saved.getSessionId()).isEqualTo(SESSION_ID);
 		assertThat(saved.getStep()).isEqualTo(2);

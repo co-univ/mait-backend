@@ -10,14 +10,20 @@ import java.util.Optional;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import com.coniv.mait.domain.question.dto.ParticipantDto;
+import com.coniv.mait.domain.question.dto.QuestionSetStatusMessage;
+import com.coniv.mait.domain.question.entity.QuestionEntity;
 import com.coniv.mait.domain.question.entity.QuestionSetEntity;
 import com.coniv.mait.domain.question.entity.QuestionSetParticipantEntity;
 import com.coniv.mait.domain.question.enums.ParticipantStatus;
+import com.coniv.mait.domain.question.enums.QuestionSetCommandType;
+import com.coniv.mait.domain.question.enums.QuestionStatusType;
+import com.coniv.mait.domain.question.repository.QuestionEntityRepository;
 import com.coniv.mait.domain.question.repository.QuestionSetEntityRepository;
 import com.coniv.mait.domain.question.repository.QuestionSetParticipantRepository;
 import com.coniv.mait.domain.question.service.component.QuestionWebSocketSender;
@@ -41,6 +47,9 @@ class QuestionSetLiveControlServiceTest {
 	@Mock
 	private QuestionSetParticipantRepository questionSetParticipantRepository;
 
+	@Mock
+	private QuestionEntityRepository questionEntityRepository;
+
 	@InjectMocks
 	private QuestionSetLiveControlService questionSetLiveControlService;
 
@@ -57,6 +66,12 @@ class QuestionSetLiveControlServiceTest {
 	private QuestionSetParticipantEntity eliminatedParticipant;
 
 	@Mock
+	private QuestionEntity accessQuestion;
+
+	@Mock
+	private QuestionEntity solveQuestion;
+
+	@Mock
 	private UserEntity user1;
 
 	@Mock
@@ -64,6 +79,32 @@ class QuestionSetLiveControlServiceTest {
 
 	@Mock
 	private UserEntity user3;
+
+	@Test
+	@DisplayName("실시간 문제셋 종료 - 열린 문제 상태를 닫고 종료 메시지를 전송한다")
+	void endLiveQuestionSet_ClosesOpenedQuestions() {
+		// given
+		Long questionSetId = 1L;
+
+		when(questionSetEntityRepository.findById(questionSetId))
+			.thenReturn(Optional.of(questionSetEntity));
+		when(questionEntityRepository.findAllByQuestionSetIdAndQuestionStatusIn(questionSetId,
+			QuestionStatusType.openStatuses()))
+			.thenReturn(List.of(accessQuestion, solveQuestion));
+
+		// when
+		questionSetLiveControlService.endLiveQuestionSet(questionSetId);
+
+		// then
+		verify(questionSetEntity).endLiveQuestionSet();
+		verify(accessQuestion).updateQuestionStatus(QuestionStatusType.NOT_OPEN);
+		verify(solveQuestion).updateQuestionStatus(QuestionStatusType.NOT_OPEN);
+
+		ArgumentCaptor<QuestionSetStatusMessage> messageCaptor =
+			ArgumentCaptor.forClass(QuestionSetStatusMessage.class);
+		verify(questionWebSocketSender).broadcastQuestionStatus(eq(questionSetId), messageCaptor.capture());
+		assertEquals(QuestionSetCommandType.LIVE_END, messageCaptor.getValue().getCommandType());
+	}
 
 	@Test
 	@DisplayName("활성 참가자 조회 - 성공")

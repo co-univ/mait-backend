@@ -66,6 +66,9 @@ public class QuestionSetLiveControlService {
 	public void endLiveQuestionSet(Long questionSetId) {
 		QuestionSetEntity questionSet = findQuestionSetById(questionSetId);
 		questionSet.endLiveQuestionSet();
+		List<QuestionEntity> openQuestions = questionEntityRepository.findAllByQuestionSetIdAndQuestionStatusIn(
+			questionSetId, QuestionStatusType.openStatuses());
+		openQuestions.forEach(question -> question.updateQuestionStatus(QuestionStatusType.NOT_OPEN));
 
 		QuestionSetStatusMessage message = QuestionSetStatusMessage.builder()
 			.questionSetId(questionSetId)
@@ -139,7 +142,7 @@ public class QuestionSetLiveControlService {
 		QuestionSetEntity questionSet = findQuestionSetById(questionSetId);
 
 		Optional<QuestionEntity> mayBeOpenQuestion = questionEntityRepository.findFirstByQuestionSetAndQuestionStatusIn(
-			questionSet, List.of(QuestionStatusType.ACCESS_PERMISSION, QuestionStatusType.SOLVE_PERMISSION));
+			questionSet, QuestionStatusType.openStatuses());
 
 		String destination = WebSocketConstants.getQuestionSetParticipateTopic(questionSetId);
 
