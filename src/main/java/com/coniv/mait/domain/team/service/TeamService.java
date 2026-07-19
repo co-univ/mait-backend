@@ -418,7 +418,8 @@ public class TeamService {
 
 		return teamInvitationEntityRepository.findActiveLinksByTeam(team, LocalDateTime.now()).stream()
 			.map(TeamInvitationLinkDto::from)
-			.sorted(Comparator.comparing(TeamInvitationLinkDto::getExpiredAt))
+			.sorted(Comparator.comparing(TeamInvitationLinkDto::getExpiredAt,
+				Comparator.nullsLast(Comparator.naturalOrder())))
 			.toList();
 	}
 
