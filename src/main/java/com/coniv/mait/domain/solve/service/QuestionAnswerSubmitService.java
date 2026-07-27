@@ -122,7 +122,11 @@ public class QuestionAnswerSubmitService {
 			.collect(Collectors.toUnmodifiableMap(UserEntity::getId, user -> user));
 
 		return records.stream()
-			.sorted(Comparator.comparing(AnswerSubmitRecordEntity::getSubmitOrder))
+			.sorted(Comparator
+				.comparing(AnswerSubmitRecordEntity::getSubmitOrder,
+					Comparator.nullsLast(Comparator.naturalOrder()))
+				.thenComparing(AnswerSubmitRecordEntity::getCreatedAt,
+					Comparator.nullsLast(Comparator.naturalOrder())))
 			.map(record -> AnswerSubmitRecordDto.of(record, userById.get(record.getUserId())))
 			.toList();
 	}
