@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -30,6 +31,7 @@ import com.coniv.mait.domain.solve.service.component.QuestionSetParticipantManag
 import com.coniv.mait.domain.solve.service.component.ScorerGenerator;
 import com.coniv.mait.domain.solve.service.component.ScorerProcessor;
 import com.coniv.mait.domain.solve.service.component.SubmitTimingProcessor;
+import com.coniv.mait.domain.solve.service.dto.AnswerSubmitRecordDto;
 import com.coniv.mait.domain.solve.service.dto.MultipleQuestionSubmitAnswer;
 import com.coniv.mait.domain.solve.service.dto.SubmitTimingDto;
 import com.coniv.mait.domain.user.entity.UserEntity;
@@ -361,6 +363,57 @@ class QuestionAnswerSubmitServiceTest {
 			assertThat(result.getTimeGapMillis()).isEqualTo(1500L);
 			verify(answerSubmitRecordEntityRepository).save(any(AnswerSubmitRecordEntity.class));
 			verify(scorerGenerator, never()).updateScorer(any(), any(), any());
+		}
+	}
+
+	@Nested
+	@DisplayName("getSubmitRecords 메서드")
+	class GetSubmitRecords {
+
+		@Test
+		@DisplayName("학습모드 기록은 생성 시각순으로 조회하고 미응답 답안은 null로 반환한다")
+		void getSubmitRecords_StudyModeRecords_SortsByCreatedAtAndAllowsNullAnswer() {
+			// given
+			Long questionSetId = 1L;
+			Long questionId = 10L;
+			Long firstUserId = 100L;
+			Long secondUserId = 200L;
+
+			UserEntity firstUser = mock(UserEntity.class);
+			UserEntity secondUser = mock(UserEntity.class);
+			AnswerSubmitRecordEntity laterRecord = mock(AnswerSubmitRecordEntity.class);
+			AnswerSubmitRecordEntity earlierRecord = mock(AnswerSubmitRecordEntity.class);
+
+			when(firstUser.getId()).thenReturn(firstUserId);
+			when(secondUser.getId()).thenReturn(secondUserId);
+
+			when(laterRecord.getId()).thenReturn(2L);
+			when(laterRecord.getUserId()).thenReturn(secondUserId);
+			when(laterRecord.getQuestionId()).thenReturn(questionId);
+			when(laterRecord.getCreatedAt()).thenReturn(LocalDateTime.of(2026, 7, 27, 20, 0));
+			when(laterRecord.getSubmittedAnswer()).thenReturn(null);
+
+			when(earlierRecord.getId()).thenReturn(1L);
+			when(earlierRecord.getUserId()).thenReturn(firstUserId);
+			when(earlierRecord.getQuestionId()).thenReturn(questionId);
+			when(earlierRecord.getCreatedAt()).thenReturn(LocalDateTime.of(2026, 7, 27, 19, 59));
+			when(earlierRecord.getSubmittedAnswer())
+				.thenReturn("{\"type\":\"MULTIPLE\",\"submitAnswers\":[1]}");
+
+			when(answerSubmitRecordEntityRepository.findAllByQuestionId(questionId))
+				.thenReturn(List.of(laterRecord, earlierRecord));
+			when(userEntityRepository.findAllById(List.of(secondUserId, firstUserId)))
+				.thenReturn(List.of(firstUser, secondUser));
+
+			// when
+			List<AnswerSubmitRecordDto> result =
+				questionAnswerSubmitService.getSubmitRecords(questionSetId, questionId);
+
+			// then
+			assertThat(result).extracting(AnswerSubmitRecordDto::getId)
+				.containsExactly(1L, 2L);
+			assertThat(result.get(0).getSubmittedAnswer()).isNotNull();
+			assertThat(result.get(1).getSubmittedAnswer()).isNull();
 		}
 	}
 }

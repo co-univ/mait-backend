@@ -23,6 +23,8 @@ public class AnswerSubmitRecordDto {
 	private SubmitAnswerDto<?> submittedAnswer;
 
 	public static AnswerSubmitRecordDto of(AnswerSubmitRecordEntity record, UserEntity userEntity) {
+		String submittedAnswer = record.getSubmittedAnswer();
+
 		return AnswerSubmitRecordDto.builder()
 			.id(record.getId())
 			.userId(userEntity.getId())
@@ -31,7 +33,7 @@ public class AnswerSubmitRecordDto {
 			.questionId(record.getQuestionId())
 			.isCorrect(record.isCorrect())
 			.submitOrder(record.getSubmitOrder())
-			.submittedAnswer(SubmitAnswerDto.fromJson(record.getSubmittedAnswer()))
+			.submittedAnswer(submittedAnswer == null ? null : SubmitAnswerDto.fromJson(submittedAnswer))
 			.build();
 	}
 }
