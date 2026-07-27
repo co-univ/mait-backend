@@ -27,12 +27,12 @@ public record QuestionAnswerSubmitRecordApiResponse(
 	Long questionId,
 	@Schema(description = "정/오답 여부", requiredMode = Schema.RequiredMode.REQUIRED)
 	boolean isCorrect,
-	@Schema(description = "제출 순서", requiredMode = Schema.RequiredMode.REQUIRED)
+	@Schema(description = "제출 순서 (학습 모드는 null)", requiredMode = Schema.RequiredMode.NOT_REQUIRED)
 	Long submitOrder,
 
 	@Schema(
-		description = "제출한 답안",
-		requiredMode = Schema.RequiredMode.REQUIRED,
+		description = "제출한 답안 (미응답 문제는 null)",
+		requiredMode = Schema.RequiredMode.NOT_REQUIRED,
 		oneOf = {
 			ShortQuestionSubmitAnswer.class,
 			MultipleQuestionSubmitAnswer.class,
