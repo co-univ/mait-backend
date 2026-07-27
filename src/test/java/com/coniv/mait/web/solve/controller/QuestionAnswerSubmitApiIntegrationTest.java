@@ -357,6 +357,65 @@ public class QuestionAnswerSubmitApiIntegrationTest extends BaseIntegrationTest 
 	}
 
 	@Test
+	@DisplayName("학습 모드 제출 기록 조회 시 nullable 필드를 허용한다")
+	void getSubmitRecords_StudyModeRecord_ReturnsOk() throws Exception {
+		// Given
+		UserEntity liveUser = userEntityRepository.save(UserEntity.localLoginUser(
+			"live-user@test.com", "password", "실시간사용자", "live-user"));
+		UserEntity studyUser = userEntityRepository.save(UserEntity.localLoginUser(
+			"study-user@test.com", "password", "학습사용자", "study-user"));
+
+		QuestionSetEntity questionSet = questionSetEntityRepository.save(QuestionSetEntity.builder()
+			.title("학습 모드 테스트 문제집")
+			.build());
+
+		MultipleQuestionEntity question = questionEntityRepository.save(
+			MultipleQuestionEntity.builder()
+				.content("학습 모드 테스트 문제")
+				.number(1L)
+				.questionSet(questionSet)
+				.lexoRank("m")
+				.answerCount(4)
+				.build());
+
+		String submittedAnswer = objectMapper.writeValueAsString(
+			new MultipleQuestionSubmitAnswer(List.of(1L)));
+
+		AnswerSubmitRecordEntity liveRecord = answerSubmitRecordEntityRepository.save(
+			AnswerSubmitRecordEntity.builder()
+				.userId(liveUser.getId())
+				.questionId(question.getId())
+				.submitOrder(1L)
+				.isCorrect(true)
+				.submittedAnswer(submittedAnswer)
+				.build());
+
+		AnswerSubmitRecordEntity studyRecord = answerSubmitRecordEntityRepository.save(
+			AnswerSubmitRecordEntity.builder()
+				.userId(studyUser.getId())
+				.questionId(question.getId())
+				.submitOrder(null)
+				.isCorrect(false)
+				.submittedAnswer(null)
+				.build());
+
+		// When & Then
+		mockMvc.perform(get("/api/v1/question-sets/{questionSetId}/questions/{questionId}/submit-records",
+				questionSet.getId(), question.getId()))
+			.andExpectAll(
+				status().isOk(),
+				jsonPath("$.isSuccess").value(true),
+				jsonPath("$.data.totalCounts").value(2),
+				jsonPath("$.data.submitRecords[0].id").value(liveRecord.getId()),
+				jsonPath("$.data.submitRecords[0].submitOrder").value(1),
+				jsonPath("$.data.submitRecords[1].id").value(studyRecord.getId()),
+				jsonPath("$.data.submitRecords[1].userId").value(studyUser.getId()),
+				jsonPath("$.data.submitRecords[1].submitOrder").value(nullValue()),
+				jsonPath("$.data.submitRecords[1].submittedAnswer").value(nullValue())
+			);
+	}
+
+	@Test
 	@DisplayName("제출 시간차 반환 API 통합 테스트 - 정오답 무관")
 	void submitAnswer_ReturnsTimeGapMillis() throws Exception {
 		// given

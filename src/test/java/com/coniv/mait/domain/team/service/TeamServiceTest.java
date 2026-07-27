@@ -38,6 +38,7 @@ import com.coniv.mait.domain.team.repository.TeamUserEntityRepository;
 import com.coniv.mait.domain.team.service.component.InviteTokenGenerator;
 import com.coniv.mait.domain.team.service.component.TeamReader;
 import com.coniv.mait.domain.team.service.dto.TeamInvitationDto;
+import com.coniv.mait.domain.team.service.dto.TeamInvitationLinkDto;
 import com.coniv.mait.domain.user.entity.UserEntity;
 import com.coniv.mait.domain.user.enums.LoginProvider;
 import com.coniv.mait.domain.user.exception.UserRoleException;
@@ -411,6 +412,33 @@ class TeamServiceTest {
 		Throwable thrown = catchThrowable(() -> teamService.getTeamInviteInfo(maitUser, token));
 		assertThat(thrown).isInstanceOf(TeamInvitationFailException.class);
 		assertThat(((TeamInvitationFailException)thrown).getErrorCode()).isEqualTo(InvitationErrorCode.ALREADY_MEMBER);
+	}
+
+	@Test
+	@DisplayName("초대 링크 목록 조회 - 만료 없음 링크를 마지막으로 정렬한다")
+	void getTeamInvitations_NoExpirationLinkSortedLast() {
+		// given
+		Long teamId = 1L;
+		TeamEntity team = TeamEntity.ofGroup("초대 링크 목록 팀", 10L);
+		UserEntity invitor = mock(UserEntity.class);
+		TeamInvitationLinkEntity noExpirationInvitation = TeamInvitationLinkEntity.createInvite(invitor, team,
+			"NO_EXPIRATION_TOKEN", InviteTokenDuration.NO_EXPIRATION, TeamUserRole.PLAYER, false);
+		TeamInvitationLinkEntity activeInvitation = TeamInvitationLinkEntity.createInvite(invitor, team,
+			"ACTIVE_TOKEN", InviteTokenDuration.ONE_DAY, TeamUserRole.PLAYER, false);
+
+		when(teamReader.getActiveTeam(teamId)).thenReturn(team);
+		when(teamInvitationEntityRepository.findActiveLinksByTeam(eq(team), any(LocalDateTime.class)))
+			.thenReturn(List.of(noExpirationInvitation, activeInvitation));
+
+		// when
+		List<TeamInvitationLinkDto> result = teamService.getTeamInvitations(teamId);
+
+		// then
+		assertThat(result)
+			.extracting(TeamInvitationLinkDto::getToken)
+			.containsExactly("ACTIVE_TOKEN", "NO_EXPIRATION_TOKEN");
+		assertThat(result.get(0).getExpiredAt()).isNotNull();
+		assertThat(result.get(1).getExpiredAt()).isNull();
 	}
 
 	@Test
