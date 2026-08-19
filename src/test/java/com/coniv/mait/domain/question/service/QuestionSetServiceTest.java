@@ -21,7 +21,6 @@ import com.coniv.mait.domain.question.enums.DeliveryMode;
 import com.coniv.mait.domain.question.enums.QuestionSetCreationType;
 import com.coniv.mait.domain.question.enums.QuestionSetSolveMode;
 import com.coniv.mait.domain.question.enums.QuestionSetStatus;
-import com.coniv.mait.domain.question.enums.QuestionSetVisibility;
 import com.coniv.mait.domain.question.enums.QuestionType;
 import com.coniv.mait.domain.question.enums.QuestionValidationResult;
 import com.coniv.mait.domain.question.event.AiQuestionGenerationRequestedEvent;
@@ -96,7 +95,6 @@ class QuestionSetServiceTest {
 			.title("제목")
 			.creationType(QuestionSetCreationType.MANUAL)
 			.solveMode(QuestionSetSolveMode.STUDY)
-			.visibility(QuestionSetVisibility.GROUP)
 			.build();
 
 		// when
@@ -109,7 +107,6 @@ class QuestionSetServiceTest {
 		assertThat(saved.getTitle()).isEqualTo("제목");
 		assertThat(saved.getCreationType()).isEqualTo(QuestionSetCreationType.MANUAL);
 		assertThat(saved.getSolveMode()).isEqualTo(QuestionSetSolveMode.STUDY);
-		assertThat(saved.getVisibility()).isEqualTo(QuestionSetVisibility.GROUP);
 		assertThat(saved.getCreatorId()).isEqualTo(USER_ID);
 
 		verify(teamRoleValidator).checkHasCreateQuestionSetAuthority(1L, USER_ID);
@@ -127,7 +124,6 @@ class QuestionSetServiceTest {
 			.title("AI 제목")
 			.creationType(QuestionSetCreationType.AI_GENERATED)
 			.solveMode(QuestionSetSolveMode.LIVE_TIME)
-			.visibility(QuestionSetVisibility.PUBLIC)
 			.build();
 
 		// when
@@ -148,7 +144,6 @@ class QuestionSetServiceTest {
 			.title("제목")
 			.creationType(QuestionSetCreationType.MANUAL)
 			.solveMode(QuestionSetSolveMode.STUDY)
-			.visibility(QuestionSetVisibility.GROUP)
 			.build();
 		doThrow(new UserRoleException("문제 세트 생성 권한이 없습니다."))
 			.when(teamRoleValidator).checkHasCreateQuestionSetAuthority(1L, USER_ID);
@@ -408,12 +403,10 @@ class QuestionSetServiceTest {
 		final String newTitle = "변경할 제목";
 		final QuestionSetSolveMode newSolveMode = QuestionSetSolveMode.LIVE_TIME;
 		final String difficulty = "난이도 설명";
-		final QuestionSetVisibility newVisibility = QuestionSetVisibility.GROUP;
 
 		QuestionSetEntity questionSetEntity = QuestionSetEntity.builder()
 			.title("원래 제목")
 			.teamId(teamId)
-			.visibility(QuestionSetVisibility.GROUP)
 			.build();
 
 		when(questionSetEntityRepository.findById(questionSetId)).thenReturn(Optional.of(questionSetEntity));
@@ -425,7 +418,6 @@ class QuestionSetServiceTest {
 			newTitle,
 			newSolveMode,
 			difficulty,
-			newVisibility,
 			List.of());
 
 		// then
@@ -435,14 +427,12 @@ class QuestionSetServiceTest {
 		assertThat(questionSetEntity.getSolveMode()).isEqualTo(QuestionSetSolveMode.LIVE_TIME);
 		assertThat(questionSetEntity.getStatus()).isEqualTo(QuestionSetStatus.BEFORE);
 		assertThat(questionSetEntity.getDifficulty()).isEqualTo(difficulty);
-		assertThat(questionSetEntity.getVisibility()).isEqualTo(newVisibility);
 
 		assertThat(result).isNotNull();
 		assertThat(result.getTitle()).isEqualTo(newTitle);
 		assertThat(result.getSolveMode()).isEqualTo(QuestionSetSolveMode.LIVE_TIME);
 		assertThat(result.getStatus()).isEqualTo(QuestionSetStatus.BEFORE);
 		assertThat(result.getDifficulty()).isEqualTo(difficulty);
-		assertThat(result.getVisibility()).isEqualTo(newVisibility);
 
 		verify(questionSetCategoryService).updateLinkedCategories(questionSetId, teamId, List.of());
 	}
@@ -458,7 +448,6 @@ class QuestionSetServiceTest {
 		QuestionSetEntity questionSetEntity = QuestionSetEntity.builder()
 			.title("제목")
 			.teamId(teamId)
-			.visibility(QuestionSetVisibility.GROUP)
 			.build();
 
 		when(questionSetEntityRepository.findById(questionSetId)).thenReturn(Optional.of(questionSetEntity));
@@ -470,7 +459,6 @@ class QuestionSetServiceTest {
 			"새 제목",
 			QuestionSetSolveMode.LIVE_TIME,
 			"난이도",
-			QuestionSetVisibility.GROUP,
 			categoryIds);
 
 		// then
@@ -487,7 +475,6 @@ class QuestionSetServiceTest {
 		QuestionSetEntity questionSetEntity = QuestionSetEntity.builder()
 			.title("제목")
 			.teamId(teamId)
-			.visibility(QuestionSetVisibility.GROUP)
 			.build();
 
 		when(questionSetEntityRepository.findById(questionSetId)).thenReturn(Optional.of(questionSetEntity));
@@ -499,7 +486,6 @@ class QuestionSetServiceTest {
 			"제목",
 			QuestionSetSolveMode.LIVE_TIME,
 			"난이도",
-			QuestionSetVisibility.GROUP,
 			List.of()))
 			.isInstanceOfSatisfying(QuestionSetStatusException.class, ex -> {
 				assertThat(ex.getExceptionCode())
@@ -521,7 +507,6 @@ class QuestionSetServiceTest {
 		QuestionSetEntity questionSetEntity = QuestionSetEntity.builder()
 			.title("제목")
 			.teamId(teamId)
-			.visibility(QuestionSetVisibility.GROUP)
 			.build();
 
 		TeamEntity team = TeamEntity.ofPersonal("name", 1L);
@@ -535,7 +520,6 @@ class QuestionSetServiceTest {
 			"제목",
 			QuestionSetSolveMode.STUDY,
 			"난이도",
-			QuestionSetVisibility.GROUP,
 			List.of());
 
 		// then
@@ -558,7 +542,6 @@ class QuestionSetServiceTest {
 			"제목",
 			QuestionSetSolveMode.LIVE_TIME,
 			"설명",
-			QuestionSetVisibility.GROUP,
 			null))
 			.isInstanceOf(EntityNotFoundException.class)
 			.hasMessage("Question set not found");
@@ -576,7 +559,6 @@ class QuestionSetServiceTest {
 
 		QuestionSetEntity questionSetEntity = QuestionSetEntity.builder()
 			.title(originalTitle)
-			.visibility(QuestionSetVisibility.GROUP)
 			.build();
 
 		when(questionSetEntityRepository.findById(questionSetId)).thenReturn(Optional.of(questionSetEntity));
@@ -694,17 +676,14 @@ class QuestionSetServiceTest {
 	void updateQuestionModeToReview() {
 		// given
 		final Long questionSetId = 1L;
-		final QuestionSetVisibility visibility = QuestionSetVisibility.GROUP;
 		QuestionSetEntity questionSetEntity = mock(QuestionSetEntity.class);
 		when(questionSetEntityRepository.findById(questionSetId)).thenReturn(Optional.of(questionSetEntity));
-		when(questionSetEntity.getVisibility()).thenReturn(visibility);
 
 		// when
-		questionSetService.updateQuestionSetToReviewMode(questionSetId, visibility);
+		questionSetService.updateQuestionSetToReviewMode(questionSetId);
 
 		// then
-		verify(questionSetEntity).openReview(visibility);
-		assertThat(questionSetEntity.getVisibility()).isEqualTo(visibility);
+		verify(questionSetEntity).openReview();
 	}
 
 	@Test
@@ -712,15 +691,14 @@ class QuestionSetServiceTest {
 	void validateQuestionOngoingStatus() {
 		// given
 		final Long questionSetId = 1L;
-		final QuestionSetVisibility visibility = QuestionSetVisibility.GROUP;
 		QuestionSetEntity questionSetEntity = mock(QuestionSetEntity.class);
 		when(questionSetEntityRepository.findById(questionSetId)).thenReturn(Optional.of(questionSetEntity));
 		doThrow(new QuestionSetStatusException(QuestionSetStatusExceptionCode.ONLY_AFTER))
 			.when(questionSetEntity)
-			.openReview(visibility);
+			.openReview();
 
 		// when, then
-		assertThatThrownBy(() -> questionSetService.updateQuestionSetToReviewMode(questionSetId, visibility))
+		assertThatThrownBy(() -> questionSetService.updateQuestionSetToReviewMode(questionSetId))
 			.isInstanceOf(QuestionSetStatusException.class);
 	}
 

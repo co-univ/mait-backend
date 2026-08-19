@@ -13,7 +13,6 @@ import com.coniv.mait.domain.question.entity.QuestionEntity;
 import com.coniv.mait.domain.question.entity.QuestionSetEntity;
 import com.coniv.mait.domain.question.enums.DeliveryMode;
 import com.coniv.mait.domain.question.enums.QuestionSetStatus;
-import com.coniv.mait.domain.question.enums.QuestionSetVisibility;
 import com.coniv.mait.domain.question.enums.QuestionType;
 import com.coniv.mait.domain.question.exception.QuestionSetStatusException;
 import com.coniv.mait.domain.question.exception.code.QuestionSetStatusExceptionCode;
@@ -89,13 +88,7 @@ public class QuestionReviewService {
 		final QuestionSetEntity questionSet = questionSetEntityRepository.findById(questionSetId)
 			.orElseThrow(() -> new EntityNotFoundException("해당 문제 셋을 찾을 수 없습니다."));
 
-		if (questionSet.getVisibility() == QuestionSetVisibility.PRIVATE) {
-			throw new QuestionSetStatusException(QuestionSetStatusExceptionCode.NEED_OPEN);
-		}
-
-		if (questionSet.getVisibility() == QuestionSetVisibility.GROUP) {
-			teamRoleValidator.checkHasSolveQuestionAuthorityInTeam(questionSet.getTeamId(), userId);
-		}
+		teamRoleValidator.checkHasSolveQuestionAuthorityInTeam(questionSet.getTeamId(), userId);
 
 		if (!questionSet.canReview()) {
 			throw new QuestionSetStatusException(QuestionSetStatusExceptionCode.ONLY_REVIEW);

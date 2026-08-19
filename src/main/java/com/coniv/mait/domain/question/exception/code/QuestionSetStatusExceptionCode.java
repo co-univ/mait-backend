@@ -15,7 +15,6 @@ public enum QuestionSetStatusExceptionCode implements ExceptionCode {
 	ONLY_REVIEW(HttpStatus.BAD_REQUEST, "0002", "리뷰 상태의 문제 셋만 처리가 가능합니다."),
 	ONLY_ONGOING(HttpStatus.BAD_REQUEST, "0003", "진행중인 문제 셋에 대해서만 처리가 가능합니다."),
 	ONLY_BEFORE(HttpStatus.BAD_REQUEST, "0004", "시작 전 상태의 문제 셋만 처리가 가능합니다."),
-	NEED_OPEN(HttpStatus.FORBIDDEN, "1001", "공개된 문제 셋만 풀이 가능"),
 	ONLY_LIVE_TIME(HttpStatus.BAD_REQUEST, "2001", "실시간 상태의 문제 셋만 처리가 가능합니다."),
 	ONLY_STUDY(HttpStatus.BAD_REQUEST, "2002", "학습 모드의 문제 셋만 처리가 가능합니다."),
 	CANNOT_CREATE_LIVE_TIME_IN_PERSONAL_TEAM(HttpStatus.BAD_REQUEST, "2003",
