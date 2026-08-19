@@ -10,9 +10,6 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.coniv.mait.domain.question.entity.QuestionEntity;
 import com.coniv.mait.domain.question.entity.QuestionSetEntity;
-import com.coniv.mait.domain.question.enums.QuestionSetVisibility;
-import com.coniv.mait.domain.question.exception.QuestionSetStatusException;
-import com.coniv.mait.domain.question.exception.code.QuestionSetStatusExceptionCode;
 import com.coniv.mait.domain.question.service.component.QuestionReader;
 import com.coniv.mait.domain.solve.entity.AnswerSubmitRecordEntity;
 import com.coniv.mait.domain.solve.exception.QuestionSolveExceptionCode;
@@ -71,10 +68,6 @@ public class QuestionAnswerSubmitService {
 
 		final Long teamId = questionSet.getTeamId();
 		teamRoleValidator.checkHasSolveQuestionAuthorityInTeam(teamId, userId);
-
-		if (questionSet.getVisibility() == QuestionSetVisibility.PRIVATE) {
-			throw new QuestionSetStatusException(QuestionSetStatusExceptionCode.NEED_OPEN);
-		}
 
 		if (!questionSetParticipantManager.isParticipating(user, questionSet)) {
 			throw new QuestionSolvingException(QuestionSolveExceptionCode.NOT_PARTICIPATED);
