@@ -3,7 +3,6 @@ package com.coniv.mait.web.question.dto;
 import java.util.List;
 
 import com.coniv.mait.domain.question.enums.QuestionSetSolveMode;
-import com.coniv.mait.domain.question.enums.QuestionSetVisibility;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.AssertTrue;
@@ -23,9 +22,6 @@ public record UpdateQuestionSetApiRequest(
 	@Schema(description = "문제 셋 난이도 설명")
 	String difficulty,
 
-	@Schema(description = "문제 셋 공개 단위", enumAsRef = true)
-	QuestionSetVisibility visibility,
-
 	@Schema(description = "문제 셋에 매핑할 카테고리 ID 목록. null 또는 빈 목록이면 기존 매핑을 모두 제거한다.")
 	List<Long> categoryIds
 ) {
@@ -33,10 +29,9 @@ public record UpdateQuestionSetApiRequest(
 		final String title,
 		final QuestionSetSolveMode solveMode,
 		final String difficulty,
-		final QuestionSetVisibility visibility,
 		final List<Long> categoryIds
 	) {
-		this(title, null, solveMode, difficulty, visibility, categoryIds);
+		this(title, null, solveMode, difficulty, categoryIds);
 	}
 
 	public UpdateQuestionSetApiRequest {

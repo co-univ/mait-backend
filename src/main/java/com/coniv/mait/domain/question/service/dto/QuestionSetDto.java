@@ -8,7 +8,6 @@ import com.coniv.mait.domain.question.entity.QuestionSetEntity;
 import com.coniv.mait.domain.question.enums.QuestionSetCreationType;
 import com.coniv.mait.domain.question.enums.QuestionSetSolveMode;
 import com.coniv.mait.domain.question.enums.QuestionSetStatus;
-import com.coniv.mait.domain.question.enums.QuestionSetVisibility;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -25,7 +24,6 @@ public class QuestionSetDto {
 	private Long id;
 	private String title;
 	private QuestionSetCreationType creationType;
-	private QuestionSetVisibility visibility;
 	private QuestionSetSolveMode solveMode;
 	private QuestionSetStatus status;
 	private Long teamId;
@@ -42,7 +40,6 @@ public class QuestionSetDto {
 			.id(questionSetEntity.getId())
 			.title(questionSetEntity.getTitle())
 			.creationType(questionSetEntity.getCreationType())
-			.visibility(questionSetEntity.getVisibility())
 			.solveMode(questionSetEntity.getSolveMode())
 			.status(questionSetEntity.getStatus())
 			.teamId(questionSetEntity.getTeamId())
@@ -59,7 +56,6 @@ public class QuestionSetDto {
 			.id(questionSetEntity.getId())
 			.title(questionSetEntity.getTitle())
 			.creationType(questionSetEntity.getCreationType())
-			.visibility(questionSetEntity.getVisibility())
 			.solveMode(questionSetEntity.getSolveMode())
 			.teamId(questionSetEntity.getTeamId())
 			.difficulty(questionSetEntity.getDifficulty())

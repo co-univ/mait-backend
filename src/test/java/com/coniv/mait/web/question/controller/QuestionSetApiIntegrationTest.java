@@ -23,7 +23,6 @@ import com.coniv.mait.domain.question.enums.DeliveryMode;
 import com.coniv.mait.domain.question.enums.QuestionSetCreationType;
 import com.coniv.mait.domain.question.enums.QuestionSetSolveMode;
 import com.coniv.mait.domain.question.enums.QuestionSetStatus;
-import com.coniv.mait.domain.question.enums.QuestionSetVisibility;
 import com.coniv.mait.domain.question.repository.MultipleChoiceEntityRepository;
 import com.coniv.mait.domain.question.repository.QuestionEntityRepository;
 import com.coniv.mait.domain.question.repository.QuestionSetCategoryEntityRepository;
@@ -86,7 +85,7 @@ public class QuestionSetApiIntegrationTest extends BaseIntegrationTest {
 	}
 
 	@Test
-	@DisplayName("문제 셋 생성 API 성공 테스트 - 제목·풀이방식·공개범위가 DB에 반영된다")
+	@DisplayName("문제 셋 생성 API 성공 테스트 - 제목과 풀이방식이 DB에 반영된다")
 	void createQuestionSetApiSuccess() throws Exception {
 		// given
 		UserEntity currentUser = userEntityRepository.findByEmail("user@example.com").orElseThrow();
@@ -95,8 +94,7 @@ public class QuestionSetApiIntegrationTest extends BaseIntegrationTest {
 
 		String title = "샘플 제목";
 		CreateQuestionSetApiRequest request = new CreateQuestionSetApiRequest(team.getId(), title,
-			QuestionSetCreationType.MANUAL, QuestionSetSolveMode.STUDY, QuestionSetVisibility.GROUP,
-			List.of(), List.of(), null, null, List.of());
+			QuestionSetCreationType.MANUAL, QuestionSetSolveMode.STUDY, List.of(), List.of(), null, null, List.of());
 
 		// when
 		mockMvc.perform(post("/api/v1/question-sets").contentType(MediaType.APPLICATION_JSON)
@@ -111,7 +109,6 @@ public class QuestionSetApiIntegrationTest extends BaseIntegrationTest {
 		assertThat(questionSetEntity.getTitle()).isEqualTo(title);
 		assertThat(questionSetEntity.getCreationType()).isEqualTo(QuestionSetCreationType.MANUAL);
 		assertThat(questionSetEntity.getSolveMode()).isEqualTo(QuestionSetSolveMode.STUDY);
-		assertThat(questionSetEntity.getVisibility()).isEqualTo(QuestionSetVisibility.GROUP);
 	}
 
 	@Test
@@ -425,7 +422,6 @@ public class QuestionSetApiIntegrationTest extends BaseIntegrationTest {
 			"Updated Title",
 			QuestionSetSolveMode.LIVE_TIME,
 			"중급",
-			QuestionSetVisibility.GROUP,
 			null);
 
 		QuestionSetEntity questionSet = questionSetEntityRepository.save(
@@ -443,7 +439,8 @@ public class QuestionSetApiIntegrationTest extends BaseIntegrationTest {
 				status().isOk(),
 				jsonPath("$.data.id").value(questionSet.getId()),
 				jsonPath("$.data.title").value("Updated Title"),
-				jsonPath("$.data.deliveryMode").value(DeliveryMode.LIVE_TIME.name()));
+				jsonPath("$.data.deliveryMode").value(DeliveryMode.LIVE_TIME.name()),
+				jsonPath("$.data.visibility").doesNotExist());
 	}
 
 	@Test
@@ -477,7 +474,6 @@ public class QuestionSetApiIntegrationTest extends BaseIntegrationTest {
 			"Updated Title",
 			QuestionSetSolveMode.LIVE_TIME,
 			"중급",
-			QuestionSetVisibility.GROUP,
 			List.of(keepCategory.getId(), addCategory.getId()));
 
 		// when & then

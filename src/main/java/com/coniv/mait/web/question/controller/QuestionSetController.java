@@ -42,7 +42,6 @@ import com.coniv.mait.web.question.dto.QuestionValidationApiResponse;
 import com.coniv.mait.web.question.dto.StudyQuestionSetGroup;
 import com.coniv.mait.web.question.dto.UpdateQuestionSetApiRequest;
 import com.coniv.mait.web.question.dto.UpdateQuestionSetFieldApiRequest;
-import com.coniv.mait.web.question.dto.UpdateQuestionSetReviewApiRequest;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -123,7 +122,7 @@ public class QuestionSetController {
 		@PathVariable Long questionSetId, @Valid @RequestBody UpdateQuestionSetApiRequest request) {
 		return ResponseEntity.ok(ApiResponse.ok(QuestionSetApiResponse.from(
 			questionSetService.completeQuestionSet(questionSetId, request.resolvedTitle(),
-				request.solveMode(), request.difficulty(), request.visibility(), request.categoryIds()))));
+				request.solveMode(), request.difficulty(), request.categoryIds()))));
 	}
 
 	@Operation(summary = "문제 셋에 카테고리 단건 매핑 추가 API",
@@ -174,9 +173,8 @@ public class QuestionSetController {
 
 	@Operation(summary = "종료된 문제를 복습 상태로 전환", description = "종료된 학습/실시간 모드의 문제를 복습 상태로 전환한다.")
 	@PatchMapping("/{questionSetId}/review")
-	public ResponseEntity<ApiResponse<Void>> updateToReviewMode(@PathVariable("questionSetId") Long questionSetId,
-		@RequestBody @Valid UpdateQuestionSetReviewApiRequest request) {
-		questionSetService.updateQuestionSetToReviewMode(questionSetId, request.visibility());
+	public ResponseEntity<ApiResponse<Void>> updateToReviewMode(@PathVariable("questionSetId") Long questionSetId) {
+		questionSetService.updateQuestionSetToReviewMode(questionSetId);
 		return ResponseEntity.ok(ApiResponse.noContent());
 	}
 

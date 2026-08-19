@@ -7,7 +7,6 @@ import com.coniv.mait.domain.question.enums.DeliveryMode;
 import com.coniv.mait.domain.question.enums.QuestionSetCreationType;
 import com.coniv.mait.domain.question.enums.QuestionSetSolveMode;
 import com.coniv.mait.domain.question.enums.QuestionSetStatus;
-import com.coniv.mait.domain.question.enums.QuestionSetVisibility;
 import com.coniv.mait.domain.question.service.dto.QuestionSetCategoryDto;
 import com.coniv.mait.domain.question.service.dto.QuestionSetDto;
 import com.coniv.mait.domain.question.service.dto.QuestionTypeCount;
@@ -27,8 +26,6 @@ public record QuestionSetApiResponse(
 	String subject,
 	@Schema(description = "문제 셋 생성 유형", requiredMode = Schema.RequiredMode.REQUIRED, enumAsRef = true)
 	QuestionSetCreationType creationType,
-	@Schema(description = "문제 셋 노출 단위", requiredMode = Schema.RequiredMode.REQUIRED, enumAsRef = true)
-	QuestionSetVisibility visibility,
 	@Schema(description = "문제 모드", requiredMode = Schema.RequiredMode.REQUIRED, enumAsRef = true)
 	DeliveryMode deliveryMode,
 	@Schema(description = "원래 풀이 방식", requiredMode = Schema.RequiredMode.NOT_REQUIRED, enumAsRef = true)
@@ -59,7 +56,6 @@ public record QuestionSetApiResponse(
 			.title(questionSetDto.getTitle())
 			.subject(questionSetDto.getTitle())
 			.creationType(questionSetDto.getCreationType())
-			.visibility(questionSetDto.getVisibility())
 			.deliveryMode(DeliveryMode.resolve(questionSetDto.getStatus(), questionSetDto.getSolveMode()))
 			.solveMode(questionSetDto.getSolveMode())
 			.status(questionSetDto.getStatus())
