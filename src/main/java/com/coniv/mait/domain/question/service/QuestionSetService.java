@@ -16,7 +16,6 @@ import com.coniv.mait.domain.question.enums.AiRequestStatus;
 import com.coniv.mait.domain.question.enums.DeliveryMode;
 import com.coniv.mait.domain.question.enums.QuestionSetCreationType;
 import com.coniv.mait.domain.question.enums.QuestionSetSolveMode;
-import com.coniv.mait.domain.question.enums.QuestionSetVisibility;
 import com.coniv.mait.domain.question.enums.QuestionType;
 import com.coniv.mait.domain.question.event.AiQuestionGenerationRequestedEvent;
 import com.coniv.mait.domain.question.exception.QuestionSetStatusException;
@@ -85,7 +84,6 @@ public class QuestionSetService {
 			.difficulty(difficulty)
 			.instruction(instruction)
 			.solveMode(questionSetDto.getSolveMode())
-			.visibility(questionSetDto.getVisibility())
 			.creatorId(userId)
 			.build();
 		questionSetEntityRepository.save(questionSetEntity);
@@ -174,7 +172,6 @@ public class QuestionSetService {
 		final String title,
 		final QuestionSetSolveMode solveMode,
 		final String difficulty,
-		final QuestionSetVisibility visibility,
 		final List<Long> categoryIds) {
 		QuestionSetEntity questionSet = questionSetEntityRepository.findById(questionSetId)
 			.orElseThrow(() -> new EntityNotFoundException("Question set not found"));
@@ -194,7 +191,7 @@ public class QuestionSetService {
 			question.updateNumber(number++);
 		}
 
-		questionSet.completeQuestionSet(title, solveMode, difficulty, visibility);
+		questionSet.completeQuestionSet(title, solveMode, difficulty);
 		if (team.getType() == TeamType.PERSONAL) {
 			questionSet.markOngoingOnComplete();
 		}
@@ -228,11 +225,11 @@ public class QuestionSetService {
 	}
 
 	@Transactional
-	public void updateQuestionSetToReviewMode(final Long questionSetId, final QuestionSetVisibility visibility) {
+	public void updateQuestionSetToReviewMode(final Long questionSetId) {
 		QuestionSetEntity questionSet = questionSetEntityRepository.findById(questionSetId)
 			.orElseThrow(() -> new EntityNotFoundException("해당 문제 셋을 찾을 수 없습니다."));
 
-		questionSet.openReview(visibility);
+		questionSet.openReview();
 	}
 
 	@Transactional
