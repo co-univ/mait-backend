@@ -56,6 +56,8 @@ public class QuestionSetEntity extends BaseTimeEntity {
 
 	private Long creatorId;
 
+	private Long sourceQuestionSetId;
+
 	@Enumerated(EnumType.STRING)
 	@Column(name = "status")
 	@Builder.Default
@@ -77,6 +79,19 @@ public class QuestionSetEntity extends BaseTimeEntity {
 		return QuestionSetEntity.builder()
 			.title(title)
 			.creationType(creationType)
+			.build();
+	}
+
+	public static QuestionSetEntity copyOf(QuestionSetEntity source, Long targetTeamId, Long creatorId) {
+		return QuestionSetEntity.builder()
+			.title(source.title)
+			.creationType(QuestionSetCreationType.MANUAL)
+			.solveMode(source.solveMode)
+			.difficulty(source.difficulty)
+			.teamId(targetTeamId)
+			.creatorId(creatorId)
+			.status(QuestionSetStatus.MAKING)
+			.sourceQuestionSetId(source.id)
 			.build();
 	}
 

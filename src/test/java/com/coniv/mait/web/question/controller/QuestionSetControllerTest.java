@@ -31,6 +31,7 @@ import com.coniv.mait.domain.question.enums.QuestionSetStatus;
 import com.coniv.mait.domain.question.enums.QuestionValidationResult;
 import com.coniv.mait.domain.question.enums.UserStudyStatus;
 import com.coniv.mait.domain.question.service.QuestionSetCategoryService;
+import com.coniv.mait.domain.question.service.QuestionSetCopyService;
 import com.coniv.mait.domain.question.service.QuestionSetDeleteService;
 import com.coniv.mait.domain.question.service.QuestionSetMaterialService;
 import com.coniv.mait.domain.question.service.QuestionSetService;
@@ -41,6 +42,7 @@ import com.coniv.mait.domain.solve.service.StudyModeService;
 import com.coniv.mait.global.auth.model.MaitUser;
 import com.coniv.mait.global.filter.JwtAuthorizationFilter;
 import com.coniv.mait.global.interceptor.idempotency.IdempotencyInterceptor;
+import com.coniv.mait.web.question.dto.CopyQuestionSetApiRequest;
 import com.coniv.mait.web.question.dto.CreateQuestionSetApiRequest;
 import com.coniv.mait.web.question.dto.QuestionSetGroup;
 import com.coniv.mait.web.question.dto.QuestionSetList;
@@ -70,6 +72,9 @@ class QuestionSetControllerTest {
 
 	@MockitoBean
 	private QuestionSetCategoryService questionSetCategoryService;
+
+	@MockitoBean
+	private QuestionSetCopyService questionSetCopyService;
 
 	@Autowired
 	private MockMvc mockMvc;
@@ -700,5 +705,45 @@ class QuestionSetControllerTest {
 				jsonPath("$.data").doesNotExist());
 
 		verify(questionSetDeleteService).deleteQuestionSet(questionSetId, USER_ID);
+	}
+
+	@Test
+	@DisplayName("문제 셋 복제 API 성공 테스트")
+	void copyQuestionSet_Success() throws Exception {
+		// given
+		Long questionSetId = 10L;
+		CopyQuestionSetApiRequest request = new CopyQuestionSetApiRequest(2L);
+
+		doReturn(QuestionSetDto.builder().id(42L).title("원본 제목").teamId(2L).build())
+			.when(questionSetCopyService).copyQuestionSet(questionSetId, 2L, USER_ID);
+
+		// when & then
+		mockMvc.perform(post("/api/v1/question-sets/{questionSetId}/copy", questionSetId)
+				.contentType(MediaType.APPLICATION_JSON)
+				.content(objectMapper.writeValueAsString(request)))
+			.andExpectAll(
+				status().isOk(),
+				jsonPath("$.isSuccess").value(true),
+				jsonPath("$.data.questionSetId").value(42),
+				jsonPath("$.data.title").value("원본 제목"),
+				jsonPath("$.data.teamId").value(2)
+			);
+
+		verify(questionSetCopyService).copyQuestionSet(questionSetId, 2L, USER_ID);
+	}
+
+	@Test
+	@DisplayName("문제 셋 복제 API 실패 테스트 - 대상 팀 ID 누락")
+	void copyQuestionSet_Failure_TargetTeamIdMissing() throws Exception {
+		// given
+		CopyQuestionSetApiRequest request = new CopyQuestionSetApiRequest(null);
+
+		// when & then
+		mockMvc.perform(post("/api/v1/question-sets/{questionSetId}/copy", 10L)
+				.contentType(MediaType.APPLICATION_JSON)
+				.content(objectMapper.writeValueAsString(request)))
+			.andExpect(status().isBadRequest());
+
+		verify(questionSetCopyService, never()).copyQuestionSet(anyLong(), anyLong(), anyLong());
 	}
 }
