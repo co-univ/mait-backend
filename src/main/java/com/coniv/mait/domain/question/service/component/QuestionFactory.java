@@ -1,6 +1,7 @@
 package com.coniv.mait.domain.question.service.component;
 
 import java.util.List;
+import java.util.Map;
 
 import com.coniv.mait.domain.question.entity.MultipleChoiceEntity;
 import com.coniv.mait.domain.question.entity.MultipleQuestionEntity;
@@ -24,6 +25,10 @@ public interface QuestionFactory<T extends QuestionDto> {
 	void deleteSubEntities(QuestionEntity question);
 
 	void createSubEntities(T questionDto, QuestionEntity question);
+
+	QuestionEntity copyQuestion(QuestionEntity source, QuestionSetEntity targetQuestionSet);
+
+	void copySubEntities(Map<Long, QuestionEntity> copiedBySourceQuestionId);
 
 	static List<MultipleChoiceEntity> createDefaultSubEntities(MultipleQuestionEntity defaultQuestion) {
 		return List.of(

@@ -5,6 +5,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.coniv.mait.domain.question.entity.QuestionSetEntity;
 import com.coniv.mait.domain.question.repository.QuestionSetEntityRepository;
+import com.coniv.mait.domain.question.service.component.QuestionCopier;
 import com.coniv.mait.domain.question.service.component.QuestionSetReader;
 import com.coniv.mait.domain.question.service.dto.QuestionSetDto;
 import com.coniv.mait.domain.user.service.component.TeamRoleValidator;
@@ -19,6 +20,7 @@ public class QuestionSetCopyService {
 	private final QuestionSetReader questionSetReader;
 	private final QuestionSetEntityRepository questionSetEntityRepository;
 	private final TeamRoleValidator teamRoleValidator;
+	private final QuestionCopier questionCopier;
 
 	@DistributedLock(key = "'question-set-copy:' + #userId + ':' + #questionSetId + ':' + #targetTeamId")
 	@Transactional
@@ -30,6 +32,8 @@ public class QuestionSetCopyService {
 
 		QuestionSetEntity copied = questionSetEntityRepository.save(
 			QuestionSetEntity.copyOf(source, targetTeamId, userId));
+
+		questionCopier.copyQuestions(source.getId(), copied);
 
 		return QuestionSetDto.from(copied);
 	}

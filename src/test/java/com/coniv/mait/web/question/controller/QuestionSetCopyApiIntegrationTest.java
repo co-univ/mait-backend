@@ -13,11 +13,26 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
 
+import com.coniv.mait.domain.question.entity.FillBlankAnswerEntity;
+import com.coniv.mait.domain.question.entity.FillBlankQuestionEntity;
+import com.coniv.mait.domain.question.entity.MultipleChoiceEntity;
+import com.coniv.mait.domain.question.entity.MultipleQuestionEntity;
+import com.coniv.mait.domain.question.entity.OrderingOptionEntity;
+import com.coniv.mait.domain.question.entity.OrderingQuestionEntity;
+import com.coniv.mait.domain.question.entity.QuestionEntity;
 import com.coniv.mait.domain.question.entity.QuestionSetEntity;
+import com.coniv.mait.domain.question.entity.ShortAnswerEntity;
+import com.coniv.mait.domain.question.entity.ShortQuestionEntity;
 import com.coniv.mait.domain.question.enums.QuestionSetCreationType;
 import com.coniv.mait.domain.question.enums.QuestionSetSolveMode;
 import com.coniv.mait.domain.question.enums.QuestionSetStatus;
+import com.coniv.mait.domain.question.enums.QuestionType;
+import com.coniv.mait.domain.question.repository.FillBlankAnswerEntityRepository;
+import com.coniv.mait.domain.question.repository.MultipleChoiceEntityRepository;
+import com.coniv.mait.domain.question.repository.OrderingOptionEntityRepository;
+import com.coniv.mait.domain.question.repository.QuestionEntityRepository;
 import com.coniv.mait.domain.question.repository.QuestionSetEntityRepository;
+import com.coniv.mait.domain.question.repository.ShortAnswerEntityRepository;
 import com.coniv.mait.domain.team.entity.TeamEntity;
 import com.coniv.mait.domain.team.entity.TeamUserEntity;
 import com.coniv.mait.domain.team.enums.TeamUserRole;
@@ -44,8 +59,28 @@ public class QuestionSetCopyApiIntegrationTest extends BaseIntegrationTest {
 	@Autowired
 	private QuestionSetEntityRepository questionSetEntityRepository;
 
+	@Autowired
+	private QuestionEntityRepository questionEntityRepository;
+
+	@Autowired
+	private MultipleChoiceEntityRepository multipleChoiceEntityRepository;
+
+	@Autowired
+	private ShortAnswerEntityRepository shortAnswerEntityRepository;
+
+	@Autowired
+	private FillBlankAnswerEntityRepository fillBlankAnswerEntityRepository;
+
+	@Autowired
+	private OrderingOptionEntityRepository orderingOptionEntityRepository;
+
 	@BeforeEach
 	void clear() {
+		multipleChoiceEntityRepository.deleteAll();
+		shortAnswerEntityRepository.deleteAll();
+		fillBlankAnswerEntityRepository.deleteAll();
+		orderingOptionEntityRepository.deleteAll();
+		questionEntityRepository.deleteAll();
 		questionSetEntityRepository.deleteAll();
 	}
 
@@ -102,6 +137,100 @@ public class QuestionSetCopyApiIntegrationTest extends BaseIntegrationTest {
 		assertThat(copied.getStartTime()).isNull();
 		assertThat(copied.getEndTime()).isNull();
 		assertThat(copied.isAdvancementSelected()).isFalse();
+	}
+
+
+	@Test
+	@DisplayName("문제 셋 복제 - 4가지 유형의 문제와 하위 엔티티가 모두 복제된다")
+	void copyQuestionSet_success_copiesAllQuestionTypesAndSubEntities() throws Exception {
+		// given
+		UserEntity user = userEntityRepository.findByEmail("user@example.com").orElseThrow();
+		TeamEntity sourceTeam = joinTeam(user, "원본 팀", TeamUserRole.MAKER);
+		TeamEntity targetTeam = joinTeam(user, "대상 팀", TeamUserRole.MAKER);
+		QuestionSetEntity source = saveQuestionSet(sourceTeam, user);
+
+		MultipleQuestionEntity multiple = questionEntityRepository.save(MultipleQuestionEntity.builder()
+			.content("객관식 문제").explanation("객관식 해설").number(1L).lexoRank("0|100000:")
+			.questionSet(source).answerCount(1).build());
+		multipleChoiceEntityRepository.saveAll(List.of(
+			MultipleChoiceEntity.builder().number(1).content("보기1").isCorrect(true).question(multiple).build(),
+			MultipleChoiceEntity.builder().number(2).content("보기2").isCorrect(false).question(multiple).build()));
+
+		ShortQuestionEntity shortQuestion = questionEntityRepository.save(ShortQuestionEntity.builder()
+			.content("단답형 문제").number(2L).lexoRank("0|200000:")
+			.questionSet(source).answerCount(1).build());
+		shortAnswerEntityRepository.save(ShortAnswerEntity.builder()
+			.answer("정답").isMain(true).number(1L).shortQuestionId(shortQuestion.getId()).build());
+
+		FillBlankQuestionEntity fillBlank = questionEntityRepository.save(FillBlankQuestionEntity.builder()
+			.content("빈칸 문제").number(3L).lexoRank("0|300000:").questionSet(source).build());
+		fillBlankAnswerEntityRepository.save(FillBlankAnswerEntity.builder()
+			.answer("빈칸정답").isMain(true).number(1L).fillBlankQuestionId(fillBlank.getId()).build());
+
+		OrderingQuestionEntity ordering = questionEntityRepository.save(OrderingQuestionEntity.builder()
+			.content("순서 문제").number(4L).lexoRank("0|400000:").questionSet(source).build());
+		orderingOptionEntityRepository.saveAll(List.of(
+			OrderingOptionEntity.builder().originOrder(1).content("가").answerOrder(2)
+				.orderingQuestionId(ordering.getId()).build(),
+			OrderingOptionEntity.builder().originOrder(2).content("나").answerOrder(1)
+				.orderingQuestionId(ordering.getId()).build()));
+
+		// when
+		mockMvc.perform(post("/api/v1/question-sets/{questionSetId}/copy", source.getId())
+				.contentType(MediaType.APPLICATION_JSON)
+				.content(objectMapper.writeValueAsString(new CopyQuestionSetApiRequest(targetTeam.getId()))))
+			.andExpect(status().isOk());
+
+		// then
+		QuestionSetEntity copiedSet = questionSetEntityRepository.findAll().stream()
+			.filter(questionSet -> !questionSet.getId().equals(source.getId()))
+			.findFirst()
+			.orElseThrow();
+
+		List<QuestionEntity> copiedQuestions =
+			questionEntityRepository.findAllByQuestionSetIdOrderByLexoRankAsc(copiedSet.getId());
+		assertThat(copiedQuestions).hasSize(4);
+		assertThat(copiedQuestions).extracting(QuestionEntity::getContent)
+			.containsExactly("객관식 문제", "단답형 문제", "빈칸 문제", "순서 문제");
+		assertThat(copiedQuestions).extracting(QuestionEntity::getType)
+			.containsExactly(QuestionType.MULTIPLE, QuestionType.SHORT, QuestionType.FILL_BLANK,
+				QuestionType.ORDERING);
+		assertThat(copiedQuestions).extracting(QuestionEntity::getLexoRank)
+			.containsExactly("0|100000:", "0|200000:", "0|300000:", "0|400000:");
+		assertThat(copiedQuestions).extracting(QuestionEntity::getId).doesNotContain(multiple.getId(),
+			shortQuestion.getId(), fillBlank.getId(), ordering.getId());
+
+		MultipleQuestionEntity copiedMultiple = (MultipleQuestionEntity)copiedQuestions.get(0);
+		assertThat(copiedMultiple.getExplanation()).isEqualTo("객관식 해설");
+		assertThat(copiedMultiple.getAnswerCount()).isEqualTo(1);
+		assertThat(multipleChoiceEntityRepository.findAllByQuestionId(copiedMultiple.getId()))
+			.extracting(MultipleChoiceEntity::getContent, MultipleChoiceEntity::isCorrect)
+			.containsExactlyInAnyOrder(tuple("보기1", true), tuple("보기2", false));
+
+		assertThat(shortAnswerEntityRepository.findAllByShortQuestionId(copiedQuestions.get(1).getId()))
+			.extracting(ShortAnswerEntity::getAnswer, ShortAnswerEntity::isMain)
+			.containsExactly(tuple("정답", true));
+
+		assertThat(fillBlankAnswerEntityRepository.findAllByFillBlankQuestionId(copiedQuestions.get(2).getId()))
+			.extracting(FillBlankAnswerEntity::getAnswer)
+			.containsExactly("빈칸정답");
+
+		assertThat(orderingOptionEntityRepository.findAllByOrderingQuestionId(copiedQuestions.get(3).getId()))
+			.extracting(OrderingOptionEntity::getContent, OrderingOptionEntity::getAnswerOrder)
+			.containsExactlyInAnyOrder(tuple("가", 2), tuple("나", 1));
+
+		assertThat(multipleChoiceEntityRepository.findAllByQuestionId(multiple.getId())).hasSize(2);
+	}
+
+	private QuestionSetEntity saveQuestionSet(final TeamEntity team, final UserEntity user) {
+		return questionSetEntityRepository.save(QuestionSetEntity.builder()
+			.title("원본 문제 셋")
+			.creationType(QuestionSetCreationType.MANUAL)
+			.solveMode(QuestionSetSolveMode.STUDY)
+			.teamId(team.getId())
+			.creatorId(user.getId())
+			.status(QuestionSetStatus.BEFORE)
+			.build());
 	}
 
 	private TeamEntity joinTeam(final UserEntity user, final String teamName, final TeamUserRole role) {

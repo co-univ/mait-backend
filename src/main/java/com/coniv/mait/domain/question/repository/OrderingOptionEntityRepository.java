@@ -13,6 +13,8 @@ public interface OrderingOptionEntityRepository extends JpaRepository<OrderingOp
 
 	List<OrderingOptionEntity> findAllByOrderingQuestionId(Long orderingQuestionId);
 
+	List<OrderingOptionEntity> findAllByOrderingQuestionIdIn(List<Long> orderingQuestionIds);
+
 	@Modifying
 	@Query("DELETE FROM OrderingOptionEntity o WHERE o.orderingQuestionId = :questionId")
 	void deleteBulkAllByQuestionId(@Param("questionId") Long questionId);

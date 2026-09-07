@@ -2,6 +2,7 @@ package com.coniv.mait.domain.question.service.component;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
@@ -136,5 +137,35 @@ public class OrderingQuestionFactory implements QuestionFactory<OrderingQuestion
 		if (count != optionDtos.size()) {
 			throw new UserParameterException("Ordering question options must have unique origin orders.");
 		}
+	}
+
+	@Override
+	public OrderingQuestionEntity copyQuestion(QuestionEntity source, QuestionSetEntity targetQuestionSet) {
+		return OrderingQuestionEntity.builder()
+			.content(source.getContent())
+			.explanation(source.getExplanation())
+			.number(source.getNumber())
+			.lexoRank(source.getLexoRank())
+			.imageUrl(source.getImageUrl())
+			.imageId(source.getImageId())
+			.questionSet(targetQuestionSet)
+			.build();
+	}
+
+	@Override
+	public void copySubEntities(Map<Long, QuestionEntity> copiedBySourceQuestionId) {
+		List<OrderingOptionEntity> sources = orderingOptionEntityRepository.findAllByOrderingQuestionIdIn(
+			List.copyOf(copiedBySourceQuestionId.keySet()));
+
+		List<OrderingOptionEntity> copies = sources.stream()
+			.map(source -> OrderingOptionEntity.builder()
+				.originOrder(source.getOriginOrder())
+				.content(source.getContent())
+				.answerOrder(source.getAnswerOrder())
+				.orderingQuestionId(copiedBySourceQuestionId.get(source.getOrderingQuestionId()).getId())
+				.build())
+			.toList();
+
+		orderingOptionEntityRepository.saveAll(copies);
 	}
 }

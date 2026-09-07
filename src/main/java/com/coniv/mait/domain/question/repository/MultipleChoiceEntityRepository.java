@@ -12,6 +12,8 @@ import com.coniv.mait.domain.question.entity.MultipleChoiceEntity;
 public interface MultipleChoiceEntityRepository extends JpaRepository<MultipleChoiceEntity, Long> {
 	List<MultipleChoiceEntity> findAllByQuestionId(Long questionId);
 
+	List<MultipleChoiceEntity> findAllByQuestionIdIn(List<Long> questionIds);
+
 	@Modifying
 	@Query("DELETE FROM MultipleChoiceEntity m WHERE m.question.id = :questionId")
 	void deleteBulkAllByQuestionId(@Param("questionId") Long questionId);
