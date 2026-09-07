@@ -10,7 +10,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Import;
-import org.springframework.jdbc.core.JdbcTemplate;
 
 import com.coniv.mait.domain.question.entity.MultipleChoiceEntity;
 import com.coniv.mait.domain.question.entity.MultipleQuestionEntity;
@@ -55,7 +54,9 @@ class MultipleQuestionAnswerCountMigrationIntegrationTest extends BaseIntegratio
 
 		// when
 		migration.migrate();
+		entityManager.clear();
 		migration.migrate();
+		entityManager.clear();
 
 		// then
 		assertThat(getAnswerCount(incorrect.getId())).isEqualTo(2);
@@ -87,8 +88,11 @@ class MultipleQuestionAnswerCountMigrationIntegrationTest extends BaseIntegratio
 	static class MigrationTestConfig {
 
 		@Bean
-		MultipleQuestionAnswerCountMigrationJob multipleQuestionAnswerCountMigrationJob(JdbcTemplate jdbcTemplate) {
-			return new MultipleQuestionAnswerCountMigrationJob(jdbcTemplate);
+		MultipleQuestionAnswerCountMigrationJob multipleQuestionAnswerCountMigrationJob(
+			QuestionEntityRepository questionEntityRepository,
+			MultipleChoiceEntityRepository multipleChoiceEntityRepository, EntityManager entityManager) {
+			return new MultipleQuestionAnswerCountMigrationJob(questionEntityRepository,
+				multipleChoiceEntityRepository, entityManager);
 		}
 	}
 }
