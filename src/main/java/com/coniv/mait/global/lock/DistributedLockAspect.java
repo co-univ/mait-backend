@@ -18,14 +18,16 @@ import org.springframework.expression.ExpressionParser;
 import org.springframework.expression.spel.standard.SpelExpressionParser;
 import org.springframework.expression.spel.support.StandardEvaluationContext;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 import com.coniv.mait.global.exception.custom.DistributedLockException;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
-// @Order 로 트랜잭션 어드바이스(LOWEST_PRECEDENCE)보다 바깥에서 동작시킨다.
-// 락이 트랜잭션 안쪽에 들어가면 커밋 전에 해제되어 다음 스레드가 미커밋 상태를 읽는다.
+// @Order 로 같은 프록시의 트랜잭션 어드바이스(LOWEST_PRECEDENCE)보다 바깥에서 동작시킨다.
+// 다만 호출자가 이미 트랜잭션인 경우는 어드바이저 순서로 해결되지 않으므로 해제를 지연시킨다.
 @Slf4j
 @Aspect
 @Component
@@ -49,14 +51,16 @@ public class DistributedLockAspect {
 		final RLock lock = redissonClient.getLock(lockKey);
 
 		boolean acquired = false;
+		boolean unlockDeferred = false;
 		try {
-			acquired = lock.tryLock(distributedLock.waitTime(), distributedLock.leaseTime(),
-				distributedLock.timeUnit());
+			acquired = tryLock(lock, distributedLock);
 
 			if (!acquired) {
 				log.info("[분산락 획득 실패] key={}", lockKey);
 				throw new DistributedLockException(lockKey);
 			}
+
+			unlockDeferred = deferUnlockUntilTransactionCompletion(lock, lockKey);
 
 			return joinPoint.proceed();
 		} catch (InterruptedException exception) {
@@ -64,10 +68,39 @@ public class DistributedLockAspect {
 			log.warn("[분산락 대기 중 인터럽트] key={}", lockKey);
 			throw new DistributedLockException(lockKey);
 		} finally {
-			if (acquired && lock.isHeldByCurrentThread()) {
+			if (acquired && !unlockDeferred && lock.isHeldByCurrentThread()) {
 				lock.unlock();
 			}
 		}
+	}
+
+	private boolean tryLock(final RLock lock, final DistributedLock distributedLock) throws InterruptedException {
+		if (distributedLock.leaseTime() < 0) {
+			return lock.tryLock(distributedLock.waitTime(), distributedLock.timeUnit());
+		}
+
+		return lock.tryLock(distributedLock.waitTime(), distributedLock.leaseTime(), distributedLock.timeUnit());
+	}
+
+	// 호출자가 이미 트랜잭션이면 대상 메서드 반환 시점에도 아직 커밋 전이다.
+	// 이때 락을 풀면 다음 스레드가 미커밋 상태를 읽으므로 트랜잭션 종료까지 해제를 미룬다.
+	private boolean deferUnlockUntilTransactionCompletion(final RLock lock, final String lockKey) {
+		if (!TransactionSynchronizationManager.isSynchronizationActive()
+			|| !TransactionSynchronizationManager.isActualTransactionActive()) {
+			return false;
+		}
+
+		TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+			@Override
+			public void afterCompletion(final int status) {
+				if (lock.isHeldByCurrentThread()) {
+					lock.unlock();
+				}
+			}
+		});
+
+		log.debug("[분산락 해제 지연] 호출자 트랜잭션 종료까지 점유를 유지한다. key={}", lockKey);
+		return true;
 	}
 
 	// JDK 프록시인 경우 시그니처가 인터페이스 메서드라 어노테이션을 찾지 못하므로 실제 대상 메서드로 보정한다.
