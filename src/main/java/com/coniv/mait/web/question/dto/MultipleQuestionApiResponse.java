@@ -18,6 +18,9 @@ public class MultipleQuestionApiResponse extends QuestionApiResponse {
 	@Schema(description = "객관식 문제의 선택지 목록", requiredMode = Schema.RequiredMode.REQUIRED)
 	private final List<MultipleChoiceApiResponse> choices;
 
+	@Schema(description = "객관식 문제의 정답 선택지 개수 (정답 비노출 모드에서도 제공)", requiredMode = Schema.RequiredMode.REQUIRED)
+	private final int answerCount;
+
 	public static MultipleQuestionApiResponse from(MultipleQuestionDto dto) {
 		List<MultipleChoiceApiResponse> choices = dto.getChoices().stream()
 			.map(MultipleChoiceApiResponse::from)
@@ -33,6 +36,7 @@ public class MultipleQuestionApiResponse extends QuestionApiResponse {
 			.imageId(dto.getImageId())
 			.type(QuestionType.MULTIPLE)
 			.choices(choices)
+			.answerCount(dto.getAnswerCount())
 			.build();
 	}
 }
