@@ -35,20 +35,17 @@ public class QuestionCopier {
 
 		Map<Long, QuestionEntity> copiedBySourceQuestionId = new LinkedHashMap<>();
 		for (QuestionEntity source : sources) {
-			copiedBySourceQuestionId.put(source.getId(),
-				questionFactories.get(source.getType()).copyQuestion(source, targetQuestionSet));
+			QuestionEntity copied = questionFactories.get(source.getType()).copyQuestion(source, targetQuestionSet);
+			copiedBySourceQuestionId.put(source.getId(), copied);
 		}
 		questionEntityRepository.saveAll(copiedBySourceQuestionId.values());
 
-		groupByQuestionType(copiedBySourceQuestionId)
-			.forEach((questionType, copiedOfType) ->
-				questionFactories.get(questionType).copySubEntities(copiedOfType));
-	}
-
-	private Map<QuestionType, Map<Long, QuestionEntity>> groupByQuestionType(
-		final Map<Long, QuestionEntity> copiedBySourceQuestionId) {
-		return copiedBySourceQuestionId.entrySet().stream()
+		Map<QuestionType, Map<Long, QuestionEntity>> copiedByQuestionType = copiedBySourceQuestionId.entrySet()
+			.stream()
 			.collect(Collectors.groupingBy(entry -> entry.getValue().getType(),
 				Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue)));
+
+		copiedByQuestionType.forEach((questionType, copiedOfType) ->
+			questionFactories.get(questionType).copySubEntities(copiedOfType));
 	}
 }
