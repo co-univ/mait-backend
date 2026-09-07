@@ -14,6 +14,8 @@ public interface MultipleChoiceEntityRepository extends JpaRepository<MultipleCh
 
 	List<MultipleChoiceEntity> findAllByQuestionIdIn(List<Long> questionIds);
 
+	int countByQuestionIdAndIsCorrectTrue(Long questionId);
+
 	@Modifying
 	@Query("DELETE FROM MultipleChoiceEntity m WHERE m.question.id = :questionId")
 	void deleteBulkAllByQuestionId(@Param("questionId") Long questionId);

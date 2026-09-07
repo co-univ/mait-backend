@@ -1,12 +1,18 @@
 package com.coniv.mait.migration.question;
 
+import java.util.List;
+
 import org.springframework.context.annotation.Profile;
-import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.coniv.mait.domain.question.entity.MultipleQuestionEntity;
+import com.coniv.mait.domain.question.enums.QuestionType;
+import com.coniv.mait.domain.question.repository.MultipleChoiceEntityRepository;
+import com.coniv.mait.domain.question.repository.QuestionEntityRepository;
 import com.coniv.mait.migration.MigrationJob;
 
+import jakarta.persistence.EntityManager;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
@@ -19,36 +25,50 @@ import lombok.extern.slf4j.Slf4j;
 @RequiredArgsConstructor
 public class MultipleQuestionAnswerCountMigrationJob implements MigrationJob {
 
-	private static final String ACTUAL_ANSWER_COUNT = """
-		(SELECT COUNT(*) FROM multiple_choices c
-		WHERE c.question_id = questions.id AND c.is_correct = true)
-		""";
+	private final QuestionEntityRepository questionEntityRepository;
 
-	private static final String MISMATCH_CONDITION = "question_type = 'multiple'"
-		+ " AND (answer_count IS NULL OR answer_count <> " + ACTUAL_ANSWER_COUNT + ")";
+	private final MultipleChoiceEntityRepository multipleChoiceEntityRepository;
 
-	private final JdbcTemplate jdbcTemplate;
+	private final EntityManager entityManager;
 
 	@Override
 	@Transactional
 	public void migrate() {
-		long mismatchCount = countMismatches();
-		log.info("[{}] 보정 전 정답 개수 불일치: {}건", getName(), mismatchCount);
-		if (mismatchCount == 0) {
+		List<MultipleQuestionEntity> questions = questionEntityRepository.findAllByQuestionType(QuestionType.MULTIPLE)
+			.stream()
+			.map(MultipleQuestionEntity.class::cast)
+			.toList();
+
+		int updatedCount = 0;
+		for (MultipleQuestionEntity question : questions) {
+			int actualAnswerCount = multipleChoiceEntityRepository.countByQuestionIdAndIsCorrectTrue(question.getId());
+			if (question.getAnswerCount() != actualAnswerCount) {
+				question.updateAnswerCount(actualAnswerCount);
+				updatedCount++;
+			}
+		}
+		log.info("[{}] 정답 개수 불일치: {}건", getName(), updatedCount);
+		if (updatedCount == 0) {
 			return;
 		}
 
-		int updatedCount = jdbcTemplate.update("UPDATE questions SET answer_count = " + ACTUAL_ANSWER_COUNT
-			+ " WHERE " + MISMATCH_CONDITION);
-
-		long remainingCount = countMismatches();
+		questionEntityRepository.flush();
+		long remainingCount = countMismatches(questions);
 		if (remainingCount != 0) {
 			throw new IllegalStateException("객관식 정답 개수 보정 후 불일치가 남아 있습니다: " + remainingCount);
 		}
 		log.info("[{}] 정답 개수 보정 완료: {}건, 남은 불일치: {}건", getName(), updatedCount, remainingCount);
 	}
 
-	private long countMismatches() {
-		return jdbcTemplate.queryForObject("SELECT COUNT(*) FROM questions WHERE " + MISMATCH_CONDITION, Long.class);
+	private long countMismatches(List<MultipleQuestionEntity> questions) {
+		long mismatchCount = 0;
+		for (MultipleQuestionEntity question : questions) {
+			entityManager.refresh(question);
+			int actualAnswerCount = multipleChoiceEntityRepository.countByQuestionIdAndIsCorrectTrue(question.getId());
+			if (question.getAnswerCount() != actualAnswerCount) {
+				mismatchCount++;
+			}
+		}
+		return mismatchCount;
 	}
 }
