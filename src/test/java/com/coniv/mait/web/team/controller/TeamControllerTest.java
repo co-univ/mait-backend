@@ -21,9 +21,11 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
+import com.coniv.mait.domain.team.enums.TeamType;
 import com.coniv.mait.domain.team.enums.TeamUserRole;
 import com.coniv.mait.domain.team.service.TeamService;
 import com.coniv.mait.domain.team.service.dto.TeamInvitationDto;
+import com.coniv.mait.domain.team.service.dto.TeamUserDto;
 import com.coniv.mait.global.auth.model.MaitUser;
 import com.coniv.mait.global.enums.InviteTokenDuration;
 import com.coniv.mait.global.filter.JwtAuthorizationFilter;
@@ -236,4 +238,58 @@ class TeamControllerTest {
 		verify(teamService).deleteTeam(eq(teamId), eq(USER_ID));
 	}
 
+	@Test
+	@DisplayName("가입 팀 목록 조회 API 성공 테스트 - role 미지정 시 서비스에 null 을 전달한다")
+	void getJoinedTeams_Success_WithoutRole() throws Exception {
+		// given
+		doReturn(List.of(joinedTeam("오너 팀", TeamUserRole.OWNER)))
+			.when(teamService).getJoinedTeams(USER_ID, null);
+
+		// when & then
+		mockMvc.perform(get("/api/v1/teams/joined"))
+			.andExpectAll(
+				status().isOk(),
+				jsonPath("$.isSuccess").value(true),
+				jsonPath("$.data[0].teamName").value("오너 팀"),
+				jsonPath("$.data[0].role").value("OWNER")
+			);
+
+		verify(teamService).getJoinedTeams(USER_ID, null);
+	}
+
+	@Test
+	@DisplayName("가입 팀 목록 조회 API 성공 테스트 - role 파라미터가 서비스로 그대로 바인딩된다")
+	void getJoinedTeams_Success_WithRole() throws Exception {
+		// given
+		doReturn(List.of(joinedTeam("메이커 팀", TeamUserRole.MAKER)))
+			.when(teamService).getJoinedTeams(USER_ID, TeamUserRole.MAKER);
+
+		// when & then
+		mockMvc.perform(get("/api/v1/teams/joined").param("role", "MAKER"))
+			.andExpectAll(
+				status().isOk(),
+				jsonPath("$.data[0].role").value("MAKER")
+			);
+
+		verify(teamService).getJoinedTeams(USER_ID, TeamUserRole.MAKER);
+	}
+
+	@Test
+	@DisplayName("가입 팀 목록 조회 API 실패 테스트 - 정의되지 않은 role 값은 400 을 반환한다")
+	void getJoinedTeams_Failure_InvalidRole() throws Exception {
+		// when & then
+		mockMvc.perform(get("/api/v1/teams/joined").param("role", "INVALID"))
+			.andExpect(status().isBadRequest());
+
+		verify(teamService, never()).getJoinedTeams(anyLong(), any());
+	}
+
+	private TeamUserDto joinedTeam(final String teamName, final TeamUserRole role) {
+		return TeamUserDto.builder()
+			.teamId(1L)
+			.teamName(teamName)
+			.teamType(TeamType.GROUP)
+			.role(role)
+			.build();
+	}
 }
