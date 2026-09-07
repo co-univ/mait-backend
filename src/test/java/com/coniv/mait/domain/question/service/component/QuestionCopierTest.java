@@ -17,6 +17,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import com.coniv.mait.domain.question.entity.MultipleQuestionEntity;
 import com.coniv.mait.domain.question.entity.QuestionEntity;
+import com.coniv.mait.domain.question.entity.QuestionImageEntity;
 import com.coniv.mait.domain.question.entity.QuestionSetEntity;
 import com.coniv.mait.domain.question.entity.ShortQuestionEntity;
 import com.coniv.mait.domain.question.enums.QuestionType;
@@ -35,6 +36,9 @@ class QuestionCopierTest {
 
 	@Mock
 	private ShortQuestionFactory shortQuestionFactory;
+
+	@Mock
+	private QuestionImageCopier questionImageCopier;
 
 	@Mock
 	private QuestionSetEntity targetQuestionSet;
@@ -103,10 +107,84 @@ class QuestionCopierTest {
 		assertThat(shortCaptor.getValue()).containsOnlyKeys(12L);
 	}
 
+
+	@Test
+	@DisplayName("문제 복제 - 이미지가 있는 문제는 복제된 이미지로 교체한다")
+	void copyQuestions_replacesImageWithCopiedOne() {
+		// given
+		MultipleQuestionEntity source = multipleQuestion(10L);
+		doReturn(List.<QuestionEntity>of(source)).when(questionEntityRepository)
+			.findAllByQuestionSetId(SOURCE_QUESTION_SET_ID);
+
+		MultipleQuestionEntity copied = MultipleQuestionEntity.builder()
+			.id(100L).lexoRank("a").imageId(7L).imageUrl("https://bucket/origin.png").build();
+		doReturn(copied).when(multipleQuestionFactory).copyQuestion(source, targetQuestionSet);
+
+		QuestionImageEntity copiedImage = QuestionImageEntity.builder()
+			.id(77L).url("https://bucket/copied.png").build();
+		doReturn(Map.of(7L, copiedImage)).when(questionImageCopier).copyAll(List.of(7L));
+
+		// when
+		questionCopier().copyQuestions(SOURCE_QUESTION_SET_ID, targetQuestionSet);
+
+		// then
+		assertThat(copied.getImageId()).isEqualTo(77L);
+		assertThat(copied.getImageUrl()).isEqualTo("https://bucket/copied.png");
+	}
+
+	@Test
+	@DisplayName("문제 복제 - 이미지가 없는 문제는 이미지 복제를 요청하지 않는다")
+	void copyQuestions_noImage_skipsImageCopy() {
+		// given
+		MultipleQuestionEntity source = multipleQuestion(10L);
+		doReturn(List.<QuestionEntity>of(source)).when(questionEntityRepository)
+			.findAllByQuestionSetId(SOURCE_QUESTION_SET_ID);
+
+		MultipleQuestionEntity copied = multipleQuestion(100L);
+		doReturn(copied).when(multipleQuestionFactory).copyQuestion(source, targetQuestionSet);
+		doReturn(Map.<Long, QuestionImageEntity>of()).when(questionImageCopier).copyAll(List.of());
+
+		// when
+		questionCopier().copyQuestions(SOURCE_QUESTION_SET_ID, targetQuestionSet);
+
+		// then
+		assertThat(copied.getImageId()).isNull();
+		verify(questionImageCopier).copyAll(List.of());
+	}
+
+	@Test
+	@DisplayName("문제 복제 - 여러 문제가 같은 이미지를 쓰면 한 번만 복제를 요청한다")
+	void copyQuestions_sharedImage_copiedOnce() {
+		// given
+		MultipleQuestionEntity firstSource = multipleQuestion(10L);
+		MultipleQuestionEntity secondSource = multipleQuestion(11L);
+		doReturn(List.<QuestionEntity>of(firstSource, secondSource)).when(questionEntityRepository)
+			.findAllByQuestionSetId(SOURCE_QUESTION_SET_ID);
+
+		MultipleQuestionEntity firstCopied = MultipleQuestionEntity.builder()
+			.id(100L).lexoRank("a").imageId(7L).build();
+		MultipleQuestionEntity secondCopied = MultipleQuestionEntity.builder()
+			.id(101L).lexoRank("a").imageId(7L).build();
+		doReturn(firstCopied).when(multipleQuestionFactory).copyQuestion(firstSource, targetQuestionSet);
+		doReturn(secondCopied).when(multipleQuestionFactory).copyQuestion(secondSource, targetQuestionSet);
+
+		QuestionImageEntity copiedImage = QuestionImageEntity.builder()
+			.id(77L).url("https://bucket/copied.png").build();
+		doReturn(Map.of(7L, copiedImage)).when(questionImageCopier).copyAll(List.of(7L));
+
+		// when
+		questionCopier().copyQuestions(SOURCE_QUESTION_SET_ID, targetQuestionSet);
+
+		// then
+		verify(questionImageCopier).copyAll(List.of(7L));
+		assertThat(firstCopied.getImageId()).isEqualTo(77L);
+		assertThat(secondCopied.getImageId()).isEqualTo(77L);
+	}
+
 	private QuestionCopier questionCopier() {
 		doReturn(QuestionType.MULTIPLE).when(multipleQuestionFactory).getQuestionType();
 		doReturn(QuestionType.SHORT).when(shortQuestionFactory).getQuestionType();
-		return new QuestionCopier(questionEntityRepository,
+		return new QuestionCopier(questionEntityRepository, questionImageCopier,
 			List.of(multipleQuestionFactory, shortQuestionFactory));
 	}
 

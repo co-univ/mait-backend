@@ -1,6 +1,7 @@
 package com.coniv.mait.web.question.controller;
 
 import static org.assertj.core.api.Assertions.*;
+import static org.mockito.Mockito.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
@@ -12,6 +13,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
 import com.coniv.mait.domain.question.entity.FillBlankAnswerEntity;
 import com.coniv.mait.domain.question.entity.FillBlankQuestionEntity;
@@ -20,6 +22,7 @@ import com.coniv.mait.domain.question.entity.MultipleQuestionEntity;
 import com.coniv.mait.domain.question.entity.OrderingOptionEntity;
 import com.coniv.mait.domain.question.entity.OrderingQuestionEntity;
 import com.coniv.mait.domain.question.entity.QuestionEntity;
+import com.coniv.mait.domain.question.entity.QuestionImageEntity;
 import com.coniv.mait.domain.question.entity.QuestionSetEntity;
 import com.coniv.mait.domain.question.entity.ShortAnswerEntity;
 import com.coniv.mait.domain.question.entity.ShortQuestionEntity;
@@ -31,6 +34,7 @@ import com.coniv.mait.domain.question.repository.FillBlankAnswerEntityRepository
 import com.coniv.mait.domain.question.repository.MultipleChoiceEntityRepository;
 import com.coniv.mait.domain.question.repository.OrderingOptionEntityRepository;
 import com.coniv.mait.domain.question.repository.QuestionEntityRepository;
+import com.coniv.mait.domain.question.repository.QuestionImageEntityRepository;
 import com.coniv.mait.domain.question.repository.QuestionSetEntityRepository;
 import com.coniv.mait.domain.question.repository.ShortAnswerEntityRepository;
 import com.coniv.mait.domain.team.entity.TeamEntity;
@@ -40,6 +44,10 @@ import com.coniv.mait.domain.team.repository.TeamEntityRepository;
 import com.coniv.mait.domain.team.repository.TeamUserEntityRepository;
 import com.coniv.mait.domain.user.entity.UserEntity;
 import com.coniv.mait.domain.user.repository.UserEntityRepository;
+import com.coniv.mait.global.component.dto.FileInfo;
+import com.coniv.mait.global.enums.FileExtension;
+import com.coniv.mait.global.s3.dto.FileType;
+import com.coniv.mait.global.s3.service.S3FileUploader;
 import com.coniv.mait.login.WithCustomUser;
 import com.coniv.mait.web.integration.BaseIntegrationTest;
 import com.coniv.mait.web.question.dto.CopyQuestionSetApiRequest;
@@ -74,6 +82,12 @@ public class QuestionSetCopyApiIntegrationTest extends BaseIntegrationTest {
 	@Autowired
 	private OrderingOptionEntityRepository orderingOptionEntityRepository;
 
+	@Autowired
+	private QuestionImageEntityRepository questionImageEntityRepository;
+
+	@MockitoBean
+	private S3FileUploader s3FileUploader;
+
 	@BeforeEach
 	void clear() {
 		multipleChoiceEntityRepository.deleteAll();
@@ -82,6 +96,7 @@ public class QuestionSetCopyApiIntegrationTest extends BaseIntegrationTest {
 		orderingOptionEntityRepository.deleteAll();
 		questionEntityRepository.deleteAll();
 		questionSetEntityRepository.deleteAll();
+		questionImageEntityRepository.deleteAll();
 	}
 
 	@Test
@@ -220,6 +235,75 @@ public class QuestionSetCopyApiIntegrationTest extends BaseIntegrationTest {
 			.containsExactlyInAnyOrder(tuple("가", 2), tuple("나", 1));
 
 		assertThat(multipleChoiceEntityRepository.findAllByQuestionId(multiple.getId())).hasSize(2);
+	}
+
+
+	@Test
+	@DisplayName("문제 셋 복제 - 문제 이미지가 S3 복사를 거쳐 별도 이미지로 분리된다")
+	void copyQuestionSet_success_copiesQuestionImage() throws Exception {
+		// given
+		UserEntity user = userEntityRepository.findByEmail("user@example.com").orElseThrow();
+		TeamEntity sourceTeam = joinTeam(user, "원본 팀", TeamUserRole.MAKER);
+		TeamEntity targetTeam = joinTeam(user, "대상 팀", TeamUserRole.MAKER);
+		QuestionSetEntity source = saveQuestionSet(sourceTeam, user);
+
+		QuestionImageEntity sourceImage = questionImageEntityRepository.save(QuestionImageEntity.builder()
+			.fileKey("questions/origin.png")
+			.url("https://bucket/questions/origin.png")
+			.bucket("mait-bucket")
+			.build());
+
+		questionEntityRepository.save(MultipleQuestionEntity.builder()
+			.content("이미지 문제").number(1L).lexoRank("0|100000:")
+			.imageId(sourceImage.getId()).imageUrl(sourceImage.getUrl())
+			.questionSet(source).answerCount(1).build());
+
+		questionEntityRepository.save(MultipleQuestionEntity.builder()
+			.content("이미지 없는 문제").number(2L).lexoRank("0|200000:")
+			.questionSet(source).answerCount(1).build());
+
+		doReturn(FileInfo.builder()
+			.key("questions/copied.png")
+			.url("https://bucket/questions/copied.png")
+			.bucket("mait-bucket")
+			.extension(FileExtension.PNG)
+			.build())
+			.when(s3FileUploader).copyFile("questions/origin.png", FileType.QUESTION_IMAGE);
+
+		// when
+		mockMvc.perform(post("/api/v1/question-sets/{questionSetId}/copy", source.getId())
+				.contentType(MediaType.APPLICATION_JSON)
+				.content(objectMapper.writeValueAsString(new CopyQuestionSetApiRequest(targetTeam.getId()))))
+			.andExpect(status().isOk());
+
+		// then
+		verify(s3FileUploader, times(1)).copyFile("questions/origin.png", FileType.QUESTION_IMAGE);
+
+		QuestionSetEntity copiedSet = questionSetEntityRepository.findAll().stream()
+			.filter(questionSet -> !questionSet.getId().equals(source.getId()))
+			.findFirst()
+			.orElseThrow();
+
+		List<QuestionEntity> copiedQuestions =
+			questionEntityRepository.findAllByQuestionSetIdOrderByLexoRankAsc(copiedSet.getId());
+		assertThat(copiedQuestions).hasSize(2);
+
+		QuestionEntity copiedWithImage = copiedQuestions.get(0);
+		assertThat(copiedWithImage.getImageId()).isNotNull();
+		assertThat(copiedWithImage.getImageId()).isNotEqualTo(sourceImage.getId());
+		assertThat(copiedWithImage.getImageUrl()).isEqualTo("https://bucket/questions/copied.png");
+
+		QuestionImageEntity copiedImage = questionImageEntityRepository
+			.findById(copiedWithImage.getImageId()).orElseThrow();
+		assertThat(copiedImage.getFileKey()).isEqualTo("questions/copied.png");
+		assertThat(copiedImage.isUsed()).isTrue();
+
+		assertThat(copiedQuestions.get(1).getImageId()).isNull();
+
+		QuestionImageEntity unchangedSource = questionImageEntityRepository
+			.findById(sourceImage.getId()).orElseThrow();
+		assertThat(unchangedSource.getFileKey()).isEqualTo("questions/origin.png");
+		assertThat(unchangedSource.isUsed()).isTrue();
 	}
 
 	private QuestionSetEntity saveQuestionSet(final TeamEntity team, final UserEntity user) {
