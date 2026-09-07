@@ -22,6 +22,7 @@ import org.springframework.web.multipart.MultipartFile;
 import com.coniv.mait.domain.question.enums.AiRequestStatus;
 import com.coniv.mait.domain.question.enums.DeliveryMode;
 import com.coniv.mait.domain.question.service.QuestionSetCategoryService;
+import com.coniv.mait.domain.question.service.QuestionSetCopyService;
 import com.coniv.mait.domain.question.service.QuestionSetDeleteService;
 import com.coniv.mait.domain.question.service.QuestionSetMaterialService;
 import com.coniv.mait.domain.question.service.QuestionSetService;
@@ -31,6 +32,8 @@ import com.coniv.mait.domain.solve.service.StudyModeService;
 import com.coniv.mait.global.auth.model.MaitUser;
 import com.coniv.mait.global.response.ApiResponse;
 import com.coniv.mait.web.question.dto.AiRequestStatusApiResponse;
+import com.coniv.mait.web.question.dto.CopyQuestionSetApiRequest;
+import com.coniv.mait.web.question.dto.CopyQuestionSetApiResponse;
 import com.coniv.mait.web.question.dto.CreateQuestionSetApiRequest;
 import com.coniv.mait.web.question.dto.CreateQuestionSetApiResponse;
 import com.coniv.mait.web.question.dto.QuestionSetApiResponse;
@@ -64,6 +67,8 @@ public class QuestionSetController {
 
 	private final QuestionSetCategoryService questionSetCategoryService;
 
+	private final QuestionSetCopyService questionSetCopyService;
+
 	@Operation(summary = "문제 셋 생성 API", description = "새로운 문제 셋을 생성합니다.")
 	@PostMapping
 	public ResponseEntity<ApiResponse<CreateQuestionSetApiResponse>> createQuestionSet(
@@ -74,6 +79,18 @@ public class QuestionSetController {
 			user.id());
 		return ResponseEntity.status(HttpStatus.OK)
 			.body(ApiResponse.ok(CreateQuestionSetApiResponse.from(questionSetDto)));
+	}
+
+	@Operation(summary = "문제 셋 복제 API",
+		description = "원본 문제 셋을 지정한 팀으로 복제한다. 원본 팀의 멤버이면서 대상 팀에 문제 셋 생성 권한이 있어야 한다.")
+	@PostMapping("/{questionSetId}/copy")
+	public ResponseEntity<ApiResponse<CopyQuestionSetApiResponse>> copyQuestionSet(
+		@AuthenticationPrincipal MaitUser user,
+		@PathVariable Long questionSetId,
+		@Valid @RequestBody CopyQuestionSetApiRequest request) {
+		QuestionSetDto copied = questionSetCopyService.copyQuestionSet(questionSetId, request.targetTeamId(),
+			user.id());
+		return ResponseEntity.ok(ApiResponse.ok(CopyQuestionSetApiResponse.from(copied)));
 	}
 
 	@Operation(summary = "문제 셋에 사용될 파일 업로드 API", description = "문제 셋 생성 과정에서 사용될 파일을 업로드합니다.")
