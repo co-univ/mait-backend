@@ -19,6 +19,7 @@ import com.coniv.mait.domain.question.enums.QuestionSetCreationType;
 import com.coniv.mait.domain.question.enums.QuestionSetSolveMode;
 import com.coniv.mait.domain.question.enums.QuestionSetStatus;
 import com.coniv.mait.domain.question.repository.QuestionSetEntityRepository;
+import com.coniv.mait.domain.question.service.component.QuestionCopier;
 import com.coniv.mait.domain.question.service.component.QuestionSetReader;
 import com.coniv.mait.domain.question.service.dto.QuestionSetDto;
 import com.coniv.mait.domain.user.exception.UserRoleException;
@@ -42,6 +43,9 @@ class QuestionSetCopyServiceTest {
 
 	@Mock
 	private TeamRoleValidator teamRoleValidator;
+
+	@Mock
+	private QuestionCopier questionCopier;
 
 	@InjectMocks
 	private QuestionSetCopyService questionSetCopyService;
