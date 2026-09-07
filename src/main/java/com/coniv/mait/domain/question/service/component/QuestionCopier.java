@@ -7,6 +7,7 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.coniv.mait.domain.question.entity.QuestionEntity;
 import com.coniv.mait.domain.question.entity.QuestionSetEntity;
@@ -27,6 +28,7 @@ public class QuestionCopier {
 			.collect(Collectors.toUnmodifiableMap(QuestionFactory::getQuestionType, Function.identity()));
 	}
 
+	@Transactional
 	public void copyQuestions(final Long sourceQuestionSetId, final QuestionSetEntity targetQuestionSet) {
 		List<QuestionEntity> sources = questionEntityRepository.findAllByQuestionSetId(sourceQuestionSetId);
 		if (sources.isEmpty()) {
