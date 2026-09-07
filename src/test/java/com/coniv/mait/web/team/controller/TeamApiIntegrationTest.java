@@ -1,6 +1,7 @@
 package com.coniv.mait.web.team.controller;
 
 import static org.assertj.core.api.Assertions.*;
+import static org.hamcrest.Matchers.*;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
@@ -562,5 +563,52 @@ public class TeamApiIntegrationTest extends BaseIntegrationTest {
 		teamUserEntityRepository.save(teamUser);
 
 		return team;
+	}
+
+	@Test
+	@Transactional
+	@WithCustomUser(email = "joined-all@example.com", name = "가입자")
+	@DisplayName("가입 팀 목록 조회 API 통합 테스트 - role 미지정 시 가입한 전체 팀을 반환한다")
+	void getJoinedTeams_Success_WithoutRole() throws Exception {
+		// given
+		UserEntity user = userEntityRepository.findByEmail("joined-all@example.com").orElseThrow();
+		joinTeam(user, "오너 팀", TeamUserRole.OWNER);
+		joinTeam(user, "메이커 팀", TeamUserRole.MAKER);
+		joinTeam(user, "플레이어 팀", TeamUserRole.PLAYER);
+
+		// when & then
+		mockMvc.perform(get("/api/v1/teams/joined").with(csrf()))
+			.andExpectAll(
+				status().isOk(),
+				jsonPath("$.isSuccess").value(true),
+				jsonPath("$.data.length()").value(3),
+				jsonPath("$.data[*].teamName").value(containsInAnyOrder("오너 팀", "메이커 팀", "플레이어 팀"))
+			);
+	}
+
+	@Test
+	@Transactional
+	@WithCustomUser(email = "joined-maker@example.com", name = "가입자")
+	@DisplayName("가입 팀 목록 조회 API 통합 테스트 - role=MAKER 는 상위 권한인 OWNER 팀까지 반환한다")
+	void getJoinedTeams_Success_FilterByMakerRole() throws Exception {
+		// given
+		UserEntity user = userEntityRepository.findByEmail("joined-maker@example.com").orElseThrow();
+		joinTeam(user, "오너 팀", TeamUserRole.OWNER);
+		joinTeam(user, "메이커 팀", TeamUserRole.MAKER);
+		joinTeam(user, "플레이어 팀", TeamUserRole.PLAYER);
+
+		// when & then
+		mockMvc.perform(get("/api/v1/teams/joined").param("role", "MAKER").with(csrf()))
+			.andExpectAll(
+				status().isOk(),
+				jsonPath("$.data.length()").value(2),
+				jsonPath("$.data[*].teamName").value(containsInAnyOrder("오너 팀", "메이커 팀")),
+				jsonPath("$.data[*].role").value(containsInAnyOrder("OWNER", "MAKER"))
+			);
+	}
+
+	private void joinTeam(final UserEntity user, final String teamName, final TeamUserRole role) {
+		TeamEntity team = teamEntityRepository.save(TeamEntity.ofGroup(teamName, user.getId()));
+		teamUserEntityRepository.save(TeamUserEntity.createTeamUser(user, team, role));
 	}
 }
