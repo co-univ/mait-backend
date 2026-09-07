@@ -12,6 +12,8 @@ import com.coniv.mait.domain.question.entity.FillBlankAnswerEntity;
 public interface FillBlankAnswerEntityRepository extends JpaRepository<FillBlankAnswerEntity, Long> {
 	List<FillBlankAnswerEntity> findAllByFillBlankQuestionId(Long fillBlankQuestionId);
 
+	List<FillBlankAnswerEntity> findAllByFillBlankQuestionIdIn(List<Long> fillBlankQuestionIds);
+
 	@Modifying
 	@Query("DELETE FROM FillBlankAnswerEntity f WHERE f.fillBlankQuestionId = :questionId")
 	void deleteBulkAllByQuestionId(@Param("questionId") Long questionId);
