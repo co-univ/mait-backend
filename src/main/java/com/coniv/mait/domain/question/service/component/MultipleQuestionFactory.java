@@ -2,6 +2,7 @@ package com.coniv.mait.domain.question.service.component;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
@@ -127,5 +128,36 @@ public class MultipleQuestionFactory implements QuestionFactory<MultipleQuestion
 
 	private int calculateAnswerCount(List<MultipleChoiceDto> choices) {
 		return (int)choices.stream().filter(MultipleChoiceDto::getIsCorrect).count();
+	}
+
+	@Override
+	public MultipleQuestionEntity copyQuestion(QuestionEntity source, QuestionSetEntity targetQuestionSet) {
+		return MultipleQuestionEntity.builder()
+			.content(source.getContent())
+			.explanation(source.getExplanation())
+			.number(source.getNumber())
+			.lexoRank(source.getLexoRank())
+			.imageUrl(source.getImageUrl())
+			.imageId(source.getImageId())
+			.questionSet(targetQuestionSet)
+			.answerCount(((MultipleQuestionEntity)source).getAnswerCount())
+			.build();
+	}
+
+	@Override
+	public void copySubEntities(Map<Long, QuestionEntity> copiedBySourceQuestionId) {
+		List<MultipleChoiceEntity> sources = multipleChoiceEntityRepository.findAllByQuestionIdIn(
+			List.copyOf(copiedBySourceQuestionId.keySet()));
+
+		List<MultipleChoiceEntity> copies = sources.stream()
+			.map(source -> MultipleChoiceEntity.builder()
+				.number(source.getNumber())
+				.content(source.getContent())
+				.isCorrect(source.isCorrect())
+				.question((MultipleQuestionEntity)copiedBySourceQuestionId.get(source.getQuestion().getId()))
+				.build())
+			.toList();
+
+		multipleChoiceEntityRepository.saveAll(copies);
 	}
 }
