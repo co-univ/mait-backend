@@ -12,6 +12,8 @@ public interface FileUploader {
 
 	FileInfo uploadFile(MultipartFile file, FileType type);
 
+	FileInfo copyFile(String sourceKey, FileType type);
+
 	static String generateKey(String directory, FileExtension extension) {
 		return directory + "/" + UUID.randomUUID() + extension.getExtension();
 	}

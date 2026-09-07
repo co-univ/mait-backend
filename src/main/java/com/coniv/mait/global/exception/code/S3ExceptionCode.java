@@ -7,6 +7,7 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public enum S3ExceptionCode {
 	PUT("사진 업로드에 실패했습니다."),
+	COPY("사진 복사에 실패했습니다."),
 	INVALID_TYPE("지원하지 않는 확장자입니다.");
 
 	private final String message;

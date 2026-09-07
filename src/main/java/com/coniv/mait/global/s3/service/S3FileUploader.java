@@ -16,8 +16,10 @@ import com.coniv.mait.global.util.FileUtil;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import software.amazon.awssdk.core.exception.SdkException;
 import software.amazon.awssdk.core.sync.RequestBody;
 import software.amazon.awssdk.services.s3.S3Client;
+import software.amazon.awssdk.services.s3.model.CopyObjectRequest;
 import software.amazon.awssdk.services.s3.model.GetUrlRequest;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 
@@ -48,19 +50,51 @@ public class S3FileUploader implements FileUploader {
 
 		putObject(file, putObjectRequest);
 
-		final String url = s3Client.utilities()
+		return FileInfo.builder()
+			.bucket(s3Property.getBucket())
+			.key(key)
+			.url(toUrl(key))
+			.extension(extension)
+			.build();
+	}
+
+	@Override
+	public FileInfo copyFile(final String sourceKey, final FileType type) {
+		final FileExtension extension = FileUtil.getFileExtension(sourceKey);
+		final String destinationKey = FileUploader.generateKey(type.getDirectory(), extension);
+
+		copyObject(sourceKey, destinationKey);
+
+		return FileInfo.builder()
+			.bucket(s3Property.getBucket())
+			.key(destinationKey)
+			.url(toUrl(destinationKey))
+			.extension(extension)
+			.build();
+	}
+
+	private void copyObject(final String sourceKey, final String destinationKey) {
+		try {
+			s3Client.copyObject(CopyObjectRequest.builder()
+				.sourceBucket(s3Property.getBucket())
+				.sourceKey(sourceKey)
+				.destinationBucket(s3Property.getBucket())
+				.destinationKey(destinationKey)
+				.build());
+		} catch (SdkException exception) {
+			log.error("[S3 복사 과정에서의 에러] bucket: {}, sourceKey: {}, destinationKey: {}",
+				s3Property.getBucket(), sourceKey, destinationKey, exception);
+			throw new S3FileException(S3ExceptionCode.COPY, s3Property.getBucket(), sourceKey);
+		}
+	}
+
+	private String toUrl(final String key) {
+		return s3Client.utilities()
 			.getUrl(GetUrlRequest.builder()
 				.bucket(s3Property.getBucket())
 				.key(key)
 				.build()
 			).toExternalForm();
-
-		return FileInfo.builder()
-			.bucket(s3Property.getBucket())
-			.key(key)
-			.url(url)
-			.extension(extension)
-			.build();
 	}
 
 	private void validateFileExtensions(FileType type, FileExtension extension) {
