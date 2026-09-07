@@ -12,15 +12,23 @@ import org.junit.jupiter.api.Test;
 import org.redisson.api.RLock;
 import org.redisson.api.RedissonClient;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Import;
+import org.springframework.test.context.ActiveProfiles;
+import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionTemplate;
 
 import com.coniv.mait.global.exception.custom.DistributedLockException;
-import com.coniv.mait.web.integration.BaseIntegrationTest;
 
+// 트랜잭션 경계에 따른 락 해제 시점이 검증 대상이므로 클래스 레벨 트랜잭션을 두지 않고
+// 필요한 테스트에서만 TransactionTemplate 으로 호출자 트랜잭션을 만든다.
+@SpringBootTest
+@ActiveProfiles("test")
 @Import(DistributedLockIntegrationTest.LockTestConfig.class)
-class DistributedLockIntegrationTest extends BaseIntegrationTest {
+class DistributedLockIntegrationTest {
 
 	private static final String KEY_PREFIX = "$lock:integration:";
 
@@ -30,12 +38,20 @@ class DistributedLockIntegrationTest extends BaseIntegrationTest {
 	@Autowired
 	private RedissonClient redissonClient;
 
+	@Autowired
+	private TransactionTemplate transactionTemplate;
+
 	@TestConfiguration
 	static class LockTestConfig {
 
 		@Bean
 		LockTestService lockTestService() {
 			return new LockTestService();
+		}
+
+		@Bean
+		TransactionTemplate lockTestTransactionTemplate(PlatformTransactionManager transactionManager) {
+			return new TransactionTemplate(transactionManager);
 		}
 	}
 
@@ -47,8 +63,32 @@ class DistributedLockIntegrationTest extends BaseIntegrationTest {
 		}
 
 		@DistributedLock(key = "'integration:' + #id")
+		@Transactional
+		public String runInTransaction(Long id) {
+			return "done:" + id;
+		}
+
+		@DistributedLock(key = "'integration:' + #id")
 		public String runAndThrow(Long id) {
 			throw new IllegalStateException("대상 메서드 실패");
+		}
+	}
+
+	private boolean acquirableByAnotherThread(String lockKey) {
+		ExecutorService executor = Executors.newSingleThreadExecutor();
+		try {
+			return executor.submit(() -> {
+				RLock lock = redissonClient.getLock(lockKey);
+				boolean acquired = lock.tryLock(0, 5, TimeUnit.SECONDS);
+				if (acquired) {
+					lock.unlock();
+				}
+				return acquired;
+			}).get(5, TimeUnit.SECONDS);
+		} catch (Exception exception) {
+			throw new IllegalStateException(exception);
+		} finally {
+			executor.shutdown();
 		}
 	}
 
@@ -127,17 +167,47 @@ class DistributedLockIntegrationTest extends BaseIntegrationTest {
 	}
 
 	@Test
+	@DisplayName("트랜잭션 밖에서 호출하면 메서드 반환과 함께 락이 해제된다")
+	void withoutTransaction_lockReleasedOnReturn() {
+		// given
+		final Long id = 5L;
+
+		// when
+		lockTestService.run(id);
+
+		// then
+		assertThat(acquirableByAnotherThread(KEY_PREFIX + id)).isTrue();
+	}
+
+	@Test
+	@DisplayName("호출자 트랜잭션에 참여하면 커밋 전까지 락이 해제되지 않는다")
+	void joinedCallerTransaction_lockHeldUntilCommit() {
+		// given
+		final Long id = 6L;
+		final String lockKey = KEY_PREFIX + id;
+
+		// when
+		transactionTemplate.execute(status -> {
+			lockTestService.runInTransaction(id);
+
+			// 대상 메서드는 반환됐지만 호출자 트랜잭션은 아직 커밋 전이다
+			assertThat(acquirableByAnotherThread(lockKey)).isFalse();
+			return null;
+		});
+
+		// then
+		assertThat(acquirableByAnotherThread(lockKey)).isTrue();
+	}
+
+	@Test
 	@DisplayName("대상 메서드가 예외로 끝나도 락이 해제되어 다음 요청이 처리된다")
 	void targetThrows_lockReleasedForNextCall() {
 		// given
-		final Long id = 5L;
+		final Long id = 7L;
 		assertThatThrownBy(() -> lockTestService.runAndThrow(id))
 			.isInstanceOf(IllegalStateException.class);
 
-		// when
-		String result = lockTestService.run(id);
-
-		// then
-		assertThat(result).isEqualTo("done:5");
+		// when & then
+		assertThat(acquirableByAnotherThread(KEY_PREFIX + id)).isTrue();
 	}
 }
