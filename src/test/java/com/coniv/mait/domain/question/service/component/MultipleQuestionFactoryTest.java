@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 import java.util.List;
+import java.util.Map;
 
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -73,6 +74,7 @@ class MultipleQuestionFactoryTest {
 		// then
 		assertThat(result).isNotNull();
 		assertThat(result).isInstanceOf(MultipleQuestionEntity.class);
+		assertThat(((MultipleQuestionEntity)result).getAnswerCount()).isEqualTo(1);
 		verify(questionEntityRepository).save(any(MultipleQuestionEntity.class));
 		verify(multipleChoiceEntityRepository).saveAll(any());
 	}
@@ -188,5 +190,39 @@ class MultipleQuestionFactoryTest {
 
 		// then
 		verify(multipleChoiceEntityRepository).saveAll(any(List.class));
+		verify(question).updateAnswerCount(1);
+	}
+
+	@Test
+	@DisplayName("복제 시 원본의 잘못된 정답 개수 대신 문제별 선택지에서 재계산한다")
+	void copySubEntities_RecalculatesAnswerCounts() {
+		// given
+		MultipleQuestionEntity source = MultipleQuestionEntity.builder().id(1L).answerCount(7).build();
+		MultipleQuestionEntity incorrectSource = MultipleQuestionEntity.builder().id(2L).answerCount(4).build();
+		MultipleQuestionEntity emptySource = MultipleQuestionEntity.builder().id(3L).answerCount(4).build();
+		MultipleQuestionEntity copied = multipleQuestionFactory.copyQuestion(source, questionSetEntity);
+		MultipleQuestionEntity incorrectCopy = multipleQuestionFactory.copyQuestion(incorrectSource, questionSetEntity);
+		MultipleQuestionEntity emptyCopy = multipleQuestionFactory.copyQuestion(emptySource, questionSetEntity);
+		when(multipleChoiceEntityRepository.findAllByQuestionIdIn(anyList())).thenReturn(List.of(
+			MultipleChoiceEntity.builder().question(source).number(1).isCorrect(true).build(),
+			MultipleChoiceEntity.builder().question(source).number(2).isCorrect(false).build(),
+			MultipleChoiceEntity.builder().question(source).number(3).isCorrect(true).build(),
+			MultipleChoiceEntity.builder().question(incorrectSource).number(1).isCorrect(false).build()
+		));
+
+		// when
+		multipleQuestionFactory.copySubEntities(Map.of(1L, copied, 2L, incorrectCopy, 3L, emptyCopy));
+
+		// then
+		assertThat(copied.getAnswerCount()).isEqualTo(2);
+		assertThat(incorrectCopy.getAnswerCount()).isZero();
+		assertThat(emptyCopy.getAnswerCount()).isZero();
+		assertThat(source.getAnswerCount()).isEqualTo(7);
+		verify(multipleChoiceEntityRepository).saveAll(argThat(choices -> {
+			List<MultipleChoiceEntity> savedChoices = (List<MultipleChoiceEntity>)choices;
+			return savedChoices.size() == 4
+				&& savedChoices.stream().filter(MultipleChoiceEntity::isCorrect)
+				.allMatch(choice -> choice.getQuestion() == copied);
+		}));
 	}
 }

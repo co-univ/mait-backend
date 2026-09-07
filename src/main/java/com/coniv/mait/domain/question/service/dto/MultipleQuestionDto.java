@@ -25,6 +25,8 @@ public class MultipleQuestionDto extends QuestionDto {
 	@Size(min = 2, max = 8, message = "객관식 선지의 개수는 2 ~ 8개여야 합니다.")
 	private List<MultipleChoiceDto> choices;
 
+	private int answerCount;
+
 	@Override
 	public QuestionDto toQuestionDto() {
 		return this;
@@ -50,6 +52,7 @@ public class MultipleQuestionDto extends QuestionDto {
 			.imageId(multipleQuestion.getImageId())
 			.questionStatus(multipleQuestion.getQuestionStatus())
 			.choices(choiceDtos)
+			.answerCount(multipleQuestion.getAnswerCount())
 			.build();
 	}
 }

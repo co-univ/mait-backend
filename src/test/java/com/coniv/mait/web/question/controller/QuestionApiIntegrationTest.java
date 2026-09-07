@@ -26,6 +26,8 @@ import com.coniv.mait.domain.question.entity.QuestionSetEntity;
 import com.coniv.mait.domain.question.entity.ShortAnswerEntity;
 import com.coniv.mait.domain.question.entity.ShortQuestionEntity;
 import com.coniv.mait.domain.question.enums.QuestionSetCreationType;
+import com.coniv.mait.domain.question.enums.QuestionSetSolveMode;
+import com.coniv.mait.domain.question.enums.QuestionSetStatus;
 import com.coniv.mait.domain.question.enums.QuestionType;
 import com.coniv.mait.domain.question.repository.FillBlankAnswerEntityRepository;
 import com.coniv.mait.domain.question.repository.MultipleChoiceEntityRepository;
@@ -77,6 +79,30 @@ public class QuestionApiIntegrationTest extends BaseIntegrationTest {
 	}
 
 	@Test
+	@DisplayName("기본 객관식 문제는 오답 선택지 4개와 정답 개수 0으로 생성된다")
+	void createDefaultMultipleQuestionHasZeroAnswers() throws Exception {
+		// given
+		QuestionSetEntity questionSet = questionSetEntityRepository.save(
+			QuestionSetEntity.of("기본 문제 테스트", QuestionSetCreationType.MANUAL));
+
+		// when
+		mockMvc.perform(post("/api/v1/question-sets/{questionSetId}/questions/default", questionSet.getId()))
+			.andExpectAll(
+				status().isOk(),
+				jsonPath("$.data.answerCount").value(0),
+				jsonPath("$.data.choices.length()").value(4)
+			);
+
+		// then
+		MultipleQuestionEntity question = (MultipleQuestionEntity)questionEntityRepository
+			.findAllByQuestionSetId(questionSet.getId()).get(0);
+		assertThat(question.getAnswerCount()).isZero();
+		assertThat(multipleChoiceEntityRepository.findAllByQuestionId(question.getId()))
+			.hasSize(4)
+			.allMatch(choice -> !choice.isCorrect());
+	}
+
+	@Test
 	@DisplayName("객관식 문제 조회 API 성공 테스트")
 	void getMultipleQuestionApiSuccess() throws Exception {
 		// given
@@ -86,6 +112,7 @@ public class QuestionApiIntegrationTest extends BaseIntegrationTest {
 		MultipleQuestionEntity question = MultipleQuestionEntity.builder()
 			.content("객관식 문제 내용")
 			.explanation("객관식 문제 해설")
+			.answerCount(1)
 			.number(1L)
 			.lexoRank("m")
 			.questionSet(savedQuestionSet)
@@ -118,6 +145,7 @@ public class QuestionApiIntegrationTest extends BaseIntegrationTest {
 				jsonPath("$.data.id").value(savedQuestion.getId()),
 				jsonPath("$.data.type").value(QuestionType.MULTIPLE.name()),
 				jsonPath("$.data.content").value("객관식 문제 내용"),
+				jsonPath("$.data.answerCount").value(1),
 				jsonPath("$.data.explanation").value("객관식 문제 해설"),
 				jsonPath("$.data.number").value(1),
 				jsonPath("$.data.choices").isArray(),
@@ -128,6 +156,42 @@ public class QuestionApiIntegrationTest extends BaseIntegrationTest {
 				jsonPath("$.data.choices[1].number").value(2),
 				jsonPath("$.data.choices[1].content").value("선택지 2"),
 				jsonPath("$.data.choices[1].isCorrect").value(false)
+			);
+	}
+
+	@Test
+	@DisplayName("실시간 객관식 조회는 정답 여부를 숨기고 정답 개수를 반환한다")
+	void getMultipleQuestionInLiveTimeReturnsAnswerCount() throws Exception {
+		// given
+		QuestionSetEntity questionSet = questionSetEntityRepository.save(QuestionSetEntity.builder()
+			.title("실시간 문제 셋")
+			.solveMode(QuestionSetSolveMode.LIVE_TIME)
+			.status(QuestionSetStatus.ONGOING)
+			.build());
+		MultipleQuestionEntity question = questionEntityRepository.save(MultipleQuestionEntity.builder()
+			.content("정답이 두 개인 문제")
+			.number(1L)
+			.lexoRank("m")
+			.questionSet(questionSet)
+			.answerCount(2)
+			.build());
+		multipleChoiceEntityRepository.saveAll(List.of(
+			MultipleChoiceEntity.builder().question(question).number(1).content("정답 1").isCorrect(true).build(),
+			MultipleChoiceEntity.builder().question(question).number(2).content("오답").isCorrect(false).build(),
+			MultipleChoiceEntity.builder().question(question).number(3).content("정답 2").isCorrect(true).build()
+		));
+
+		// when & then
+		mockMvc.perform(get("/api/v1/question-sets/{questionSetId}/questions/{questionId}",
+				questionSet.getId(), question.getId())
+				.param("mode", "LIVE_TIME"))
+			.andExpectAll(
+				status().isOk(),
+				jsonPath("$.data.answerCount").value(2),
+				jsonPath("$.data.choices.length()").value(3),
+				jsonPath("$.data.choices[0].isCorrect").isEmpty(),
+				jsonPath("$.data.choices[1].isCorrect").isEmpty(),
+				jsonPath("$.data.choices[2].isCorrect").isEmpty()
 			);
 	}
 
@@ -497,6 +561,7 @@ public class QuestionApiIntegrationTest extends BaseIntegrationTest {
 
 		MultipleQuestionEntity originalQuestion = MultipleQuestionEntity.builder()
 			.content("원본 객관식 문제 내용")
+			.answerCount(1)
 			.explanation("원본 문제 해설")
 			.number(1L)
 			.questionSet(savedQuestionSet)
@@ -535,7 +600,7 @@ public class QuestionApiIntegrationTest extends BaseIntegrationTest {
 			MultipleChoiceDto.builder()
 				.number(3)
 				.content("새로운 선택지 3")
-				.isCorrect(false)
+				.isCorrect(true)
 				.build()
 		);
 
@@ -556,6 +621,7 @@ public class QuestionApiIntegrationTest extends BaseIntegrationTest {
 			.andExpect(jsonPath("$.isSuccess").value(true))
 			.andExpect(jsonPath("$.data").exists())
 			.andExpect(jsonPath("$.data.content").value("수정된 객관식 문제 내용"))
+			.andExpect(jsonPath("$.data.answerCount").value(2))
 			.andExpect(jsonPath("$.data.explanation").value("수정된 문제 해설"));
 
 		// then - 수정된 문제 확인
@@ -563,6 +629,7 @@ public class QuestionApiIntegrationTest extends BaseIntegrationTest {
 			.findById(savedQuestion.getId()).orElseThrow();
 
 		assertThat(updatedQuestion.getContent()).isEqualTo("수정된 객관식 문제 내용");
+		assertThat(updatedQuestion.getAnswerCount()).isEqualTo(2);
 		assertThat(updatedQuestion.getExplanation()).isEqualTo("수정된 문제 해설");
 		assertThat(updatedQuestion.getNumber()).isEqualTo(1L);
 
@@ -571,17 +638,14 @@ public class QuestionApiIntegrationTest extends BaseIntegrationTest {
 		assertThat(updatedChoiceEntities).extracting("content")
 			.containsExactlyInAnyOrder("수정된 선택지 1", "수정된 선택지 2", "새로운 선택지 3");
 
-		// 정답이 2번으로 변경되었는지 확인
+		// 정답이 1개에서 2개로 변경되었는지 확인
 		long correctCount = updatedChoiceEntities.stream()
 			.mapToLong(choice -> choice.isCorrect() ? 1 : 0)
 			.sum();
-		assertThat(correctCount).isEqualTo(1);
-
-		MultipleChoiceEntity correctChoice = updatedChoiceEntities.stream()
-			.filter(MultipleChoiceEntity::isCorrect)
-			.findFirst().orElseThrow();
-		assertThat(correctChoice.getNumber()).isEqualTo(2);
-		assertThat(correctChoice.getContent()).isEqualTo("수정된 선택지 2");
+		assertThat(correctCount).isEqualTo(updatedQuestion.getAnswerCount());
+		assertThat(updatedChoiceEntities).filteredOn(MultipleChoiceEntity::isCorrect)
+			.extracting(MultipleChoiceEntity::getNumber)
+			.containsExactlyInAnyOrder(2, 3);
 	}
 
 	@Test
