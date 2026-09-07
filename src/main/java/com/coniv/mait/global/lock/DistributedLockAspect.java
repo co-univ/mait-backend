@@ -26,8 +26,6 @@ import com.coniv.mait.global.exception.custom.DistributedLockException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
-// @Order 로 같은 프록시의 트랜잭션 어드바이스(LOWEST_PRECEDENCE)보다 바깥에서 동작시킨다.
-// 다만 호출자가 이미 트랜잭션인 경우는 어드바이저 순서로 해결되지 않으므로 해제를 지연시킨다.
 @Slf4j
 @Aspect
 @Component
@@ -43,7 +41,7 @@ public class DistributedLockAspect {
 
 	private final RedissonClient redissonClient;
 
-	@Around("@annotation(com.coniv.mait.global.lock.DistributedLock)")
+	@Around("@annotation(DistributedLock)")
 	public Object lock(final ProceedingJoinPoint joinPoint) throws Throwable {
 		final Method method = resolveTargetMethod(joinPoint);
 		final DistributedLock distributedLock = method.getAnnotation(DistributedLock.class);
