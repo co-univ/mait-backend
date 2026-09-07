@@ -41,6 +41,7 @@ import com.coniv.mait.domain.team.service.dto.TeamUserDto;
 import com.coniv.mait.domain.user.entity.UserEntity;
 import com.coniv.mait.domain.user.repository.UserEntityRepository;
 import com.coniv.mait.domain.user.service.component.TeamRoleValidator;
+import com.coniv.mait.domain.user.service.component.UserReader;
 import com.coniv.mait.global.auth.model.MaitUser;
 import com.coniv.mait.global.enums.InviteTokenDuration;
 import com.coniv.mait.global.event.MaitEventPublisher;
@@ -62,6 +63,7 @@ public class TeamService {
 	private final TeamReader teamReader;
 	private final QuestionSetEntityRepository questionSetEntityRepository;
 	private final TeamRoleValidator teamRoleValidator;
+	private final UserReader userReader;
 
 	private static final String PERSONAL_WORKSPACE_NAME_SUFFIX = "의 워크스페이스";
 
@@ -286,12 +288,12 @@ public class TeamService {
 	}
 
 	@Transactional(readOnly = true)
-	public List<TeamUserDto> getJoinedTeams(final Long userId) {
-		UserEntity user = userEntityRepository.findById(userId)
-			.orElseThrow(() -> new EntityNotFoundException("User not found with id: " + userId));
+	public List<TeamUserDto> getJoinedTeams(final Long userId, final TeamUserRole requiredRole) {
+		UserEntity user = userReader.getById(userId);
 
 		return teamUserEntityRepository.findAllByUserFetchJoinActiveTeam(user).stream()
 			.map(TeamUserDto::from)
+			.filter(teamUser -> requiredRole == null || teamUser.getRole().covers(requiredRole))
 			.toList();
 	}
 

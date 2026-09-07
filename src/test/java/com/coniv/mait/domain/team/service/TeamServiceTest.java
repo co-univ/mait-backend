@@ -39,11 +39,13 @@ import com.coniv.mait.domain.team.service.component.InviteTokenGenerator;
 import com.coniv.mait.domain.team.service.component.TeamReader;
 import com.coniv.mait.domain.team.service.dto.TeamInvitationDto;
 import com.coniv.mait.domain.team.service.dto.TeamInvitationLinkDto;
+import com.coniv.mait.domain.team.service.dto.TeamUserDto;
 import com.coniv.mait.domain.user.entity.UserEntity;
 import com.coniv.mait.domain.user.enums.LoginProvider;
 import com.coniv.mait.domain.user.exception.UserRoleException;
 import com.coniv.mait.domain.user.repository.UserEntityRepository;
 import com.coniv.mait.domain.user.service.component.TeamRoleValidator;
+import com.coniv.mait.domain.user.service.component.UserReader;
 import com.coniv.mait.global.auth.model.MaitUser;
 import com.coniv.mait.global.enums.InviteTokenDuration;
 import com.coniv.mait.global.event.MaitEventPublisher;
@@ -82,6 +84,9 @@ class TeamServiceTest {
 
 	@Mock
 	private TeamRoleValidator teamRoleValidator;
+
+	@Mock
+	private UserReader userReader;
 
 	@InjectMocks
 	private TeamService teamService;
@@ -568,5 +573,94 @@ class TeamServiceTest {
 		assertThat(event.recipients()).extracting("email")
 			.containsExactly("owner@example.com", "member@example.com");
 		assertThat(event.ongoingLiveQuestionSetIds()).containsExactly(100L);
+	}
+
+	@Test
+	@DisplayName("가입 팀 목록 조회 - 권한 미지정 시 가입한 전체 팀을 반환한다")
+	void getJoinedTeams_withoutRole_returnsAllJoinedTeams() {
+		// given
+		Long userId = 1L;
+		UserEntity user = givenJoinedTeamUser(userId);
+
+		// when
+		List<TeamUserDto> result = teamService.getJoinedTeams(userId, null);
+
+		// then
+		assertThat(result).extracting(TeamUserDto::getTeamName)
+			.containsExactly("오너 팀", "메이커 팀", "플레이어 팀");
+		verify(teamUserEntityRepository).findAllByUserFetchJoinActiveTeam(user);
+	}
+
+	@Test
+	@DisplayName("가입 팀 목록 조회 - MAKER 로 조회하면 상위 권한인 OWNER 팀도 포함한다")
+	void getJoinedTeams_makerRole_includesOwnerTeam() {
+		// given
+		Long userId = 1L;
+		givenJoinedTeamUser(userId);
+
+		// when
+		List<TeamUserDto> result = teamService.getJoinedTeams(userId, TeamUserRole.MAKER);
+
+		// then
+		assertThat(result).extracting(TeamUserDto::getRole)
+			.containsExactly(TeamUserRole.OWNER, TeamUserRole.MAKER);
+	}
+
+	@Test
+	@DisplayName("가입 팀 목록 조회 - OWNER 로 조회하면 OWNER 팀만 반환한다")
+	void getJoinedTeams_ownerRole_returnsOnlyOwnerTeam() {
+		// given
+		Long userId = 1L;
+		givenJoinedTeamUser(userId);
+
+		// when
+		List<TeamUserDto> result = teamService.getJoinedTeams(userId, TeamUserRole.OWNER);
+
+		// then
+		assertThat(result).extracting(TeamUserDto::getRole).containsExactly(TeamUserRole.OWNER);
+	}
+
+	@Test
+	@DisplayName("가입 팀 목록 조회 - PLAYER 로 조회하면 모든 권한이 PLAYER 를 포함하므로 전체 팀을 반환한다")
+	void getJoinedTeams_playerRole_returnsAllTeams() {
+		// given
+		Long userId = 1L;
+		givenJoinedTeamUser(userId);
+
+		// when
+		List<TeamUserDto> result = teamService.getJoinedTeams(userId, TeamUserRole.PLAYER);
+
+		// then
+		assertThat(result).extracting(TeamUserDto::getRole)
+			.containsExactly(TeamUserRole.OWNER, TeamUserRole.MAKER, TeamUserRole.PLAYER);
+	}
+
+	@Test
+	@DisplayName("가입 팀 목록 조회 - 존재하지 않는 사용자면 예외가 발생하고 팀을 조회하지 않는다")
+	void getJoinedTeams_userNotFound_throws() {
+		// given
+		Long userId = 999L;
+		doThrow(new EntityNotFoundException("해당 유저를 찾을 수 없습니다.")).when(userReader).getById(userId);
+
+		// when & then
+		assertThatThrownBy(() -> teamService.getJoinedTeams(userId, TeamUserRole.MAKER))
+			.isInstanceOf(EntityNotFoundException.class)
+			.hasMessage("해당 유저를 찾을 수 없습니다.");
+
+		verify(teamUserEntityRepository, never()).findAllByUserFetchJoinActiveTeam(any());
+	}
+
+	private UserEntity givenJoinedTeamUser(final Long userId) {
+		UserEntity user = UserEntity.socialLoginUser("joined@test.com", "가입자", "provider", LoginProvider.GOOGLE);
+		doReturn(user).when(userReader).getById(userId);
+
+		List<TeamUserEntity> teamUsers = List.of(
+			TeamUserEntity.createTeamUser(user, TeamEntity.ofGroup("오너 팀", userId), TeamUserRole.OWNER),
+			TeamUserEntity.createTeamUser(user, TeamEntity.ofGroup("메이커 팀", 2L), TeamUserRole.MAKER),
+			TeamUserEntity.createTeamUser(user, TeamEntity.ofGroup("플레이어 팀", 3L), TeamUserRole.PLAYER)
+		);
+		doReturn(teamUsers).when(teamUserEntityRepository).findAllByUserFetchJoinActiveTeam(user);
+
+		return user;
 	}
 }

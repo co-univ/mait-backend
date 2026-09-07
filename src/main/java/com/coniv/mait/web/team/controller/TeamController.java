@@ -14,6 +14,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.coniv.mait.domain.team.enums.TeamUserRole;
 import com.coniv.mait.domain.team.service.TeamService;
 import com.coniv.mait.domain.team.service.dto.TeamApplicantDto;
 import com.coniv.mait.domain.team.service.dto.TeamInvitationDto;
@@ -37,6 +38,8 @@ import com.coniv.mait.web.team.dto.UpdateTeamNameApiRequest;
 import com.coniv.mait.web.team.dto.UpdateTeamUserRoleApiRequest;
 
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 
@@ -121,8 +124,9 @@ public class TeamController {
 	@Operation(summary = "가입 팀 목록 반환 API")
 	@GetMapping("/joined")
 	public ResponseEntity<ApiResponse<List<TeamApiResponse>>> getJoinedTeams(
-		@AuthenticationPrincipal MaitUser userPrincipal) {
-		List<TeamUserDto> joinedTeams = teamService.getJoinedTeams(userPrincipal.id());
+		@AuthenticationPrincipal MaitUser userPrincipal, @Parameter(schema = @Schema(enumAsRef = true))
+		@RequestParam(value = "role", required = false) TeamUserRole role) {
+		List<TeamUserDto> joinedTeams = teamService.getJoinedTeams(userPrincipal.id(), role);
 		List<TeamApiResponse> response = joinedTeams.stream().map(TeamApiResponse::from).toList();
 		return ResponseEntity.ok(ApiResponse.ok(response));
 	}
