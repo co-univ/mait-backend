@@ -166,7 +166,7 @@ public class QuestionSetCopyApiIntegrationTest extends BaseIntegrationTest {
 
 		MultipleQuestionEntity multiple = questionEntityRepository.save(MultipleQuestionEntity.builder()
 			.content("객관식 문제").explanation("객관식 해설").number(1L).lexoRank("0|100000:")
-			.questionSet(source).answerCount(1).build());
+			.questionSet(source).answerCount(4).build()); // 원본의 잘못된 저장값은 복제본에 전파하지 않는다.
 		multipleChoiceEntityRepository.saveAll(List.of(
 			MultipleChoiceEntity.builder().number(1).content("보기1").isCorrect(true).question(multiple).build(),
 			MultipleChoiceEntity.builder().number(2).content("보기2").isCorrect(false).question(multiple).build()));
@@ -218,6 +218,7 @@ public class QuestionSetCopyApiIntegrationTest extends BaseIntegrationTest {
 		MultipleQuestionEntity copiedMultiple = (MultipleQuestionEntity)copiedQuestions.get(0);
 		assertThat(copiedMultiple.getExplanation()).isEqualTo("객관식 해설");
 		assertThat(copiedMultiple.getAnswerCount()).isEqualTo(1);
+		assertThat(multiple.getAnswerCount()).isEqualTo(4);
 		assertThat(multipleChoiceEntityRepository.findAllByQuestionId(copiedMultiple.getId()))
 			.extracting(MultipleChoiceEntity::getContent, MultipleChoiceEntity::isCorrect)
 			.containsExactlyInAnyOrder(tuple("보기1", true), tuple("보기2", false));
