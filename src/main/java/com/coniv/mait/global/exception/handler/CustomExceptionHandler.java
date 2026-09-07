@@ -14,6 +14,7 @@ import com.coniv.mait.domain.team.exception.TeamInvitationFailException;
 import com.coniv.mait.domain.team.exception.TeamManagerException;
 import com.coniv.mait.domain.user.exception.UserRoleException;
 import com.coniv.mait.global.exception.CommonExceptionCode;
+import com.coniv.mait.global.exception.custom.DistributedLockException;
 import com.coniv.mait.global.exception.custom.EmailSendException;
 import com.coniv.mait.global.exception.custom.LoginFailException;
 import com.coniv.mait.global.exception.custom.PolicyException;
@@ -158,5 +159,13 @@ public class CustomExceptionHandler {
 		HttpServletRequest request) {
 		return ResponseEntity.status(exception.getExceptionCode().getStatus())
 			.body(ErrorResponse.from(exception.getExceptionCode()));
+	}
+
+	@ExceptionHandler(DistributedLockException.class)
+	public ResponseEntity<ErrorResponse> handleDistributedLockException(DistributedLockException exception,
+		HttpServletRequest request) {
+		log.info("DistributedLockException 발생: {}, {}", exception.getLockKey(), request.getRequestURI());
+		return ResponseEntity.status(CommonExceptionCode.LOCK_ACQUISITION_FAILED.getStatus())
+			.body(ErrorResponse.from(CommonExceptionCode.LOCK_ACQUISITION_FAILED));
 	}
 }
