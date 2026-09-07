@@ -26,6 +26,8 @@ import com.coniv.mait.domain.question.entity.QuestionSetEntity;
 import com.coniv.mait.domain.question.entity.ShortAnswerEntity;
 import com.coniv.mait.domain.question.entity.ShortQuestionEntity;
 import com.coniv.mait.domain.question.enums.QuestionSetCreationType;
+import com.coniv.mait.domain.question.enums.QuestionSetSolveMode;
+import com.coniv.mait.domain.question.enums.QuestionSetStatus;
 import com.coniv.mait.domain.question.enums.QuestionType;
 import com.coniv.mait.domain.question.repository.FillBlankAnswerEntityRepository;
 import com.coniv.mait.domain.question.repository.MultipleChoiceEntityRepository;
@@ -86,6 +88,7 @@ public class QuestionApiIntegrationTest extends BaseIntegrationTest {
 		MultipleQuestionEntity question = MultipleQuestionEntity.builder()
 			.content("객관식 문제 내용")
 			.explanation("객관식 문제 해설")
+			.answerCount(1)
 			.number(1L)
 			.lexoRank("m")
 			.questionSet(savedQuestionSet)
@@ -118,6 +121,7 @@ public class QuestionApiIntegrationTest extends BaseIntegrationTest {
 				jsonPath("$.data.id").value(savedQuestion.getId()),
 				jsonPath("$.data.type").value(QuestionType.MULTIPLE.name()),
 				jsonPath("$.data.content").value("객관식 문제 내용"),
+				jsonPath("$.data.answerCount").value(1),
 				jsonPath("$.data.explanation").value("객관식 문제 해설"),
 				jsonPath("$.data.number").value(1),
 				jsonPath("$.data.choices").isArray(),
@@ -128,6 +132,42 @@ public class QuestionApiIntegrationTest extends BaseIntegrationTest {
 				jsonPath("$.data.choices[1].number").value(2),
 				jsonPath("$.data.choices[1].content").value("선택지 2"),
 				jsonPath("$.data.choices[1].isCorrect").value(false)
+			);
+	}
+
+	@Test
+	@DisplayName("실시간 객관식 조회는 정답 여부를 숨기고 정답 개수를 반환한다")
+	void getMultipleQuestionInLiveTimeReturnsAnswerCount() throws Exception {
+		// given
+		QuestionSetEntity questionSet = questionSetEntityRepository.save(QuestionSetEntity.builder()
+			.title("실시간 문제 셋")
+			.solveMode(QuestionSetSolveMode.LIVE_TIME)
+			.status(QuestionSetStatus.ONGOING)
+			.build());
+		MultipleQuestionEntity question = questionEntityRepository.save(MultipleQuestionEntity.builder()
+			.content("정답이 두 개인 문제")
+			.number(1L)
+			.lexoRank("m")
+			.questionSet(questionSet)
+			.answerCount(2)
+			.build());
+		multipleChoiceEntityRepository.saveAll(List.of(
+			MultipleChoiceEntity.builder().question(question).number(1).content("정답 1").isCorrect(true).build(),
+			MultipleChoiceEntity.builder().question(question).number(2).content("오답").isCorrect(false).build(),
+			MultipleChoiceEntity.builder().question(question).number(3).content("정답 2").isCorrect(true).build()
+		));
+
+		// when & then
+		mockMvc.perform(get("/api/v1/question-sets/{questionSetId}/questions/{questionId}",
+				questionSet.getId(), question.getId())
+				.param("mode", "LIVE_TIME"))
+			.andExpectAll(
+				status().isOk(),
+				jsonPath("$.data.answerCount").value(2),
+				jsonPath("$.data.choices.length()").value(3),
+				jsonPath("$.data.choices[0].isCorrect").isEmpty(),
+				jsonPath("$.data.choices[1].isCorrect").isEmpty(),
+				jsonPath("$.data.choices[2].isCorrect").isEmpty()
 			);
 	}
 
