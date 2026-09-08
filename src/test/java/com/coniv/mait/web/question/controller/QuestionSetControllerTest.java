@@ -437,7 +437,7 @@ class QuestionSetControllerTest {
 			.difficulty(difficulty)
 			.build();
 
-		when(questionSetService.completeQuestionSet(questionSetId, title, solveMode, difficulty, categoryIds))
+		when(questionSetService.completeQuestionSet(questionSetId, title, solveMode, difficulty, categoryIds, USER_ID))
 			.thenReturn(questionSetDto);
 
 		// when & then
@@ -452,7 +452,36 @@ class QuestionSetControllerTest {
 				jsonPath("$.data.difficulty").value(difficulty),
 				jsonPath("$.data.visibility").doesNotExist());
 
-		verify(questionSetService).completeQuestionSet(questionSetId, title, solveMode, difficulty, categoryIds);
+		verify(questionSetService).completeQuestionSet(questionSetId, title, solveMode, difficulty, categoryIds,
+			USER_ID);
+	}
+
+	@Test
+	@DisplayName("문제 셋 최종 저장 API는 상태 오류를 400/0005로 반환한다")
+	void completeQuestionSet_invalidStatus() throws Exception {
+		UpdateQuestionSetApiRequest request = new UpdateQuestionSetApiRequest(
+			"제목", QuestionSetSolveMode.STUDY, "난이도", List.of());
+		when(questionSetService.completeQuestionSet(eq(1L), any(), any(), any(), any(), eq(USER_ID)))
+			.thenThrow(new QuestionSetStatusException(QuestionSetStatusExceptionCode.ONLY_MAKING));
+
+		mockMvc.perform(put("/api/v1/question-sets/1")
+				.contentType(MediaType.APPLICATION_JSON)
+				.content(objectMapper.writeValueAsString(request)))
+			.andExpectAll(status().isBadRequest(), jsonPath("$.code").value("0005"));
+	}
+
+	@Test
+	@DisplayName("문제 셋 최종 저장 API는 권한 오류를 403으로 반환한다")
+	void completeQuestionSet_forbidden() throws Exception {
+		UpdateQuestionSetApiRequest request = new UpdateQuestionSetApiRequest(
+			"제목", QuestionSetSolveMode.STUDY, "난이도", List.of());
+		when(questionSetService.completeQuestionSet(eq(1L), any(), any(), any(), any(), eq(USER_ID)))
+			.thenThrow(new UserRoleException("문제 세트 생성 권한이 없습니다."));
+
+		mockMvc.perform(put("/api/v1/question-sets/1")
+				.contentType(MediaType.APPLICATION_JSON)
+				.content(objectMapper.writeValueAsString(request)))
+			.andExpectAll(status().isForbidden(), jsonPath("$.code").value("C-008"));
 	}
 
 	@Test
@@ -507,7 +536,8 @@ class QuestionSetControllerTest {
 				jsonPath("$.reasons[*]").value(org.hamcrest.Matchers.hasItems(
 					expectedErrorMessages.toArray(new String[0]))));
 
-		verify(questionSetService, never()).completeQuestionSet(anyLong(), anyString(), any(), anyString(), any());
+		verify(questionSetService, never()).completeQuestionSet(anyLong(), anyString(), any(), anyString(), any(),
+			anyLong());
 	}
 
 	static Stream<Arguments> invalidUpdateQuestionSetRequests() {

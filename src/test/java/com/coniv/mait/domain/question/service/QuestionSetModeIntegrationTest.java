@@ -196,8 +196,9 @@ class QuestionSetModeIntegrationTest {
 	}
 
 	@ParameterizedTest
-	@CsvSource({"BEFORE,PLAYER", "AFTER,PLAYER", "BEFORE,OUTSIDER", "AFTER,OUTSIDER"})
-	@DisplayName("모드 변경과 복습 전환은 해당 팀의 Maker 권한을 검증한다")
+	@CsvSource({"BEFORE,PLAYER", "AFTER,PLAYER", "MAKING,PLAYER",
+		"BEFORE,OUTSIDER", "AFTER,OUTSIDER", "MAKING,OUTSIDER"})
+	@DisplayName("모드 변경·복습 전환·최종 저장은 해당 팀의 Maker 권한을 검증한다")
 	void requiresTeamMaker(QuestionSetStatus status, String role) {
 		QuestionSetEntity questionSet = saveQuestionSet(status, QuestionSetSolveMode.STUDY);
 		var requester = users.save(UserEntity.localLoginUser(UUID.randomUUID() + "@test.com", "pw", "player", null));
@@ -208,8 +209,11 @@ class QuestionSetModeIntegrationTest {
 		assertThatThrownBy(() -> {
 			if (status == QuestionSetStatus.BEFORE) {
 				service.changeSolveMode(questionSet.getId(), QuestionSetSolveMode.LIVE_TIME, requesterPrincipal);
-			} else {
+			} else if (status == QuestionSetStatus.AFTER) {
 				service.updateQuestionSetToReviewMode(questionSet.getId(), requester.getId());
+			} else {
+				service.completeQuestionSet(questionSet.getId(), "덮어쓸 제목", QuestionSetSolveMode.LIVE_TIME,
+					"난이도", List.of(), requester.getId());
 			}
 		}).isInstanceOf(role.equals("PLAYER") ? UserRoleException.class : EntityNotFoundException.class);
 		assertThat(questionSet.getSolveMode()).isEqualTo(QuestionSetSolveMode.STUDY);
@@ -233,12 +237,12 @@ class QuestionSetModeIntegrationTest {
 
 	@ParameterizedTest
 	@EnumSource(QuestionSetSolveMode.class)
-	@DisplayName("제작 완료는 제목·모드를 저장하고 문제 번호를 부여한다")
+	@DisplayName("MAKER의 정상 제작 완료는 제목·모드를 저장하고 문제 번호를 부여한다")
 	void completeQuestionSet_success(QuestionSetSolveMode solveMode) {
 		QuestionSetEntity questionSet = saveQuestionSet(QuestionSetStatus.MAKING, solveMode);
 		var question = questions.save(ShortQuestionEntity.builder().questionSet(questionSet)
 			.content("문제").lexoRank("a").build());
-		service.completeQuestionSet(questionSet.getId(), "최종 제목", solveMode, "난이도", List.of());
+		service.completeQuestionSet(questionSet.getId(), "최종 제목", solveMode, "난이도", List.of(), user.getId());
 		entityManager.flush();
 		entityManager.clear();
 		QuestionSetEntity saved = questionSets.findById(questionSet.getId()).orElseThrow();
@@ -246,6 +250,33 @@ class QuestionSetModeIntegrationTest {
 		assertThat(saved.getSolveMode()).isEqualTo(solveMode);
 		assertThat(saved.getTitle()).isEqualTo("최종 제목");
 		assertThat(questions.findById(question.getId()).orElseThrow().getNumber()).isEqualTo(1L);
+	}
+
+	@ParameterizedTest
+	@EnumSource(value = QuestionSetStatus.class, names = "MAKING", mode = EnumSource.Mode.EXCLUDE)
+	@DisplayName("최종 저장 경로로 진행 상태를 되돌리거나 모드 변경 제한을 우회할 수 없다")
+	void completeQuestionSet_cannotBypassPolicy(QuestionSetStatus status) {
+		QuestionSetEntity questionSet = saveQuestionSet(status, QuestionSetSolveMode.STUDY);
+		var question = questions.save(ShortQuestionEntity.builder().questionSet(questionSet)
+			.content("문제").lexoRank("a").number(7L).build());
+		var category = categories.save(QuestionSetCategoryEntity.of(team.getId(), "보존할 카테고리"));
+		categoryLinks.save(QuestionSetCategoryLinkEntity.of(questionSet.getId(), category.getId()));
+		entityManager.flush();
+		entityManager.clear();
+
+		assertThatThrownBy(() -> service.completeQuestionSet(questionSet.getId(), "덮어쓸 제목",
+			QuestionSetSolveMode.LIVE_TIME, "덮어쓸 난이도", List.of(), user.getId()))
+			.isInstanceOfSatisfying(QuestionSetStatusException.class,
+				ex -> assertThat(ex.getExceptionCode()).isEqualTo(QuestionSetStatusExceptionCode.ONLY_MAKING));
+
+		QuestionSetEntity saved = questionSets.findById(questionSet.getId()).orElseThrow();
+		assertThat(saved.getStatus()).isEqualTo(status);
+		assertThat(saved.getSolveMode()).isEqualTo(QuestionSetSolveMode.STUDY);
+		assertThat(saved.getTitle()).isEqualTo("유지할 제목");
+		assertThat(saved.getDifficulty()).isEqualTo("유지할 난이도");
+		assertThat(questions.findById(question.getId()).orElseThrow().getNumber()).isEqualTo(7L);
+		assertThat(categoryLinks.findAllByQuestionSetId(questionSet.getId()))
+			.extracting(QuestionSetCategoryLinkEntity::getCategoryId).containsExactly(category.getId());
 	}
 
 	private QuestionSetEntity saveQuestionSet(QuestionSetStatus status, QuestionSetSolveMode mode) {
