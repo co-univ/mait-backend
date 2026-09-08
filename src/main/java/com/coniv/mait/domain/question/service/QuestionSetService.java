@@ -176,9 +176,13 @@ public class QuestionSetService {
 		QuestionSetEntity questionSet = questionSetEntityRepository.findById(questionSetId)
 			.orElseThrow(() -> new EntityNotFoundException("Question set not found"));
 
-		TeamEntity team = validateTeamSolveMode(questionSet.getTeamId(), solveMode);
+		TeamEntity team = teamReader.getTeam(questionSet.getTeamId());
+		if (solveMode == QuestionSetSolveMode.LIVE_TIME && team.getType() == TeamType.PERSONAL) {
+			throw new QuestionSetStatusException(
+				QuestionSetStatusExceptionCode.CANNOT_CREATE_LIVE_TIME_IN_PERSONAL_TEAM);
+		}
 
-		// Todo: 현재 생성 단계가 아니면 예외 + 팀 권한 검증. 기존 문제 셋 모드 변경은 changeSolveMode를 사용한다.
+		// Todo: 현재 생성 단계가 아니면 예외
 		int number = 1;
 
 		List<QuestionEntity> questions = questionEntityRepository.findAllByQuestionSetIdOrderByLexoRankAsc(
@@ -201,19 +205,15 @@ public class QuestionSetService {
 		final MaitUser user) {
 		QuestionSetEntity questionSet = questionSetReader.getQuestionSet(questionSetId);
 		teamRoleValidator.checkHasCreateQuestionSetAuthority(questionSet.getTeamId(), user.id());
-		validateTeamSolveMode(questionSet.getTeamId(), solveMode);
-		questionSet.changeSolveMode(solveMode);
 
-		return getQuestionSet(questionSetId, user);
-	}
-
-	private TeamEntity validateTeamSolveMode(final Long teamId, final QuestionSetSolveMode solveMode) {
-		TeamEntity team = teamReader.getTeam(teamId);
+		TeamEntity team = teamReader.getTeam(questionSet.getTeamId());
 		if (solveMode == QuestionSetSolveMode.LIVE_TIME && team.getType() == TeamType.PERSONAL) {
 			throw new QuestionSetStatusException(
 				QuestionSetStatusExceptionCode.CANNOT_CREATE_LIVE_TIME_IN_PERSONAL_TEAM);
 		}
-		return team;
+		questionSet.changeSolveMode(solveMode);
+
+		return getQuestionSet(questionSetId, user);
 	}
 
 	@Transactional
