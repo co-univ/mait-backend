@@ -33,7 +33,7 @@ public class QuestionSetStudyControlService {
 
 	@Transactional
 	public void startStudyQuestionSet(final MaitUser user, final Long questionSetId) {
-		QuestionSetEntity questionSet = questionSetReader.getQuestionSetForUpdate(questionSetId);
+		QuestionSetEntity questionSet = questionSetReader.getQuestionSet(questionSetId);
 		teamRoleValidator.checkHasCreateQuestionSetAuthority(questionSet.getTeamId(), user.id());
 		questionSet.startStudyQuestionSet();
 		log.info("[학습 문제 셋 시작] questionSetId={}, teamId={}, startedBy={}",

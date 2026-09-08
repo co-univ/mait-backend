@@ -63,7 +63,7 @@ class QuestionSetStudyControlServiceTest {
 			.status(QuestionSetStatus.BEFORE)
 			.build();
 
-		when(questionSetReader.getQuestionSetForUpdate(QUESTION_SET_ID)).thenReturn(questionSet);
+		when(questionSetReader.getQuestionSet(QUESTION_SET_ID)).thenReturn(questionSet);
 
 		// when
 		questionSetStudyControlService.startStudyQuestionSet(MAIT_USER, QUESTION_SET_ID);
@@ -78,7 +78,7 @@ class QuestionSetStudyControlServiceTest {
 	@DisplayName("존재하지 않는 문제 셋 시작 시 EntityNotFoundException이 발생한다")
 	void startStudyQuestionSet_QuestionSetNotFound_ThrowsException() {
 		// given
-		when(questionSetReader.getQuestionSetForUpdate(QUESTION_SET_ID))
+		when(questionSetReader.getQuestionSet(QUESTION_SET_ID))
 			.thenThrow(new EntityNotFoundException(QUESTION_SET_ID + " : 해당 문제 셋을 찾을 수 없습니다."));
 
 		// when & then
@@ -97,7 +97,7 @@ class QuestionSetStudyControlServiceTest {
 			.status(QuestionSetStatus.BEFORE)
 			.build();
 
-		when(questionSetReader.getQuestionSetForUpdate(QUESTION_SET_ID)).thenReturn(questionSet);
+		when(questionSetReader.getQuestionSet(QUESTION_SET_ID)).thenReturn(questionSet);
 		doThrow(new UserRoleException("문제 세트 생성 권한이 없습니다."))
 			.when(teamRoleValidator).checkHasCreateQuestionSetAuthority(TEAM_ID, USER_ID);
 
@@ -117,7 +117,7 @@ class QuestionSetStudyControlServiceTest {
 			.status(QuestionSetStatus.BEFORE)
 			.build();
 
-		when(questionSetReader.getQuestionSetForUpdate(QUESTION_SET_ID)).thenReturn(questionSet);
+		when(questionSetReader.getQuestionSet(QUESTION_SET_ID)).thenReturn(questionSet);
 
 		// when & then
 		assertThatThrownBy(() ->
@@ -135,7 +135,7 @@ class QuestionSetStudyControlServiceTest {
 			.status(QuestionSetStatus.ONGOING)
 			.build();
 
-		when(questionSetReader.getQuestionSetForUpdate(QUESTION_SET_ID)).thenReturn(questionSet);
+		when(questionSetReader.getQuestionSet(QUESTION_SET_ID)).thenReturn(questionSet);
 
 		// when & then
 		assertThatThrownBy(() ->

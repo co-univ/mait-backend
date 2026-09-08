@@ -5,10 +5,6 @@ import static org.assertj.core.api.Assertions.*;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.Executors;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -22,9 +18,6 @@ import org.springframework.context.annotation.Import;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
-import org.springframework.test.context.transaction.TestTransaction;
-import org.springframework.transaction.PlatformTransactionManager;
-import org.springframework.transaction.support.TransactionTemplate;
 
 import com.coniv.mait.domain.question.entity.QuestionSetCategoryEntity;
 import com.coniv.mait.domain.question.entity.QuestionSetCategoryLinkEntity;
@@ -66,16 +59,11 @@ import jakarta.persistence.EntityNotFoundException;
 @DataJpaTest(showSql = false)
 @ActiveProfiles("test")
 @Import({QuestionSetService.class, QuestionSetReader.class, QuestionSetCategoryService.class,
-	TeamRoleValidator.class, TeamReader.class, QuestionSetLiveControlService.class,
-	QuestionSetStudyControlService.class})
+	TeamRoleValidator.class, TeamReader.class})
 class QuestionSetModeIntegrationTest {
 
 	@Autowired
 	private QuestionSetService service;
-	@Autowired
-	private QuestionSetLiveControlService liveControlService;
-	@Autowired
-	private QuestionSetStudyControlService studyControlService;
 	@Autowired
 	private QuestionSetEntityRepository questionSets;
 	@Autowired
@@ -94,8 +82,6 @@ class QuestionSetModeIntegrationTest {
 	private UserEntityRepository users;
 	@Autowired
 	private EntityManager entityManager;
-	@Autowired
-	private PlatformTransactionManager transactionManager;
 
 	@MockitoBean
 	private QuestionService questionService;
@@ -262,62 +248,6 @@ class QuestionSetModeIntegrationTest {
 		assertThat(questions.findById(question.getId()).orElseThrow().getNumber()).isEqualTo(1L);
 	}
 
-	@ParameterizedTest
-	@CsvSource({"LIVE_TIME,true", "STUDY,true", "LIVE_TIME,false", "STUDY,false"})
-	@DisplayName("풀이 시작과 모드 변경은 동일 문제 셋의 잠금을 공유하고 최신 상태를 검증한다")
-	void changeModeAndStart_areSerialized(QuestionSetSolveMode originalMode, boolean startFirst) throws Exception {
-		QuestionSetEntity questionSet = saveQuestionSet(QuestionSetStatus.BEFORE, originalMode);
-		Long questionSetId = questionSet.getId();
-		TestTransaction.flagForCommit();
-		TestTransaction.end();
-		TransactionTemplate transaction = new TransactionTemplate(transactionManager);
-		CountDownLatch firstUpdated = new CountDownLatch(1);
-		CountDownLatch releaseFirst = new CountDownLatch(1);
-		CountDownLatch secondStarted = new CountDownLatch(1);
-		try (var executor = Executors.newFixedThreadPool(2)) {
-			var first = executor.submit(() -> transaction.executeWithoutResult(ignored -> {
-				if (startFirst) {
-					start(questionSetId, originalMode);
-				} else {
-					service.changeSolveMode(questionSetId, opposite(originalMode), principal);
-				}
-				firstUpdated.countDown();
-				await(releaseFirst);
-			}));
-			try {
-				assertThat(firstUpdated.await(10, TimeUnit.SECONDS)).isTrue();
-				var second = executor.submit(() -> {
-					secondStarted.countDown();
-					return catchThrowable(() -> {
-						if (startFirst) {
-							service.changeSolveMode(questionSetId, opposite(originalMode), principal);
-						} else {
-							start(questionSetId, originalMode);
-						}
-					});
-				});
-				assertThat(secondStarted.await(10, TimeUnit.SECONDS)).isTrue();
-				assertThatThrownBy(() -> second.get(200, TimeUnit.MILLISECONDS)).isInstanceOf(TimeoutException.class);
-				releaseFirst.countDown();
-				first.get(10, TimeUnit.SECONDS);
-				assertThat(second.get(10, TimeUnit.SECONDS)).isInstanceOf(QuestionSetStatusException.class);
-				QuestionSetEntity saved = questionSets.findById(questionSetId).orElseThrow();
-				assertThat(saved.getSolveMode()).isEqualTo(startFirst ? originalMode : opposite(originalMode));
-				assertThat(saved.getStatus())
-					.isEqualTo(startFirst ? QuestionSetStatus.ONGOING : QuestionSetStatus.BEFORE);
-			} finally {
-				releaseFirst.countDown();
-			}
-		} finally {
-			transaction.executeWithoutResult(ignored -> {
-				questionSets.deleteById(questionSetId);
-				members.deleteAll(members.findAllByTeamId(team.getId()));
-				teams.deleteById(team.getId());
-				users.deleteById(user.getId());
-			});
-		}
-	}
-
 	private QuestionSetEntity saveQuestionSet(QuestionSetStatus status, QuestionSetSolveMode mode) {
 		return questionSets.save(QuestionSetEntity.builder().teamId(team.getId()).creatorId(user.getId())
 			.title("유지할 제목").difficulty("유지할 난이도").instruction("유지할 설명")
@@ -326,24 +256,5 @@ class QuestionSetModeIntegrationTest {
 
 	private QuestionSetSolveMode opposite(QuestionSetSolveMode mode) {
 		return mode == QuestionSetSolveMode.STUDY ? QuestionSetSolveMode.LIVE_TIME : QuestionSetSolveMode.STUDY;
-	}
-
-	private void start(Long questionSetId, QuestionSetSolveMode mode) {
-		if (mode == QuestionSetSolveMode.LIVE_TIME) {
-			liveControlService.startLiveQuestionSet(questionSetId);
-		} else {
-			studyControlService.startStudyQuestionSet(principal, questionSetId);
-		}
-	}
-
-	private void await(CountDownLatch latch) {
-		try {
-			if (!latch.await(10, TimeUnit.SECONDS)) {
-				throw new IllegalStateException("동시성 테스트 대기 시간 초과");
-			}
-		} catch (InterruptedException exception) {
-			Thread.currentThread().interrupt();
-			throw new IllegalStateException(exception);
-		}
 	}
 }

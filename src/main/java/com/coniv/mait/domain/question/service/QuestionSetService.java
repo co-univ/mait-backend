@@ -199,7 +199,7 @@ public class QuestionSetService {
 	@Transactional
 	public QuestionSetDto changeSolveMode(final Long questionSetId, final QuestionSetSolveMode solveMode,
 		final MaitUser user) {
-		QuestionSetEntity questionSet = questionSetReader.getQuestionSetForUpdate(questionSetId);
+		QuestionSetEntity questionSet = questionSetReader.getQuestionSet(questionSetId);
 		teamRoleValidator.checkHasCreateQuestionSetAuthority(questionSet.getTeamId(), user.id());
 		validateTeamSolveMode(questionSet.getTeamId(), solveMode);
 		questionSet.changeSolveMode(solveMode);
