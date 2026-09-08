@@ -64,7 +64,7 @@ public class QuestionSetLiveControlService {
 
 	@Transactional
 	public void endLiveQuestionSet(Long questionSetId) {
-		QuestionSetEntity questionSet = findQuestionSetByIdForUpdate(questionSetId);
+		QuestionSetEntity questionSet = findQuestionSetById(questionSetId);
 		questionSet.endLiveQuestionSet();
 		List<QuestionEntity> openQuestions = questionEntityRepository.findAllByQuestionSetIdAndQuestionStatusIn(
 			questionSetId, QuestionStatusType.openStatuses());

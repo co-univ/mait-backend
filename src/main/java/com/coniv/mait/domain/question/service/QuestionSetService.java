@@ -172,15 +172,13 @@ public class QuestionSetService {
 		final String title,
 		final QuestionSetSolveMode solveMode,
 		final String difficulty,
-		final List<Long> categoryIds,
-		final Long userId) {
-		QuestionSetEntity questionSet = questionSetEntityRepository.findByIdForUpdate(questionSetId)
+		final List<Long> categoryIds) {
+		QuestionSetEntity questionSet = questionSetEntityRepository.findById(questionSetId)
 			.orElseThrow(() -> new EntityNotFoundException("Question set not found"));
-		teamRoleValidator.checkHasCreateQuestionSetAuthority(questionSet.getTeamId(), userId);
 
 		TeamEntity team = validateTeamSolveMode(questionSet.getTeamId(), solveMode);
 
-		questionSet.completeQuestionSet(title, solveMode, difficulty);
+		// Todo: 현재 생성 단계가 아니면 예외 + 팀 권한 검증. 기존 문제 셋 모드 변경은 changeSolveMode를 사용한다.
 		int number = 1;
 
 		List<QuestionEntity> questions = questionEntityRepository.findAllByQuestionSetIdOrderByLexoRankAsc(
@@ -189,6 +187,7 @@ public class QuestionSetService {
 			question.updateNumber(number++);
 		}
 
+		questionSet.completeQuestionSet(title, solveMode, difficulty);
 		if (team.getType() == TeamType.PERSONAL) {
 			questionSet.markOngoingOnComplete();
 		}
@@ -219,7 +218,7 @@ public class QuestionSetService {
 
 	@Transactional
 	public void updateQuestionSetField(final Long questionSetId, final String title) {
-		QuestionSetEntity questionSet = questionSetEntityRepository.findByIdForUpdate(questionSetId)
+		QuestionSetEntity questionSet = questionSetEntityRepository.findById(questionSetId)
 			.orElseThrow(() -> new EntityNotFoundException("Question set not found"));
 
 		questionSet.updateTitle(title);
@@ -243,7 +242,7 @@ public class QuestionSetService {
 
 	@Transactional
 	public void updateQuestionSetToReviewMode(final Long questionSetId, final Long userId) {
-		QuestionSetEntity questionSet = questionSetEntityRepository.findByIdForUpdate(questionSetId)
+		QuestionSetEntity questionSet = questionSetEntityRepository.findById(questionSetId)
 			.orElseThrow(() -> new EntityNotFoundException("해당 문제 셋을 찾을 수 없습니다."));
 
 		teamRoleValidator.checkHasCreateQuestionSetAuthority(questionSet.getTeamId(), userId);
@@ -252,7 +251,7 @@ public class QuestionSetService {
 
 	@Transactional
 	public void restartQuestionSet(final Long questionSetId, final MaitUser user) {
-		QuestionSetEntity questionSet = questionSetEntityRepository.findByIdForUpdate(questionSetId)
+		QuestionSetEntity questionSet = questionSetEntityRepository.findById(questionSetId)
 			.orElseThrow(() -> new EntityNotFoundException("해당 문제 셋을 찾을 수 없습니다."));
 
 		teamRoleValidator.checkHasCreateQuestionSetAuthority(questionSet.getTeamId(), user.id());

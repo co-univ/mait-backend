@@ -149,9 +149,6 @@ public class QuestionSetEntity extends BaseTimeEntity {
 	}
 
 	public void completeQuestionSet(String title, QuestionSetSolveMode solveMode, String difficulty) {
-		if (status != QuestionSetStatus.MAKING) {
-			throw new QuestionSetStatusException(QuestionSetStatusExceptionCode.ONLY_MAKING);
-		}
 		if (solveMode == null) {
 			throw new IllegalArgumentException("문제 셋 완료 시 solveMode는 필수입니다.");
 		}

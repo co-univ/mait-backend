@@ -42,7 +42,7 @@ public class QuestionSetStudyControlService {
 
 	@Transactional
 	public void endStudyQuestionSet(final MaitUser user, final Long questionSetId) {
-		QuestionSetEntity questionSet = questionSetReader.getQuestionSetForUpdate(questionSetId);
+		QuestionSetEntity questionSet = questionSetReader.getQuestionSet(questionSetId);
 		teamRoleValidator.checkHasCreateQuestionSetAuthority(questionSet.getTeamId(), user.id());
 		if (teamReader.getTeam(questionSet.getTeamId()).getType() == TeamType.PERSONAL) {
 			throw new QuestionSetStatusException(QuestionSetStatusExceptionCode.CANNOT_END_STUDY_IN_PERSONAL_TEAM);
@@ -54,7 +54,7 @@ public class QuestionSetStudyControlService {
 
 	@Transactional
 	public void evaluateAndAutoEnd(final Long questionSetId) {
-		QuestionSetEntity questionSet = questionSetReader.getQuestionSetForUpdate(questionSetId);
+		QuestionSetEntity questionSet = questionSetReader.getQuestionSet(questionSetId);
 
 		if (!(questionSet.getSolveMode() == QuestionSetSolveMode.STUDY
 			&& questionSet.getStatus() == QuestionSetStatus.ONGOING)) {

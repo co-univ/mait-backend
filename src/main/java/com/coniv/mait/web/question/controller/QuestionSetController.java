@@ -136,14 +136,13 @@ public class QuestionSetController {
 	}
 
 	@Operation(summary = "문제 셋을 최종 저장 API",
-		description = "팀의 MAKER/OWNER가 MAKING 상태의 문제 셋을 제작 완료한다. 모드 변경은 solve-mode API를 사용한다.")
+		description = "문제 셋을 제작 완료 상태로 변경. 기존 문제 셋의 모드 변경은 solve-mode API를 사용한다.")
 	@PutMapping("/{questionSetId}")
 	public ResponseEntity<ApiResponse<QuestionSetApiResponse>> completeQuestionSet(
-		@AuthenticationPrincipal MaitUser user,
 		@PathVariable Long questionSetId, @Valid @RequestBody UpdateQuestionSetApiRequest request) {
 		return ResponseEntity.ok(ApiResponse.ok(QuestionSetApiResponse.from(
 			questionSetService.completeQuestionSet(questionSetId, request.resolvedTitle(),
-				request.solveMode(), request.difficulty(), request.categoryIds(), user.id()))));
+				request.solveMode(), request.difficulty(), request.categoryIds()))));
 	}
 
 	@Operation(summary = "문제 셋 풀이 방식 변경",

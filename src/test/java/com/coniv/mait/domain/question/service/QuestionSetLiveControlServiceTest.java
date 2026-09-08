@@ -86,7 +86,7 @@ class QuestionSetLiveControlServiceTest {
 		// given
 		Long questionSetId = 1L;
 
-		when(questionSetEntityRepository.findByIdForUpdate(questionSetId))
+		when(questionSetEntityRepository.findById(questionSetId))
 			.thenReturn(Optional.of(questionSetEntity));
 		when(questionEntityRepository.findAllByQuestionSetIdAndQuestionStatusIn(questionSetId,
 			QuestionStatusType.openStatuses()))
