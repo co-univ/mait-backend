@@ -712,10 +712,12 @@ class QuestionSetControllerTest {
 	void copyQuestionSet_Success() throws Exception {
 		// given
 		Long questionSetId = 10L;
-		CopyQuestionSetApiRequest request = new CopyQuestionSetApiRequest(2L);
+		CopyQuestionSetApiRequest request = new CopyQuestionSetApiRequest(2L, "복제본 제목",
+			QuestionSetSolveMode.LIVE_TIME);
 
-		doReturn(QuestionSetDto.builder().id(42L).title("원본 제목").teamId(2L).build())
-			.when(questionSetCopyService).copyQuestionSet(questionSetId, 2L, USER_ID);
+		doReturn(QuestionSetDto.builder().id(42L).title("복제본 제목").teamId(2L).build())
+			.when(questionSetCopyService)
+			.copyQuestionSet(questionSetId, 2L, "복제본 제목", QuestionSetSolveMode.LIVE_TIME, USER_ID);
 
 		// when & then
 		mockMvc.perform(post("/api/v1/question-sets/{questionSetId}/copy", questionSetId)
@@ -725,25 +727,43 @@ class QuestionSetControllerTest {
 				status().isOk(),
 				jsonPath("$.isSuccess").value(true),
 				jsonPath("$.data.questionSetId").value(42),
-				jsonPath("$.data.title").value("원본 제목"),
+				jsonPath("$.data.title").value("복제본 제목"),
 				jsonPath("$.data.teamId").value(2)
 			);
 
-		verify(questionSetCopyService).copyQuestionSet(questionSetId, 2L, USER_ID);
+		verify(questionSetCopyService)
+			.copyQuestionSet(questionSetId, 2L, "복제본 제목", QuestionSetSolveMode.LIVE_TIME, USER_ID);
 	}
 
-	@Test
-	@DisplayName("문제 셋 복제 API 실패 테스트 - 대상 팀 ID 누락")
-	void copyQuestionSet_Failure_TargetTeamIdMissing() throws Exception {
-		// given
-		CopyQuestionSetApiRequest request = new CopyQuestionSetApiRequest(null);
-
+	@ParameterizedTest(name = "{index} - {0}")
+	@DisplayName("문제 셋 복제 API 실패 테스트 - 유효하지 않은 요청")
+	@MethodSource("invalidCopyQuestionSetRequests")
+	void copyQuestionSet_Failure_InvalidRequest(String testName, CopyQuestionSetApiRequest request,
+		String expectedMessage) throws Exception {
 		// when & then
 		mockMvc.perform(post("/api/v1/question-sets/{questionSetId}/copy", 10L)
 				.contentType(MediaType.APPLICATION_JSON)
 				.content(objectMapper.writeValueAsString(request)))
-			.andExpect(status().isBadRequest());
+			.andExpectAll(
+				status().isBadRequest(),
+				jsonPath("$.reasons[0]").value(expectedMessage));
 
-		verify(questionSetCopyService, never()).copyQuestionSet(anyLong(), anyLong(), anyLong());
+		verify(questionSetCopyService, never()).copyQuestionSet(anyLong(), anyLong(), any(), any(), anyLong());
+	}
+
+	static Stream<Arguments> invalidCopyQuestionSetRequests() {
+		return Stream.of(
+			Arguments.of("대상 팀 ID 누락",
+				new CopyQuestionSetApiRequest(null, "복제본 제목", QuestionSetSolveMode.STUDY),
+				"복제할 팀 정보는 필수 입니다."),
+			Arguments.of("제목 누락",
+				new CopyQuestionSetApiRequest(2L, null, QuestionSetSolveMode.STUDY),
+				"문제 셋 제목을 입력해주세요."),
+			Arguments.of("공백 제목",
+				new CopyQuestionSetApiRequest(2L, "   ", QuestionSetSolveMode.STUDY),
+				"문제 셋 제목을 입력해주세요."),
+			Arguments.of("풀이 방식 누락",
+				new CopyQuestionSetApiRequest(2L, "복제본 제목", null),
+				"문제 풀이 방식을 선택해주세요."));
 	}
 }

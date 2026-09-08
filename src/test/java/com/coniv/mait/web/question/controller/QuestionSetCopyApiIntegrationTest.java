@@ -119,7 +119,8 @@ public class QuestionSetCopyApiIntegrationTest extends BaseIntegrationTest {
 			.startTime(LocalDateTime.of(2026, 1, 1, 10, 0))
 			.build());
 
-		CopyQuestionSetApiRequest request = new CopyQuestionSetApiRequest(targetTeam.getId());
+		CopyQuestionSetApiRequest request = new CopyQuestionSetApiRequest(targetTeam.getId(), "복제본 문제 셋",
+			QuestionSetSolveMode.LIVE_TIME);
 
 		// when & then
 		mockMvc.perform(post("/api/v1/question-sets/{questionSetId}/copy", source.getId())
@@ -128,7 +129,7 @@ public class QuestionSetCopyApiIntegrationTest extends BaseIntegrationTest {
 			.andExpectAll(
 				status().isOk(),
 				jsonPath("$.isSuccess").value(true),
-				jsonPath("$.data.title").value("원본 문제 셋"),
+				jsonPath("$.data.title").value("복제본 문제 셋"),
 				jsonPath("$.data.teamId").value(targetTeam.getId())
 			);
 
@@ -143,8 +144,8 @@ public class QuestionSetCopyApiIntegrationTest extends BaseIntegrationTest {
 		assertThat(copied.getTeamId()).isEqualTo(targetTeam.getId());
 		assertThat(copied.getCreatorId()).isEqualTo(user.getId());
 		assertThat(copied.getSourceQuestionSetId()).isEqualTo(source.getId());
-		assertThat(copied.getTitle()).isEqualTo("원본 문제 셋");
-		assertThat(copied.getSolveMode()).isEqualTo(QuestionSetSolveMode.STUDY);
+		assertThat(copied.getTitle()).isEqualTo("복제본 문제 셋");
+		assertThat(copied.getSolveMode()).isEqualTo(QuestionSetSolveMode.LIVE_TIME);
 		assertThat(copied.getDifficulty()).isEqualTo("보통");
 		assertThat(copied.getCreationType()).isEqualTo(QuestionSetCreationType.MANUAL);
 		assertThat(copied.getInstruction()).isNull();
@@ -193,7 +194,8 @@ public class QuestionSetCopyApiIntegrationTest extends BaseIntegrationTest {
 		// when
 		mockMvc.perform(post("/api/v1/question-sets/{questionSetId}/copy", source.getId())
 				.contentType(MediaType.APPLICATION_JSON)
-				.content(objectMapper.writeValueAsString(new CopyQuestionSetApiRequest(targetTeam.getId()))))
+				.content(objectMapper.writeValueAsString(new CopyQuestionSetApiRequest(targetTeam.getId(), "복제본 문제 셋",
+					QuestionSetSolveMode.LIVE_TIME))))
 			.andExpect(status().isOk());
 
 		// then
@@ -274,7 +276,8 @@ public class QuestionSetCopyApiIntegrationTest extends BaseIntegrationTest {
 		// when
 		mockMvc.perform(post("/api/v1/question-sets/{questionSetId}/copy", source.getId())
 				.contentType(MediaType.APPLICATION_JSON)
-				.content(objectMapper.writeValueAsString(new CopyQuestionSetApiRequest(targetTeam.getId()))))
+				.content(objectMapper.writeValueAsString(new CopyQuestionSetApiRequest(targetTeam.getId(), "복제본 문제 셋",
+					QuestionSetSolveMode.LIVE_TIME))))
 			.andExpect(status().isOk());
 
 		// then
