@@ -35,6 +35,11 @@ public class QuestionSetReader {
 			.orElseThrow(() -> new EntityNotFoundException(questionSetId + " : 해당 문제 셋을 찾을 수 없습니다."));
 	}
 
+	public QuestionSetEntity getQuestionSetForUpdate(final Long questionSetId) {
+		return questionSetEntityRepository.findByIdForUpdate(questionSetId)
+			.orElseThrow(() -> new EntityNotFoundException(questionSetId + " : 해당 문제 셋을 찾을 수 없습니다."));
+	}
+
 	public List<QuestionSetEntity> getFinishedLiveQuestionSetsBySolveModeInTeam(final Long teamId,
 		final QuestionSetSolveMode solveMode) {
 		return questionSetEntityRepository.findAllByTeamIdAndSolveModeAndStatusIn(teamId,

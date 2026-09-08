@@ -50,7 +50,7 @@ public class QuestionSetLiveControlService {
 
 	@Transactional
 	public void startLiveQuestionSet(Long questionSetId) {
-		QuestionSetEntity questionSet = findQuestionSetById(questionSetId);
+		QuestionSetEntity questionSet = findQuestionSetByIdForUpdate(questionSetId);
 		questionSet.startLiveQuestionSet();
 
 		QuestionSetStatusMessage message = QuestionSetStatusMessage.builder()
@@ -64,7 +64,7 @@ public class QuestionSetLiveControlService {
 
 	@Transactional
 	public void endLiveQuestionSet(Long questionSetId) {
-		QuestionSetEntity questionSet = findQuestionSetById(questionSetId);
+		QuestionSetEntity questionSet = findQuestionSetByIdForUpdate(questionSetId);
 		questionSet.endLiveQuestionSet();
 		List<QuestionEntity> openQuestions = questionEntityRepository.findAllByQuestionSetIdAndQuestionStatusIn(
 			questionSetId, QuestionStatusType.openStatuses());
@@ -76,6 +76,11 @@ public class QuestionSetLiveControlService {
 			.build();
 		questionWebSocketSender.broadcastQuestionStatus(questionSetId, message);
 		log.info("Ended live question set with ID: {}", questionSetId);
+	}
+
+	private QuestionSetEntity findQuestionSetByIdForUpdate(Long questionSetId) {
+		return questionSetEntityRepository.findByIdForUpdate(questionSetId)
+			.orElseThrow(() -> new EntityNotFoundException("QuestionSet not found with id: " + questionSetId));
 	}
 
 	private QuestionSetEntity findQuestionSetById(Long questionSetId) {

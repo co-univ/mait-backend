@@ -172,17 +172,15 @@ public class QuestionSetService {
 		final String title,
 		final QuestionSetSolveMode solveMode,
 		final String difficulty,
-		final List<Long> categoryIds) {
-		QuestionSetEntity questionSet = questionSetEntityRepository.findById(questionSetId)
+		final List<Long> categoryIds,
+		final Long userId) {
+		QuestionSetEntity questionSet = questionSetEntityRepository.findByIdForUpdate(questionSetId)
 			.orElseThrow(() -> new EntityNotFoundException("Question set not found"));
+		teamRoleValidator.checkHasCreateQuestionSetAuthority(questionSet.getTeamId(), userId);
 
-		TeamEntity team = teamReader.getTeam(questionSet.getTeamId());
-		if (solveMode == QuestionSetSolveMode.LIVE_TIME && team.getType() == TeamType.PERSONAL) {
-			throw new QuestionSetStatusException(
-				QuestionSetStatusExceptionCode.CANNOT_CREATE_LIVE_TIME_IN_PERSONAL_TEAM);
-		}
+		TeamEntity team = validateTeamSolveMode(questionSet.getTeamId(), solveMode);
 
-		// Todo: 현재 생성 단계가 아니면 예외
+		questionSet.completeQuestionSet(title, solveMode, difficulty);
 		int number = 1;
 
 		List<QuestionEntity> questions = questionEntityRepository.findAllByQuestionSetIdOrderByLexoRankAsc(
@@ -191,7 +189,6 @@ public class QuestionSetService {
 			question.updateNumber(number++);
 		}
 
-		questionSet.completeQuestionSet(title, solveMode, difficulty);
 		if (team.getType() == TeamType.PERSONAL) {
 			questionSet.markOngoingOnComplete();
 		}
@@ -201,8 +198,28 @@ public class QuestionSetService {
 	}
 
 	@Transactional
+	public QuestionSetDto changeSolveMode(final Long questionSetId, final QuestionSetSolveMode solveMode,
+		final MaitUser user) {
+		QuestionSetEntity questionSet = questionSetReader.getQuestionSetForUpdate(questionSetId);
+		teamRoleValidator.checkHasCreateQuestionSetAuthority(questionSet.getTeamId(), user.id());
+		validateTeamSolveMode(questionSet.getTeamId(), solveMode);
+		questionSet.changeSolveMode(solveMode);
+
+		return getQuestionSet(questionSetId, user);
+	}
+
+	private TeamEntity validateTeamSolveMode(final Long teamId, final QuestionSetSolveMode solveMode) {
+		TeamEntity team = teamReader.getTeam(teamId);
+		if (solveMode == QuestionSetSolveMode.LIVE_TIME && team.getType() == TeamType.PERSONAL) {
+			throw new QuestionSetStatusException(
+				QuestionSetStatusExceptionCode.CANNOT_CREATE_LIVE_TIME_IN_PERSONAL_TEAM);
+		}
+		return team;
+	}
+
+	@Transactional
 	public void updateQuestionSetField(final Long questionSetId, final String title) {
-		QuestionSetEntity questionSet = questionSetEntityRepository.findById(questionSetId)
+		QuestionSetEntity questionSet = questionSetEntityRepository.findByIdForUpdate(questionSetId)
 			.orElseThrow(() -> new EntityNotFoundException("Question set not found"));
 
 		questionSet.updateTitle(title);
@@ -225,16 +242,17 @@ public class QuestionSetService {
 	}
 
 	@Transactional
-	public void updateQuestionSetToReviewMode(final Long questionSetId) {
-		QuestionSetEntity questionSet = questionSetEntityRepository.findById(questionSetId)
+	public void updateQuestionSetToReviewMode(final Long questionSetId, final Long userId) {
+		QuestionSetEntity questionSet = questionSetEntityRepository.findByIdForUpdate(questionSetId)
 			.orElseThrow(() -> new EntityNotFoundException("해당 문제 셋을 찾을 수 없습니다."));
 
+		teamRoleValidator.checkHasCreateQuestionSetAuthority(questionSet.getTeamId(), userId);
 		questionSet.openReview();
 	}
 
 	@Transactional
 	public void restartQuestionSet(final Long questionSetId, final MaitUser user) {
-		QuestionSetEntity questionSet = questionSetEntityRepository.findById(questionSetId)
+		QuestionSetEntity questionSet = questionSetEntityRepository.findByIdForUpdate(questionSetId)
 			.orElseThrow(() -> new EntityNotFoundException("해당 문제 셋을 찾을 수 없습니다."));
 
 		teamRoleValidator.checkHasCreateQuestionSetAuthority(questionSet.getTeamId(), user.id());

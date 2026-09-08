@@ -45,6 +45,7 @@ import com.coniv.mait.web.question.dto.QuestionValidationApiResponse;
 import com.coniv.mait.web.question.dto.StudyQuestionSetGroup;
 import com.coniv.mait.web.question.dto.UpdateQuestionSetApiRequest;
 import com.coniv.mait.web.question.dto.UpdateQuestionSetFieldApiRequest;
+import com.coniv.mait.web.question.dto.UpdateQuestionSetSolveModeApiRequest;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -134,13 +135,26 @@ public class QuestionSetController {
 		return ResponseEntity.ok(ApiResponse.ok(QuestionSetApiResponse.from(questionSetDto)));
 	}
 
-	@Operation(summary = "문제 셋을 최종 저장 API", description = "문제 셋을 제작 완료 상태로 변경")
+	@Operation(summary = "문제 셋을 최종 저장 API",
+		description = "팀의 MAKER/OWNER가 MAKING 상태의 문제 셋을 제작 완료한다. 모드 변경은 solve-mode API를 사용한다.")
 	@PutMapping("/{questionSetId}")
 	public ResponseEntity<ApiResponse<QuestionSetApiResponse>> completeQuestionSet(
+		@AuthenticationPrincipal MaitUser user,
 		@PathVariable Long questionSetId, @Valid @RequestBody UpdateQuestionSetApiRequest request) {
 		return ResponseEntity.ok(ApiResponse.ok(QuestionSetApiResponse.from(
 			questionSetService.completeQuestionSet(questionSetId, request.resolvedTitle(),
-				request.solveMode(), request.difficulty(), request.categoryIds()))));
+				request.solveMode(), request.difficulty(), request.categoryIds(), user.id()))));
+	}
+
+	@Operation(summary = "문제 셋 풀이 방식 변경",
+		description = "팀의 MAKER/OWNER가 BEFORE 상태에서만 실시간↔학습 모드를 변경한다. "
+			+ "제목, 카테고리, 진행 상태와 풀이 기록은 유지된다. 개인 팀은 실시간 모드로 변경할 수 없다.")
+	@PatchMapping("/{questionSetId}/solve-mode")
+	public ResponseEntity<ApiResponse<QuestionSetApiResponse>> changeSolveMode(
+		@AuthenticationPrincipal MaitUser user, @PathVariable Long questionSetId,
+		@Valid @RequestBody UpdateQuestionSetSolveModeApiRequest request) {
+		return ResponseEntity.ok(ApiResponse.ok(QuestionSetApiResponse.from(
+			questionSetService.changeSolveMode(questionSetId, request.solveMode(), user))));
 	}
 
 	@Operation(summary = "문제 셋에 카테고리 단건 매핑 추가 API",
@@ -189,10 +203,12 @@ public class QuestionSetController {
 		return ResponseEntity.ok(ApiResponse.ok(AiRequestStatusApiResponse.of(questionSetId, status)));
 	}
 
-	@Operation(summary = "종료된 문제를 복습 상태로 전환", description = "종료된 학습/실시간 모드의 문제를 복습 상태로 전환한다.")
+	@Operation(summary = "종료된 문제를 복습 상태로 전환",
+		description = "팀의 MAKER/OWNER가 AFTER 상태의 학습/실시간 문제 셋을 REVIEW로 전환한다. 원래 solveMode는 유지한다.")
 	@PatchMapping("/{questionSetId}/review")
-	public ResponseEntity<ApiResponse<Void>> updateToReviewMode(@PathVariable("questionSetId") Long questionSetId) {
-		questionSetService.updateQuestionSetToReviewMode(questionSetId);
+	public ResponseEntity<ApiResponse<Void>> updateToReviewMode(@PathVariable("questionSetId") Long questionSetId,
+		@AuthenticationPrincipal MaitUser user) {
+		questionSetService.updateQuestionSetToReviewMode(questionSetId, user.id());
 		return ResponseEntity.ok(ApiResponse.noContent());
 	}
 

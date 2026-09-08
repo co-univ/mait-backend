@@ -63,7 +63,7 @@ class QuestionSetStudyControlServiceTest {
 			.status(QuestionSetStatus.BEFORE)
 			.build();
 
-		when(questionSetReader.getQuestionSet(QUESTION_SET_ID)).thenReturn(questionSet);
+		when(questionSetReader.getQuestionSetForUpdate(QUESTION_SET_ID)).thenReturn(questionSet);
 
 		// when
 		questionSetStudyControlService.startStudyQuestionSet(MAIT_USER, QUESTION_SET_ID);
@@ -78,7 +78,7 @@ class QuestionSetStudyControlServiceTest {
 	@DisplayName("존재하지 않는 문제 셋 시작 시 EntityNotFoundException이 발생한다")
 	void startStudyQuestionSet_QuestionSetNotFound_ThrowsException() {
 		// given
-		when(questionSetReader.getQuestionSet(QUESTION_SET_ID))
+		when(questionSetReader.getQuestionSetForUpdate(QUESTION_SET_ID))
 			.thenThrow(new EntityNotFoundException(QUESTION_SET_ID + " : 해당 문제 셋을 찾을 수 없습니다."));
 
 		// when & then
@@ -97,7 +97,7 @@ class QuestionSetStudyControlServiceTest {
 			.status(QuestionSetStatus.BEFORE)
 			.build();
 
-		when(questionSetReader.getQuestionSet(QUESTION_SET_ID)).thenReturn(questionSet);
+		when(questionSetReader.getQuestionSetForUpdate(QUESTION_SET_ID)).thenReturn(questionSet);
 		doThrow(new UserRoleException("문제 세트 생성 권한이 없습니다."))
 			.when(teamRoleValidator).checkHasCreateQuestionSetAuthority(TEAM_ID, USER_ID);
 
@@ -117,7 +117,7 @@ class QuestionSetStudyControlServiceTest {
 			.status(QuestionSetStatus.BEFORE)
 			.build();
 
-		when(questionSetReader.getQuestionSet(QUESTION_SET_ID)).thenReturn(questionSet);
+		when(questionSetReader.getQuestionSetForUpdate(QUESTION_SET_ID)).thenReturn(questionSet);
 
 		// when & then
 		assertThatThrownBy(() ->
@@ -135,7 +135,7 @@ class QuestionSetStudyControlServiceTest {
 			.status(QuestionSetStatus.ONGOING)
 			.build();
 
-		when(questionSetReader.getQuestionSet(QUESTION_SET_ID)).thenReturn(questionSet);
+		when(questionSetReader.getQuestionSetForUpdate(QUESTION_SET_ID)).thenReturn(questionSet);
 
 		// when & then
 		assertThatThrownBy(() ->
@@ -153,7 +153,7 @@ class QuestionSetStudyControlServiceTest {
 			.status(QuestionSetStatus.ONGOING)
 			.build();
 
-		when(questionSetReader.getQuestionSet(QUESTION_SET_ID)).thenReturn(questionSet);
+		when(questionSetReader.getQuestionSetForUpdate(QUESTION_SET_ID)).thenReturn(questionSet);
 		when(teamReader.getTeam(TEAM_ID)).thenReturn(TeamEntity.ofGroup("팀", 1L));
 
 		// when
@@ -169,7 +169,7 @@ class QuestionSetStudyControlServiceTest {
 	@DisplayName("존재하지 않는 문제 셋 종료 시 EntityNotFoundException이 발생한다")
 	void endStudyQuestionSet_QuestionSetNotFound_ThrowsException() {
 		// given
-		when(questionSetReader.getQuestionSet(QUESTION_SET_ID))
+		when(questionSetReader.getQuestionSetForUpdate(QUESTION_SET_ID))
 			.thenThrow(new EntityNotFoundException(QUESTION_SET_ID + " : 해당 문제 셋을 찾을 수 없습니다."));
 
 		// when & then
@@ -188,7 +188,7 @@ class QuestionSetStudyControlServiceTest {
 			.status(QuestionSetStatus.ONGOING)
 			.build();
 
-		when(questionSetReader.getQuestionSet(QUESTION_SET_ID)).thenReturn(questionSet);
+		when(questionSetReader.getQuestionSetForUpdate(QUESTION_SET_ID)).thenReturn(questionSet);
 		doThrow(new UserRoleException("문제 세트 생성 권한이 없습니다."))
 			.when(teamRoleValidator).checkHasCreateQuestionSetAuthority(TEAM_ID, USER_ID);
 
@@ -208,7 +208,7 @@ class QuestionSetStudyControlServiceTest {
 			.status(QuestionSetStatus.ONGOING)
 			.build();
 
-		when(questionSetReader.getQuestionSet(QUESTION_SET_ID)).thenReturn(questionSet);
+		when(questionSetReader.getQuestionSetForUpdate(QUESTION_SET_ID)).thenReturn(questionSet);
 		when(teamReader.getTeam(TEAM_ID)).thenReturn(TeamEntity.ofGroup("팀", 1L));
 
 		// when & then
@@ -227,7 +227,7 @@ class QuestionSetStudyControlServiceTest {
 			.status(QuestionSetStatus.BEFORE)
 			.build();
 
-		when(questionSetReader.getQuestionSet(QUESTION_SET_ID)).thenReturn(questionSet);
+		when(questionSetReader.getQuestionSetForUpdate(QUESTION_SET_ID)).thenReturn(questionSet);
 		when(teamReader.getTeam(TEAM_ID)).thenReturn(TeamEntity.ofGroup("팀", 1L));
 
 		// when & then
@@ -246,7 +246,7 @@ class QuestionSetStudyControlServiceTest {
 			.status(QuestionSetStatus.ONGOING)
 			.build();
 
-		when(questionSetReader.getQuestionSet(QUESTION_SET_ID)).thenReturn(questionSet);
+		when(questionSetReader.getQuestionSetForUpdate(QUESTION_SET_ID)).thenReturn(questionSet);
 
 		// when
 		questionSetStudyControlService.evaluateAndAutoEnd(QUESTION_SET_ID);
@@ -266,7 +266,7 @@ class QuestionSetStudyControlServiceTest {
 			.status(QuestionSetStatus.AFTER)
 			.build();
 
-		when(questionSetReader.getQuestionSet(QUESTION_SET_ID)).thenReturn(questionSet);
+		when(questionSetReader.getQuestionSetForUpdate(QUESTION_SET_ID)).thenReturn(questionSet);
 
 		// when
 		questionSetStudyControlService.evaluateAndAutoEnd(QUESTION_SET_ID);
@@ -286,7 +286,7 @@ class QuestionSetStudyControlServiceTest {
 			.status(QuestionSetStatus.ONGOING)
 			.build();
 
-		when(questionSetReader.getQuestionSet(QUESTION_SET_ID)).thenReturn(questionSet);
+		when(questionSetReader.getQuestionSetForUpdate(QUESTION_SET_ID)).thenReturn(questionSet);
 		when(solvingSessionEntityRepository.countByQuestionSetIdAndSolveModeAndStatus(
 			QUESTION_SET_ID, QuestionSetSolveMode.STUDY, SolvingStatus.PROGRESSING))
 			.thenReturn(1L);
@@ -309,7 +309,7 @@ class QuestionSetStudyControlServiceTest {
 			.status(QuestionSetStatus.ONGOING)
 			.build();
 
-		when(questionSetReader.getQuestionSet(QUESTION_SET_ID)).thenReturn(questionSet);
+		when(questionSetReader.getQuestionSetForUpdate(QUESTION_SET_ID)).thenReturn(questionSet);
 		when(solvingSessionEntityRepository.countByQuestionSetIdAndSolveModeAndStatus(
 			QUESTION_SET_ID, QuestionSetSolveMode.STUDY, SolvingStatus.PROGRESSING))
 			.thenReturn(0L);
@@ -335,7 +335,7 @@ class QuestionSetStudyControlServiceTest {
 			.status(QuestionSetStatus.ONGOING)
 			.build();
 
-		when(questionSetReader.getQuestionSet(QUESTION_SET_ID)).thenReturn(questionSet);
+		when(questionSetReader.getQuestionSetForUpdate(QUESTION_SET_ID)).thenReturn(questionSet);
 		when(solvingSessionEntityRepository.countByQuestionSetIdAndSolveModeAndStatus(
 			QUESTION_SET_ID, QuestionSetSolveMode.STUDY, SolvingStatus.PROGRESSING))
 			.thenReturn(0L);
@@ -362,7 +362,7 @@ class QuestionSetStudyControlServiceTest {
 			.status(QuestionSetStatus.ONGOING)
 			.build();
 
-		when(questionSetReader.getQuestionSet(QUESTION_SET_ID)).thenReturn(questionSet);
+		when(questionSetReader.getQuestionSetForUpdate(QUESTION_SET_ID)).thenReturn(questionSet);
 		when(teamReader.getTeam(TEAM_ID)).thenReturn(TeamEntity.ofPersonal("개인 워크스페이스", 1L));
 
 		// when & then

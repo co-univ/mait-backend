@@ -409,7 +409,7 @@ class QuestionSetServiceTest {
 			.teamId(teamId)
 			.build();
 
-		when(questionSetEntityRepository.findById(questionSetId)).thenReturn(Optional.of(questionSetEntity));
+		when(questionSetEntityRepository.findByIdForUpdate(questionSetId)).thenReturn(Optional.of(questionSetEntity));
 		when(teamReader.getTeam(teamId)).thenReturn(TeamEntity.ofGroup("코니브", 1L));
 
 		// when
@@ -418,10 +418,10 @@ class QuestionSetServiceTest {
 			newTitle,
 			newSolveMode,
 			difficulty,
-			List.of());
+			List.of(), USER_ID);
 
 		// then
-		verify(questionSetEntityRepository, times(1)).findById(questionSetId);
+		verify(questionSetEntityRepository, times(1)).findByIdForUpdate(questionSetId);
 
 		assertThat(questionSetEntity.getTitle()).isEqualTo(newTitle);
 		assertThat(questionSetEntity.getSolveMode()).isEqualTo(QuestionSetSolveMode.LIVE_TIME);
@@ -450,7 +450,7 @@ class QuestionSetServiceTest {
 			.teamId(teamId)
 			.build();
 
-		when(questionSetEntityRepository.findById(questionSetId)).thenReturn(Optional.of(questionSetEntity));
+		when(questionSetEntityRepository.findByIdForUpdate(questionSetId)).thenReturn(Optional.of(questionSetEntity));
 		when(teamReader.getTeam(teamId)).thenReturn(TeamEntity.ofGroup("코니브", 1L));
 
 		// when
@@ -459,7 +459,7 @@ class QuestionSetServiceTest {
 			"새 제목",
 			QuestionSetSolveMode.LIVE_TIME,
 			"난이도",
-			categoryIds);
+			categoryIds, USER_ID);
 
 		// then
 		verify(questionSetCategoryService).updateLinkedCategories(questionSetId, teamId, categoryIds);
@@ -477,7 +477,7 @@ class QuestionSetServiceTest {
 			.teamId(teamId)
 			.build();
 
-		when(questionSetEntityRepository.findById(questionSetId)).thenReturn(Optional.of(questionSetEntity));
+		when(questionSetEntityRepository.findByIdForUpdate(questionSetId)).thenReturn(Optional.of(questionSetEntity));
 		when(teamReader.getTeam(teamId)).thenReturn(TeamEntity.ofPersonal("개인 워크스페이스", 1L));
 
 		// when, then
@@ -486,7 +486,7 @@ class QuestionSetServiceTest {
 			"제목",
 			QuestionSetSolveMode.LIVE_TIME,
 			"난이도",
-			List.of()))
+			List.of(), USER_ID))
 			.isInstanceOfSatisfying(QuestionSetStatusException.class, ex -> {
 				assertThat(ex.getExceptionCode())
 					.isEqualTo(QuestionSetStatusExceptionCode.CANNOT_CREATE_LIVE_TIME_IN_PERSONAL_TEAM);
@@ -511,7 +511,7 @@ class QuestionSetServiceTest {
 
 		TeamEntity team = TeamEntity.ofPersonal("name", 1L);
 
-		when(questionSetEntityRepository.findById(questionSetId)).thenReturn(Optional.of(questionSetEntity));
+		when(questionSetEntityRepository.findByIdForUpdate(questionSetId)).thenReturn(Optional.of(questionSetEntity));
 		when(teamReader.getTeam(questionSetEntity.getTeamId())).thenReturn(team);
 
 		// when
@@ -520,7 +520,7 @@ class QuestionSetServiceTest {
 			"제목",
 			QuestionSetSolveMode.STUDY,
 			"난이도",
-			List.of());
+			List.of(), USER_ID);
 
 		// then
 		assertThat(questionSetEntity.getSolveMode()).isEqualTo(QuestionSetSolveMode.STUDY);
@@ -533,7 +533,7 @@ class QuestionSetServiceTest {
 	void completeQuestionSetTest_Fail_NotFound() {
 		// given
 		final Long questionSetId = 999L;
-		when(questionSetEntityRepository.findById(questionSetId))
+		when(questionSetEntityRepository.findByIdForUpdate(questionSetId))
 			.thenReturn(Optional.empty());
 
 		// when & then
@@ -542,11 +542,11 @@ class QuestionSetServiceTest {
 			"제목",
 			QuestionSetSolveMode.LIVE_TIME,
 			"설명",
-			null))
+			null, USER_ID))
 			.isInstanceOf(EntityNotFoundException.class)
 			.hasMessage("Question set not found");
 
-		verify(questionSetEntityRepository, times(1)).findById(questionSetId);
+		verify(questionSetEntityRepository, times(1)).findByIdForUpdate(questionSetId);
 	}
 
 	@Test
@@ -561,13 +561,13 @@ class QuestionSetServiceTest {
 			.title(originalTitle)
 			.build();
 
-		when(questionSetEntityRepository.findById(questionSetId)).thenReturn(Optional.of(questionSetEntity));
+		when(questionSetEntityRepository.findByIdForUpdate(questionSetId)).thenReturn(Optional.of(questionSetEntity));
 
 		// when
 		questionSetService.updateQuestionSetField(questionSetId, newTitle);
 
 		// then
-		verify(questionSetEntityRepository, times(1)).findById(questionSetId);
+		verify(questionSetEntityRepository, times(1)).findByIdForUpdate(questionSetId);
 		assertThat(questionSetEntity.getTitle()).isEqualTo(newTitle);
 	}
 
@@ -677,10 +677,10 @@ class QuestionSetServiceTest {
 		// given
 		final Long questionSetId = 1L;
 		QuestionSetEntity questionSetEntity = mock(QuestionSetEntity.class);
-		when(questionSetEntityRepository.findById(questionSetId)).thenReturn(Optional.of(questionSetEntity));
+		when(questionSetEntityRepository.findByIdForUpdate(questionSetId)).thenReturn(Optional.of(questionSetEntity));
 
 		// when
-		questionSetService.updateQuestionSetToReviewMode(questionSetId);
+		questionSetService.updateQuestionSetToReviewMode(questionSetId, USER_ID);
 
 		// then
 		verify(questionSetEntity).openReview();
@@ -692,13 +692,13 @@ class QuestionSetServiceTest {
 		// given
 		final Long questionSetId = 1L;
 		QuestionSetEntity questionSetEntity = mock(QuestionSetEntity.class);
-		when(questionSetEntityRepository.findById(questionSetId)).thenReturn(Optional.of(questionSetEntity));
+		when(questionSetEntityRepository.findByIdForUpdate(questionSetId)).thenReturn(Optional.of(questionSetEntity));
 		doThrow(new QuestionSetStatusException(QuestionSetStatusExceptionCode.ONLY_AFTER))
 			.when(questionSetEntity)
 			.openReview();
 
 		// when, then
-		assertThatThrownBy(() -> questionSetService.updateQuestionSetToReviewMode(questionSetId))
+		assertThatThrownBy(() -> questionSetService.updateQuestionSetToReviewMode(questionSetId, USER_ID))
 			.isInstanceOf(QuestionSetStatusException.class);
 	}
 
@@ -717,7 +717,7 @@ class QuestionSetServiceTest {
 			.solveMode(QuestionSetSolveMode.LIVE_TIME)
 			.endTime(endedAt)
 			.build();
-		when(questionSetEntityRepository.findById(questionSetId)).thenReturn(Optional.of(questionSetEntity));
+		when(questionSetEntityRepository.findByIdForUpdate(questionSetId)).thenReturn(Optional.of(questionSetEntity));
 
 		// when
 		questionSetService.restartQuestionSet(questionSetId, user);
@@ -744,7 +744,7 @@ class QuestionSetServiceTest {
 			.solveMode(QuestionSetSolveMode.STUDY)
 			.endTime(endedAt)
 			.build();
-		when(questionSetEntityRepository.findById(questionSetId)).thenReturn(Optional.of(questionSetEntity));
+		when(questionSetEntityRepository.findByIdForUpdate(questionSetId)).thenReturn(Optional.of(questionSetEntity));
 
 		// when
 		questionSetService.restartQuestionSet(questionSetId, user);
@@ -768,7 +768,7 @@ class QuestionSetServiceTest {
 			.status(QuestionSetStatus.REVIEW)
 			.solveMode(QuestionSetSolveMode.LIVE_TIME)
 			.build();
-		when(questionSetEntityRepository.findById(questionSetId)).thenReturn(Optional.of(questionSetEntity));
+		when(questionSetEntityRepository.findByIdForUpdate(questionSetId)).thenReturn(Optional.of(questionSetEntity));
 
 		// when, then
 		assertThatThrownBy(() -> questionSetService.restartQuestionSet(questionSetId, user))
@@ -790,7 +790,7 @@ class QuestionSetServiceTest {
 			.status(QuestionSetStatus.ONGOING)
 			.solveMode(QuestionSetSolveMode.LIVE_TIME)
 			.build();
-		when(questionSetEntityRepository.findById(questionSetId)).thenReturn(Optional.of(questionSetEntity));
+		when(questionSetEntityRepository.findByIdForUpdate(questionSetId)).thenReturn(Optional.of(questionSetEntity));
 
 		// when, then
 		assertThatThrownBy(() -> questionSetService.restartQuestionSet(questionSetId, user))

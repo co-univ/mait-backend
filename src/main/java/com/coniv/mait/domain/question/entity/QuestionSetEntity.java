@@ -149,6 +149,9 @@ public class QuestionSetEntity extends BaseTimeEntity {
 	}
 
 	public void completeQuestionSet(String title, QuestionSetSolveMode solveMode, String difficulty) {
+		if (status != QuestionSetStatus.MAKING) {
+			throw new QuestionSetStatusException(QuestionSetStatusExceptionCode.ONLY_MAKING);
+		}
 		if (solveMode == null) {
 			throw new IllegalArgumentException("문제 셋 완료 시 solveMode는 필수입니다.");
 		}
@@ -157,6 +160,16 @@ public class QuestionSetEntity extends BaseTimeEntity {
 		this.solveMode = solveMode;
 		this.status = QuestionSetStatus.BEFORE;
 		this.difficulty = difficulty;
+	}
+
+	public void changeSolveMode(QuestionSetSolveMode solveMode) {
+		if (status != QuestionSetStatus.BEFORE) {
+			throw new QuestionSetStatusException(QuestionSetStatusExceptionCode.ONLY_BEFORE);
+		}
+		if (solveMode == null) {
+			throw new IllegalArgumentException("변경할 solveMode는 필수입니다.");
+		}
+		this.solveMode = solveMode;
 	}
 
 	public void markOngoingOnComplete() {
