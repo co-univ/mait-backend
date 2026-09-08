@@ -12,6 +12,8 @@ import com.coniv.mait.domain.question.entity.ShortAnswerEntity;
 public interface ShortAnswerEntityRepository extends JpaRepository<ShortAnswerEntity, Long> {
 	List<ShortAnswerEntity> findAllByShortQuestionId(Long shortQuestionId);
 
+	List<ShortAnswerEntity> findAllByShortQuestionIdIn(List<Long> shortQuestionIds);
+
 	@Modifying
 	@Query("DELETE FROM ShortAnswerEntity s WHERE s.shortQuestionId = :questionId")
 	void deleteBulkAllByQuestionId(@Param("questionId") Long questionId);

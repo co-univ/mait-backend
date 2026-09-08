@@ -11,7 +11,6 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.StringRedisTemplate;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 
@@ -20,7 +19,6 @@ import com.coniv.mait.domain.question.entity.MultipleQuestionEntity;
 import com.coniv.mait.domain.question.entity.QuestionSetEntity;
 import com.coniv.mait.domain.question.entity.QuestionSetParticipantEntity;
 import com.coniv.mait.domain.question.enums.ParticipantStatus;
-import com.coniv.mait.domain.question.enums.QuestionSetVisibility;
 import com.coniv.mait.domain.question.enums.QuestionStatusType;
 import com.coniv.mait.domain.question.repository.FillBlankAnswerEntityRepository;
 import com.coniv.mait.domain.question.repository.MultipleChoiceEntityRepository;
@@ -181,59 +179,6 @@ public class QuestionAnswerSubmitApiIntegrationTest extends BaseIntegrationTest 
 	}
 
 	@Test
-	@DisplayName("문제 셋이 PRIVATE인 경우 답안 제출 시 NEED_OPEN(FORBIDDEN) 반환")
-	void submitAnswer_WhenQuestionSetPrivate_ReturnNeedOpen() throws Exception {
-		// Given
-		UserEntity user = userEntityRepository.save(
-			UserEntity.localLoginUser("email", "testUser", "youth", "singsing"));
-		TeamEntity team = teamEntityRepository.save(TeamEntity.ofGroup("coniv", user.getId()));
-		final Long teamId = team.getId();
-		teamUserEntityRepository.save(TeamUserEntity.createPlayerUser(user, team));
-
-		QuestionSetEntity questionSet = questionSetEntityRepository.save(
-			QuestionSetEntity.builder()
-				.teamId(teamId)
-				.visibility(QuestionSetVisibility.PRIVATE)
-				.build()
-		);
-
-		questionSetParticipantRepository.save(
-			QuestionSetParticipantEntity.builder()
-				.status(ParticipantStatus.ACTIVE)
-				.questionSet(questionSet)
-				.user(user)
-				.winner(false)
-				.build()
-		);
-
-		MultipleQuestionEntity multipleQuestion = questionEntityRepository.save(
-			MultipleQuestionEntity.builder()
-				.number(1L)
-				.questionSet(questionSet)
-				.questionStatus(QuestionStatusType.SOLVE_PERMISSION)
-				.lexoRank("m")
-				.build()
-		);
-
-		ObjectNode node = objectMapper.createObjectNode();
-		node.put("type", "MULTIPLE");
-		node.put("userId", user.getId());
-		node.set("submitAnswers", objectMapper.valueToTree(List.of(1L)));
-
-		// When & Then
-		mockMvc.perform(post("/api/v1/question-sets/{questionSetId}/questions/{questionId}/submit",
-				questionSet.getId(), multipleQuestion.getId())
-				.contentType(MediaType.APPLICATION_JSON)
-				.content(objectMapper.writeValueAsString(node)))
-			.andExpect(status().isForbidden())
-			.andExpectAll(
-				jsonPath("$.isSuccess").value(false),
-				jsonPath("$.status").value(HttpStatus.FORBIDDEN.name()),
-				jsonPath("$.code").value("1001")
-			);
-	}
-
-	@Test
 	@DisplayName("문제별 득점자 조회 성공 API 테스트")
 	void getScorer_Success() throws Exception {
 		// Given
@@ -353,6 +298,65 @@ public class QuestionAnswerSubmitApiIntegrationTest extends BaseIntegrationTest 
 				jsonPath("$.data.submitRecords[1].questionId").value(multipleQuestion.getId()),
 				jsonPath("$.data.submitRecords[1].isCorrect").value(false),
 				jsonPath("$.data.submitRecords[1].submitOrder").value(2)
+			);
+	}
+
+	@Test
+	@DisplayName("학습 모드 제출 기록 조회 시 nullable 필드를 허용한다")
+	void getSubmitRecords_StudyModeRecord_ReturnsOk() throws Exception {
+		// Given
+		UserEntity liveUser = userEntityRepository.save(UserEntity.localLoginUser(
+			"live-user@test.com", "password", "실시간사용자", "live-user"));
+		UserEntity studyUser = userEntityRepository.save(UserEntity.localLoginUser(
+			"study-user@test.com", "password", "학습사용자", "study-user"));
+
+		QuestionSetEntity questionSet = questionSetEntityRepository.save(QuestionSetEntity.builder()
+			.title("학습 모드 테스트 문제집")
+			.build());
+
+		MultipleQuestionEntity question = questionEntityRepository.save(
+			MultipleQuestionEntity.builder()
+				.content("학습 모드 테스트 문제")
+				.number(1L)
+				.questionSet(questionSet)
+				.lexoRank("m")
+				.answerCount(4)
+				.build());
+
+		String submittedAnswer = objectMapper.writeValueAsString(
+			new MultipleQuestionSubmitAnswer(List.of(1L)));
+
+		AnswerSubmitRecordEntity liveRecord = answerSubmitRecordEntityRepository.save(
+			AnswerSubmitRecordEntity.builder()
+				.userId(liveUser.getId())
+				.questionId(question.getId())
+				.submitOrder(1L)
+				.isCorrect(true)
+				.submittedAnswer(submittedAnswer)
+				.build());
+
+		AnswerSubmitRecordEntity studyRecord = answerSubmitRecordEntityRepository.save(
+			AnswerSubmitRecordEntity.builder()
+				.userId(studyUser.getId())
+				.questionId(question.getId())
+				.submitOrder(null)
+				.isCorrect(false)
+				.submittedAnswer(null)
+				.build());
+
+		// When & Then
+		mockMvc.perform(get("/api/v1/question-sets/{questionSetId}/questions/{questionId}/submit-records",
+				questionSet.getId(), question.getId()))
+			.andExpectAll(
+				status().isOk(),
+				jsonPath("$.isSuccess").value(true),
+				jsonPath("$.data.totalCounts").value(2),
+				jsonPath("$.data.submitRecords[0].id").value(liveRecord.getId()),
+				jsonPath("$.data.submitRecords[0].submitOrder").value(1),
+				jsonPath("$.data.submitRecords[1].id").value(studyRecord.getId()),
+				jsonPath("$.data.submitRecords[1].userId").value(studyUser.getId()),
+				jsonPath("$.data.submitRecords[1].submitOrder").value(nullValue()),
+				jsonPath("$.data.submitRecords[1].submittedAnswer").value(nullValue())
 			);
 	}
 

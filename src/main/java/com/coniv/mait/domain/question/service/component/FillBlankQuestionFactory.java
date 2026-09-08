@@ -1,6 +1,7 @@
 package com.coniv.mait.domain.question.service.component;
 
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Component;
@@ -114,5 +115,35 @@ public class FillBlankQuestionFactory implements QuestionFactory<FillBlankQuesti
 				String.format("Each blank number must have exactly one main answer. Number %d has %d main answers.",
 					number, mainCount));
 		}
+	}
+
+	@Override
+	public FillBlankQuestionEntity copyQuestion(QuestionEntity source, QuestionSetEntity targetQuestionSet) {
+		return FillBlankQuestionEntity.builder()
+			.content(source.getContent())
+			.explanation(source.getExplanation())
+			.number(source.getNumber())
+			.lexoRank(source.getLexoRank())
+			.imageUrl(source.getImageUrl())
+			.imageId(source.getImageId())
+			.questionSet(targetQuestionSet)
+			.build();
+	}
+
+	@Override
+	public void copySubEntities(Map<Long, QuestionEntity> copiedBySourceQuestionId) {
+		List<FillBlankAnswerEntity> sources = fillBlankAnswerEntityRepository.findAllByFillBlankQuestionIdIn(
+			List.copyOf(copiedBySourceQuestionId.keySet()));
+
+		List<FillBlankAnswerEntity> copies = sources.stream()
+			.map(source -> FillBlankAnswerEntity.builder()
+				.answer(source.getAnswer())
+				.isMain(source.isMain())
+				.number(source.getNumber())
+				.fillBlankQuestionId(copiedBySourceQuestionId.get(source.getFillBlankQuestionId()).getId())
+				.build())
+			.toList();
+
+		fillBlankAnswerEntityRepository.saveAll(copies);
 	}
 }

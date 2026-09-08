@@ -1,6 +1,7 @@
 package com.coniv.mait.domain.question.service.component;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
@@ -129,5 +130,36 @@ public class ShortQuestionFactory implements QuestionFactory<ShortQuestionDto> {
 			.filter(Objects::nonNull)
 			.distinct()
 			.count();
+	}
+
+	@Override
+	public ShortQuestionEntity copyQuestion(QuestionEntity source, QuestionSetEntity targetQuestionSet) {
+		return ShortQuestionEntity.builder()
+			.content(source.getContent())
+			.explanation(source.getExplanation())
+			.number(source.getNumber())
+			.lexoRank(source.getLexoRank())
+			.imageUrl(source.getImageUrl())
+			.imageId(source.getImageId())
+			.questionSet(targetQuestionSet)
+			.answerCount(((ShortQuestionEntity)source).getAnswerCount())
+			.build();
+	}
+
+	@Override
+	public void copySubEntities(Map<Long, QuestionEntity> copiedBySourceQuestionId) {
+		List<ShortAnswerEntity> sources = shortAnswerEntityRepository.findAllByShortQuestionIdIn(
+			List.copyOf(copiedBySourceQuestionId.keySet()));
+
+		List<ShortAnswerEntity> copies = sources.stream()
+			.map(source -> ShortAnswerEntity.builder()
+				.answer(source.getAnswer())
+				.isMain(source.isMain())
+				.number(source.getNumber())
+				.shortQuestionId(copiedBySourceQuestionId.get(source.getShortQuestionId()).getId())
+				.build())
+			.toList();
+
+		shortAnswerEntityRepository.saveAll(copies);
 	}
 }

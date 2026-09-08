@@ -1,6 +1,7 @@
 package com.coniv.mait.web.team.controller;
 
 import static org.assertj.core.api.Assertions.*;
+import static org.hamcrest.Matchers.*;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
@@ -309,6 +310,39 @@ public class TeamApiIntegrationTest extends BaseIntegrationTest {
 
 	@Test
 	@Transactional
+	@WithCustomUser(email = "invitation-list-owner@example.com", name = "오너")
+	@DisplayName("초대 링크 목록 API 통합 테스트 - 활성 링크와 만료 없음 링크만 반환한다")
+	void getTeamInvitations_ReturnsActiveAndNoExpirationLinks() throws Exception {
+		// given
+		UserEntity owner = userEntityRepository.findByEmail("invitation-list-owner@example.com").orElseThrow();
+		TeamEntity team = createTeamWithOwner("초대 링크 목록 팀", owner);
+		String activeToken = "ACTIVE" + System.currentTimeMillis();
+		String noExpirationToken = "NOEXP" + System.currentTimeMillis();
+		String expiredToken = "EXPIRED" + System.currentTimeMillis();
+
+		TeamInvitationLinkEntity activeInvitation = TeamInvitationLinkEntity.createInvite(owner, team, activeToken,
+			InviteTokenDuration.ONE_DAY, TeamUserRole.PLAYER, false);
+		TeamInvitationLinkEntity noExpirationInvitation = TeamInvitationLinkEntity.createInvite(owner, team,
+			noExpirationToken, InviteTokenDuration.NO_EXPIRATION, TeamUserRole.PLAYER, false);
+		TeamInvitationLinkEntity expiredInvitation = TeamInvitationLinkEntity.createInvite(owner, team, expiredToken,
+			InviteTokenDuration.ONE_DAY, TeamUserRole.PLAYER, false);
+		expiredInvitation.changeToExpired();
+		teamInvitationEntityRepository.saveAll(List.of(activeInvitation, noExpirationInvitation, expiredInvitation));
+
+		// when & then
+		mockMvc.perform(get("/api/v1/teams/{teamId}/invitations", team.getId())
+				.with(csrf()))
+			.andExpectAll(
+				status().isOk(),
+				jsonPath("$.isSuccess").value(true),
+				jsonPath("$.data.length()").value(2),
+				jsonPath("$.data[0].token").value(activeToken),
+				jsonPath("$.data[1].token").value(noExpirationToken)
+			);
+	}
+
+	@Test
+	@Transactional
 	@DisplayName("팀 초대 정보 조회 API 통합 테스트 - 익명 사용자 성공")
 	void getTeamInfo_Anonymous_Success() throws Exception {
 		// given: create owner user and team and invite
@@ -529,5 +563,52 @@ public class TeamApiIntegrationTest extends BaseIntegrationTest {
 		teamUserEntityRepository.save(teamUser);
 
 		return team;
+	}
+
+	@Test
+	@Transactional
+	@WithCustomUser(email = "joined-all@example.com", name = "가입자")
+	@DisplayName("가입 팀 목록 조회 API 통합 테스트 - role 미지정 시 가입한 전체 팀을 반환한다")
+	void getJoinedTeams_Success_WithoutRole() throws Exception {
+		// given
+		UserEntity user = userEntityRepository.findByEmail("joined-all@example.com").orElseThrow();
+		joinTeam(user, "오너 팀", TeamUserRole.OWNER);
+		joinTeam(user, "메이커 팀", TeamUserRole.MAKER);
+		joinTeam(user, "플레이어 팀", TeamUserRole.PLAYER);
+
+		// when & then
+		mockMvc.perform(get("/api/v1/teams/joined").with(csrf()))
+			.andExpectAll(
+				status().isOk(),
+				jsonPath("$.isSuccess").value(true),
+				jsonPath("$.data.length()").value(3),
+				jsonPath("$.data[*].teamName").value(containsInAnyOrder("오너 팀", "메이커 팀", "플레이어 팀"))
+			);
+	}
+
+	@Test
+	@Transactional
+	@WithCustomUser(email = "joined-maker@example.com", name = "가입자")
+	@DisplayName("가입 팀 목록 조회 API 통합 테스트 - role=MAKER 는 상위 권한인 OWNER 팀까지 반환한다")
+	void getJoinedTeams_Success_FilterByMakerRole() throws Exception {
+		// given
+		UserEntity user = userEntityRepository.findByEmail("joined-maker@example.com").orElseThrow();
+		joinTeam(user, "오너 팀", TeamUserRole.OWNER);
+		joinTeam(user, "메이커 팀", TeamUserRole.MAKER);
+		joinTeam(user, "플레이어 팀", TeamUserRole.PLAYER);
+
+		// when & then
+		mockMvc.perform(get("/api/v1/teams/joined").param("role", "MAKER").with(csrf()))
+			.andExpectAll(
+				status().isOk(),
+				jsonPath("$.data.length()").value(2),
+				jsonPath("$.data[*].teamName").value(containsInAnyOrder("오너 팀", "메이커 팀")),
+				jsonPath("$.data[*].role").value(containsInAnyOrder("OWNER", "MAKER"))
+			);
+	}
+
+	private void joinTeam(final UserEntity user, final String teamName, final TeamUserRole role) {
+		TeamEntity team = teamEntityRepository.save(TeamEntity.ofGroup(teamName, user.getId()));
+		teamUserEntityRepository.save(TeamUserEntity.createTeamUser(user, team, role));
 	}
 }

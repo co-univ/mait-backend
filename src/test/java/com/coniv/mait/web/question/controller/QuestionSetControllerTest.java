@@ -13,7 +13,9 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.EnumSource;
 import org.junit.jupiter.params.provider.MethodSource;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
@@ -28,10 +30,12 @@ import com.coniv.mait.domain.question.enums.DeliveryMode;
 import com.coniv.mait.domain.question.enums.QuestionSetCreationType;
 import com.coniv.mait.domain.question.enums.QuestionSetSolveMode;
 import com.coniv.mait.domain.question.enums.QuestionSetStatus;
-import com.coniv.mait.domain.question.enums.QuestionSetVisibility;
 import com.coniv.mait.domain.question.enums.QuestionValidationResult;
 import com.coniv.mait.domain.question.enums.UserStudyStatus;
+import com.coniv.mait.domain.question.exception.QuestionSetStatusException;
+import com.coniv.mait.domain.question.exception.code.QuestionSetStatusExceptionCode;
 import com.coniv.mait.domain.question.service.QuestionSetCategoryService;
+import com.coniv.mait.domain.question.service.QuestionSetCopyService;
 import com.coniv.mait.domain.question.service.QuestionSetDeleteService;
 import com.coniv.mait.domain.question.service.QuestionSetMaterialService;
 import com.coniv.mait.domain.question.service.QuestionSetService;
@@ -39,9 +43,11 @@ import com.coniv.mait.domain.question.service.dto.QuestionSetDto;
 import com.coniv.mait.domain.question.service.dto.QuestionSetMaterialDto;
 import com.coniv.mait.domain.question.service.dto.QuestionValidateDto;
 import com.coniv.mait.domain.solve.service.StudyModeService;
+import com.coniv.mait.domain.user.exception.UserRoleException;
 import com.coniv.mait.global.auth.model.MaitUser;
 import com.coniv.mait.global.filter.JwtAuthorizationFilter;
 import com.coniv.mait.global.interceptor.idempotency.IdempotencyInterceptor;
+import com.coniv.mait.web.question.dto.CopyQuestionSetApiRequest;
 import com.coniv.mait.web.question.dto.CreateQuestionSetApiRequest;
 import com.coniv.mait.web.question.dto.QuestionSetGroup;
 import com.coniv.mait.web.question.dto.QuestionSetList;
@@ -49,7 +55,6 @@ import com.coniv.mait.web.question.dto.StudyQuestionSetDto;
 import com.coniv.mait.web.question.dto.StudyQuestionSetGroup;
 import com.coniv.mait.web.question.dto.UpdateQuestionSetApiRequest;
 import com.coniv.mait.web.question.dto.UpdateQuestionSetFieldApiRequest;
-import com.coniv.mait.web.question.dto.UpdateQuestionSetReviewApiRequest;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 @WebMvcTest(controllers = QuestionSetController.class)
@@ -72,6 +77,9 @@ class QuestionSetControllerTest {
 
 	@MockitoBean
 	private QuestionSetCategoryService questionSetCategoryService;
+
+	@MockitoBean
+	private QuestionSetCopyService questionSetCopyService;
 
 	@Autowired
 	private MockMvc mockMvc;
@@ -107,8 +115,7 @@ class QuestionSetControllerTest {
 		// given
 		final Long questionSetId = 1L;
 		CreateQuestionSetApiRequest request = new CreateQuestionSetApiRequest(1L, "Sample Title",
-			QuestionSetCreationType.MANUAL, QuestionSetSolveMode.STUDY, QuestionSetVisibility.GROUP,
-			null, null, null, null, null);
+			QuestionSetCreationType.MANUAL, QuestionSetSolveMode.STUDY, null, null, null, null, null);
 
 		QuestionSetDto questionSetDto = QuestionSetDto.builder()
 			.id(questionSetId)
@@ -153,30 +160,27 @@ class QuestionSetControllerTest {
 	static Stream<Arguments> invalidCreateQuestionSetRequests() {
 		return Stream.of(
 			Arguments.of("팀 ID 누락", new CreateQuestionSetApiRequest(null, "제목", QuestionSetCreationType.MANUAL,
-				QuestionSetSolveMode.STUDY, QuestionSetVisibility.GROUP, null, null, null, null, null),
+				QuestionSetSolveMode.STUDY, null, null, null, null, null),
 				"팀 정보는 필수 입니다."),
 			Arguments.of("빈 제목", new CreateQuestionSetApiRequest(1L, "", QuestionSetCreationType.MANUAL,
-				QuestionSetSolveMode.STUDY, QuestionSetVisibility.GROUP, null, null, null, null, null),
+				QuestionSetSolveMode.STUDY, null, null, null, null, null),
 				"문제 셋 제목을 입력해주세요."),
 			Arguments.of("공백만 있는 제목", new CreateQuestionSetApiRequest(1L, "   ", QuestionSetCreationType.MANUAL,
-				QuestionSetSolveMode.STUDY, QuestionSetVisibility.GROUP, null, null, null, null, null),
+				QuestionSetSolveMode.STUDY, null, null, null, null, null),
 				"문제 셋 제목을 입력해주세요."),
 			Arguments.of("생성 유형 누락", new CreateQuestionSetApiRequest(1L, "제목", null,
-				QuestionSetSolveMode.STUDY, QuestionSetVisibility.GROUP, null, null, null, null, null),
+				QuestionSetSolveMode.STUDY, null, null, null, null, null),
 				"문제 셋 생성 유형을 선택해주세요."),
 			Arguments.of("풀이 방식 누락", new CreateQuestionSetApiRequest(1L, "제목", QuestionSetCreationType.MANUAL,
-				null, QuestionSetVisibility.GROUP, null, null, null, null, null),
-				"문제 풀이 방식을 선택해주세요."),
-			Arguments.of("공개 범위 누락", new CreateQuestionSetApiRequest(1L, "제목", QuestionSetCreationType.MANUAL,
-				QuestionSetSolveMode.STUDY, null, null, null, null, null, null),
-				"문제 셋 공개 범위를 입력해주세요."));
+				null, null, null, null, null, null),
+				"문제 풀이 방식을 선택해주세요."));
 	}
 
 	@Test
 	@DisplayName("문제 셋 생성 실패 테스트 - 여러 필드 동시 유효성 검증 실패")
 	void createQuestionSetMultipleValidationFailuresTest() throws Exception {
 		// given
-		CreateQuestionSetApiRequest request = new CreateQuestionSetApiRequest(null, null, null, null, null,
+		CreateQuestionSetApiRequest request = new CreateQuestionSetApiRequest(null, null, null, null,
 			null, null, null, null, null);
 
 		// when & then
@@ -189,13 +193,12 @@ class QuestionSetControllerTest {
 				jsonPath("$.code").value("C-001"),
 				jsonPath("$.message").value("사용자 입력 오류입니다."),
 				jsonPath("$.reasons").isArray(),
-				jsonPath("$.reasons.length()").value(5),
+				jsonPath("$.reasons.length()").value(4),
 				jsonPath("$.reasons[*]").value(org.hamcrest.Matchers.hasItems(
 					"팀 정보는 필수 입니다.",
 					"문제 셋 제목을 입력해주세요.",
 					"문제 셋 생성 유형을 선택해주세요.",
-					"문제 풀이 방식을 선택해주세요.",
-					"문제 셋 공개 범위를 입력해주세요.")));
+					"문제 풀이 방식을 선택해주세요.")));
 
 		verify(questionSetService, never()).createQuestionSet(any(), any(), any(), any(), any(), any(), any());
 	}
@@ -422,10 +425,9 @@ class QuestionSetControllerTest {
 		final String title = "Updated Title";
 		final QuestionSetSolveMode solveMode = QuestionSetSolveMode.LIVE_TIME;
 		final String difficulty = "Intermediate";
-		final QuestionSetVisibility visibility = QuestionSetVisibility.PRIVATE;
 		final List<Long> categoryIds = List.of(11L, 12L);
 
-		var request = new UpdateQuestionSetApiRequest(title, solveMode, difficulty, visibility, categoryIds);
+		var request = new UpdateQuestionSetApiRequest(title, solveMode, difficulty, categoryIds);
 
 		QuestionSetDto questionSetDto = QuestionSetDto.builder()
 			.id(questionSetId)
@@ -433,11 +435,9 @@ class QuestionSetControllerTest {
 			.solveMode(solveMode)
 			.status(QuestionSetStatus.BEFORE)
 			.difficulty(difficulty)
-			.visibility(visibility)
 			.build();
 
-		when(questionSetService.completeQuestionSet(questionSetId, title, solveMode, difficulty, visibility,
-			categoryIds))
+		when(questionSetService.completeQuestionSet(questionSetId, title, solveMode, difficulty, categoryIds))
 			.thenReturn(questionSetDto);
 
 		// when & then
@@ -450,10 +450,9 @@ class QuestionSetControllerTest {
 				jsonPath("$.data.title").value(title),
 				jsonPath("$.data.deliveryMode").value(DeliveryMode.LIVE_TIME.name()),
 				jsonPath("$.data.difficulty").value(difficulty),
-				jsonPath("$.data.visibility").value(visibility.name()));
+				jsonPath("$.data.visibility").doesNotExist());
 
-		verify(questionSetService).completeQuestionSet(questionSetId, title, solveMode, difficulty,
-			visibility, categoryIds);
+		verify(questionSetService).completeQuestionSet(questionSetId, title, solveMode, difficulty, categoryIds);
 	}
 
 	@Test
@@ -508,31 +507,26 @@ class QuestionSetControllerTest {
 				jsonPath("$.reasons[*]").value(org.hamcrest.Matchers.hasItems(
 					expectedErrorMessages.toArray(new String[0]))));
 
-		verify(questionSetService, never()).completeQuestionSet(anyLong(), anyString(), any(), anyString(),
-			any(), any());
+		verify(questionSetService, never()).completeQuestionSet(anyLong(), anyString(), any(), anyString(), any());
 	}
 
 	static Stream<Arguments> invalidUpdateQuestionSetRequests() {
 		return Stream.of(
 			Arguments.of(
 				"제목이 빈 문자열",
-				new UpdateQuestionSetApiRequest("", QuestionSetSolveMode.LIVE_TIME, "설명",
-					QuestionSetVisibility.GROUP, null),
+				new UpdateQuestionSetApiRequest("", QuestionSetSolveMode.LIVE_TIME, "설명", null),
 				List.of("제목을 입력해주세요")),
 			Arguments.of(
 				"제목이 null",
-				new UpdateQuestionSetApiRequest(null, QuestionSetSolveMode.LIVE_TIME, "설명",
-					QuestionSetVisibility.GROUP, null),
+				new UpdateQuestionSetApiRequest(null, QuestionSetSolveMode.LIVE_TIME, "설명", null),
 				List.of("제목을 입력해주세요")),
 			Arguments.of(
 				"제목이 공백만 포함",
-				new UpdateQuestionSetApiRequest("   ", QuestionSetSolveMode.LIVE_TIME, "설명",
-					QuestionSetVisibility.PRIVATE, null),
+				new UpdateQuestionSetApiRequest("   ", QuestionSetSolveMode.LIVE_TIME, "설명", null),
 				List.of("제목을 입력해주세요")),
 			Arguments.of(
 				"문제 풀이 방식이 null",
-				new UpdateQuestionSetApiRequest("유효한 제목", null, "설명",
-					QuestionSetVisibility.GROUP, null),
+				new UpdateQuestionSetApiRequest("유효한 제목", null, "설명", null),
 				List.of("문제 풀이 방식을 입력해주세요", "문제 풀이 방식은 STUDY 또는 LIVE_TIME만 가능합니다")));
 	}
 
@@ -678,34 +672,64 @@ class QuestionSetControllerTest {
 	void updateQuestionSetToReviewMode() throws Exception {
 		// given
 		final Long questionSetId = 1L;
-		final QuestionSetVisibility visibility = QuestionSetVisibility.GROUP;
-		UpdateQuestionSetReviewApiRequest request = new UpdateQuestionSetReviewApiRequest(
-			visibility);
 
 		// when & then
-		mockMvc.perform(patch("/api/v1/question-sets/{questionSetId}/review", questionSetId)
-				.contentType(MediaType.APPLICATION_JSON)
-				.content(objectMapper.writeValueAsString(request)))
+		mockMvc.perform(patch("/api/v1/question-sets/{questionSetId}/review", questionSetId))
 			.andExpect(status().isOk());
 
-		verify(questionSetService).updateQuestionSetToReviewMode(questionSetId, visibility);
+		verify(questionSetService).updateQuestionSetToReviewMode(questionSetId, USER_ID);
+	}
+
+	@ParameterizedTest
+	@EnumSource(QuestionSetSolveMode.class)
+	@DisplayName("풀이 방식 변경 API는 요청한 모드와 인증 사용자를 전달한다")
+	void changeSolveMode(QuestionSetSolveMode solveMode) throws Exception {
+		QuestionSetDto result = QuestionSetDto.builder().id(1L).title("유지할 제목")
+			.solveMode(solveMode).status(QuestionSetStatus.BEFORE).build();
+		when(questionSetService.changeSolveMode(eq(1L), eq(solveMode), any(MaitUser.class))).thenReturn(result);
+
+		mockMvc.perform(patch("/api/v1/question-sets/1/solve-mode")
+				.contentType(MediaType.APPLICATION_JSON)
+				.content("{\"solveMode\":\"" + solveMode.name() + "\"}"))
+			.andExpectAll(status().isOk(), jsonPath("$.data.solveMode").value(solveMode.name()),
+				jsonPath("$.data.deliveryMode").value(solveMode.name()),
+				jsonPath("$.data.status").value("BEFORE"), jsonPath("$.data.title").value("유지할 제목"));
+		verify(questionSetService).changeSolveMode(eq(1L), eq(solveMode), argThat(user -> user.id().equals(USER_ID)));
+	}
+
+	@ParameterizedTest
+	@ValueSource(strings = {"{}", "{\"solveMode\":null}", "{\"solveMode\":\"REVIEW\"}", "{\"solveMode\":\"INVALID\"}"})
+	@DisplayName("풀이 방식 변경 API는 누락되거나 지원하지 않는 모드를 거절한다")
+	void changeSolveMode_invalidBody(String body) throws Exception {
+		mockMvc.perform(patch("/api/v1/question-sets/1/solve-mode")
+				.contentType(MediaType.APPLICATION_JSON).content(body))
+			.andExpectAll(status().isBadRequest(), jsonPath("$.code").value("C-001"));
+		verify(questionSetService, never()).changeSolveMode(anyLong(), any(), any());
 	}
 
 	@Test
-	@DisplayName("종료된 문제를 복습 모드로 전환 - 공개 범위를 입력하지 않은 경우")
-	void validateQuestionSetVisibility() throws Exception {
-		// given
-		final Long questionSetId = 1L;
-		UpdateQuestionSetReviewApiRequest request = new UpdateQuestionSetReviewApiRequest(null);
+	@DisplayName("풀이 방식 변경 API는 상태 오류 계약을 반환한다")
+	void changeSolveMode_invalidStatus() throws Exception {
+		when(questionSetService.changeSolveMode(eq(1L), any(), any()))
+			.thenThrow(new QuestionSetStatusException(QuestionSetStatusExceptionCode.ONLY_BEFORE));
+		mockMvc.perform(patch("/api/v1/question-sets/1/solve-mode")
+				.contentType(MediaType.APPLICATION_JSON).content("{\"solveMode\":\"STUDY\"}"))
+			.andExpectAll(status().isBadRequest(), jsonPath("$.code").value("0004"));
+	}
 
-		// when & then
-		mockMvc.perform(patch("/api/v1/question-sets/{questionSetId}/review", questionSetId)
-				.contentType(MediaType.APPLICATION_JSON)
-				.content(objectMapper.writeValueAsString(request)))
-			.andExpectAll(status().isBadRequest(),
-				jsonPath("$.isSuccess").value(false),
-				jsonPath("$.code").value("C-001")
-			);
+	@ParameterizedTest
+	@ValueSource(strings = {"solve-mode", "review"})
+	@DisplayName("모드 변경과 복습 전환 API는 권한 오류를 403으로 반환한다")
+	void changeMode_forbidden(String path) throws Exception {
+		UserRoleException exception = new UserRoleException("문제 세트 생성 권한이 없습니다.");
+		if (path.equals("solve-mode")) {
+			when(questionSetService.changeSolveMode(eq(1L), any(), any())).thenThrow(exception);
+		} else {
+			doThrow(exception).when(questionSetService).updateQuestionSetToReviewMode(1L, USER_ID);
+		}
+		mockMvc.perform(patch("/api/v1/question-sets/1/" + path)
+				.contentType(MediaType.APPLICATION_JSON).content("{\"solveMode\":\"STUDY\"}"))
+			.andExpectAll(status().isForbidden(), jsonPath("$.code").value("C-008"));
 	}
 
 	@Test
@@ -738,5 +762,65 @@ class QuestionSetControllerTest {
 				jsonPath("$.data").doesNotExist());
 
 		verify(questionSetDeleteService).deleteQuestionSet(questionSetId, USER_ID);
+	}
+
+	@Test
+	@DisplayName("문제 셋 복제 API 성공 테스트")
+	void copyQuestionSet_Success() throws Exception {
+		// given
+		Long questionSetId = 10L;
+		CopyQuestionSetApiRequest request = new CopyQuestionSetApiRequest(2L, "복제본 제목",
+			QuestionSetSolveMode.LIVE_TIME);
+
+		doReturn(QuestionSetDto.builder().id(42L).title("복제본 제목").teamId(2L).build())
+			.when(questionSetCopyService)
+			.copyQuestionSet(questionSetId, 2L, "복제본 제목", QuestionSetSolveMode.LIVE_TIME, USER_ID);
+
+		// when & then
+		mockMvc.perform(post("/api/v1/question-sets/{questionSetId}/copy", questionSetId)
+				.contentType(MediaType.APPLICATION_JSON)
+				.content(objectMapper.writeValueAsString(request)))
+			.andExpectAll(
+				status().isOk(),
+				jsonPath("$.isSuccess").value(true),
+				jsonPath("$.data.questionSetId").value(42),
+				jsonPath("$.data.title").value("복제본 제목"),
+				jsonPath("$.data.teamId").value(2)
+			);
+
+		verify(questionSetCopyService)
+			.copyQuestionSet(questionSetId, 2L, "복제본 제목", QuestionSetSolveMode.LIVE_TIME, USER_ID);
+	}
+
+	@ParameterizedTest(name = "{index} - {0}")
+	@DisplayName("문제 셋 복제 API 실패 테스트 - 유효하지 않은 요청")
+	@MethodSource("invalidCopyQuestionSetRequests")
+	void copyQuestionSet_Failure_InvalidRequest(String testName, CopyQuestionSetApiRequest request,
+		String expectedMessage) throws Exception {
+		// when & then
+		mockMvc.perform(post("/api/v1/question-sets/{questionSetId}/copy", 10L)
+				.contentType(MediaType.APPLICATION_JSON)
+				.content(objectMapper.writeValueAsString(request)))
+			.andExpectAll(
+				status().isBadRequest(),
+				jsonPath("$.reasons[0]").value(expectedMessage));
+
+		verify(questionSetCopyService, never()).copyQuestionSet(anyLong(), anyLong(), any(), any(), anyLong());
+	}
+
+	static Stream<Arguments> invalidCopyQuestionSetRequests() {
+		return Stream.of(
+			Arguments.of("대상 팀 ID 누락",
+				new CopyQuestionSetApiRequest(null, "복제본 제목", QuestionSetSolveMode.STUDY),
+				"복제할 팀 정보는 필수 입니다."),
+			Arguments.of("제목 누락",
+				new CopyQuestionSetApiRequest(2L, null, QuestionSetSolveMode.STUDY),
+				"문제 셋 제목을 입력해주세요."),
+			Arguments.of("공백 제목",
+				new CopyQuestionSetApiRequest(2L, "   ", QuestionSetSolveMode.STUDY),
+				"문제 셋 제목을 입력해주세요."),
+			Arguments.of("풀이 방식 누락",
+				new CopyQuestionSetApiRequest(2L, "복제본 제목", null),
+				"문제 풀이 방식을 선택해주세요."));
 	}
 }

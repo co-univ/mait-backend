@@ -6,7 +6,6 @@ import com.coniv.mait.domain.question.enums.DeliveryMode;
 import com.coniv.mait.domain.question.enums.QuestionSetCreationType;
 import com.coniv.mait.domain.question.enums.QuestionSetSolveMode;
 import com.coniv.mait.domain.question.enums.QuestionSetStatus;
-import com.coniv.mait.domain.question.enums.QuestionSetVisibility;
 import com.coniv.mait.domain.question.exception.QuestionSetStatusException;
 import com.coniv.mait.domain.question.exception.code.QuestionSetStatusExceptionCode;
 import com.coniv.mait.global.entity.BaseTimeEntity;
@@ -49,11 +48,6 @@ public class QuestionSetEntity extends BaseTimeEntity {
 	private QuestionSetCreationType creationType = QuestionSetCreationType.MANUAL;
 
 	@Enumerated(EnumType.STRING)
-	@Column(nullable = false)
-	@Builder.Default
-	private QuestionSetVisibility visibility = QuestionSetVisibility.GROUP;
-
-	@Enumerated(EnumType.STRING)
 	@Column
 	private QuestionSetSolveMode solveMode;
 
@@ -61,6 +55,8 @@ public class QuestionSetEntity extends BaseTimeEntity {
 	private Long teamId;
 
 	private Long creatorId;
+
+	private Long sourceQuestionSetId;
 
 	@Enumerated(EnumType.STRING)
 	@Column(name = "status")
@@ -83,6 +79,20 @@ public class QuestionSetEntity extends BaseTimeEntity {
 		return QuestionSetEntity.builder()
 			.title(title)
 			.creationType(creationType)
+			.build();
+	}
+
+	public static QuestionSetEntity copyOf(QuestionSetEntity source, Long targetTeamId, Long creatorId, String title,
+		QuestionSetSolveMode solveMode) {
+		return QuestionSetEntity.builder()
+			.title(title)
+			.creationType(QuestionSetCreationType.MANUAL)
+			.solveMode(solveMode)
+			.difficulty(source.difficulty)
+			.teamId(targetTeamId)
+			.creatorId(creatorId)
+			.status(QuestionSetStatus.MAKING)
+			.sourceQuestionSetId(source.id)
 			.build();
 	}
 
@@ -138,8 +148,7 @@ public class QuestionSetEntity extends BaseTimeEntity {
 		}
 	}
 
-	public void completeQuestionSet(String title, QuestionSetSolveMode solveMode, String difficulty,
-		QuestionSetVisibility visibility) {
+	public void completeQuestionSet(String title, QuestionSetSolveMode solveMode, String difficulty) {
 		if (solveMode == null) {
 			throw new IllegalArgumentException("문제 셋 완료 시 solveMode는 필수입니다.");
 		}
@@ -148,7 +157,16 @@ public class QuestionSetEntity extends BaseTimeEntity {
 		this.solveMode = solveMode;
 		this.status = QuestionSetStatus.BEFORE;
 		this.difficulty = difficulty;
-		this.visibility = visibility;
+	}
+
+	public void changeSolveMode(QuestionSetSolveMode solveMode) {
+		if (status != QuestionSetStatus.BEFORE) {
+			throw new QuestionSetStatusException(QuestionSetStatusExceptionCode.ONLY_BEFORE);
+		}
+		if (solveMode == null) {
+			throw new IllegalArgumentException("변경할 solveMode는 필수입니다.");
+		}
+		this.solveMode = solveMode;
 	}
 
 	public void markOngoingOnComplete() {
@@ -160,12 +178,11 @@ public class QuestionSetEntity extends BaseTimeEntity {
 		this.title = title;
 	}
 
-	public void openReview(QuestionSetVisibility visibility) {
+	public void openReview() {
 		if (status != QuestionSetStatus.AFTER) {
 			throw new QuestionSetStatusException(QuestionSetStatusExceptionCode.ONLY_AFTER);
 		}
 		this.status = QuestionSetStatus.REVIEW;
-		this.visibility = visibility;
 	}
 
 	public boolean canReview() {

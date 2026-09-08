@@ -6,7 +6,6 @@ import java.util.List;
 import com.coniv.mait.domain.question.dto.MaterialDto;
 import com.coniv.mait.domain.question.enums.QuestionSetCreationType;
 import com.coniv.mait.domain.question.enums.QuestionSetSolveMode;
-import com.coniv.mait.domain.question.enums.QuestionSetVisibility;
 import com.coniv.mait.domain.question.service.dto.QuestionCount;
 import com.coniv.mait.domain.question.service.dto.QuestionSetDto;
 
@@ -28,9 +27,6 @@ public record CreateQuestionSetApiRequest(
 	@Schema(description = "문제 풀이 방식 (실시간/학습)", enumAsRef = true, examples = {"STUDY", "LIVE_TIME"})
 	@NotNull(message = "문제 풀이 방식을 선택해주세요.")
 	QuestionSetSolveMode solveMode,
-	@Schema(description = "문제 셋 공개 단위, 미지정 시 GROUP", enumAsRef = true)
-	@NotNull(message = "문제 셋 공개 범위를 입력해주세요.")
-	QuestionSetVisibility visibility,
 	@Schema(description = "업로드한 해당 문제 셋의 파일 목록")
 	List<MaterialDto> materials,
 	@Schema(description = "제작 요청할 문제 개수")
@@ -48,14 +44,13 @@ public record CreateQuestionSetApiRequest(
 		final String title,
 		final QuestionSetCreationType creationType,
 		final QuestionSetSolveMode solveMode,
-		final QuestionSetVisibility visibility,
 		final List<MaterialDto> materials,
 		final List<@Valid QuestionCount> counts,
 		final String difficulty,
 		final String instruction,
 		final List<Long> categoryIds
 	) {
-		this(teamId, title, null, creationType, solveMode, visibility, materials, counts, difficulty, instruction,
+		this(teamId, title, null, creationType, solveMode, materials, counts, difficulty, instruction,
 			categoryIds);
 	}
 
@@ -71,7 +66,6 @@ public record CreateQuestionSetApiRequest(
 			.title(resolvedTitle())
 			.creationType(creationType)
 			.solveMode(solveMode)
-			.visibility(visibility)
 			.materials(materials)
 			.build();
 	}
