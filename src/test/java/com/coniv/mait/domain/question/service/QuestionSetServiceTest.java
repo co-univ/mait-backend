@@ -10,6 +10,8 @@ import java.util.Optional;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.EnumSource;
 import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
@@ -418,7 +420,7 @@ class QuestionSetServiceTest {
 			newTitle,
 			newSolveMode,
 			difficulty,
-			List.of());
+			List.of(), USER_ID);
 
 		// then
 		verify(questionSetEntityRepository, times(1)).findById(questionSetId);
@@ -459,7 +461,7 @@ class QuestionSetServiceTest {
 			"새 제목",
 			QuestionSetSolveMode.LIVE_TIME,
 			"난이도",
-			categoryIds);
+			categoryIds, USER_ID);
 
 		// then
 		verify(questionSetCategoryService).updateLinkedCategories(questionSetId, teamId, categoryIds);
@@ -486,7 +488,7 @@ class QuestionSetServiceTest {
 			"제목",
 			QuestionSetSolveMode.LIVE_TIME,
 			"난이도",
-			List.of()))
+			List.of(), USER_ID))
 			.isInstanceOfSatisfying(QuestionSetStatusException.class, ex -> {
 				assertThat(ex.getExceptionCode())
 					.isEqualTo(QuestionSetStatusExceptionCode.CANNOT_CREATE_LIVE_TIME_IN_PERSONAL_TEAM);
@@ -520,7 +522,7 @@ class QuestionSetServiceTest {
 			"제목",
 			QuestionSetSolveMode.STUDY,
 			"난이도",
-			List.of());
+			List.of(), USER_ID);
 
 		// then
 		assertThat(questionSetEntity.getSolveMode()).isEqualTo(QuestionSetSolveMode.STUDY);
@@ -542,11 +544,75 @@ class QuestionSetServiceTest {
 			"제목",
 			QuestionSetSolveMode.LIVE_TIME,
 			"설명",
-			null))
+			null, USER_ID))
 			.isInstanceOf(EntityNotFoundException.class)
 			.hasMessage("Question set not found");
 
 		verify(questionSetEntityRepository, times(1)).findById(questionSetId);
+	}
+
+	@ParameterizedTest
+	@EnumSource(value = QuestionSetStatus.class, names = "MAKING", mode = EnumSource.Mode.EXCLUDE)
+	@DisplayName("문제 셋 완료 처리 테스트 - 실패 (제작 중이 아닌 상태)")
+	void completeQuestionSetTest_Fail_NotMaking(QuestionSetStatus status) {
+		// given
+		final Long questionSetId = 1L;
+		final Long teamId = 100L;
+
+		QuestionSetEntity questionSetEntity = QuestionSetEntity.builder()
+			.title("원래 제목")
+			.teamId(teamId)
+			.status(status)
+			.solveMode(QuestionSetSolveMode.STUDY)
+			.build();
+
+		when(questionSetEntityRepository.findById(questionSetId)).thenReturn(Optional.of(questionSetEntity));
+		when(teamReader.getTeam(teamId)).thenReturn(TeamEntity.ofGroup("코니브", 1L));
+
+		// when, then
+		assertThatThrownBy(() -> questionSetService.completeQuestionSet(
+			questionSetId,
+			"덮어쓸 제목",
+			QuestionSetSolveMode.LIVE_TIME,
+			"난이도",
+			List.of(), USER_ID))
+			.isInstanceOfSatisfying(QuestionSetStatusException.class, ex ->
+				assertThat(ex.getExceptionCode()).isEqualTo(QuestionSetStatusExceptionCode.ONLY_MAKING));
+
+		assertThat(questionSetEntity.getStatus()).isEqualTo(status);
+		assertThat(questionSetEntity.getSolveMode()).isEqualTo(QuestionSetSolveMode.STUDY);
+		assertThat(questionSetEntity.getTitle()).isEqualTo("원래 제목");
+		verify(questionSetCategoryService, never()).updateLinkedCategories(anyLong(), anyLong(), anyList());
+	}
+
+	@Test
+	@DisplayName("문제 셋 완료 처리 테스트 - 실패 (팀 Maker 권한 없음)")
+	void completeQuestionSetTest_Fail_NoMakerAuthority() {
+		// given
+		final Long questionSetId = 1L;
+		final Long teamId = 100L;
+
+		QuestionSetEntity questionSetEntity = QuestionSetEntity.builder()
+			.title("원래 제목")
+			.teamId(teamId)
+			.build();
+
+		when(questionSetEntityRepository.findById(questionSetId)).thenReturn(Optional.of(questionSetEntity));
+		doThrow(new UserRoleException("문제 세트 생성 권한이 없습니다."))
+			.when(teamRoleValidator).checkHasCreateQuestionSetAuthority(teamId, USER_ID);
+
+		// when, then
+		assertThatThrownBy(() -> questionSetService.completeQuestionSet(
+			questionSetId,
+			"덮어쓸 제목",
+			QuestionSetSolveMode.STUDY,
+			"난이도",
+			List.of(), USER_ID))
+			.isInstanceOf(UserRoleException.class);
+
+		assertThat(questionSetEntity.getStatus()).isEqualTo(QuestionSetStatus.MAKING);
+		assertThat(questionSetEntity.getTitle()).isEqualTo("원래 제목");
+		verify(questionSetCategoryService, never()).updateLinkedCategories(anyLong(), anyLong(), anyList());
 	}
 
 	@Test
