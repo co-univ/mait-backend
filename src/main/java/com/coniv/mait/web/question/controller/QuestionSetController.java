@@ -82,14 +82,15 @@ public class QuestionSetController {
 	}
 
 	@Operation(summary = "문제 셋 복제 API",
-		description = "원본 문제 셋을 지정한 팀으로 복제한다. 원본 팀의 멤버이면서 대상 팀에 문제 셋 생성 권한이 있어야 한다.")
+		description = "원본 문제 셋을 요청한 제목과 풀이 방식으로 지정한 팀에 복제한다. "
+			+ "원본 팀의 멤버이면서 대상 팀에 문제 셋 생성 권한이 있어야 한다.")
 	@PostMapping("/{questionSetId}/copy")
 	public ResponseEntity<ApiResponse<CopyQuestionSetApiResponse>> copyQuestionSet(
 		@AuthenticationPrincipal MaitUser user,
 		@PathVariable Long questionSetId,
 		@Valid @RequestBody CopyQuestionSetApiRequest request) {
 		QuestionSetDto copied = questionSetCopyService.copyQuestionSet(questionSetId, request.targetTeamId(),
-			user.id());
+			request.title(), request.solveMode(), user.id());
 		return ResponseEntity.ok(ApiResponse.ok(CopyQuestionSetApiResponse.from(copied)));
 	}
 

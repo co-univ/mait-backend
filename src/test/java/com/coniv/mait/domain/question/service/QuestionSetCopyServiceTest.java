@@ -34,6 +34,8 @@ class QuestionSetCopyServiceTest {
 	private static final Long SOURCE_TEAM_ID = 1L;
 	private static final Long TARGET_TEAM_ID = 2L;
 	private static final Long USER_ID = 100L;
+	private static final String COPY_TITLE = "복제본 제목";
+	private static final QuestionSetSolveMode COPY_SOLVE_MODE = QuestionSetSolveMode.LIVE_TIME;
 
 	@Mock
 	private QuestionSetReader questionSetReader;
@@ -51,18 +53,18 @@ class QuestionSetCopyServiceTest {
 	private QuestionSetCopyService questionSetCopyService;
 
 	@Test
-	@DisplayName("문제 셋 복제 - 대상 팀과 요청자로 재설정된 복제본을 저장한다")
+	@DisplayName("문제 셋 복제 - 요청한 제목과 풀이 방식, 대상 팀과 요청자로 재설정된 복제본을 저장한다")
 	void copyQuestionSet_success_savesCopyInTargetTeam() {
 		// given
 		givenSource(sourceBuilder().build());
 
 		// when
-		QuestionSetDto result = questionSetCopyService.copyQuestionSet(QUESTION_SET_ID, TARGET_TEAM_ID, USER_ID);
+		QuestionSetDto result = copyQuestionSet();
 
 		// then
 		QuestionSetEntity saved = captureSaved();
-		assertThat(saved.getTitle()).isEqualTo("원본 제목");
-		assertThat(saved.getSolveMode()).isEqualTo(QuestionSetSolveMode.STUDY);
+		assertThat(saved.getTitle()).isEqualTo(COPY_TITLE);
+		assertThat(saved.getSolveMode()).isEqualTo(COPY_SOLVE_MODE);
 		assertThat(saved.getDifficulty()).isEqualTo("보통");
 		assertThat(saved.getTeamId()).isEqualTo(TARGET_TEAM_ID);
 		assertThat(saved.getCreatorId()).isEqualTo(USER_ID);
@@ -80,7 +82,7 @@ class QuestionSetCopyServiceTest {
 			.build());
 
 		// when
-		questionSetCopyService.copyQuestionSet(QUESTION_SET_ID, TARGET_TEAM_ID, USER_ID);
+		copyQuestionSet();
 
 		// then
 		QuestionSetEntity saved = captureSaved();
@@ -100,7 +102,7 @@ class QuestionSetCopyServiceTest {
 			.build());
 
 		// when
-		questionSetCopyService.copyQuestionSet(QUESTION_SET_ID, TARGET_TEAM_ID, USER_ID);
+		copyQuestionSet();
 
 		// then
 		QuestionSetEntity saved = captureSaved();
@@ -117,7 +119,7 @@ class QuestionSetCopyServiceTest {
 		givenSource(sourceBuilder().sourceQuestionSetId(1L).build());
 
 		// when
-		questionSetCopyService.copyQuestionSet(QUESTION_SET_ID, TARGET_TEAM_ID, USER_ID);
+		copyQuestionSet();
 
 		// then
 		assertThat(captureSaved().getSourceQuestionSetId()).isEqualTo(QUESTION_SET_ID);
@@ -131,7 +133,7 @@ class QuestionSetCopyServiceTest {
 			.when(questionSetReader).getQuestionSet(QUESTION_SET_ID);
 
 		// when & then
-		assertThatThrownBy(() -> questionSetCopyService.copyQuestionSet(QUESTION_SET_ID, TARGET_TEAM_ID, USER_ID))
+		assertThatThrownBy(this::copyQuestionSet)
 			.isInstanceOf(EntityNotFoundException.class)
 			.hasMessage(QUESTION_SET_ID + " : 해당 문제 셋을 찾을 수 없습니다.");
 
@@ -147,7 +149,7 @@ class QuestionSetCopyServiceTest {
 			.when(teamRoleValidator).checkIsTeamMember(SOURCE_TEAM_ID, USER_ID);
 
 		// when & then
-		assertThatThrownBy(() -> questionSetCopyService.copyQuestionSet(QUESTION_SET_ID, TARGET_TEAM_ID, USER_ID))
+		assertThatThrownBy(this::copyQuestionSet)
 			.isInstanceOf(UserRoleException.class)
 			.hasMessage("해당 팀의 멤버가 아닙니다.");
 
@@ -164,7 +166,7 @@ class QuestionSetCopyServiceTest {
 			.when(teamRoleValidator).checkHasCreateQuestionSetAuthority(TARGET_TEAM_ID, USER_ID);
 
 		// when & then
-		assertThatThrownBy(() -> questionSetCopyService.copyQuestionSet(QUESTION_SET_ID, TARGET_TEAM_ID, USER_ID))
+		assertThatThrownBy(this::copyQuestionSet)
 			.isInstanceOf(UserRoleException.class)
 			.hasMessage("문제 세트 생성 권한이 없습니다.");
 
@@ -187,6 +189,11 @@ class QuestionSetCopyServiceTest {
 		doReturn(source).when(questionSetReader).getQuestionSet(QUESTION_SET_ID);
 		doAnswer(invocation -> invocation.getArgument(0)).when(questionSetEntityRepository)
 			.save(any(QuestionSetEntity.class));
+	}
+
+	private QuestionSetDto copyQuestionSet() {
+		return questionSetCopyService.copyQuestionSet(QUESTION_SET_ID, TARGET_TEAM_ID, COPY_TITLE, COPY_SOLVE_MODE,
+			USER_ID);
 	}
 
 	private QuestionSetEntity captureSaved() {

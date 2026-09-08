@@ -4,6 +4,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.coniv.mait.domain.question.entity.QuestionSetEntity;
+import com.coniv.mait.domain.question.enums.QuestionSetSolveMode;
 import com.coniv.mait.domain.question.repository.QuestionSetEntityRepository;
 import com.coniv.mait.domain.question.service.component.QuestionCopier;
 import com.coniv.mait.domain.question.service.component.QuestionSetReader;
@@ -24,14 +25,15 @@ public class QuestionSetCopyService {
 
 	@DistributedLock(key = "'question-set-copy:' + #userId + ':' + #questionSetId + ':' + #targetTeamId")
 	@Transactional
-	public QuestionSetDto copyQuestionSet(final Long questionSetId, final Long targetTeamId, final Long userId) {
+	public QuestionSetDto copyQuestionSet(final Long questionSetId, final Long targetTeamId, final String title,
+		final QuestionSetSolveMode solveMode, final Long userId) {
 		QuestionSetEntity source = questionSetReader.getQuestionSet(questionSetId);
 
 		teamRoleValidator.checkIsTeamMember(source.getTeamId(), userId);
 		teamRoleValidator.checkHasCreateQuestionSetAuthority(targetTeamId, userId);
 
 		QuestionSetEntity copied = questionSetEntityRepository.save(
-			QuestionSetEntity.copyOf(source, targetTeamId, userId));
+			QuestionSetEntity.copyOf(source, targetTeamId, userId, title, solveMode));
 
 		questionCopier.copyQuestions(source.getId(), copied);
 
