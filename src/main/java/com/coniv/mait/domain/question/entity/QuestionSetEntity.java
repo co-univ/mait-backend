@@ -82,11 +82,12 @@ public class QuestionSetEntity extends BaseTimeEntity {
 			.build();
 	}
 
-	public static QuestionSetEntity copyOf(QuestionSetEntity source, Long targetTeamId, Long creatorId) {
+	public static QuestionSetEntity copyOf(QuestionSetEntity source, Long targetTeamId, Long creatorId, String title,
+		QuestionSetSolveMode solveMode) {
 		return QuestionSetEntity.builder()
-			.title(source.title)
+			.title(title)
 			.creationType(QuestionSetCreationType.MANUAL)
-			.solveMode(source.solveMode)
+			.solveMode(solveMode)
 			.difficulty(source.difficulty)
 			.teamId(targetTeamId)
 			.creatorId(creatorId)
