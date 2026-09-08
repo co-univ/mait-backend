@@ -13,7 +13,9 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.EnumSource;
 import org.junit.jupiter.params.provider.MethodSource;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
@@ -30,6 +32,8 @@ import com.coniv.mait.domain.question.enums.QuestionSetSolveMode;
 import com.coniv.mait.domain.question.enums.QuestionSetStatus;
 import com.coniv.mait.domain.question.enums.QuestionValidationResult;
 import com.coniv.mait.domain.question.enums.UserStudyStatus;
+import com.coniv.mait.domain.question.exception.QuestionSetStatusException;
+import com.coniv.mait.domain.question.exception.code.QuestionSetStatusExceptionCode;
 import com.coniv.mait.domain.question.service.QuestionSetCategoryService;
 import com.coniv.mait.domain.question.service.QuestionSetCopyService;
 import com.coniv.mait.domain.question.service.QuestionSetDeleteService;
@@ -39,6 +43,7 @@ import com.coniv.mait.domain.question.service.dto.QuestionSetDto;
 import com.coniv.mait.domain.question.service.dto.QuestionSetMaterialDto;
 import com.coniv.mait.domain.question.service.dto.QuestionValidateDto;
 import com.coniv.mait.domain.solve.service.StudyModeService;
+import com.coniv.mait.domain.user.exception.UserRoleException;
 import com.coniv.mait.global.auth.model.MaitUser;
 import com.coniv.mait.global.filter.JwtAuthorizationFilter;
 import com.coniv.mait.global.interceptor.idempotency.IdempotencyInterceptor;
@@ -672,7 +677,59 @@ class QuestionSetControllerTest {
 		mockMvc.perform(patch("/api/v1/question-sets/{questionSetId}/review", questionSetId))
 			.andExpect(status().isOk());
 
-		verify(questionSetService).updateQuestionSetToReviewMode(questionSetId);
+		verify(questionSetService).updateQuestionSetToReviewMode(questionSetId, USER_ID);
+	}
+
+	@ParameterizedTest
+	@EnumSource(QuestionSetSolveMode.class)
+	@DisplayName("풀이 방식 변경 API는 요청한 모드와 인증 사용자를 전달한다")
+	void changeSolveMode(QuestionSetSolveMode solveMode) throws Exception {
+		QuestionSetDto result = QuestionSetDto.builder().id(1L).title("유지할 제목")
+			.solveMode(solveMode).status(QuestionSetStatus.BEFORE).build();
+		when(questionSetService.changeSolveMode(eq(1L), eq(solveMode), any(MaitUser.class))).thenReturn(result);
+
+		mockMvc.perform(patch("/api/v1/question-sets/1/solve-mode")
+				.contentType(MediaType.APPLICATION_JSON)
+				.content("{\"solveMode\":\"" + solveMode.name() + "\"}"))
+			.andExpectAll(status().isOk(), jsonPath("$.data.solveMode").value(solveMode.name()),
+				jsonPath("$.data.deliveryMode").value(solveMode.name()),
+				jsonPath("$.data.status").value("BEFORE"), jsonPath("$.data.title").value("유지할 제목"));
+		verify(questionSetService).changeSolveMode(eq(1L), eq(solveMode), argThat(user -> user.id().equals(USER_ID)));
+	}
+
+	@ParameterizedTest
+	@ValueSource(strings = {"{}", "{\"solveMode\":null}", "{\"solveMode\":\"REVIEW\"}", "{\"solveMode\":\"INVALID\"}"})
+	@DisplayName("풀이 방식 변경 API는 누락되거나 지원하지 않는 모드를 거절한다")
+	void changeSolveMode_invalidBody(String body) throws Exception {
+		mockMvc.perform(patch("/api/v1/question-sets/1/solve-mode")
+				.contentType(MediaType.APPLICATION_JSON).content(body))
+			.andExpectAll(status().isBadRequest(), jsonPath("$.code").value("C-001"));
+		verify(questionSetService, never()).changeSolveMode(anyLong(), any(), any());
+	}
+
+	@Test
+	@DisplayName("풀이 방식 변경 API는 상태 오류 계약을 반환한다")
+	void changeSolveMode_invalidStatus() throws Exception {
+		when(questionSetService.changeSolveMode(eq(1L), any(), any()))
+			.thenThrow(new QuestionSetStatusException(QuestionSetStatusExceptionCode.ONLY_BEFORE));
+		mockMvc.perform(patch("/api/v1/question-sets/1/solve-mode")
+				.contentType(MediaType.APPLICATION_JSON).content("{\"solveMode\":\"STUDY\"}"))
+			.andExpectAll(status().isBadRequest(), jsonPath("$.code").value("0004"));
+	}
+
+	@ParameterizedTest
+	@ValueSource(strings = {"solve-mode", "review"})
+	@DisplayName("모드 변경과 복습 전환 API는 권한 오류를 403으로 반환한다")
+	void changeMode_forbidden(String path) throws Exception {
+		UserRoleException exception = new UserRoleException("문제 세트 생성 권한이 없습니다.");
+		if (path.equals("solve-mode")) {
+			when(questionSetService.changeSolveMode(eq(1L), any(), any())).thenThrow(exception);
+		} else {
+			doThrow(exception).when(questionSetService).updateQuestionSetToReviewMode(1L, USER_ID);
+		}
+		mockMvc.perform(patch("/api/v1/question-sets/1/" + path)
+				.contentType(MediaType.APPLICATION_JSON).content("{\"solveMode\":\"STUDY\"}"))
+			.andExpectAll(status().isForbidden(), jsonPath("$.code").value("C-008"));
 	}
 
 	@Test

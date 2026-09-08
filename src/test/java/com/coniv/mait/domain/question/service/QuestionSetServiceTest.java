@@ -680,7 +680,7 @@ class QuestionSetServiceTest {
 		when(questionSetEntityRepository.findById(questionSetId)).thenReturn(Optional.of(questionSetEntity));
 
 		// when
-		questionSetService.updateQuestionSetToReviewMode(questionSetId);
+		questionSetService.updateQuestionSetToReviewMode(questionSetId, USER_ID);
 
 		// then
 		verify(questionSetEntity).openReview();
@@ -698,7 +698,7 @@ class QuestionSetServiceTest {
 			.openReview();
 
 		// when, then
-		assertThatThrownBy(() -> questionSetService.updateQuestionSetToReviewMode(questionSetId))
+		assertThatThrownBy(() -> questionSetService.updateQuestionSetToReviewMode(questionSetId, USER_ID))
 			.isInstanceOf(QuestionSetStatusException.class);
 	}
 

@@ -176,11 +176,7 @@ public class QuestionSetService {
 		QuestionSetEntity questionSet = questionSetEntityRepository.findById(questionSetId)
 			.orElseThrow(() -> new EntityNotFoundException("Question set not found"));
 
-		TeamEntity team = teamReader.getTeam(questionSet.getTeamId());
-		if (solveMode == QuestionSetSolveMode.LIVE_TIME && team.getType() == TeamType.PERSONAL) {
-			throw new QuestionSetStatusException(
-				QuestionSetStatusExceptionCode.CANNOT_CREATE_LIVE_TIME_IN_PERSONAL_TEAM);
-		}
+		TeamEntity team = validateTeamSolveMode(questionSet.getTeamId(), solveMode);
 
 		// Todo: 현재 생성 단계가 아니면 예외
 		int number = 1;
@@ -198,6 +194,26 @@ public class QuestionSetService {
 		questionSetCategoryService.updateLinkedCategories(questionSetId, questionSet.getTeamId(), categoryIds);
 
 		return QuestionSetDto.from(questionSet);
+	}
+
+	@Transactional
+	public QuestionSetDto changeSolveMode(final Long questionSetId, final QuestionSetSolveMode solveMode,
+		final MaitUser user) {
+		QuestionSetEntity questionSet = questionSetReader.getQuestionSet(questionSetId);
+		teamRoleValidator.checkHasCreateQuestionSetAuthority(questionSet.getTeamId(), user.id());
+		validateTeamSolveMode(questionSet.getTeamId(), solveMode);
+		questionSet.changeSolveMode(solveMode);
+
+		return getQuestionSet(questionSetId, user);
+	}
+
+	private TeamEntity validateTeamSolveMode(final Long teamId, final QuestionSetSolveMode solveMode) {
+		TeamEntity team = teamReader.getTeam(teamId);
+		if (solveMode == QuestionSetSolveMode.LIVE_TIME && team.getType() == TeamType.PERSONAL) {
+			throw new QuestionSetStatusException(
+				QuestionSetStatusExceptionCode.CANNOT_CREATE_LIVE_TIME_IN_PERSONAL_TEAM);
+		}
+		return team;
 	}
 
 	@Transactional
@@ -225,10 +241,11 @@ public class QuestionSetService {
 	}
 
 	@Transactional
-	public void updateQuestionSetToReviewMode(final Long questionSetId) {
+	public void updateQuestionSetToReviewMode(final Long questionSetId, final Long userId) {
 		QuestionSetEntity questionSet = questionSetEntityRepository.findById(questionSetId)
 			.orElseThrow(() -> new EntityNotFoundException("해당 문제 셋을 찾을 수 없습니다."));
 
+		teamRoleValidator.checkHasCreateQuestionSetAuthority(questionSet.getTeamId(), userId);
 		questionSet.openReview();
 	}
 

@@ -159,6 +159,16 @@ public class QuestionSetEntity extends BaseTimeEntity {
 		this.difficulty = difficulty;
 	}
 
+	public void changeSolveMode(QuestionSetSolveMode solveMode) {
+		if (status != QuestionSetStatus.BEFORE) {
+			throw new QuestionSetStatusException(QuestionSetStatusExceptionCode.ONLY_BEFORE);
+		}
+		if (solveMode == null) {
+			throw new IllegalArgumentException("변경할 solveMode는 필수입니다.");
+		}
+		this.solveMode = solveMode;
+	}
+
 	public void markOngoingOnComplete() {
 		this.status = QuestionSetStatus.ONGOING;
 		this.startTime = LocalDateTime.now();
