@@ -11,6 +11,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.EnumSource;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
@@ -436,7 +437,7 @@ class QuestionSetServiceTest {
 			.teamId(teamId)
 			.build();
 
-		when(questionSetEntityRepository.findById(questionSetId)).thenReturn(Optional.of(questionSetEntity));
+		when(questionSetEntityRepository.findByIdForUpdate(questionSetId)).thenReturn(Optional.of(questionSetEntity));
 		when(teamReader.getTeam(teamId)).thenReturn(TeamEntity.ofGroup("코니브", 1L));
 
 		// when
@@ -448,7 +449,7 @@ class QuestionSetServiceTest {
 			List.of(), USER_ID);
 
 		// then
-		verify(questionSetEntityRepository, times(1)).findById(questionSetId);
+		verify(questionSetEntityRepository, times(1)).findByIdForUpdate(questionSetId);
 
 		assertThat(questionSetEntity.getTitle()).isEqualTo(newTitle);
 		assertThat(questionSetEntity.getSolveMode()).isEqualTo(QuestionSetSolveMode.LIVE_TIME);
@@ -478,7 +479,7 @@ class QuestionSetServiceTest {
 			.teamId(teamId)
 			.build();
 
-		when(questionSetEntityRepository.findById(questionSetId)).thenReturn(Optional.of(questionSetEntity));
+		when(questionSetEntityRepository.findByIdForUpdate(questionSetId)).thenReturn(Optional.of(questionSetEntity));
 		when(teamReader.getTeam(teamId)).thenReturn(TeamEntity.ofGroup("코니브", 1L));
 
 		// when
@@ -505,7 +506,7 @@ class QuestionSetServiceTest {
 			.teamId(teamId)
 			.build();
 
-		when(questionSetEntityRepository.findById(questionSetId)).thenReturn(Optional.of(questionSetEntity));
+		when(questionSetEntityRepository.findByIdForUpdate(questionSetId)).thenReturn(Optional.of(questionSetEntity));
 		when(teamReader.getTeam(teamId)).thenReturn(TeamEntity.ofPersonal("개인 워크스페이스", 1L));
 
 		// when, then
@@ -539,7 +540,7 @@ class QuestionSetServiceTest {
 
 		TeamEntity team = TeamEntity.ofPersonal("name", 1L);
 
-		when(questionSetEntityRepository.findById(questionSetId)).thenReturn(Optional.of(questionSetEntity));
+		when(questionSetEntityRepository.findByIdForUpdate(questionSetId)).thenReturn(Optional.of(questionSetEntity));
 		when(teamReader.getTeam(questionSetEntity.getTeamId())).thenReturn(team);
 
 		// when
@@ -561,7 +562,7 @@ class QuestionSetServiceTest {
 	void completeQuestionSetTest_Fail_NotFound() {
 		// given
 		final Long questionSetId = 999L;
-		when(questionSetEntityRepository.findById(questionSetId))
+		when(questionSetEntityRepository.findByIdForUpdate(questionSetId))
 			.thenReturn(Optional.empty());
 
 		// when & then
@@ -574,7 +575,37 @@ class QuestionSetServiceTest {
 			.isInstanceOf(EntityNotFoundException.class)
 			.hasMessage("Question set not found");
 
-		verify(questionSetEntityRepository, times(1)).findById(questionSetId);
+		verify(questionSetEntityRepository, times(1)).findByIdForUpdate(questionSetId);
+	}
+
+	@ParameterizedTest
+	@EnumSource(value = QuestionSetStatus.class, names = "MAKING", mode = EnumSource.Mode.EXCLUDE)
+	@DisplayName("제작 중이 아닌 문제셋의 최종 저장은 상태, 풀이 모드, 문제 번호, 카테고리를 변경하지 않는다")
+	void completeQuestionSetTest_Fail_NotMaking(QuestionSetStatus status) {
+		// given
+		final Long questionSetId = 1L;
+		final Long teamId = 100L;
+		QuestionSetEntity questionSet = QuestionSetEntity.builder()
+			.teamId(teamId)
+			.status(status)
+			.solveMode(QuestionSetSolveMode.STUDY)
+			.title("원래 제목")
+			.difficulty("원래 난이도")
+			.build();
+		when(questionSetEntityRepository.findByIdForUpdate(questionSetId)).thenReturn(Optional.of(questionSet));
+		when(teamReader.getTeam(teamId)).thenReturn(TeamEntity.ofGroup("코니브", 1L));
+
+		// when & then
+		assertThatThrownBy(() -> questionSetService.completeQuestionSet(questionSetId, "새 제목",
+			QuestionSetSolveMode.LIVE_TIME, "새 난이도", List.of(1L), USER_ID))
+			.isInstanceOfSatisfying(QuestionSetStatusException.class,
+				ex -> assertThat(ex.getExceptionCode()).isEqualTo(QuestionSetStatusExceptionCode.ONLY_MAKING));
+
+		assertThat(questionSet.getStatus()).isEqualTo(status);
+		assertThat(questionSet.getSolveMode()).isEqualTo(QuestionSetSolveMode.STUDY);
+		assertThat(questionSet.getTitle()).isEqualTo("원래 제목");
+		assertThat(questionSet.getDifficulty()).isEqualTo("원래 난이도");
+		verifyNoInteractions(questionReader, questionSetCategoryService);
 	}
 
 	@Test
@@ -610,7 +641,11 @@ class QuestionSetServiceTest {
 		Long questionSetId = 1L;
 		Long teamId = 100L;
 		QuestionSetEntity questionSet = mock(QuestionSetEntity.class);
-		when(questionSetEntityRepository.findById(questionSetId)).thenReturn(Optional.of(questionSet));
+		if (operation.equals("TITLE")) {
+			when(questionSetEntityRepository.findById(questionSetId)).thenReturn(Optional.of(questionSet));
+		} else {
+			when(questionSetEntityRepository.findByIdForUpdate(questionSetId)).thenReturn(Optional.of(questionSet));
+		}
 		when(questionSet.getTeamId()).thenReturn(teamId);
 		doThrow(new UserRoleException("팀 관리 권한이 없습니다."))
 			.when(teamRoleValidator).checkIsTeamManager(teamId, USER_ID);

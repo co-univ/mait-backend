@@ -178,13 +178,13 @@ public class QuestionSetService {
 		final String difficulty,
 		final List<Long> categoryIds,
 		final Long userId) {
-		QuestionSetEntity questionSet = questionSetEntityRepository.findById(questionSetId)
+		QuestionSetEntity questionSet = questionSetEntityRepository.findByIdForUpdate(questionSetId)
 			.orElseThrow(() -> new EntityNotFoundException("Question set not found"));
 		teamRoleValidator.checkIsTeamManager(questionSet.getTeamId(), userId);
 
 		TeamEntity team = validateTeamSolveMode(questionSet.getTeamId(), solveMode);
+		questionSet.completeQuestionSet(title, solveMode, difficulty);
 
-		// Todo: 현재 생성 단계가 아니면 예외
 		int number = 1;
 
 		List<QuestionEntity> questions = questionReader.getOrderedQuestions(questionSetId);
@@ -192,7 +192,6 @@ public class QuestionSetService {
 			question.updateNumber(number++);
 		}
 
-		questionSet.completeQuestionSet(title, solveMode, difficulty);
 		if (team.getType() == TeamType.PERSONAL) {
 			questionSet.markOngoingOnComplete();
 		}
