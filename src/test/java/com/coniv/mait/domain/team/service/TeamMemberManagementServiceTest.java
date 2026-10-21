@@ -75,7 +75,7 @@ class TeamMemberManagementServiceTest {
 
 		// then
 		var order = inOrder(teamRoleValidator, userEntityRepository, teamUserEntityRepository);
-		order.verify(teamRoleValidator).checkHasManageTeamMemberAuthority(TEAM_ID, REQUESTER_ID);
+		order.verify(teamRoleValidator).checkIsTeamManager(TEAM_ID, REQUESTER_ID);
 		order.verify(userEntityRepository).findById(TARGET_USER_ID);
 		ArgumentCaptor<TeamUserEntity> captor = ArgumentCaptor.forClass(TeamUserEntity.class);
 		order.verify(teamUserEntityRepository).save(captor.capture());
@@ -95,7 +95,7 @@ class TeamMemberManagementServiceTest {
 
 		// then
 		var order = inOrder(teamRoleValidator, teamUserEntityRepository);
-		order.verify(teamRoleValidator).checkHasManageTeamMemberAuthority(TEAM_ID, REQUESTER_ID);
+		order.verify(teamRoleValidator).checkIsTeamManager(TEAM_ID, REQUESTER_ID);
 		order.verify(teamUserEntityRepository).delete(targetMember);
 	}
 
@@ -109,7 +109,7 @@ class TeamMemberManagementServiceTest {
 		teamService.updateTeamUserRole(TEAM_USER_ID, TeamUserRole.MAKER, REQUESTER_ID);
 
 		// then
-		verify(teamRoleValidator).checkHasManageTeamMemberAuthority(TEAM_ID, REQUESTER_ID);
+		verify(teamRoleValidator).checkIsTeamManager(TEAM_ID, REQUESTER_ID);
 		assertThat(targetMember.getUserRole()).isEqualTo(TeamUserRole.MAKER);
 	}
 
@@ -119,12 +119,12 @@ class TeamMemberManagementServiceTest {
 	void unauthorizedRequesterCannotMutateMembers(String operation) {
 		// given
 		stubTarget(operation);
-		doThrow(new UserRoleException("팀원을 관리할 권한이 없습니다."))
-			.when(teamRoleValidator).checkHasManageTeamMemberAuthority(TEAM_ID, REQUESTER_ID);
+		doThrow(new UserRoleException("팀 관리 권한이 없습니다."))
+			.when(teamRoleValidator).checkIsTeamManager(TEAM_ID, REQUESTER_ID);
 
 		// when & then
 		assertThatThrownBy(() -> mutate(operation, TeamUserRole.MAKER))
-			.isInstanceOf(UserRoleException.class).hasMessage("팀원을 관리할 권한이 없습니다.");
+			.isInstanceOf(UserRoleException.class).hasMessage("팀 관리 권한이 없습니다.");
 		verify(teamUserEntityRepository, never()).save(any());
 		verify(teamUserEntityRepository, never()).delete(any());
 		verifyNoInteractions(userEntityRepository);
@@ -144,7 +144,7 @@ class TeamMemberManagementServiceTest {
 		// when & then
 		assertThatThrownBy(() -> mutate(operation, TeamUserRole.MAKER))
 			.isInstanceOf(TeamManagerException.class).hasMessage(message);
-		verify(teamRoleValidator).checkHasManageTeamMemberAuthority(TEAM_ID, REQUESTER_ID);
+		verify(teamRoleValidator).checkIsTeamManager(TEAM_ID, REQUESTER_ID);
 		verify(teamUserEntityRepository, never()).delete(any());
 		assertThat(targetMember.getUserRole()).isEqualTo(TeamUserRole.OWNER);
 	}

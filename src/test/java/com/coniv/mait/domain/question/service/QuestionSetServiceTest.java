@@ -109,7 +109,7 @@ class QuestionSetServiceTest {
 		assertThat(saved.getSolveMode()).isEqualTo(QuestionSetSolveMode.STUDY);
 		assertThat(saved.getCreatorId()).isEqualTo(USER_ID);
 
-		verify(teamRoleValidator).checkHasCreateQuestionSetAuthority(1L, USER_ID);
+		verify(teamRoleValidator).checkIsTeamManager(1L, USER_ID);
 		verify(questionService).createDefaultQuestions(any(), eq(List.of()));
 		verify(maitEventPublisher, never()).publishEvent(any());
 		verify(questionSetCategoryService).attachCategories(any(), eq(1L), eq(List.of()));
@@ -145,14 +145,14 @@ class QuestionSetServiceTest {
 			.creationType(QuestionSetCreationType.MANUAL)
 			.solveMode(QuestionSetSolveMode.STUDY)
 			.build();
-		doThrow(new UserRoleException("문제 세트 생성 권한이 없습니다."))
-			.when(teamRoleValidator).checkHasCreateQuestionSetAuthority(1L, USER_ID);
+		doThrow(new UserRoleException("팀 관리 권한이 없습니다."))
+			.when(teamRoleValidator).checkIsTeamManager(1L, USER_ID);
 
 		// when & then
 		assertThatThrownBy(() ->
 			questionSetService.createQuestionSet(request, List.of(), List.of(), null, null, List.of(), USER_ID))
 			.isInstanceOf(UserRoleException.class)
-			.hasMessage("문제 세트 생성 권한이 없습니다.");
+			.hasMessage("팀 관리 권한이 없습니다.");
 
 		verify(questionSetEntityRepository, never()).save(any());
 	}
@@ -196,7 +196,7 @@ class QuestionSetServiceTest {
 		assertThat(list.questionSets().get(1).getId()).isEqualTo(1L);
 
 		verify(teamRoleValidator).checkIsTeamMember(teamId, USER_ID);
-		verify(teamRoleValidator).checkHasCreateQuestionSetAuthority(teamId, USER_ID);
+		verify(teamRoleValidator).checkIsTeamManager(teamId, USER_ID);
 		verify(questionSetEntityRepository, times(1)).findAllByTeamId(teamId);
 	}
 
@@ -255,7 +255,7 @@ class QuestionSetServiceTest {
 		assertThat(group.questionSets().get(QuestionSetStatus.AFTER).get(0).getId()).isEqualTo(3L);
 
 		verify(teamRoleValidator).checkIsTeamMember(teamId, USER_ID);
-		verify(teamRoleValidator, never()).checkHasCreateQuestionSetAuthority(anyLong(), anyLong());
+		verify(teamRoleValidator, never()).checkIsTeamManager(anyLong(), anyLong());
 		verify(questionSetEntityRepository, times(1)).findAllByTeamId(teamId);
 	}
 
@@ -275,7 +275,7 @@ class QuestionSetServiceTest {
 		// then
 		assertThat(result).isInstanceOf(QuestionSetGroup.class);
 		verify(teamRoleValidator).checkIsTeamMember(teamId, USER_ID);
-		verify(teamRoleValidator, never()).checkHasCreateQuestionSetAuthority(anyLong(), anyLong());
+		verify(teamRoleValidator, never()).checkIsTeamManager(anyLong(), anyLong());
 		verify(questionSetEntityRepository).findAllByTeamId(teamId);
 	}
 
@@ -316,7 +316,7 @@ class QuestionSetServiceTest {
 		assertThat(result.questionSets().get(QuestionSetStatus.BEFORE).get(0).getId()).isEqualTo(2L);
 		assertThat(result.questionSets().get(QuestionSetStatus.BEFORE).get(1).getId()).isEqualTo(1L);
 
-		verify(teamRoleValidator).checkHasCreateQuestionSetAuthority(teamId, USER_ID);
+		verify(teamRoleValidator).checkIsTeamManager(teamId, USER_ID);
 		verify(questionSetEntityRepository).findAllByTeamId(teamId);
 	}
 
@@ -529,7 +529,7 @@ class QuestionSetServiceTest {
 	}
 
 	@Test
-	@DisplayName("문제 셋 완료 처리 테스트 - 실패 (존재하지 않는 문제셋)")
+	@DisplayName("문제 셋 완료 처리 테스트 - 실패 (존재하지 않는 문제 셋)")
 	void completeQuestionSetTest_Fail_NotFound() {
 		// given
 		final Long questionSetId = 999L;
@@ -723,7 +723,7 @@ class QuestionSetServiceTest {
 		questionSetService.restartQuestionSet(questionSetId, user);
 
 		// then
-		verify(teamRoleValidator).checkHasCreateQuestionSetAuthority(teamId, USER_ID);
+		verify(teamRoleValidator).checkIsTeamManager(teamId, USER_ID);
 		assertThat(questionSetEntity.getStatus()).isEqualTo(QuestionSetStatus.ONGOING);
 		assertThat(questionSetEntity.getStartTime()).isAfter(endedAt);
 		assertThat(questionSetEntity.getEndTime()).isNull();
@@ -750,7 +750,7 @@ class QuestionSetServiceTest {
 		questionSetService.restartQuestionSet(questionSetId, user);
 
 		// then
-		verify(teamRoleValidator).checkHasCreateQuestionSetAuthority(teamId, USER_ID);
+		verify(teamRoleValidator).checkIsTeamManager(teamId, USER_ID);
 		assertThat(questionSetEntity.getStatus()).isEqualTo(QuestionSetStatus.ONGOING);
 		assertThat(questionSetEntity.getStartTime()).isAfter(endedAt);
 		assertThat(questionSetEntity.getEndTime()).isNull();

@@ -55,7 +55,6 @@ import com.coniv.mait.global.auth.model.MaitUser;
 import com.coniv.mait.global.event.MaitEventPublisher;
 
 import jakarta.persistence.EntityManager;
-import jakarta.persistence.EntityNotFoundException;
 
 @DataJpaTest(showSql = false)
 @ActiveProfiles("test")
@@ -212,7 +211,7 @@ class QuestionSetModeIntegrationTest {
 			} else {
 				service.updateQuestionSetToReviewMode(questionSet.getId(), requester.getId());
 			}
-		}).isInstanceOf(role.equals("PLAYER") ? UserRoleException.class : EntityNotFoundException.class);
+		}).isInstanceOf(UserRoleException.class);
 		assertThat(questionSet.getSolveMode()).isEqualTo(QuestionSetSolveMode.STUDY);
 		assertThat(questionSet.getStatus()).isEqualTo(status);
 		assertThat(questionSet.getTitle()).isEqualTo("유지할 제목");
