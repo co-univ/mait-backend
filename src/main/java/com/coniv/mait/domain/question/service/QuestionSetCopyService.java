@@ -30,7 +30,7 @@ public class QuestionSetCopyService {
 		QuestionSetEntity source = questionSetReader.getQuestionSet(questionSetId);
 
 		teamRoleValidator.checkIsTeamMember(source.getTeamId(), userId);
-		teamRoleValidator.checkHasCreateQuestionSetAuthority(targetTeamId, userId);
+		teamRoleValidator.checkIsTeamManager(targetTeamId, userId);
 
 		QuestionSetEntity copied = questionSetEntityRepository.save(
 			QuestionSetEntity.copyOf(source, targetTeamId, userId, title, solveMode));

@@ -39,7 +39,7 @@ public class QuestionSetCategoryService {
 
 	@Transactional
 	public QuestionSetCategoryDto createCategory(final Long teamId, final String name, final Long userId) {
-		teamRoleValidator.checkHasCreateQuestionSetAuthority(teamId, userId);
+		teamRoleValidator.checkIsTeamManager(teamId, userId);
 
 		if (questionSetCategoryEntityRepository.existsByTeamIdAndNameAndDeletedAtIsNull(teamId, name)) {
 			throw new QuestionSetCategoryException(QuestionSetCategoryExceptionCode.DUPLICATE_NAME);
@@ -85,7 +85,7 @@ public class QuestionSetCategoryService {
 		QuestionSetCategoryEntity category = questionSetCategoryEntityRepository.findByIdAndDeletedAtIsNull(categoryId)
 			.orElseThrow(() -> new EntityNotFoundException("해당 카테고리를 찾을 수 없습니다."));
 
-		teamRoleValidator.checkHasCreateQuestionSetAuthority(category.getTeamId(), userId);
+		teamRoleValidator.checkIsTeamManager(category.getTeamId(), userId);
 
 		if (category.getName().equals(name)) {
 			return QuestionSetCategoryDto.from(category);
@@ -110,7 +110,7 @@ public class QuestionSetCategoryService {
 		QuestionSetCategoryEntity category = questionSetCategoryEntityRepository.findById(categoryId)
 			.orElseThrow(() -> new EntityNotFoundException("해당 카테고리를 찾을 수 없습니다."));
 
-		teamRoleValidator.checkHasCreateQuestionSetAuthority(category.getTeamId(), userId);
+		teamRoleValidator.checkIsTeamManager(category.getTeamId(), userId);
 
 		if (category.deleted()) {
 			return;
@@ -121,7 +121,7 @@ public class QuestionSetCategoryService {
 
 	@Transactional
 	public QuestionSetCategoryDto restoreCategory(final Long teamId, final String name, final Long userId) {
-		teamRoleValidator.checkHasCreateQuestionSetAuthority(teamId, userId);
+		teamRoleValidator.checkIsTeamManager(teamId, userId);
 
 		if (questionSetCategoryEntityRepository.existsByTeamIdAndNameAndDeletedAtIsNull(teamId, name)) {
 			throw new QuestionSetCategoryException(QuestionSetCategoryExceptionCode.ALREADY_ACTIVE);
@@ -140,7 +140,7 @@ public class QuestionSetCategoryService {
 		QuestionSetEntity questionSet = questionSetEntityRepository.findById(questionSetId)
 			.orElseThrow(() -> new EntityNotFoundException("문제 셋을 찾을 수 없습니다."));
 
-		teamRoleValidator.checkHasCreateQuestionSetAuthority(questionSet.getTeamId(), userId);
+		teamRoleValidator.checkIsTeamManager(questionSet.getTeamId(), userId);
 
 		if (questionSetCategoryLinkEntityRepository.existsByQuestionSetIdAndCategoryId(questionSetId, categoryId)) {
 			return;
@@ -157,7 +157,7 @@ public class QuestionSetCategoryService {
 		QuestionSetEntity questionSet = questionSetEntityRepository.findById(questionSetId)
 			.orElseThrow(() -> new EntityNotFoundException("문제 셋을 찾을 수 없습니다."));
 
-		teamRoleValidator.checkHasCreateQuestionSetAuthority(questionSet.getTeamId(), userId);
+		teamRoleValidator.checkIsTeamManager(questionSet.getTeamId(), userId);
 
 		questionSetCategoryLinkEntityRepository.deleteByQuestionSetIdAndCategoryId(questionSetId, categoryId);
 	}

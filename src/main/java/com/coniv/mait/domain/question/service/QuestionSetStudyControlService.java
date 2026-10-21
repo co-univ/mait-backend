@@ -34,7 +34,7 @@ public class QuestionSetStudyControlService {
 	@Transactional
 	public void startStudyQuestionSet(final MaitUser user, final Long questionSetId) {
 		QuestionSetEntity questionSet = questionSetReader.getQuestionSet(questionSetId);
-		teamRoleValidator.checkHasCreateQuestionSetAuthority(questionSet.getTeamId(), user.id());
+		teamRoleValidator.checkIsTeamManager(questionSet.getTeamId(), user.id());
 		questionSet.startStudyQuestionSet();
 		log.info("[학습 문제 셋 시작] questionSetId={}, teamId={}, startedBy={}",
 			questionSetId, questionSet.getTeamId(), user.id());
@@ -43,7 +43,7 @@ public class QuestionSetStudyControlService {
 	@Transactional
 	public void endStudyQuestionSet(final MaitUser user, final Long questionSetId) {
 		QuestionSetEntity questionSet = questionSetReader.getQuestionSet(questionSetId);
-		teamRoleValidator.checkHasCreateQuestionSetAuthority(questionSet.getTeamId(), user.id());
+		teamRoleValidator.checkIsTeamManager(questionSet.getTeamId(), user.id());
 		if (teamReader.getTeam(questionSet.getTeamId()).getType() == TeamType.PERSONAL) {
 			throw new QuestionSetStatusException(QuestionSetStatusExceptionCode.CANNOT_END_STUDY_IN_PERSONAL_TEAM);
 		}

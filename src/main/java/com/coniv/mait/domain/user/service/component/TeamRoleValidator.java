@@ -23,16 +23,16 @@ public class TeamRoleValidator {
 
 	private final TeamUserEntityRepository teamUserEntityRepository;
 
-	public void checkHasCreateQuestionSetAuthority(final Long teamId, final Long userId) {
+	public void checkIsTeamManager(final Long teamId, final Long userId) {
 		TeamEntity team = teamReader.getActiveTeam(teamId);
 
 		UserEntity user = userReader.getById(userId);
 
 		TeamUserEntity teamUser = teamUserEntityRepository.findByTeamAndUser(team, user)
-			.orElseThrow(() -> new EntityNotFoundException("해당 팀의 멤버가 아닙니다."));
+			.orElseThrow(() -> new UserRoleException("해당 팀의 멤버가 아닙니다."));
 
-		if (!teamUser.getUserRole().canCreateQuestionSet()) {
-			throw new UserRoleException("문제 세트 생성 권한이 없습니다.");
+		if (!teamUser.getUserRole().covers(TeamUserRole.MAKER)) {
+			throw new UserRoleException("팀 관리 권한이 없습니다.");
 		}
 	}
 
@@ -66,17 +66,6 @@ public class TeamRoleValidator {
 
 		if (teamUser.getUserRole() != TeamUserRole.OWNER) {
 			throw new UserRoleException("해당 팀의 OWNER가 아닙니다.");
-		}
-	}
-
-	public void checkHasManageTeamMemberAuthority(final Long teamId, final Long userId) {
-		TeamEntity team = teamReader.getActiveTeam(teamId);
-		UserEntity user = userReader.getById(userId);
-		TeamUserEntity teamUser = teamUserEntityRepository.findByTeamAndUser(team, user)
-			.orElseThrow(() -> new UserRoleException("해당 팀의 멤버가 아닙니다."));
-
-		if (teamUser.getUserRole() != TeamUserRole.OWNER && teamUser.getUserRole() != TeamUserRole.MAKER) {
-			throw new UserRoleException("팀원을 관리할 권한이 없습니다.");
 		}
 	}
 }
