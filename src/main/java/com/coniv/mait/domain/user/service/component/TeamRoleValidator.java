@@ -9,7 +9,6 @@ import com.coniv.mait.domain.team.repository.TeamUserEntityRepository;
 import com.coniv.mait.domain.team.service.component.TeamReader;
 import com.coniv.mait.domain.user.entity.UserEntity;
 import com.coniv.mait.domain.user.exception.UserRoleException;
-import com.coniv.mait.domain.user.repository.UserEntityRepository;
 
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
@@ -18,7 +17,7 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class TeamRoleValidator {
 
-	private final UserEntityRepository userEntityRepository;
+	private final UserReader userReader;
 
 	private final TeamReader teamReader;
 
@@ -27,8 +26,7 @@ public class TeamRoleValidator {
 	public void checkHasCreateQuestionSetAuthority(final Long teamId, final Long userId) {
 		TeamEntity team = teamReader.getActiveTeam(teamId);
 
-		UserEntity user = userEntityRepository.findById(userId)
-			.orElseThrow(() -> new EntityNotFoundException("존재하지 않는 사용자입니다."));
+		UserEntity user = userReader.getById(userId);
 
 		TeamUserEntity teamUser = teamUserEntityRepository.findByTeamAndUser(team, user)
 			.orElseThrow(() -> new EntityNotFoundException("해당 팀의 멤버가 아닙니다."));
@@ -41,8 +39,7 @@ public class TeamRoleValidator {
 	public void checkHasSolveQuestionAuthorityInTeam(final Long teamId, final Long userId) {
 		TeamEntity team = teamReader.getActiveTeam(teamId);
 
-		UserEntity user = userEntityRepository.findById(userId)
-			.orElseThrow(() -> new EntityNotFoundException("존재하지 않는 사용자입니다."));
+		UserEntity user = userReader.getById(userId);
 
 		if (!teamUserEntityRepository.existsByTeamAndUser(team, user)) {
 			throw new UserRoleException("해당 문제를 풀 수 있는 권한이 없습니다.");
@@ -52,8 +49,7 @@ public class TeamRoleValidator {
 	public void checkIsTeamMember(final Long teamId, final Long userId) {
 		TeamEntity team = teamReader.getActiveTeam(teamId);
 
-		UserEntity user = userEntityRepository.findById(userId)
-			.orElseThrow(() -> new EntityNotFoundException("존재하지 않는 사용자입니다."));
+		UserEntity user = userReader.getById(userId);
 
 		if (!teamUserEntityRepository.existsByTeamAndUser(team, user)) {
 			throw new UserRoleException("해당 팀의 멤버가 아닙니다.");
@@ -63,8 +59,7 @@ public class TeamRoleValidator {
 	public void checkIsTeamOwner(final Long teamId, final Long userId) {
 		TeamEntity team = teamReader.getActiveTeam(teamId);
 
-		UserEntity user = userEntityRepository.findById(userId)
-			.orElseThrow(() -> new EntityNotFoundException("존재하지 않는 사용자입니다."));
+		UserEntity user = userReader.getById(userId);
 
 		TeamUserEntity teamUser = teamUserEntityRepository.findByTeamAndUser(team, user)
 			.orElseThrow(() -> new EntityNotFoundException("해당 팀의 멤버가 아닙니다."));
@@ -76,8 +71,7 @@ public class TeamRoleValidator {
 
 	public void checkHasManageTeamMemberAuthority(final Long teamId, final Long userId) {
 		TeamEntity team = teamReader.getActiveTeam(teamId);
-		UserEntity user = userEntityRepository.findById(userId)
-			.orElseThrow(() -> new EntityNotFoundException("존재하지 않는 사용자입니다."));
+		UserEntity user = userReader.getById(userId);
 		TeamUserEntity teamUser = teamUserEntityRepository.findByTeamAndUser(team, user)
 			.orElseThrow(() -> new UserRoleException("해당 팀의 멤버가 아닙니다."));
 
