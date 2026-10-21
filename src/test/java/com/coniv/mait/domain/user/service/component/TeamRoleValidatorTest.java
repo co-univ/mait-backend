@@ -8,6 +8,8 @@ import java.util.Optional;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.EnumSource;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -37,6 +39,67 @@ class TeamRoleValidatorTest {
 
 	@Mock
 	private TeamUserEntityRepository teamUserEntityRepository;
+
+	@ParameterizedTest
+	@EnumSource(value = TeamUserRole.class, names = {"OWNER", "MAKER"})
+	@DisplayName("해당 팀의 OWNER와 MAKER는 팀원 관리 권한을 가진다")
+	void checkManageTeamMemberAuthority_success(TeamUserRole role) {
+		// given
+		TeamEntity team = TeamEntity.ofGroup("팀", 100L);
+		UserEntity user = UserEntity.localLoginUser("manager@example.com", "password", "관리자", "관리자");
+		when(teamReader.getActiveTeam(1L)).thenReturn(team);
+		when(userEntityRepository.findById(100L)).thenReturn(Optional.of(user));
+		when(teamUserEntityRepository.findByTeamAndUser(team, user))
+			.thenReturn(Optional.of(TeamUserEntity.createTeamUser(user, team, role)));
+
+		// when & then
+		assertThatCode(() -> teamRoleValidator.checkHasManageTeamMemberAuthority(1L, 100L))
+			.doesNotThrowAnyException();
+	}
+
+	@Test
+	@DisplayName("PLAYER는 팀원 관리 권한을 가지지 않는다")
+	void checkManageTeamMemberAuthority_playerDenied() {
+		// given
+		TeamEntity team = TeamEntity.ofGroup("팀", 100L);
+		UserEntity user = UserEntity.localLoginUser("player@example.com", "password", "참가자", "참가자");
+		when(teamReader.getActiveTeam(1L)).thenReturn(team);
+		when(userEntityRepository.findById(100L)).thenReturn(Optional.of(user));
+		when(teamUserEntityRepository.findByTeamAndUser(team, user))
+			.thenReturn(Optional.of(TeamUserEntity.createPlayerUser(user, team)));
+
+		// when & then
+		assertThatThrownBy(() -> teamRoleValidator.checkHasManageTeamMemberAuthority(1L, 100L))
+			.isInstanceOf(UserRoleException.class).hasMessage("팀원을 관리할 권한이 없습니다.");
+	}
+
+	@Test
+	@DisplayName("조회한 대상 팀에 소속되지 않은 요청자는 팀원 관리를 거절한다")
+	void checkManageTeamMemberAuthority_nonMemberDenied() {
+		// given
+		TeamEntity targetTeam = TeamEntity.ofGroup("대상 팀", 200L);
+		UserEntity user = UserEntity.localLoginUser("other-owner@example.com", "password", "다른팀 오너", "오너");
+		when(teamReader.getActiveTeam(1L)).thenReturn(targetTeam);
+		when(userEntityRepository.findById(100L)).thenReturn(Optional.of(user));
+		when(teamUserEntityRepository.findByTeamAndUser(targetTeam, user)).thenReturn(Optional.empty());
+
+		// when & then
+		assertThatThrownBy(() -> teamRoleValidator.checkHasManageTeamMemberAuthority(1L, 100L))
+			.isInstanceOf(UserRoleException.class).hasMessage("해당 팀의 멤버가 아닙니다.");
+	}
+
+	@Test
+	@DisplayName("존재하지 않는 요청자는 팀원 관리 권한 확인을 통과할 수 없다")
+	void checkManageTeamMemberAuthority_missingUserDenied() {
+		// given
+		when(teamReader.getActiveTeam(1L)).thenReturn(TeamEntity.ofGroup("팀", 200L));
+		when(userEntityRepository.findById(100L)).thenReturn(Optional.empty());
+
+		// when & then
+		assertThatThrownBy(() -> teamRoleValidator.checkHasManageTeamMemberAuthority(1L, 100L))
+			.isInstanceOf(EntityNotFoundException.class).hasMessage("존재하지 않는 사용자입니다.");
+		verifyNoInteractions(teamUserEntityRepository);
+	}
 
 	@Test
 	@DisplayName("checkHasCreateQuestionSetAuthority - OWNER 권한을 가진 사용자는 문제 세트 생성 권한 확인 성공")
