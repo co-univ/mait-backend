@@ -150,11 +150,12 @@ public class TeamService {
 	}
 
 	@Transactional
-	public void addUserInTeam(final Long teamId, final Long userId, final TeamUserRole role) {
+	public void addUserInTeam(final Long teamId, final Long userId, final TeamUserRole role, final Long requesterId) {
+		TeamEntity team = teamReader.getActiveTeam(teamId);
+		teamRoleValidator.checkHasManageTeamMemberAuthority(teamId, requesterId);
 		if (role == TeamUserRole.OWNER) {
 			throw new TeamManagerException("Cannot add team user with OWNER role.");
 		}
-		TeamEntity team = teamReader.getActiveTeam(teamId);
 		UserEntity user = userEntityRepository.findById(userId)
 			.orElseThrow(() -> new EntityNotFoundException("User not found with id: " + userId));
 
@@ -364,10 +365,15 @@ public class TeamService {
 	}
 
 	@Transactional
-	public void deleteTeamUser(Long teamUserId) {
+	public void deleteTeamUser(final Long teamUserId, final Long requesterId) {
 		TeamUserEntity teamUser = teamUserEntityRepository.findById(teamUserId)
 			.orElseThrow(() -> new EntityNotFoundException("Team user not found with id: " + teamUserId));
 		teamReader.validateActiveTeam(teamUser.getTeam());
+		teamRoleValidator.checkHasManageTeamMemberAuthority(teamUser.getTeam().getId(), requesterId);
+
+		if (teamUser.getUserRole() == TeamUserRole.OWNER) {
+			throw new TeamManagerException("Cannot delete OWNER from the team.");
+		}
 
 		teamUserEntityRepository.delete(teamUser);
 	}
@@ -399,13 +405,15 @@ public class TeamService {
 	}
 
 	@Transactional
-	public void updateTeamUserRole(Long teamUserId, TeamUserRole role) {
-		if (role == TeamUserRole.OWNER) {
-			throw new TeamManagerException("Cannot set team user role to OWNER.");
-		}
+	public void updateTeamUserRole(final Long teamUserId, final TeamUserRole role, final Long requesterId) {
 		TeamUserEntity teamUser = teamUserEntityRepository.findById(teamUserId)
 			.orElseThrow(() -> new EntityNotFoundException("Team user not found with id: " + teamUserId));
 		teamReader.validateActiveTeam(teamUser.getTeam());
+		teamRoleValidator.checkHasManageTeamMemberAuthority(teamUser.getTeam().getId(), requesterId);
+
+		if (role == TeamUserRole.OWNER) {
+			throw new TeamManagerException("Cannot set team user role to OWNER.");
+		}
 
 		if (teamUser.getUserRole() == TeamUserRole.OWNER) {
 			throw new TeamManagerException("Cannot change role of OWNER.");

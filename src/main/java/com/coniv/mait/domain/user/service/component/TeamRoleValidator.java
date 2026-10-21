@@ -73,4 +73,16 @@ public class TeamRoleValidator {
 			throw new UserRoleException("해당 팀의 OWNER가 아닙니다.");
 		}
 	}
+
+	public void checkHasManageTeamMemberAuthority(final Long teamId, final Long userId) {
+		TeamEntity team = teamReader.getActiveTeam(teamId);
+		UserEntity user = userEntityRepository.findById(userId)
+			.orElseThrow(() -> new EntityNotFoundException("존재하지 않는 사용자입니다."));
+		TeamUserEntity teamUser = teamUserEntityRepository.findByTeamAndUser(team, user)
+			.orElseThrow(() -> new UserRoleException("해당 팀의 멤버가 아닙니다."));
+
+		if (teamUser.getUserRole() != TeamUserRole.OWNER && teamUser.getUserRole() != TeamUserRole.MAKER) {
+			throw new UserRoleException("팀원을 관리할 권한이 없습니다.");
+		}
+	}
 }
