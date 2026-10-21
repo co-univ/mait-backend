@@ -10,6 +10,8 @@ import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.access.ExceptionTranslationFilter;
 
 import com.coniv.mait.domain.auth.service.Oauth2UserService;
+import com.coniv.mait.domain.user.enums.UserRole;
+import com.coniv.mait.global.auth.jwt.JwtAccessDeniedHandler;
 import com.coniv.mait.global.auth.jwt.JwtAuthenticationEntryPoint;
 import com.coniv.mait.global.filter.JwtAuthorizationFilter;
 import com.coniv.mait.global.oauth.OAuth2SuccessHandler;
@@ -22,6 +24,7 @@ import lombok.RequiredArgsConstructor;
 public class SecurityConfig {
 
 	private final JwtAuthenticationEntryPoint jwtAuthenticationEntryPoint;
+	private final JwtAccessDeniedHandler jwtAccessDeniedHandler;
 	private final JwtAuthorizationFilter jwtAuthorizationFilter;
 	private final Oauth2UserService oauth2UserService;
 	private final OAuth2SuccessHandler oauth2SuccessHandler;
@@ -64,11 +67,12 @@ public class SecurityConfig {
 					"/error"
 				).permitAll()
 				.requestMatchers("/ws/**").permitAll()
-				// TODO: 어드민 인증/인가 도입 전까지 임시로 전체 허용
-				.requestMatchers("/api/v1/admin/**").permitAll()
+				.requestMatchers("/api/v1/admin/**").hasRole(UserRole.ADMIN.name())
 				.anyRequest().authenticated()
 			)
-			.exceptionHandling(exception -> exception.authenticationEntryPoint(jwtAuthenticationEntryPoint))
+			.exceptionHandling(exception -> exception
+				.authenticationEntryPoint(jwtAuthenticationEntryPoint)
+				.accessDeniedHandler(jwtAccessDeniedHandler))
 			.addFilterAfter(jwtAuthorizationFilter, ExceptionTranslationFilter.class)
 			.oauth2Login((oauth2) -> oauth2
 				.userInfoEndpoint(userInfoEndpoint -> userInfoEndpoint

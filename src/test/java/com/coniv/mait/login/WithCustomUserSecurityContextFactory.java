@@ -5,6 +5,7 @@ import java.util.List;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.TestComponent;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.test.context.support.WithSecurityContextFactory;
@@ -38,7 +39,7 @@ public class WithCustomUserSecurityContextFactory implements WithSecurityContext
 		UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(
 			MaitUser.from(user),
 			"N/A",
-			List.of()
+			List.of(new SimpleGrantedAuthority("ROLE_" + annotation.role().name()))
 		);
 
 		SecurityContext context = SecurityContextHolder.createEmptyContext();

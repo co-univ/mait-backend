@@ -21,10 +21,11 @@ import com.coniv.mait.domain.question.repository.QuestionEntityRepository;
 import com.coniv.mait.domain.question.repository.QuestionSetEntityRepository;
 import com.coniv.mait.domain.team.entity.TeamEntity;
 import com.coniv.mait.domain.team.repository.TeamEntityRepository;
+import com.coniv.mait.domain.user.enums.UserRole;
 import com.coniv.mait.login.WithCustomUser;
 import com.coniv.mait.web.integration.BaseIntegrationTest;
 
-@WithCustomUser
+@WithCustomUser(role = UserRole.ADMIN)
 public class AdminLookupApiIntegrationTest extends BaseIntegrationTest {
 
 	@Autowired
