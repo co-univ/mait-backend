@@ -50,16 +50,16 @@ import com.coniv.mait.domain.user.entity.UserEntity;
 import com.coniv.mait.domain.user.exception.UserRoleException;
 import com.coniv.mait.domain.user.repository.UserEntityRepository;
 import com.coniv.mait.domain.user.service.component.TeamRoleValidator;
+import com.coniv.mait.domain.user.service.component.UserReader;
 import com.coniv.mait.global.auth.model.MaitUser;
 import com.coniv.mait.global.event.MaitEventPublisher;
 
 import jakarta.persistence.EntityManager;
-import jakarta.persistence.EntityNotFoundException;
 
 @DataJpaTest(showSql = false)
 @ActiveProfiles("test")
 @Import({QuestionSetService.class, QuestionSetReader.class, QuestionSetCategoryService.class,
-	TeamRoleValidator.class, TeamReader.class})
+	TeamRoleValidator.class, TeamReader.class, UserReader.class})
 class QuestionSetModeIntegrationTest {
 
 	@Autowired
@@ -211,7 +211,7 @@ class QuestionSetModeIntegrationTest {
 			} else {
 				service.updateQuestionSetToReviewMode(questionSet.getId(), requester.getId());
 			}
-		}).isInstanceOf(role.equals("PLAYER") ? UserRoleException.class : EntityNotFoundException.class);
+		}).isInstanceOf(UserRoleException.class);
 		assertThat(questionSet.getSolveMode()).isEqualTo(QuestionSetSolveMode.STUDY);
 		assertThat(questionSet.getStatus()).isEqualTo(status);
 		assertThat(questionSet.getTitle()).isEqualTo("유지할 제목");

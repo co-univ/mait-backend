@@ -284,6 +284,65 @@ class TeamControllerTest {
 		verify(teamService, never()).getJoinedTeams(anyLong(), any());
 	}
 
+	@Test
+	@DisplayName("팀원 추가 시 대상 사용자 ID와 별도로 인증한 요청자 ID를 전달한다")
+	void addUserInTeam_passesAuthenticatedRequester() throws Exception {
+		// when & then
+		mockMvc.perform(post("/api/v1/teams/10/team-users").contentType(MediaType.APPLICATION_JSON)
+				.content("{\"userId\":200,\"role\":\"MAKER\",\"requesterId\":999}"))
+			.andExpect(status().isOk());
+		verify(teamService).addUserInTeam(10L, 200L, TeamUserRole.MAKER, USER_ID);
+	}
+
+	@Test
+	@DisplayName("팀원 삭제 시 인증한 요청자 ID를 전달한다")
+	void deleteTeamUser_passesAuthenticatedRequester() throws Exception {
+		// when & then
+		mockMvc.perform(delete("/api/v1/teams/team-users/20"))
+			.andExpect(status().isOk());
+		verify(teamService).deleteTeamUser(20L, USER_ID);
+	}
+
+	@Test
+	@DisplayName("팀원 역할 변경 시 인증한 요청자 ID를 전달한다")
+	void updateTeamUserRole_passesAuthenticatedRequester() throws Exception {
+		// when & then
+		mockMvc.perform(patch("/api/v1/teams/team-users/20/role").contentType(MediaType.APPLICATION_JSON)
+				.content("{\"role\":\"MAKER\"}"))
+			.andExpect(status().isOk());
+		verify(teamService).updateTeamUserRole(20L, TeamUserRole.MAKER, USER_ID);
+	}
+
+	@Test
+	@DisplayName("팀원 추가 시 대상 사용자 ID가 없으면 400을 반환한다")
+	void addUserInTeam_missingUserId() throws Exception {
+		// when & then
+		mockMvc.perform(post("/api/v1/teams/10/team-users").contentType(MediaType.APPLICATION_JSON)
+				.content("{\"role\":\"MAKER\"}"))
+			.andExpect(status().isBadRequest());
+		verifyNoInteractions(teamService);
+	}
+
+	@Test
+	@DisplayName("팀원 추가 시 역할이 없으면 400을 반환한다")
+	void addUserInTeam_missingRole() throws Exception {
+		// when & then
+		mockMvc.perform(post("/api/v1/teams/10/team-users").contentType(MediaType.APPLICATION_JSON)
+				.content("{\"userId\":200}"))
+			.andExpect(status().isBadRequest());
+		verifyNoInteractions(teamService);
+	}
+
+	@Test
+	@DisplayName("팀원 역할 변경 시 역할이 없으면 400을 반환한다")
+	void updateTeamUserRole_missingRole() throws Exception {
+		// when & then
+		mockMvc.perform(patch("/api/v1/teams/team-users/20/role").contentType(MediaType.APPLICATION_JSON)
+				.content("{}"))
+			.andExpect(status().isBadRequest());
+		verifyNoInteractions(teamService);
+	}
+
 	private TeamUserDto joinedTeam(final String teamName, final TeamUserRole role) {
 		return TeamUserDto.builder()
 			.teamId(1L)
