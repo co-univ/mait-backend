@@ -71,7 +71,7 @@ class QuestionSetStudyControlServiceTest {
 		// then
 		assertThat(questionSet.getStatus()).isEqualTo(QuestionSetStatus.ONGOING);
 		assertThat(questionSet.getStartTime()).isNotNull();
-		verify(teamRoleValidator).checkHasCreateQuestionSetAuthority(TEAM_ID, USER_ID);
+		verify(teamRoleValidator).checkIsTeamManager(TEAM_ID, USER_ID);
 	}
 
 	@Test
@@ -98,8 +98,8 @@ class QuestionSetStudyControlServiceTest {
 			.build();
 
 		when(questionSetReader.getQuestionSet(QUESTION_SET_ID)).thenReturn(questionSet);
-		doThrow(new UserRoleException("문제 세트 생성 권한이 없습니다."))
-			.when(teamRoleValidator).checkHasCreateQuestionSetAuthority(TEAM_ID, USER_ID);
+		doThrow(new UserRoleException("팀 관리 권한이 없습니다."))
+			.when(teamRoleValidator).checkIsTeamManager(TEAM_ID, USER_ID);
 
 		// when & then
 		assertThatThrownBy(() ->
@@ -162,7 +162,7 @@ class QuestionSetStudyControlServiceTest {
 		// then
 		assertThat(questionSet.getStatus()).isEqualTo(QuestionSetStatus.AFTER);
 		assertThat(questionSet.getEndTime()).isNotNull();
-		verify(teamRoleValidator).checkHasCreateQuestionSetAuthority(TEAM_ID, USER_ID);
+		verify(teamRoleValidator).checkIsTeamManager(TEAM_ID, USER_ID);
 	}
 
 	@Test
@@ -189,8 +189,8 @@ class QuestionSetStudyControlServiceTest {
 			.build();
 
 		when(questionSetReader.getQuestionSet(QUESTION_SET_ID)).thenReturn(questionSet);
-		doThrow(new UserRoleException("문제 세트 생성 권한이 없습니다."))
-			.when(teamRoleValidator).checkHasCreateQuestionSetAuthority(TEAM_ID, USER_ID);
+		doThrow(new UserRoleException("팀 관리 권한이 없습니다."))
+			.when(teamRoleValidator).checkIsTeamManager(TEAM_ID, USER_ID);
 
 		// when & then
 		assertThatThrownBy(() ->

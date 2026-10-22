@@ -75,7 +75,7 @@ public class QuestionSetService {
 	public QuestionSetDto createQuestionSet(final QuestionSetDto questionSetDto, final List<QuestionCount> counts,
 		final List<MaterialDto> materials, final String instruction, final String difficulty,
 		final List<Long> categoryIds, final Long userId) {
-		teamRoleValidator.checkHasCreateQuestionSetAuthority(questionSetDto.getTeamId(), userId);
+		teamRoleValidator.checkIsTeamManager(questionSetDto.getTeamId(), userId);
 
 		QuestionSetEntity questionSetEntity = QuestionSetEntity.builder()
 			.title(questionSetDto.getTitle())
@@ -113,7 +113,7 @@ public class QuestionSetService {
 		teamRoleValidator.checkIsTeamMember(teamId, user.id());
 
 		if (mode == DeliveryMode.MAKING) {
-			teamRoleValidator.checkHasCreateQuestionSetAuthority(teamId, user.id());
+			teamRoleValidator.checkIsTeamManager(teamId, user.id());
 		}
 
 		List<QuestionSetDto> questionSets = questionSetEntityRepository.findAllByTeamId(teamId).stream()
@@ -132,7 +132,7 @@ public class QuestionSetService {
 	}
 
 	public QuestionSetGroup getStudyManagementQuestionSets(final Long teamId, final MaitUser user) {
-		teamRoleValidator.checkHasCreateQuestionSetAuthority(teamId, user.id());
+		teamRoleValidator.checkIsTeamManager(teamId, user.id());
 
 		List<QuestionSetDto> questionSets = questionSetEntityRepository.findAllByTeamId(teamId).stream()
 			.filter(questionSet -> questionSet.getDisplayMode() == DeliveryMode.STUDY)
@@ -200,7 +200,7 @@ public class QuestionSetService {
 	public QuestionSetDto changeSolveMode(final Long questionSetId, final QuestionSetSolveMode solveMode,
 		final MaitUser user) {
 		QuestionSetEntity questionSet = questionSetReader.getQuestionSet(questionSetId);
-		teamRoleValidator.checkHasCreateQuestionSetAuthority(questionSet.getTeamId(), user.id());
+		teamRoleValidator.checkIsTeamManager(questionSet.getTeamId(), user.id());
 		validateTeamSolveMode(questionSet.getTeamId(), solveMode);
 		questionSet.changeSolveMode(solveMode);
 
@@ -245,7 +245,7 @@ public class QuestionSetService {
 		QuestionSetEntity questionSet = questionSetEntityRepository.findById(questionSetId)
 			.orElseThrow(() -> new EntityNotFoundException("해당 문제 셋을 찾을 수 없습니다."));
 
-		teamRoleValidator.checkHasCreateQuestionSetAuthority(questionSet.getTeamId(), userId);
+		teamRoleValidator.checkIsTeamManager(questionSet.getTeamId(), userId);
 		questionSet.openReview();
 	}
 
@@ -254,7 +254,7 @@ public class QuestionSetService {
 		QuestionSetEntity questionSet = questionSetEntityRepository.findById(questionSetId)
 			.orElseThrow(() -> new EntityNotFoundException("해당 문제 셋을 찾을 수 없습니다."));
 
-		teamRoleValidator.checkHasCreateQuestionSetAuthority(questionSet.getTeamId(), user.id());
+		teamRoleValidator.checkIsTeamManager(questionSet.getTeamId(), user.id());
 		questionSet.restart();
 	}
 }
