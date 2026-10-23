@@ -1,14 +1,22 @@
 package com.coniv.mait.global.interceptor.idempotency;
 
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+import java.util.HexFormat;
 import java.util.Objects;
+import java.util.concurrent.ScheduledFuture;
 
-import org.springframework.http.HttpMethod;
-import org.springframework.http.HttpStatus;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 import org.springframework.web.servlet.HandlerInterceptor;
-import org.springframework.web.servlet.ModelAndView;
 import org.springframework.web.util.ContentCachingResponseWrapper;
+import org.springframework.web.util.WebUtils;
 
+import com.coniv.mait.global.auth.model.MaitUser;
 import com.coniv.mait.global.exception.CommonExceptionCode;
 import com.coniv.mait.global.response.ErrorResponse;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -23,69 +31,118 @@ import lombok.extern.slf4j.Slf4j;
 @RequiredArgsConstructor
 public class IdempotencyInterceptor implements HandlerInterceptor {
 
-	private static final String IDEMPOTENCY_HEADER = "Idempotency-Key";
+	public static final String PATH_PATTERN = "/api/v1/question-sets/*/questions/*/submit";
 
+	private static final String EXECUTION_ATTRIBUTE = IdempotencyInterceptor.class.getName() + ".execution";
 	private final IdempotencyRedisRepository idempotencyRedisRepository;
-
 	private final ObjectMapper objectMapper;
 
 	@Override
 	public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) throws
 		Exception {
-
-		if (!HttpMethod.POST.name().equals(request.getMethod())) {
+		String clientKey = request.getHeader("Idempotency-Key");
+		if (!"POST".equals(request.getMethod()) || clientKey == null || clientKey.isBlank()) {
 			return true;
 		}
 
-		final String idempotencyKey = request.getHeader(IDEMPOTENCY_HEADER);
-		if (idempotencyKey == null || idempotencyKey.isEmpty()) {
-			return true;
+		Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+		if (authentication == null || !authentication.isAuthenticated()
+			|| !(authentication.getPrincipal() instanceof MaitUser user)) {
+			return reject(response, CommonExceptionCode.JWT_AUTH_EXCEPTION);
 		}
 
-		IdempotencyStatus status = idempotencyRedisRepository.getStatus(idempotencyKey);
-
-		if (status == null) {
-			idempotencyRedisRepository.setProcessing(idempotencyKey);
-			return true;
+		IdempotencyRequestWrapper wrapped = WebUtils.getNativeRequest(request, IdempotencyRequestWrapper.class);
+		if (wrapped == null) {
+			throw new IllegalStateException("멱등성 요청 본문 래퍼가 필요합니다.");
+		}
+		String path = request.getRequestURI().substring(request.getContextPath().length());
+		String key = user.id() + ":" + hash(path) + ":" + hash(clientKey);
+		String fingerprint = hash(request.getMethod() + "\n" + path + "\n"
+			+ Objects.toString(request.getQueryString(), "") + "\n"
+			+ Objects.toString(request.getContentType(), "") + "\n" + hash(wrapped.getBody()));
+		IdempotencyRecord processing = IdempotencyRecord.processing(fingerprint);
+		if (idempotencyRedisRepository.claim(key, processing)) {
+			try {
+				ScheduledFuture<?> renewal = idempotencyRedisRepository.startRenewal(key, processing);
+				request.setAttribute(EXECUTION_ATTRIBUTE, new Execution(key, processing, renewal));
+				return true;
+			} catch (RuntimeException exception) {
+				idempotencyRedisRepository.release(key, processing);
+				throw exception;
+			}
 		}
 
-		if (status == IdempotencyStatus.PROCESSING) {
-			response.setStatus(HttpStatus.CONFLICT.value());
-			response.setContentType("application/json; charset=UTF-8");
-			response.getWriter()
-				.write(objectMapper.writeValueAsString(ErrorResponse.from(CommonExceptionCode.PROCESSING)));
-			log.info("[요청은 왔지만 아직 처리 중]");
+		IdempotencyRecord existing = idempotencyRedisRepository.get(key);
+		if (existing != null && !existing.fingerprint().equals(fingerprint)) {
+			return reject(response, CommonExceptionCode.IDEMPOTENCY_KEY_REUSED);
+		}
+		if (existing != null && existing.status() == IdempotencyStatus.COMPLETED) {
+			existing.response().writeTo(response);
 			return false;
 		}
-
-		Object cachedResponse = idempotencyRedisRepository.getResponse(idempotencyKey);
-		if (status == IdempotencyStatus.COMPLETED && !Objects.isNull(cachedResponse)) {
-			response.setContentType("application/json");
-			response.getWriter().write(objectMapper.writeValueAsString(cachedResponse));
-			return false;
-		}
-
-		return true;
+		return reject(response, CommonExceptionCode.PROCESSING);
 	}
 
 	@Override
-	public void postHandle(HttpServletRequest request, HttpServletResponse response, Object handler,
-		ModelAndView modelAndView) throws Exception {
-		String idempotencyKey = request.getHeader(IDEMPOTENCY_HEADER);
-		if (idempotencyKey == null) {
+	public void afterCompletion(HttpServletRequest request, HttpServletResponse response, Object handler,
+		Exception exception) {
+		Execution execution = (Execution)request.getAttribute(EXECUTION_ATTRIBUTE);
+		if (execution == null) {
 			return;
 		}
+		request.removeAttribute(EXECUTION_ATTRIBUTE);
+		ContentCachingResponseWrapper wrapped = WebUtils.getNativeResponse(response,
+			ContentCachingResponseWrapper.class);
+		boolean success = exception == null && response.getStatus() >= 200 && response.getStatus() < 300;
+		IdempotencyResponse cached = success && wrapped != null ? IdempotencyResponse.from(wrapped) : null;
 
-		final ContentCachingResponseWrapper responseWrapper = (ContentCachingResponseWrapper)response;
-
-		if (responseWrapper.getStatus() != HttpStatus.OK.value()) {
-			log.info("[멱등성 처리 실패] 응답 상태: {}", responseWrapper.getStatus());
-			return;
+		if (TransactionSynchronizationManager.isActualTransactionActive()
+			&& TransactionSynchronizationManager.isSynchronizationActive()) {
+			TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+				@Override
+				public void afterCompletion(int status) {
+					finish(execution, status == STATUS_COMMITTED ? cached : null);
+				}
+			});
+		} else {
+			finish(execution, cached);
 		}
+	}
 
-		idempotencyRedisRepository.setCompleted(idempotencyKey,
-			objectMapper.readTree(responseWrapper.getContentAsByteArray()));
+	private void finish(Execution execution, IdempotencyResponse response) {
+		try {
+			if (response == null) {
+				idempotencyRedisRepository.release(execution.key(), execution.processing());
+			} else if (!idempotencyRedisRepository.complete(execution.key(), execution.processing(), response)) {
+				log.error("멱등성 응답 저장 시 실행 소유권이 없습니다. key={}", execution.key());
+			}
+		} catch (RuntimeException exception) {
+			// 비즈니스 커밋 이후 캐시 저장 실패는 실행 실패로 간주해 키를 삭제하면 안 된다.
+			log.error("멱등성 요청 정리에 실패했습니다. key={}", execution.key(), exception);
+		} finally {
+			execution.renewal().cancel(false);
+		}
+	}
 
-		responseWrapper.copyBodyToResponse();
+	private boolean reject(HttpServletResponse response, CommonExceptionCode code) throws Exception {
+		response.setStatus(code.getStatus().value());
+		response.setContentType("application/json; charset=UTF-8");
+		response.getWriter().write(objectMapper.writeValueAsString(ErrorResponse.from(code)));
+		return false;
+	}
+
+	private String hash(String value) {
+		return hash(value.getBytes(StandardCharsets.UTF_8));
+	}
+
+	private String hash(byte[] value) {
+		try {
+			return HexFormat.of().formatHex(MessageDigest.getInstance("SHA-256").digest(value));
+		} catch (NoSuchAlgorithmException exception) {
+			throw new IllegalStateException(exception);
+		}
+	}
+
+	private record Execution(String key, IdempotencyRecord processing, ScheduledFuture<?> renewal) {
 	}
 }

@@ -17,6 +17,6 @@ public class WebConfig implements WebMvcConfigurer {
 	@Override
 	public void addInterceptors(InterceptorRegistry registry) {
 		registry.addInterceptor(idempotencyInterceptor)
-			.addPathPatterns("/api/v1/question-sets/*/questions/*/submit");
+			.addPathPatterns(IdempotencyInterceptor.PATH_PATTERN);
 	}
 }
