@@ -2,6 +2,7 @@ package com.coniv.mait.global.filter;
 
 import java.io.IOException;
 
+import org.springframework.http.HttpMethod;
 import org.springframework.stereotype.Component;
 import org.springframework.util.AntPathMatcher;
 import org.springframework.web.filter.OncePerRequestFilter;
@@ -25,10 +26,10 @@ public class ContentWrappingFilter extends OncePerRequestFilter {
 		FilterChain filterChain) throws ServletException, IOException {
 
 		final ContentCachingResponseWrapper responseWrapper = new ContentCachingResponseWrapper(response);
-		String key = request.getHeader("Idempotency-Key");
+		String key = request.getHeader(IdempotencyInterceptor.IDEMPOTENCY_HEADER);
 		HttpServletRequest wrappedRequest = request;
 		String path = request.getRequestURI().substring(request.getContextPath().length());
-		if ("POST".equals(request.getMethod()) && key != null && !key.isBlank()
+		if (HttpMethod.POST.name().equals(request.getMethod()) && key != null && !key.isBlank()
 			&& PATH_MATCHER.match(IdempotencyInterceptor.PATH_PATTERN, path)) {
 			wrappedRequest = new IdempotencyRequestWrapper(request);
 		}

@@ -7,6 +7,7 @@ import java.util.HexFormat;
 import java.util.Objects;
 import java.util.concurrent.ScheduledFuture;
 
+import org.springframework.http.HttpMethod;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
@@ -32,6 +33,7 @@ import lombok.extern.slf4j.Slf4j;
 public class IdempotencyInterceptor implements HandlerInterceptor {
 
 	public static final String PATH_PATTERN = "/api/v1/question-sets/*/questions/*/submit";
+	public static final String IDEMPOTENCY_HEADER = "Idempotency-Key";
 
 	private static final String EXECUTION_ATTRIBUTE = IdempotencyInterceptor.class.getName() + ".execution";
 	private final IdempotencyRedisRepository idempotencyRedisRepository;
@@ -40,8 +42,8 @@ public class IdempotencyInterceptor implements HandlerInterceptor {
 	@Override
 	public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) throws
 		Exception {
-		String clientKey = request.getHeader("Idempotency-Key");
-		if (!"POST".equals(request.getMethod()) || clientKey == null || clientKey.isBlank()) {
+		String clientKey = request.getHeader(IDEMPOTENCY_HEADER);
+		if (!HttpMethod.POST.name().equals(request.getMethod()) || clientKey == null || clientKey.isBlank()) {
 			return true;
 		}
 
