@@ -4,7 +4,6 @@ import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.HexFormat;
-import java.util.concurrent.ScheduledFuture;
 
 import org.springframework.http.HttpMethod;
 import org.springframework.security.core.Authentication;
@@ -61,14 +60,8 @@ public class IdempotencyInterceptor implements HandlerInterceptor {
 		String fingerprint = hash(wrapped.getBody());
 		IdempotencyRecord processing = IdempotencyRecord.processing(fingerprint);
 		if (idempotencyRedisRepository.claim(key, processing)) {
-			try {
-				ScheduledFuture<?> renewal = idempotencyRedisRepository.startRenewal(key, processing);
-				request.setAttribute(EXECUTION_ATTRIBUTE, new Execution(key, processing, renewal));
-				return true;
-			} catch (RuntimeException exception) {
-				idempotencyRedisRepository.release(key, processing);
-				throw exception;
-			}
+			request.setAttribute(EXECUTION_ATTRIBUTE, new Execution(key, processing));
+			return true;
 		}
 
 		IdempotencyRecord existing = idempotencyRedisRepository.get(key);
@@ -118,8 +111,6 @@ public class IdempotencyInterceptor implements HandlerInterceptor {
 		} catch (RuntimeException exception) {
 			// 비즈니스 커밋 이후 캐시 저장 실패는 실행 실패로 간주해 키를 삭제하면 안 된다.
 			log.error("멱등성 요청 정리에 실패했습니다. key={}", execution.key(), exception);
-		} finally {
-			execution.renewal().cancel(false);
 		}
 	}
 
@@ -142,6 +133,6 @@ public class IdempotencyInterceptor implements HandlerInterceptor {
 		}
 	}
 
-	private record Execution(String key, IdempotencyRecord processing, ScheduledFuture<?> renewal) {
+	private record Execution(String key, IdempotencyRecord processing) {
 	}
 }
