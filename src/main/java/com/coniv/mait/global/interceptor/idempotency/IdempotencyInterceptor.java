@@ -6,11 +6,10 @@ import java.security.NoSuchAlgorithmException;
 import java.util.HexFormat;
 
 import org.springframework.http.HttpMethod;
+import org.springframework.http.HttpStatusCode;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
-import org.springframework.transaction.support.TransactionSynchronization;
-import org.springframework.transaction.support.TransactionSynchronizationManager;
 import org.springframework.web.servlet.HandlerInterceptor;
 import org.springframework.web.util.ContentCachingResponseWrapper;
 import org.springframework.web.util.WebUtils;
@@ -85,20 +84,10 @@ public class IdempotencyInterceptor implements HandlerInterceptor {
 		request.removeAttribute(EXECUTION_ATTRIBUTE);
 		ContentCachingResponseWrapper wrapped = WebUtils.getNativeResponse(response,
 			ContentCachingResponseWrapper.class);
-		boolean success = exception == null && response.getStatus() >= 200 && response.getStatus() < 300;
+		boolean success = exception == null && HttpStatusCode.valueOf(response.getStatus()).is2xxSuccessful();
 		IdempotencyResponse cached = success && wrapped != null ? IdempotencyResponse.from(wrapped) : null;
 
-		if (TransactionSynchronizationManager.isActualTransactionActive()
-			&& TransactionSynchronizationManager.isSynchronizationActive()) {
-			TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
-				@Override
-				public void afterCompletion(int status) {
-					finish(execution, status == STATUS_COMMITTED ? cached : null);
-				}
-			});
-		} else {
-			finish(execution, cached);
-		}
+		finish(execution, cached);
 	}
 
 	private void finish(Execution execution, IdempotencyResponse response) {
