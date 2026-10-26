@@ -6,7 +6,6 @@ import static org.mockito.BDDMockito.*;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.ScheduledFuture;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -32,9 +31,6 @@ class IdempotencyInterceptorTest {
 
 	@Mock
 	private IdempotencyRedisRepository repository;
-
-	@Mock
-	private ScheduledFuture<?> renewal;
 
 	private IdempotencyInterceptor interceptor;
 	private MockHttpServletRequest request;
@@ -89,11 +85,11 @@ class IdempotencyInterceptorTest {
 	}
 
 	@Test
-	@DisplayName("선점에 성공한 요청만 실행하고 만료 시간을 갱신한다")
-	void claimStartsRenewal() throws Exception {
+	@DisplayName("선점에 성공한 요청만 비즈니스 처리로 진행한다")
+	void claimedRequestPasses() throws Exception {
 		allowClaim();
 		assertThat(interceptor.preHandle(wrap(), response, null)).isTrue();
-		verify(repository).startRenewal(anyString(), any(IdempotencyRecord.class));
+		verify(repository).claim(anyString(), any(IdempotencyRecord.class));
 	}
 
 	@Test
@@ -106,7 +102,6 @@ class IdempotencyInterceptorTest {
 		assertThat(response.getStatus()).isEqualTo(409);
 		assertThat(response.getContentAsString()).contains("C-005");
 		verify(repository, never()).release(anyString(), any());
-		verify(repository, never()).startRenewal(anyString(), any());
 	}
 
 	@Test
@@ -160,7 +155,6 @@ class IdempotencyInterceptorTest {
 		verify(repository).complete(anyString(), any(), result.capture());
 		assertThat(result.getValue().status()).isEqualTo(204);
 		assertThat(result.getValue().body()).isEmpty();
-		verify(renewal).cancel(false);
 	}
 
 	@Test
@@ -173,7 +167,6 @@ class IdempotencyInterceptorTest {
 		interceptor.afterCompletion(wrapped, response, null, null);
 		verify(repository).release(anyString(), any());
 		verify(repository, never()).complete(anyString(), any(), any());
-		verify(renewal).cancel(false);
 	}
 
 	@Test
@@ -202,7 +195,6 @@ class IdempotencyInterceptorTest {
 		TransactionSynchronizationManager.getSynchronizations().forEach(
 			sync -> sync.afterCompletion(TransactionSynchronization.STATUS_ROLLED_BACK));
 		verify(repository).release(anyString(), any());
-		verify(renewal).cancel(false);
 	}
 
 	@Test
@@ -216,7 +208,6 @@ class IdempotencyInterceptorTest {
 		interceptor.preHandle(wrapped, cached, null);
 		interceptor.afterCompletion(wrapped, cached, null, null);
 		verify(repository, never()).release(anyString(), any());
-		verify(renewal).cancel(false);
 	}
 
 	@Test
@@ -232,7 +223,6 @@ class IdempotencyInterceptorTest {
 
 	private void allowClaim() {
 		given(repository.claim(anyString(), any())).willReturn(true);
-		willReturn(renewal).given(repository).startRenewal(anyString(), any());
 	}
 
 	private IdempotencyRecord existingRequest() {
