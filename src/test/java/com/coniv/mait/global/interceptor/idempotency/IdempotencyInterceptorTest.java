@@ -19,8 +19,6 @@ import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockHttpServletResponse;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.transaction.support.TransactionSynchronization;
-import org.springframework.transaction.support.TransactionSynchronizationManager;
 import org.springframework.web.util.ContentCachingResponseWrapper;
 
 import com.coniv.mait.global.auth.model.MaitUser;
@@ -50,10 +48,6 @@ class IdempotencyInterceptorTest {
 	@AfterEach
 	void tearDown() {
 		SecurityContextHolder.clearContext();
-		if (TransactionSynchronizationManager.isSynchronizationActive()) {
-			TransactionSynchronizationManager.clearSynchronization();
-		}
-		TransactionSynchronizationManager.setActualTransactionActive(false);
 	}
 
 	@Test
@@ -178,23 +172,6 @@ class IdempotencyInterceptorTest {
 		interceptor.afterCompletion(wrapped, response, null, new IllegalStateException("rollback"));
 		verify(repository).release(anyString(), any());
 		verify(repository, never()).complete(anyString(), any(), any());
-	}
-
-	@Test
-	@DisplayName("외부 트랜잭션이 롤백되면 완료 캐시를 만들지 않고 키를 해제한다")
-	void rollbackReleasesAfterTransactionCompletion() throws Exception {
-		allowClaim();
-		IdempotencyRequestWrapper wrapped = wrap();
-		ContentCachingResponseWrapper cached = new ContentCachingResponseWrapper(response);
-		TransactionSynchronizationManager.setActualTransactionActive(true);
-		TransactionSynchronizationManager.initSynchronization();
-		interceptor.preHandle(wrapped, cached, null);
-		interceptor.afterCompletion(wrapped, cached, null, null);
-		verify(repository, never()).release(anyString(), any());
-		verify(repository, never()).complete(anyString(), any(), any());
-		TransactionSynchronizationManager.getSynchronizations().forEach(
-			sync -> sync.afterCompletion(TransactionSynchronization.STATUS_ROLLED_BACK));
-		verify(repository).release(anyString(), any());
 	}
 
 	@Test

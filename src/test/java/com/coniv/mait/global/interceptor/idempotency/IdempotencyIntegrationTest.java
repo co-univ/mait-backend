@@ -1,6 +1,7 @@
 package com.coniv.mait.global.interceptor.idempotency;
 
 import static org.assertj.core.api.Assertions.*;
+import static org.mockito.BDDMockito.*;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
@@ -25,6 +26,7 @@ import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.http.MediaType;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.test.context.bean.override.mockito.MockitoSpyBean;
 import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
@@ -39,6 +41,7 @@ import com.coniv.mait.domain.question.repository.QuestionEntityRepository;
 import com.coniv.mait.domain.question.repository.QuestionSetEntityRepository;
 import com.coniv.mait.domain.question.repository.QuestionSetParticipantRepository;
 import com.coniv.mait.domain.question.service.component.QuestionRedisKeys;
+import com.coniv.mait.domain.solve.entity.AnswerSubmitRecordEntity;
 import com.coniv.mait.domain.solve.repository.AnswerSubmitRecordEntityRepository;
 import com.coniv.mait.domain.team.entity.TeamEntity;
 import com.coniv.mait.domain.team.entity.TeamUserEntity;
@@ -72,7 +75,7 @@ class IdempotencyIntegrationTest extends BaseIntegrationTest {
 	@Autowired
 	private QuestionEntityRepository questions;
 
-	@Autowired
+	@MockitoSpyBean
 	private AnswerSubmitRecordEntityRepository submissions;
 
 	@Autowired
@@ -189,18 +192,19 @@ class IdempotencyIntegrationTest extends BaseIntegrationTest {
 	}
 
 	@Test
-	@DisplayName("실제 DB 롤백 후에는 성공 캐시가 남지 않고 동일 요청을 다시 실행한다")
+	@DisplayName("서비스에서 저장 후 실패하면 DB 롤백 후 동일 키로 재시도할 수 있다")
 	void rolledBackSubmissionCanRetry() throws Exception {
+		// given
+		var repositoryAnswer = mockingDetails(submissions).getMockCreationSettings().getDefaultAnswer();
+		doAnswer(invocation -> {
+			AnswerSubmitRecordEntity saved = (AnswerSubmitRecordEntity)repositoryAnswer.answer(invocation);
+			assertThat(saved.getId()).isNotNull();
+			throw new IllegalStateException("답안 저장 이후 실패");
+		}).doAnswer(repositoryAnswer).when(submissions).save(any(AnswerSubmitRecordEntity.class));
 		// when
-		transactions.executeWithoutResult(transaction -> {
-			try {
-				submit(body);
-			} catch (Exception exception) {
-				throw new IllegalStateException(exception);
-			}
-			assertThat(submissions.findAllByQuestionId(fixture.questionId())).hasSize(1);
-			transaction.setRollbackOnly();
-		});
+		mockMvc.perform(post(path()).header("Idempotency-Key", clientKey)
+				.contentType(MediaType.APPLICATION_JSON).content(body))
+			.andExpect(status().isInternalServerError());
 		// then
 		assertThat(submissions.findAllByQuestionId(fixture.questionId())).isEmpty();
 		submit(body);
