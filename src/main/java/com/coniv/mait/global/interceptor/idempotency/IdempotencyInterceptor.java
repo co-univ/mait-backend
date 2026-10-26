@@ -4,7 +4,6 @@ import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.HexFormat;
-import java.util.Objects;
 import java.util.concurrent.ScheduledFuture;
 
 import org.springframework.http.HttpMethod;
@@ -59,9 +58,7 @@ public class IdempotencyInterceptor implements HandlerInterceptor {
 		}
 		String path = request.getRequestURI().substring(request.getContextPath().length());
 		String key = user.id() + ":" + hash(path) + ":" + hash(clientKey);
-		String fingerprint = hash(request.getMethod() + "\n" + path + "\n"
-			+ Objects.toString(request.getQueryString(), "") + "\n"
-			+ Objects.toString(request.getContentType(), "") + "\n" + hash(wrapped.getBody()));
+		String fingerprint = hash(wrapped.getBody());
 		IdempotencyRecord processing = IdempotencyRecord.processing(fingerprint);
 		if (idempotencyRedisRepository.claim(key, processing)) {
 			try {
