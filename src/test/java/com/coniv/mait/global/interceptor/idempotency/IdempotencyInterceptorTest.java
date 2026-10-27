@@ -186,7 +186,8 @@ class IdempotencyInterceptorTest {
 		IdempotencyRequestWrapper wrapped = wrap();
 		ContentCachingResponseWrapper cached = new ContentCachingResponseWrapper(response);
 		interceptor.preHandle(wrapped, cached, null);
-		interceptor.afterCompletion(wrapped, cached, null, null);
+		assertThatThrownBy(() -> interceptor.afterCompletion(wrapped, cached, null, null))
+			.isInstanceOf(IllegalStateException.class).hasMessage("Redis unavailable");
 		verify(repository, never()).release(anyString(), any());
 	}
 
