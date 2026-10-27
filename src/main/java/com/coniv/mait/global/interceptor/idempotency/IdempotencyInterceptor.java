@@ -1,18 +1,24 @@
 package com.coniv.mait.global.interceptor.idempotency;
 
-import java.util.Objects;
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+import java.util.HexFormat;
 
 import org.springframework.http.HttpMethod;
-import org.springframework.http.HttpStatus;
+import org.springframework.http.HttpStatusCode;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
 import org.springframework.web.servlet.HandlerInterceptor;
-import org.springframework.web.servlet.ModelAndView;
 import org.springframework.web.util.ContentCachingResponseWrapper;
+import org.springframework.web.util.WebUtils;
 
+import com.coniv.mait.global.auth.model.MaitUser;
 import com.coniv.mait.global.exception.CommonExceptionCode;
-import com.coniv.mait.global.response.ErrorResponse;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import com.coniv.mait.global.exception.custom.IdempotencyException;
 
+import io.jsonwebtoken.JwtException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
@@ -23,69 +29,85 @@ import lombok.extern.slf4j.Slf4j;
 @RequiredArgsConstructor
 public class IdempotencyInterceptor implements HandlerInterceptor {
 
-	private static final String IDEMPOTENCY_HEADER = "Idempotency-Key";
+	public static final String IDEMPOTENCY_HEADER = "Idempotency-Key";
 
+	private static final String EXECUTION_ATTRIBUTE = IdempotencyInterceptor.class.getName() + ".execution";
 	private final IdempotencyRedisRepository idempotencyRedisRepository;
-
-	private final ObjectMapper objectMapper;
 
 	@Override
 	public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) throws
 		Exception {
-
-		if (!HttpMethod.POST.name().equals(request.getMethod())) {
+		String clientKey = request.getHeader(IDEMPOTENCY_HEADER);
+		if (!HttpMethod.POST.name().equals(request.getMethod()) || clientKey == null || clientKey.isBlank()) {
 			return true;
 		}
 
-		final String idempotencyKey = request.getHeader(IDEMPOTENCY_HEADER);
-		if (idempotencyKey == null || idempotencyKey.isEmpty()) {
+		Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+		if (authentication == null || !authentication.isAuthenticated()
+			|| !(authentication.getPrincipal() instanceof MaitUser user)) {
+			throw new JwtException(CommonExceptionCode.JWT_AUTH_EXCEPTION.getMessage());
+		}
+
+		IdempotencyRequestWrapper wrapped = WebUtils.getNativeRequest(request, IdempotencyRequestWrapper.class);
+		if (wrapped == null) {
+			throw new IllegalStateException("멱등성 요청 본문 래퍼가 필요합니다.");
+		}
+		String path = request.getRequestURI().substring(request.getContextPath().length());
+		String key = user.id() + ":" + hash(path) + ":" + hash(clientKey);
+		String fingerprint = hash(wrapped.getBody());
+		IdempotencyRecord processing = IdempotencyRecord.processing(fingerprint);
+		if (idempotencyRedisRepository.claim(key, processing)) {
+			request.setAttribute(EXECUTION_ATTRIBUTE, new Execution(key, processing));
 			return true;
 		}
 
-		IdempotencyStatus status = idempotencyRedisRepository.getStatus(idempotencyKey);
-
-		if (status == null) {
-			idempotencyRedisRepository.setProcessing(idempotencyKey);
-			return true;
+		IdempotencyRecord existing = idempotencyRedisRepository.get(key);
+		if (existing != null && !existing.fingerprint().equals(fingerprint)) {
+			throw new IdempotencyException(CommonExceptionCode.IDEMPOTENCY_KEY_REUSED);
 		}
-
-		if (status == IdempotencyStatus.PROCESSING) {
-			response.setStatus(HttpStatus.CONFLICT.value());
-			response.setContentType("application/json; charset=UTF-8");
-			response.getWriter()
-				.write(objectMapper.writeValueAsString(ErrorResponse.from(CommonExceptionCode.PROCESSING)));
-			log.info("[요청은 왔지만 아직 처리 중]");
+		if (existing != null && existing.status() == IdempotencyStatus.COMPLETED) {
+			existing.response().writeTo(response);
 			return false;
 		}
-
-		Object cachedResponse = idempotencyRedisRepository.getResponse(idempotencyKey);
-		if (status == IdempotencyStatus.COMPLETED && !Objects.isNull(cachedResponse)) {
-			response.setContentType("application/json");
-			response.getWriter().write(objectMapper.writeValueAsString(cachedResponse));
-			return false;
-		}
-
-		return true;
+		throw new IdempotencyException(CommonExceptionCode.PROCESSING);
 	}
 
 	@Override
-	public void postHandle(HttpServletRequest request, HttpServletResponse response, Object handler,
-		ModelAndView modelAndView) throws Exception {
-		String idempotencyKey = request.getHeader(IDEMPOTENCY_HEADER);
-		if (idempotencyKey == null) {
+	public void afterCompletion(HttpServletRequest request, HttpServletResponse response, Object handler,
+		Exception exception) {
+		Execution execution = (Execution)request.getAttribute(EXECUTION_ATTRIBUTE);
+		if (execution == null) {
+			return;
+		}
+		request.removeAttribute(EXECUTION_ATTRIBUTE);
+		ContentCachingResponseWrapper wrapped = WebUtils.getNativeResponse(response,
+			ContentCachingResponseWrapper.class);
+		boolean success = exception == null && HttpStatusCode.valueOf(response.getStatus()).is2xxSuccessful();
+		if (!success || wrapped == null) {
+			idempotencyRedisRepository.release(execution.key(), execution.processing());
 			return;
 		}
 
-		final ContentCachingResponseWrapper responseWrapper = (ContentCachingResponseWrapper)response;
-
-		if (responseWrapper.getStatus() != HttpStatus.OK.value()) {
-			log.info("[멱등성 처리 실패] 응답 상태: {}", responseWrapper.getStatus());
-			return;
+		IdempotencyResponse cached = IdempotencyResponse.from(wrapped);
+		boolean responseSaved = idempotencyRedisRepository.saveCompletedResponse(execution.key(),
+			execution.processing(), cached);
+		if (!responseSaved) {
+			log.error("멱등성 응답 저장 시 실행 소유권이 없습니다. key={}", execution.key());
 		}
+	}
 
-		idempotencyRedisRepository.setCompleted(idempotencyKey,
-			objectMapper.readTree(responseWrapper.getContentAsByteArray()));
+	private String hash(String value) {
+		return hash(value.getBytes(StandardCharsets.UTF_8));
+	}
 
-		responseWrapper.copyBodyToResponse();
+	private String hash(byte[] value) {
+		try {
+			return HexFormat.of().formatHex(MessageDigest.getInstance("SHA-256").digest(value));
+		} catch (NoSuchAlgorithmException exception) {
+			throw new IllegalStateException(exception);
+		}
+	}
+
+	private record Execution(String key, IdempotencyRecord processing) {
 	}
 }
