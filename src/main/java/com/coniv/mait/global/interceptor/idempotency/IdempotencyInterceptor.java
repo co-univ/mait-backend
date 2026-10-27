@@ -90,15 +90,14 @@ public class IdempotencyInterceptor implements HandlerInterceptor {
 	}
 
 	private void finish(Execution execution, IdempotencyResponse response) {
-		try {
-			if (response == null) {
-				idempotencyRedisRepository.release(execution.key(), execution.processing());
-			} else if (!idempotencyRedisRepository.complete(execution.key(), execution.processing(), response)) {
-				log.error("멱등성 응답 저장 시 실행 소유권이 없습니다. key={}", execution.key());
-			}
-		} catch (RuntimeException exception) {
-			// 비즈니스 커밋 이후 캐시 저장 실패는 실행 실패로 간주해 키를 삭제하면 안 된다.
-			log.error("멱등성 요청 정리에 실패했습니다. key={}", execution.key(), exception);
+		if (response == null) {
+			idempotencyRedisRepository.release(execution.key(), execution.processing());
+			return;
+		}
+
+		boolean completed = idempotencyRedisRepository.complete(execution.key(), execution.processing(), response);
+		if (!completed) {
+			log.error("멱등성 응답 저장 시 실행 소유권이 없습니다. key={}", execution.key());
 		}
 	}
 
