@@ -11,7 +11,9 @@ import jakarta.servlet.ReadListener;
 import jakarta.servlet.ServletInputStream;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletRequestWrapper;
+import lombok.Getter;
 
+@Getter
 public class IdempotencyRequestWrapper extends HttpServletRequestWrapper {
 
 	private final byte[] body;
@@ -19,10 +21,6 @@ public class IdempotencyRequestWrapper extends HttpServletRequestWrapper {
 	public IdempotencyRequestWrapper(HttpServletRequest request) throws IOException {
 		super(request);
 		body = request.getInputStream().readAllBytes();
-	}
-
-	public byte[] getBody() {
-		return body;
 	}
 
 	@Override
