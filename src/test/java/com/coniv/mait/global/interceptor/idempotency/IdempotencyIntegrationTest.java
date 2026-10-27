@@ -215,12 +215,12 @@ class IdempotencyIntegrationTest extends BaseIntegrationTest {
 	}
 
 	@Test
-	@DisplayName("완료된 키로 다른 답안을 제출하면 캐시를 반환하지 않고 거절한다")
+	@DisplayName("완료된 키로 다른 답안을 제출하면 캐시를 반환하지 않고 422로 거절한다")
 	void changedAnswerRejected() throws Exception {
 		submit(body);
 		mockMvc.perform(post(path()).header("Idempotency-Key", clientKey)
 				.contentType(MediaType.APPLICATION_JSON).content(body.replace("[1]", "[2]")))
-			.andExpect(status().isConflict())
+			.andExpect(status().isUnprocessableEntity())
 			.andExpect(jsonPath("$.code").value("C-011"));
 		assertThat(submissions.findAllByQuestionId(fixture.questionId())).hasSize(1);
 	}
