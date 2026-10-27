@@ -121,7 +121,7 @@ class IdempotencyInterceptorTest {
 		assertThat(response.getStatus()).isEqualTo(201);
 		assertThat(response.getContentAsString()).isEqualTo("응답 원문");
 		assertThat(response.getHeader("Location")).isEqualTo("/result/1");
-		verify(repository, never()).complete(anyString(), any(), any());
+		verify(repository, never()).saveCompletedResponse(anyString(), any(), any());
 	}
 
 	@Test
@@ -140,16 +140,16 @@ class IdempotencyInterceptorTest {
 
 	@Test
 	@DisplayName("성공 응답은 빈 본문이어도 완료 캐시에 저장한다")
-	void successfulEmptyResponseCompleted() throws Exception {
+	void successfulEmptyResponseSaved() throws Exception {
 		allowClaim();
-		given(repository.complete(anyString(), any(), any())).willReturn(true);
+		given(repository.saveCompletedResponse(anyString(), any(), any())).willReturn(true);
 		IdempotencyRequestWrapper wrapped = wrap();
 		ContentCachingResponseWrapper cached = new ContentCachingResponseWrapper(response);
 		interceptor.preHandle(wrapped, cached, null);
 		cached.setStatus(204);
 		interceptor.afterCompletion(wrapped, cached, null, null);
 		ArgumentCaptor<IdempotencyResponse> result = ArgumentCaptor.forClass(IdempotencyResponse.class);
-		verify(repository).complete(anyString(), any(), result.capture());
+		verify(repository).saveCompletedResponse(anyString(), any(), result.capture());
 		assertThat(result.getValue().status()).isEqualTo(204);
 		assertThat(result.getValue().body()).isEmpty();
 	}
@@ -163,7 +163,7 @@ class IdempotencyInterceptorTest {
 		response.setStatus(400);
 		interceptor.afterCompletion(wrapped, response, null, null);
 		verify(repository).release(anyString(), any());
-		verify(repository, never()).complete(anyString(), any(), any());
+		verify(repository, never()).saveCompletedResponse(anyString(), any(), any());
 	}
 
 	@Test
@@ -174,7 +174,7 @@ class IdempotencyInterceptorTest {
 		interceptor.preHandle(wrapped, response, null);
 		interceptor.afterCompletion(wrapped, response, null, new IllegalStateException("rollback"));
 		verify(repository).release(anyString(), any());
-		verify(repository, never()).complete(anyString(), any(), any());
+		verify(repository, never()).saveCompletedResponse(anyString(), any(), any());
 	}
 
 	@Test
@@ -182,7 +182,7 @@ class IdempotencyInterceptorTest {
 	void cacheFailureDoesNotReleaseSuccessfulExecution() throws Exception {
 		allowClaim();
 		willThrow(new IllegalStateException("Redis unavailable"))
-			.given(repository).complete(anyString(), any(), any());
+			.given(repository).saveCompletedResponse(anyString(), any(), any());
 		IdempotencyRequestWrapper wrapped = wrap();
 		ContentCachingResponseWrapper cached = new ContentCachingResponseWrapper(response);
 		interceptor.preHandle(wrapped, cached, null);

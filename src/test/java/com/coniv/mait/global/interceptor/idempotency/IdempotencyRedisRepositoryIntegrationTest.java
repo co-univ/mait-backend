@@ -86,7 +86,7 @@ class IdempotencyRedisRepositoryIntegrationTest {
 
 	@Test
 	@DisplayName("완료 상태와 HTTP 응답을 하나의 값으로 저장한다")
-	void completionStoresWholeResponseAtomically() {
+	void saveCompletedResponseStoresStatusAndResponseAtomically() {
 		// given
 		IdempotencyRecord owner = IdempotencyRecord.processing("body");
 		repository.claim(key, owner);
@@ -94,7 +94,7 @@ class IdempotencyRedisRepositoryIntegrationTest {
 		IdempotencyResponse response = new IdempotencyResponse(201,
 			Map.of("Location", List.of("/result/1")), new byte[] {0, 1, 2});
 		// when
-		assertThat(repository.complete(key, owner, response)).isTrue();
+		assertThat(repository.saveCompletedResponse(key, owner, response)).isTrue();
 		// then
 		IdempotencyRecord completed = repository.get(key);
 		assertThat(completed.status()).isEqualTo(IdempotencyStatus.COMPLETED);
@@ -123,7 +123,8 @@ class IdempotencyRedisRepositoryIntegrationTest {
 		redis.expireAt(redisKey, Instant.EPOCH);
 		IdempotencyRecord replacement = IdempotencyRecord.processing("body");
 		assertThat(repository.claim(key, replacement)).isTrue();
-		assertThat(repository.complete(key, old, new IdempotencyResponse(200, Map.of(), new byte[0]))).isFalse();
+		assertThat(repository.saveCompletedResponse(key, old, new IdempotencyResponse(200, Map.of(), new byte[0])))
+			.isFalse();
 		assertThat(repository.release(key, old)).isFalse();
 		assertThat(repository.get(key)).isEqualTo(replacement);
 	}
@@ -148,7 +149,8 @@ class IdempotencyRedisRepositoryIntegrationTest {
 		// given
 		IdempotencyRecord owner = IdempotencyRecord.processing("body");
 		repository.claim(key, owner);
-		assertThat(repository.complete(key, owner, new IdempotencyResponse(200, Map.of(), new byte[0]))).isTrue();
+		assertThat(repository.saveCompletedResponse(key, owner, new IdempotencyResponse(200, Map.of(), new byte[0])))
+			.isTrue();
 		// when
 		redis.expireAt(redisKey, Instant.EPOCH);
 		// then
