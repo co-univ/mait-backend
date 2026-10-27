@@ -83,13 +83,12 @@ public class IdempotencyInterceptor implements HandlerInterceptor {
 		ContentCachingResponseWrapper wrapped = WebUtils.getNativeResponse(response,
 			ContentCachingResponseWrapper.class);
 		boolean success = exception == null && HttpStatusCode.valueOf(response.getStatus()).is2xxSuccessful();
-		IdempotencyResponse cached = success && wrapped != null ? IdempotencyResponse.from(wrapped) : null;
-
-		if (cached == null) {
+		if (!success || wrapped == null) {
 			idempotencyRedisRepository.release(execution.key(), execution.processing());
 			return;
 		}
 
+		IdempotencyResponse cached = IdempotencyResponse.from(wrapped);
 		boolean responseSaved = idempotencyRedisRepository.saveCompletedResponse(execution.key(),
 			execution.processing(), cached);
 		if (!responseSaved) {
