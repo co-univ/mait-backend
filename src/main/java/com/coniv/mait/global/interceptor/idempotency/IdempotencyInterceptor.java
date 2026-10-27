@@ -16,9 +16,9 @@ import org.springframework.web.util.WebUtils;
 
 import com.coniv.mait.global.auth.model.MaitUser;
 import com.coniv.mait.global.exception.CommonExceptionCode;
-import com.coniv.mait.global.response.ErrorResponse;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import com.coniv.mait.global.exception.custom.IdempotencyException;
 
+import io.jsonwebtoken.JwtException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
@@ -34,7 +34,6 @@ public class IdempotencyInterceptor implements HandlerInterceptor {
 
 	private static final String EXECUTION_ATTRIBUTE = IdempotencyInterceptor.class.getName() + ".execution";
 	private final IdempotencyRedisRepository idempotencyRedisRepository;
-	private final ObjectMapper objectMapper;
 
 	@Override
 	public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) throws
@@ -47,7 +46,7 @@ public class IdempotencyInterceptor implements HandlerInterceptor {
 		Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
 		if (authentication == null || !authentication.isAuthenticated()
 			|| !(authentication.getPrincipal() instanceof MaitUser user)) {
-			return reject(response, CommonExceptionCode.JWT_AUTH_EXCEPTION);
+			throw new JwtException(CommonExceptionCode.JWT_AUTH_EXCEPTION.getMessage());
 		}
 
 		IdempotencyRequestWrapper wrapped = WebUtils.getNativeRequest(request, IdempotencyRequestWrapper.class);
@@ -65,13 +64,13 @@ public class IdempotencyInterceptor implements HandlerInterceptor {
 
 		IdempotencyRecord existing = idempotencyRedisRepository.get(key);
 		if (existing != null && !existing.fingerprint().equals(fingerprint)) {
-			return reject(response, CommonExceptionCode.IDEMPOTENCY_KEY_REUSED);
+			throw new IdempotencyException(CommonExceptionCode.IDEMPOTENCY_KEY_REUSED);
 		}
 		if (existing != null && existing.status() == IdempotencyStatus.COMPLETED) {
 			existing.response().writeTo(response);
 			return false;
 		}
-		return reject(response, CommonExceptionCode.PROCESSING);
+		throw new IdempotencyException(CommonExceptionCode.PROCESSING);
 	}
 
 	@Override
@@ -101,13 +100,6 @@ public class IdempotencyInterceptor implements HandlerInterceptor {
 			// 비즈니스 커밋 이후 캐시 저장 실패는 실행 실패로 간주해 키를 삭제하면 안 된다.
 			log.error("멱등성 요청 정리에 실패했습니다. key={}", execution.key(), exception);
 		}
-	}
-
-	private boolean reject(HttpServletResponse response, CommonExceptionCode code) throws Exception {
-		response.setStatus(code.getStatus().value());
-		response.setContentType("application/json; charset=UTF-8");
-		response.getWriter().write(objectMapper.writeValueAsString(ErrorResponse.from(code)));
-		return false;
 	}
 
 	private String hash(String value) {
