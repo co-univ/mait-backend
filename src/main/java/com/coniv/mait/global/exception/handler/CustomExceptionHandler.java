@@ -16,6 +16,7 @@ import com.coniv.mait.domain.user.exception.UserRoleException;
 import com.coniv.mait.global.exception.CommonExceptionCode;
 import com.coniv.mait.global.exception.custom.DistributedLockException;
 import com.coniv.mait.global.exception.custom.EmailSendException;
+import com.coniv.mait.global.exception.custom.IdempotencyException;
 import com.coniv.mait.global.exception.custom.LoginFailException;
 import com.coniv.mait.global.exception.custom.PolicyException;
 import com.coniv.mait.global.exception.custom.QuestionSetLiveException;
@@ -167,5 +168,13 @@ public class CustomExceptionHandler {
 		log.info("DistributedLockException 발생: {}, {}", exception.getLockKey(), request.getRequestURI());
 		return ResponseEntity.status(CommonExceptionCode.LOCK_ACQUISITION_FAILED.getStatus())
 			.body(ErrorResponse.from(CommonExceptionCode.LOCK_ACQUISITION_FAILED));
+	}
+
+	@ExceptionHandler(IdempotencyException.class)
+	public ResponseEntity<ErrorResponse> handleIdempotencyException(IdempotencyException exception,
+		HttpServletRequest request) {
+		log.info("IdempotencyException 발생: {}, {}", exception.getExceptionCode(), request.getRequestURI());
+		return ResponseEntity.status(exception.getExceptionCode().getStatus())
+			.body(ErrorResponse.from(exception.getExceptionCode()));
 	}
 }

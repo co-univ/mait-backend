@@ -23,6 +23,8 @@ public enum CommonExceptionCode implements ExceptionCode {
 	DATA_INTEGRITY_VIOLATION(HttpStatus.CONFLICT, "C-009", "데이터 무결성 제약 조건을 위반했습니다."),
 	LOCK_ACQUISITION_FAILED(HttpStatus.CONFLICT, "C-010", "이미 처리 중인 요청입니다. 잠시 후 다시 시도해주세요."),
 
+	IDEMPOTENCY_KEY_REUSED(HttpStatus.UNPROCESSABLE_ENTITY, "C-011", "동일한 멱등성 키를 다른 요청 내용에 사용할 수 없습니다."),
+
 	LOGIN_FAIL_EXCEPTION(HttpStatus.UNAUTHORIZED, "A-001", "로그인 실패"),
 	JWT_AUTH_EXCEPTION(HttpStatus.UNAUTHORIZED, "A-002", "JWT 인증 오류"),
 	JWT_EXPIRED(HttpStatus.UNAUTHORIZED, "A-003", "JWT 만료"),
