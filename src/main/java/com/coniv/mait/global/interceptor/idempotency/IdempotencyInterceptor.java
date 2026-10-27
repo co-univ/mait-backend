@@ -29,7 +29,6 @@ import lombok.extern.slf4j.Slf4j;
 @RequiredArgsConstructor
 public class IdempotencyInterceptor implements HandlerInterceptor {
 
-	public static final String PATH_PATTERN = "/api/v1/question-sets/*/questions/*/submit";
 	public static final String IDEMPOTENCY_HEADER = "Idempotency-Key";
 
 	private static final String EXECUTION_ATTRIBUTE = IdempotencyInterceptor.class.getName() + ".execution";

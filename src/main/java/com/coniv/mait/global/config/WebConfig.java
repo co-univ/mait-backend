@@ -12,11 +12,13 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class WebConfig implements WebMvcConfigurer {
 
+	public static final String IDEMPOTENCY_PATH_PATTERN = "/api/v1/question-sets/*/questions/*/submit";
+
 	private final IdempotencyInterceptor idempotencyInterceptor;
 
 	@Override
 	public void addInterceptors(InterceptorRegistry registry) {
 		registry.addInterceptor(idempotencyInterceptor)
-			.addPathPatterns(IdempotencyInterceptor.PATH_PATTERN);
+			.addPathPatterns(IDEMPOTENCY_PATH_PATTERN);
 	}
 }

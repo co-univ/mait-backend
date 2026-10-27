@@ -8,6 +8,7 @@ import org.springframework.util.AntPathMatcher;
 import org.springframework.web.filter.OncePerRequestFilter;
 import org.springframework.web.util.ContentCachingResponseWrapper;
 
+import com.coniv.mait.global.config.WebConfig;
 import com.coniv.mait.global.interceptor.idempotency.IdempotencyInterceptor;
 import com.coniv.mait.global.interceptor.idempotency.IdempotencyRequestWrapper;
 
@@ -30,7 +31,7 @@ public class ContentWrappingFilter extends OncePerRequestFilter {
 		HttpServletRequest wrappedRequest = request;
 		String path = request.getRequestURI().substring(request.getContextPath().length());
 		if (HttpMethod.POST.name().equals(request.getMethod()) && key != null && !key.isBlank()
-			&& PATH_MATCHER.match(IdempotencyInterceptor.PATH_PATTERN, path)) {
+			&& PATH_MATCHER.match(WebConfig.IDEMPOTENCY_PATH_PATTERN, path)) {
 			wrappedRequest = new IdempotencyRequestWrapper(request);
 		}
 		filterChain.doFilter(wrappedRequest, responseWrapper);
