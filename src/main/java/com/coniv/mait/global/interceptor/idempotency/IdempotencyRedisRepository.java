@@ -19,7 +19,7 @@ public class IdempotencyRedisRepository {
 	private static final Duration PROCESSING_TTL = Duration.ofSeconds(60);
 	private static final Duration RESPONSE_TTL = Duration.ofSeconds(60);
 
-	private static final DefaultRedisScript<Long> COMPLETE_SCRIPT = new DefaultRedisScript<>("""
+	private static final DefaultRedisScript<Long> SAVE_COMPLETED_RESPONSE_SCRIPT = new DefaultRedisScript<>("""
 		if redis.call('GET', KEYS[1]) ~= ARGV[1] then
 			return 0
 		end
@@ -50,8 +50,8 @@ public class IdempotencyRedisRepository {
 		return objectMapper.convertValue(value, IdempotencyRecord.class);
 	}
 
-	public boolean complete(String key, IdempotencyRecord processing, IdempotencyResponse response) {
-		return Long.valueOf(1).equals(redisTemplate.execute(COMPLETE_SCRIPT, List.of(KEY_PREFIX + key),
+	public boolean saveCompletedResponse(String key, IdempotencyRecord processing, IdempotencyResponse response) {
+		return Long.valueOf(1).equals(redisTemplate.execute(SAVE_COMPLETED_RESPONSE_SCRIPT, List.of(KEY_PREFIX + key),
 			processing, processing.completed(response), RESPONSE_TTL.toMillis()));
 	}
 

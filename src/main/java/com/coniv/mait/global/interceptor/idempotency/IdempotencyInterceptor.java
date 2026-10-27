@@ -86,17 +86,14 @@ public class IdempotencyInterceptor implements HandlerInterceptor {
 		boolean success = exception == null && HttpStatusCode.valueOf(response.getStatus()).is2xxSuccessful();
 		IdempotencyResponse cached = success && wrapped != null ? IdempotencyResponse.from(wrapped) : null;
 
-		finish(execution, cached);
-	}
-
-	private void finish(Execution execution, IdempotencyResponse response) {
-		if (response == null) {
+		if (cached == null) {
 			idempotencyRedisRepository.release(execution.key(), execution.processing());
 			return;
 		}
 
-		boolean completed = idempotencyRedisRepository.complete(execution.key(), execution.processing(), response);
-		if (!completed) {
+		boolean responseSaved = idempotencyRedisRepository.saveCompletedResponse(execution.key(),
+			execution.processing(), cached);
+		if (!responseSaved) {
 			log.error("멱등성 응답 저장 시 실행 소유권이 없습니다. key={}", execution.key());
 		}
 	}
