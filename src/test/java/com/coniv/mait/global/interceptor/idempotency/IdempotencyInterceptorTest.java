@@ -22,7 +22,10 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.util.ContentCachingResponseWrapper;
 
 import com.coniv.mait.global.auth.model.MaitUser;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import com.coniv.mait.global.exception.CommonExceptionCode;
+import com.coniv.mait.global.exception.custom.IdempotencyException;
+
+import io.jsonwebtoken.JwtException;
 
 @ExtendWith(MockitoExtension.class)
 class IdempotencyInterceptorTest {
@@ -36,7 +39,7 @@ class IdempotencyInterceptorTest {
 
 	@BeforeEach
 	void setUp() {
-		interceptor = new IdempotencyInterceptor(repository, new ObjectMapper());
+		interceptor = new IdempotencyInterceptor(repository);
 		request = new MockHttpServletRequest("POST", "/api/v1/question-sets/1/questions/2/submit");
 		request.addHeader("Idempotency-Key", "client-key");
 		request.setContentType("application/json");
@@ -73,8 +76,8 @@ class IdempotencyInterceptorTest {
 	@DisplayName("인증된 사용자가 없으면 캐시를 조회하지 않는다")
 	void unauthenticatedRejected() throws Exception {
 		SecurityContextHolder.clearContext();
-		assertThat(interceptor.preHandle(request, response, null)).isFalse();
-		assertThat(response.getStatus()).isEqualTo(401);
+		assertThatThrownBy(() -> interceptor.preHandle(request, response, null))
+			.isInstanceOf(JwtException.class);
 		verifyNoInteractions(repository);
 	}
 
@@ -87,14 +90,14 @@ class IdempotencyInterceptorTest {
 	}
 
 	@Test
-	@DisplayName("선점 실패 요청은 409를 반환하고 실행 소유자의 키를 삭제하지 않는다")
+	@DisplayName("선점 실패 요청은 처리 중 예외를 던지고 실행 소유자의 키를 삭제하지 않는다")
 	void rejectedRequestDoesNotReleaseOwner() throws Exception {
 		given(repository.get(anyString())).willAnswer(invocation -> existingRequest());
 		IdempotencyRequestWrapper wrapped = wrap();
-		assertThat(interceptor.preHandle(wrapped, response, null)).isFalse();
+		assertThatThrownBy(() -> interceptor.preHandle(wrapped, response, null))
+			.isInstanceOfSatisfying(IdempotencyException.class, exception ->
+				assertThat(exception.getExceptionCode()).isEqualTo(CommonExceptionCode.PROCESSING));
 		interceptor.afterCompletion(wrapped, response, null, null);
-		assertThat(response.getStatus()).isEqualTo(409);
-		assertThat(response.getContentAsString()).contains("C-005");
 		verify(repository, never()).release(anyString(), any());
 	}
 
@@ -102,9 +105,9 @@ class IdempotencyInterceptorTest {
 	@DisplayName("같은 키로 본문을 변경하면 완료 응답을 재사용하지 않는다")
 	void differentBodyRejected() throws Exception {
 		given(repository.get(anyString())).willReturn(IdempotencyRecord.processing("different-body"));
-		assertThat(interceptor.preHandle(wrap(), response, null)).isFalse();
-		assertThat(response.getStatus()).isEqualTo(409);
-		assertThat(response.getContentAsString()).contains("C-011");
+		assertThatThrownBy(() -> interceptor.preHandle(wrap(), response, null))
+			.isInstanceOfSatisfying(IdempotencyException.class, exception ->
+					assertThat(exception.getExceptionCode()).isEqualTo(CommonExceptionCode.IDEMPOTENCY_KEY_REUSED));
 	}
 
 	@Test

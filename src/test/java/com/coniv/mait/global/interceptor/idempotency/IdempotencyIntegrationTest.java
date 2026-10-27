@@ -164,6 +164,9 @@ class IdempotencyIntegrationTest extends BaseIntegrationTest {
 				assertThat(response.getStatus()).isIn(200, 409);
 				if (response.getStatus() == 200) {
 					successfulBodies.add(response.getContentAsString());
+				} else {
+					assertThat(objectMapper.readTree(response.getContentAsByteArray()).path("code").asText())
+						.isEqualTo("C-005");
 				}
 			}
 			// then
