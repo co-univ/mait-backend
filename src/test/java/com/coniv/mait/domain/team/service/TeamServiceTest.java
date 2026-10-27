@@ -436,7 +436,7 @@ class TeamServiceTest {
 			.thenReturn(List.of(noExpirationInvitation, activeInvitation));
 
 		// when
-		List<TeamInvitationLinkDto> result = teamService.getTeamInvitations(teamId);
+		List<TeamInvitationLinkDto> result = teamService.getTeamInvitations(teamId, 10L);
 
 		// then
 		assertThat(result)

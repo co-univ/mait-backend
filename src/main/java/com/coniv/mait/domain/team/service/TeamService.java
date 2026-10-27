@@ -299,8 +299,8 @@ public class TeamService {
 	}
 
 	@Transactional(readOnly = true)
-	public List<TeamUserDto> getTeamUsers(final Long teamId) {
-		teamReader.getActiveTeam(teamId);
+	public List<TeamUserDto> getTeamUsers(final Long teamId, final Long requesterId) {
+		teamRoleValidator.checkIsTeamMember(teamId, requesterId);
 		List<TeamUserEntity> teamUsers = teamUserEntityRepository.findAllByTeamIdFetchJoinUser(teamId);
 
 		return teamUsers.stream()
@@ -310,8 +310,8 @@ public class TeamService {
 	}
 
 	@Transactional(readOnly = true)
-	public List<TeamApplicantDto> getApplicants(Long teamId) {
-		teamReader.getActiveTeam(teamId);
+	public List<TeamApplicantDto> getApplicants(final Long teamId, final Long requesterId) {
+		teamRoleValidator.checkIsTeamManager(teamId, requesterId);
 		List<TeamInvitationApplicantEntity> pendingApplicants = teamInvitationApplicationEntityRepository
 			.findAllByTeamIdAndApplicationStatus(teamId, InvitationApplicationStatus.PENDING);
 
@@ -423,8 +423,9 @@ public class TeamService {
 	}
 
 	@Transactional(readOnly = true)
-	public List<TeamInvitationLinkDto> getTeamInvitations(Long teamId) {
+	public List<TeamInvitationLinkDto> getTeamInvitations(final Long teamId, final Long requesterId) {
 		TeamEntity team = teamReader.getActiveTeam(teamId);
+		teamRoleValidator.checkIsTeamManager(teamId, requesterId);
 
 		return teamInvitationEntityRepository.findActiveLinksByTeam(team, LocalDateTime.now()).stream()
 			.map(TeamInvitationLinkDto::from)
@@ -434,10 +435,11 @@ public class TeamService {
 	}
 
 	@Transactional
-	public void deleteTeamInvitation(Long invitationId) {
+	public void deleteTeamInvitation(final Long invitationId, final Long requesterId) {
 		TeamInvitationLinkEntity invitationLink = teamInvitationEntityRepository.findById(invitationId)
 			.orElseThrow(() -> new EntityNotFoundException("Team invitation not found with id: " + invitationId));
 		teamReader.validateActiveTeam(invitationLink.getTeam());
+		teamRoleValidator.checkIsTeamManager(invitationLink.getTeam().getId(), requesterId);
 
 		invitationLink.changeToExpired();
 	}
