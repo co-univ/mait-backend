@@ -37,8 +37,12 @@ public class FillBlankQuestionAnswerChecker implements AnswerChecker<FillBlankSu
 				Collectors.mapping(entity -> AnswerProcessUtil.processAnswer(entity.getAnswer()), Collectors.toSet())));
 
 		List<FillBlankSubmitAnswer> submitAnswers = answers.getSubmitAnswers();
+		Set<Long> submitAnswerNumbers = submitAnswers.stream()
+			.map(FillBlankSubmitAnswer::number)
+			.collect(Collectors.toSet());
 
-		if (submitAnswers.size() != answersByNumber.size()) {
+		if (submitAnswerNumbers.size() != submitAnswers.size()
+			|| !submitAnswerNumbers.equals(answersByNumber.keySet())) {
 			return false;
 		}
 
