@@ -1,8 +1,9 @@
 package com.coniv.mait.domain.solve.service.component;
 
+import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Component;
@@ -45,20 +46,33 @@ public class ShortQuestionAnswerChecker implements AnswerChecker<String> {
 			throw new QuestionSolvingException(QuestionSolveExceptionCode.ANSWER_COUNT);
 		}
 
-		Map<Long, Boolean> shortAnswersByNumberChecked = shortAnswersByNumber.keySet().stream()
-			.collect(Collectors.toMap(Function.identity(), value -> false));
+		List<String> submitAnswers = answers.getSubmitAnswers().stream()
+			.map(AnswerProcessUtil::processAnswer)
+			.toList();
 
-		for (String submitAnswer : answers.getSubmitAnswers()) {
-			String processedSubmitAnswer = AnswerProcessUtil.processAnswer(submitAnswer);
-			for (Long number : shortAnswersByNumber.keySet()) {
-				if (shortAnswersByNumberChecked.get(number)) {
-					continue;
-				}
-				boolean contains = shortAnswersByNumber.get(number).contains(processedSubmitAnswer);
-				shortAnswersByNumberChecked.put(number, contains);
-			}
+		return matchAnswerGroups(submitAnswers, 0, shortAnswersByNumber, new HashSet<>());
+	}
+
+	private boolean matchAnswerGroups(List<String> submitAnswers, int answerIndex,
+		Map<Long, Set<String>> shortAnswersByNumber, Set<Long> matchedNumbers) {
+		if (answerIndex == submitAnswers.size()) {
+			return true;
 		}
 
-		return shortAnswersByNumberChecked.values().stream().allMatch(a -> a);
+		String submitAnswer = submitAnswers.get(answerIndex);
+		for (Map.Entry<Long, Set<String>> answerGroup : shortAnswersByNumber.entrySet()) {
+			Long number = answerGroup.getKey();
+			if (matchedNumbers.contains(number) || !answerGroup.getValue().contains(submitAnswer)) {
+				continue;
+			}
+
+			matchedNumbers.add(number);
+			if (matchAnswerGroups(submitAnswers, answerIndex + 1, shortAnswersByNumber, matchedNumbers)) {
+				return true;
+			}
+			matchedNumbers.remove(number);
+		}
+
+		return false;
 	}
 }
