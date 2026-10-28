@@ -16,6 +16,7 @@ import com.coniv.mait.domain.question.entity.FillBlankAnswerEntity;
 import com.coniv.mait.domain.question.entity.QuestionEntity;
 import com.coniv.mait.domain.question.enums.QuestionType;
 import com.coniv.mait.domain.question.repository.FillBlankAnswerEntityRepository;
+import com.coniv.mait.domain.solve.service.dto.FillBlankQuestionSubmitAnswer;
 import com.coniv.mait.domain.solve.service.dto.FillBlankSubmitAnswer;
 import com.coniv.mait.domain.solve.service.dto.SubmitAnswerDto;
 
@@ -237,5 +238,117 @@ class FillBlankQuestionAnswerCheckerTest {
 		};
 
 		assertThat(fillBlankQuestionAnswerChecker.checkAnswer(question, partialSubmit)).isFalse();
+	}
+
+	@Test
+	@DisplayName("빈칸 - 같은 번호의 정답을 중복 제출하면 오답 처리")
+	void checkAnswer_duplicateNumber() {
+		// given
+		QuestionEntity question = mock(QuestionEntity.class);
+		when(question.getId()).thenReturn(1L);
+		when(fillBlankAnswerEntityRepository.findAllByFillBlankQuestionId(1L)).thenReturn(List.of(
+			FillBlankAnswerEntity.builder().number(1L).answer("alpha").build(),
+			FillBlankAnswerEntity.builder().number(2L).answer("beta").build()
+		));
+		FillBlankQuestionSubmitAnswer submitAnswer = new FillBlankQuestionSubmitAnswer(List.of(
+			new FillBlankSubmitAnswer(1L, "alpha"),
+			new FillBlankSubmitAnswer(1L, "alpha")
+		));
+
+		// when
+		boolean isCorrect = fillBlankQuestionAnswerChecker.checkAnswer(question, submitAnswer);
+
+		// then
+		assertThat(isCorrect).isFalse();
+	}
+
+	@Test
+	@DisplayName("빈칸 - 모든 번호가 있어도 같은 번호를 추가 제출하면 오답 처리")
+	void checkAnswer_duplicateNumberWithAllBlanks() {
+		// given
+		QuestionEntity question = mock(QuestionEntity.class);
+		when(question.getId()).thenReturn(1L);
+		when(fillBlankAnswerEntityRepository.findAllByFillBlankQuestionId(1L)).thenReturn(List.of(
+			FillBlankAnswerEntity.builder().number(1L).answer("alpha").build(),
+			FillBlankAnswerEntity.builder().number(2L).answer("beta").build()
+		));
+		FillBlankQuestionSubmitAnswer submitAnswer = new FillBlankQuestionSubmitAnswer(List.of(
+			new FillBlankSubmitAnswer(1L, "alpha"),
+			new FillBlankSubmitAnswer(2L, "beta"),
+			new FillBlankSubmitAnswer(1L, "alpha")
+		));
+
+		// when
+		boolean isCorrect = fillBlankQuestionAnswerChecker.checkAnswer(question, submitAnswer);
+
+		// then
+		assertThat(isCorrect).isFalse();
+	}
+
+	@Test
+	@DisplayName("빈칸 - 답안 개수가 같아도 존재하지 않는 번호면 오답 처리")
+	void checkAnswer_nonExistentNumber() {
+		// given
+		QuestionEntity question = mock(QuestionEntity.class);
+		when(question.getId()).thenReturn(1L);
+		when(fillBlankAnswerEntityRepository.findAllByFillBlankQuestionId(1L)).thenReturn(List.of(
+			FillBlankAnswerEntity.builder().number(1L).answer("alpha").build(),
+			FillBlankAnswerEntity.builder().number(2L).answer("beta").build()
+		));
+		FillBlankQuestionSubmitAnswer submitAnswer = new FillBlankQuestionSubmitAnswer(List.of(
+			new FillBlankSubmitAnswer(1L, "alpha"),
+			new FillBlankSubmitAnswer(99L, "beta")
+		));
+
+		// when
+		boolean isCorrect = fillBlankQuestionAnswerChecker.checkAnswer(question, submitAnswer);
+
+		// then
+		assertThat(isCorrect).isFalse();
+	}
+
+	@Test
+	@DisplayName("빈칸 - 모든 정답과 함께 추가 번호를 제출하면 오답 처리")
+	void checkAnswer_extraNumber() {
+		// given
+		QuestionEntity question = mock(QuestionEntity.class);
+		when(question.getId()).thenReturn(1L);
+		when(fillBlankAnswerEntityRepository.findAllByFillBlankQuestionId(1L)).thenReturn(List.of(
+			FillBlankAnswerEntity.builder().number(1L).answer("alpha").build(),
+			FillBlankAnswerEntity.builder().number(2L).answer("beta").build()
+		));
+		FillBlankQuestionSubmitAnswer submitAnswer = new FillBlankQuestionSubmitAnswer(List.of(
+			new FillBlankSubmitAnswer(1L, "alpha"),
+			new FillBlankSubmitAnswer(2L, "beta"),
+			new FillBlankSubmitAnswer(3L, "gamma")
+		));
+
+		// when
+		boolean isCorrect = fillBlankQuestionAnswerChecker.checkAnswer(question, submitAnswer);
+
+		// then
+		assertThat(isCorrect).isFalse();
+	}
+
+	@Test
+	@DisplayName("빈칸 - 제출 순서가 달라도 번호별 정답이면 정답 처리")
+	void checkAnswer_reversedOrder() {
+		// given
+		QuestionEntity question = mock(QuestionEntity.class);
+		when(question.getId()).thenReturn(1L);
+		when(fillBlankAnswerEntityRepository.findAllByFillBlankQuestionId(1L)).thenReturn(List.of(
+			FillBlankAnswerEntity.builder().number(1L).answer("alpha").build(),
+			FillBlankAnswerEntity.builder().number(2L).answer("beta").build()
+		));
+		FillBlankQuestionSubmitAnswer submitAnswer = new FillBlankQuestionSubmitAnswer(List.of(
+			new FillBlankSubmitAnswer(2L, "beta"),
+			new FillBlankSubmitAnswer(1L, "alpha")
+		));
+
+		// when
+		boolean isCorrect = fillBlankQuestionAnswerChecker.checkAnswer(question, submitAnswer);
+
+		// then
+		assertThat(isCorrect).isTrue();
 	}
 }
