@@ -94,6 +94,88 @@ class FillBlankReviewAnswerCheckerTest {
 	}
 
 	@Test
+	@DisplayName("check - 일부 빈칸을 누락하면 전체 오답이지만 제출한 정답 판정은 유지")
+	void check_missingBlankPreservesSubmittedResult() {
+		// given
+		Long questionId = 1L;
+		QuestionEntity question = mock(QuestionEntity.class);
+		when(question.getId()).thenReturn(questionId);
+
+		when(fillBlankAnswerEntityRepository.findAllByFillBlankQuestionId(questionId))
+			.thenReturn(List.of(
+				FillBlankAnswerEntity.builder().number(1L).answer("첫번째").build(),
+				FillBlankAnswerEntity.builder().number(2L).answer("두번째").build()
+			));
+
+		FillBlankQuestionSubmitAnswer submitAnswer = new FillBlankQuestionSubmitAnswer(List.of(
+			new FillBlankSubmitAnswer(1L, "첫번째")
+		));
+
+		// when
+		ReviewAnswerCheckResult result = checker.check(questionId, question, submitAnswer);
+
+		// then
+		assertThat(result.isCorrect()).isFalse();
+		assertThat(result.gradedResults()).isEqualTo(List.of(
+			new GradedAnswerFillBlankResult(1L, "첫번째", true)
+		));
+	}
+
+	@Test
+	@DisplayName("check - 빈 답안을 제출하면 전체 오답이고 개별 채점 결과는 비어 있음")
+	void check_emptySubmission() {
+		// given
+		Long questionId = 1L;
+		QuestionEntity question = mock(QuestionEntity.class);
+		when(question.getId()).thenReturn(questionId);
+
+		when(fillBlankAnswerEntityRepository.findAllByFillBlankQuestionId(questionId))
+			.thenReturn(List.of(
+				FillBlankAnswerEntity.builder().number(1L).answer("첫번째").build(),
+				FillBlankAnswerEntity.builder().number(2L).answer("두번째").build()
+			));
+
+		FillBlankQuestionSubmitAnswer submitAnswer = new FillBlankQuestionSubmitAnswer(List.of());
+
+		// when
+		ReviewAnswerCheckResult result = checker.check(questionId, question, submitAnswer);
+
+		// then
+		assertThat(result.isCorrect()).isFalse();
+		assertThat(result.gradedResults()).isEmpty();
+	}
+
+	@Test
+	@DisplayName("check - 제출 개수가 같아도 잘못된 빈칸 번호가 있으면 전체 오답")
+	void check_sameCountWithUnknownBlankPreservesSubmittedResults() {
+		// given
+		Long questionId = 1L;
+		QuestionEntity question = mock(QuestionEntity.class);
+		when(question.getId()).thenReturn(questionId);
+
+		when(fillBlankAnswerEntityRepository.findAllByFillBlankQuestionId(questionId))
+			.thenReturn(List.of(
+				FillBlankAnswerEntity.builder().number(1L).answer("첫번째").build(),
+				FillBlankAnswerEntity.builder().number(2L).answer("두번째").build()
+			));
+
+		FillBlankQuestionSubmitAnswer submitAnswer = new FillBlankQuestionSubmitAnswer(List.of(
+			new FillBlankSubmitAnswer(1L, "첫번째"),
+			new FillBlankSubmitAnswer(99L, "두번째")
+		));
+
+		// when
+		ReviewAnswerCheckResult result = checker.check(questionId, question, submitAnswer);
+
+		// then
+		assertThat(result.isCorrect()).isFalse();
+		assertThat(result.gradedResults()).isEqualTo(List.of(
+			new GradedAnswerFillBlankResult(1L, "첫번째", true),
+			new GradedAnswerFillBlankResult(99L, "두번째", false)
+		));
+	}
+
+	@Test
 	@DisplayName("check - 같은 빈칸에 여러 정답 허용")
 	void check_multipleAnswersPerBlank() {
 		// given
