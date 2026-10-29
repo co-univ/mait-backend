@@ -257,8 +257,8 @@ public class StudyModeApiIntegrationTest extends BaseIntegrationTest {
 				.teamId(team.getId())
 				.build());
 
-		MultipleQuestionEntity q1 = questionEntityRepository.save(
-			MultipleQuestionEntity.builder().questionSet(questionSet).number(1L).lexoRank("a").build());
+		ShortQuestionEntity q1 = questionEntityRepository.save(
+			ShortQuestionEntity.builder().questionSet(questionSet).number(1L).lexoRank("a").answerCount(1).build());
 
 		mockMvc.perform(
 				post("/api/v1/question-sets/{questionSetId}/study-mode", questionSet.getId()))

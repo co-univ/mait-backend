@@ -10,6 +10,8 @@ import java.util.Optional;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.EnumSource;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -34,6 +36,7 @@ import com.coniv.mait.domain.solve.repository.SolvingSessionEntityRepository;
 import com.coniv.mait.domain.solve.repository.StudyAnswerDraftEntityRepository;
 import com.coniv.mait.domain.solve.service.component.AnswerGrader;
 import com.coniv.mait.domain.solve.service.component.StudyAnswerDraftFactory;
+import com.coniv.mait.domain.solve.service.component.SubmitAnswerValidator;
 import com.coniv.mait.domain.solve.service.dto.ShortQuestionSubmitAnswer;
 import com.coniv.mait.domain.solve.service.dto.StudyAnswerDraftDto;
 import com.coniv.mait.domain.solve.service.dto.StudyGradeResultDto;
@@ -90,6 +93,9 @@ class StudyModeServiceTest {
 
 	@Mock
 	private AnswerGrader answerGrader;
+
+	@Mock
+	private SubmitAnswerValidator submitAnswerValidator;
 
 	@Mock
 	private MaitEventPublisher maitEventPublisher;
@@ -470,6 +476,7 @@ class StudyModeServiceTest {
 		String serializedAnswer = "{\"type\":\"SHORT\",\"submitAnswers\":[\"답안\"]}";
 
 		QuestionSetEntity mockQuestionSet = mock(QuestionSetEntity.class);
+		QuestionEntity question = mock(QuestionEntity.class);
 		UserEntity mockUser = mock(UserEntity.class);
 		SolvingSessionEntity mockSession = mock(SolvingSessionEntity.class);
 
@@ -489,6 +496,7 @@ class StudyModeServiceTest {
 			QuestionSetSolveMode.STUDY)).thenReturn(Optional.of(mockSession));
 		when(mockSession.getId()).thenReturn(solvingSessionId);
 		when(studyAnswerDraftEntityRepository.findById(draftId)).thenReturn(Optional.of(draft));
+		when(questionReader.getQuestion(questionId, QUESTION_SET_ID)).thenReturn(question);
 		when(objectMapper.writeValueAsString(submitAnswer)).thenReturn(serializedAnswer);
 
 		// when
@@ -500,6 +508,43 @@ class StudyModeServiceTest {
 		assertThat(result.isSubmitted()).isTrue();
 		assertThat(result.getQuestionId()).isEqualTo(questionId);
 		assertThat(result.getSolvingSessionId()).isEqualTo(solvingSessionId);
+		verify(submitAnswerValidator).validate(question, submitAnswer);
+	}
+
+	@ParameterizedTest
+	@EnumSource(value = QuestionSolveExceptionCode.class, names = {"INVALID_TYPE", "INVALID_ANSWER_FORMAT"})
+	@DisplayName("updateStudyAnswerDraft - 답안 검증에 실패하면 기존 초안을 변경하지 않는다")
+	void updateStudyAnswerDraft_rejectsInvalidAnswer(QuestionSolveExceptionCode code) {
+		// given
+		Long questionId = 101L;
+		Long solvingSessionId = 1000L;
+		SubmitAnswerDto<?> submitAnswer = new ShortQuestionSubmitAnswer(List.of("답안"));
+		QuestionSetEntity questionSet = mock(QuestionSetEntity.class);
+		QuestionEntity question = mock(QuestionEntity.class);
+		UserEntity user = mock(UserEntity.class);
+		SolvingSessionEntity session = mock(SolvingSessionEntity.class);
+		StudyAnswerDraftId draftId = new StudyAnswerDraftId(solvingSessionId, questionId);
+		StudyAnswerDraftEntity draft = StudyAnswerDraftEntity.builder()
+			.id(draftId).solvingSession(session).submittedAnswer("기존 답안").submitted(true).build();
+		when(questionSetReader.getQuestionSet(QUESTION_SET_ID)).thenReturn(questionSet);
+		when(userReader.getById(USER_ID)).thenReturn(user);
+		when(questionSet.getTeamId()).thenReturn(TEAM_ID);
+		when(user.getId()).thenReturn(USER_ID);
+		when(questionSet.getId()).thenReturn(QUESTION_SET_ID);
+		when(solvingSessionEntityRepository.findByUserIdAndQuestionSetIdAndSolveMode(USER_ID, QUESTION_SET_ID,
+			QuestionSetSolveMode.STUDY)).thenReturn(Optional.of(session));
+		when(session.getId()).thenReturn(solvingSessionId);
+		when(studyAnswerDraftEntityRepository.findById(draftId)).thenReturn(Optional.of(draft));
+		when(questionReader.getQuestion(questionId, QUESTION_SET_ID)).thenReturn(question);
+		QuestionSolvingException exception = new QuestionSolvingException(code);
+		doThrow(exception).when(submitAnswerValidator).validate(question, submitAnswer);
+
+		// when & then
+		assertThatThrownBy(() -> studyModeService.updateStudyAnswerDraft(MAIT_USER, QUESTION_SET_ID, questionId,
+			submitAnswer)).isSameAs(exception);
+		assertThat(draft.getSubmittedAnswer()).isEqualTo("기존 답안");
+		assertThat(draft.isSubmitted()).isTrue();
+		verifyNoInteractions(objectMapper);
 	}
 
 	@Test
