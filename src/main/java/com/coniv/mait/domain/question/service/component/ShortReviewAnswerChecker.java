@@ -1,9 +1,11 @@
 package com.coniv.mait.domain.question.service.component;
 
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Component;
@@ -51,29 +53,16 @@ public class ShortReviewAnswerChecker implements ReviewAnswerChecker<String> {
 			throw new QuestionSolvingException(QuestionSolveExceptionCode.ANSWER_COUNT);
 		}
 
-		Map<Long, Boolean> shortAnswersByNumberChecked = shortAnswersByNumber.keySet().stream()
-			.collect(Collectors.toMap(Function.identity(), value -> false));
-
-		List<GradedAnswerShortResult> gradedResults = submittedAnswers.stream()
-			.map(submitted -> {
-				String processed = AnswerProcessUtil.processAnswer(submitted);
-				boolean matchedAny = false;
-
-				for (Long number : shortAnswersByNumber.keySet()) {
-					if (shortAnswersByNumberChecked.get(number)) {
-						// 이미 해당 그룹에 정답을 맞췄으면
-						continue;
-					}
-					boolean contains = shortAnswersByNumber.get(number).contains(processed);
-					shortAnswersByNumberChecked.put(number, contains);
-					if (contains) {
-						matchedAny = true;
-					}
-				}
-
-				return new GradedAnswerShortResult(submitted, matchedAny);
-			})
+		List<String> processedAnswers = submittedAnswers.stream()
+			.map(AnswerProcessUtil::processAnswer)
 			.toList();
+		Map<Long, Integer> matchedAnswerIndexesByNumber = new HashMap<>();
+		List<GradedAnswerShortResult> gradedResults = new ArrayList<>();
+		for (int answerIndex = 0; answerIndex < submittedAnswers.size(); answerIndex++) {
+			boolean isCorrect = matchAnswerGroup(processedAnswers, answerIndex, shortAnswersByNumber,
+				matchedAnswerIndexesByNumber, new HashSet<>());
+			gradedResults.add(new GradedAnswerShortResult(submittedAnswers.get(answerIndex), isCorrect));
+		}
 
 		boolean isCorrect = gradedResults.stream().allMatch(GradedAnswerShortResult::isCorrect);
 
@@ -83,5 +72,29 @@ public class ShortReviewAnswerChecker implements ReviewAnswerChecker<String> {
 			.type(QuestionType.SHORT)
 			.gradedResults(gradedResults)
 			.build();
+	}
+
+	private boolean matchAnswerGroup(List<String> processedAnswers, int answerIndex,
+		Map<Long, Set<String>> shortAnswersByNumber, Map<Long, Integer> matchedAnswerIndexesByNumber,
+		Set<Long> visitedNumbers) {
+		String submittedAnswer = processedAnswers.get(answerIndex);
+		for (Map.Entry<Long, Set<String>> answerGroup : shortAnswersByNumber.entrySet()) {
+			Long number = answerGroup.getKey();
+			if (!answerGroup.getValue().contains(submittedAnswer) || !visitedNumbers.add(number)) {
+				continue;
+			}
+
+			Integer matchedAnswerIndex = matchedAnswerIndexesByNumber.get(number);
+			// 기존 답을 다른 그룹으로 옮길 수 있을 때만 현재 답에 이 그룹을 배정한다.
+			if (matchedAnswerIndex != null && !matchAnswerGroup(processedAnswers, matchedAnswerIndex,
+				shortAnswersByNumber, matchedAnswerIndexesByNumber, visitedNumbers)) {
+				continue;
+			}
+
+			matchedAnswerIndexesByNumber.put(number, answerIndex);
+			return true;
+		}
+
+		return false;
 	}
 }
