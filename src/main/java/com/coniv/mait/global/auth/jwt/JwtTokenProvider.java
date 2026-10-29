@@ -74,9 +74,7 @@ public class JwtTokenProvider {
 		if (refreshToken == null) {
 			throw new BadCredentialsException("Refresh token is null");
 		}
-		// 타입 클레임 도입 전에 발급된 refresh token은 reissue 시 저장된 토큰과의 일치 여부로 검증한다
-		String tokenType = getTokenType(refreshToken);
-		if (tokenType != null && !TokenType.REFRESH.name().equals(tokenType)) {
+		if (!TokenType.REFRESH.name().equals(getTokenType(refreshToken))) {
 			throw new BadCredentialsException("Type is not refresh token");
 		}
 		if (blackListRepository.existsById(refreshToken)) {

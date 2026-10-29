@@ -126,15 +126,15 @@ class JwtTokenProviderTest {
 	}
 
 	@Test
-	@DisplayName("타입 클레임 도입 전에 발급된 refresh token은 refresh token 검증을 통과한다")
-	void validateRefreshToken_NoTokenType_Success() {
+	@DisplayName("타입 클레임이 없는 토큰으로 refresh token 검증을 하면 예외를 던진다")
+	void validateRefreshToken_NoTokenType_ThrowsException() {
 		// given
 		String legacyToken = generateTokenWithoutType(1L);
-		given(blackListRepository.existsById(legacyToken)).willReturn(false);
 
 		// when & then
-		assertThatCode(() -> jwtTokenProvider.validateRefreshToken(legacyToken))
-			.doesNotThrowAnyException();
+		assertThatThrownBy(() -> jwtTokenProvider.validateRefreshToken(legacyToken))
+			.isInstanceOf(BadCredentialsException.class)
+			.hasMessage("Type is not refresh token");
 	}
 
 	@Test
