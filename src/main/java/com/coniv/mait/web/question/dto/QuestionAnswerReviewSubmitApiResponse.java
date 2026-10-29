@@ -14,13 +14,13 @@ public record QuestionAnswerReviewSubmitApiResponse(
 	@Schema(description = "유저가 제출한 문제 PK", requiredMode = Schema.RequiredMode.REQUIRED)
 	Long questionId,
 
-	@Schema(description = "유저가 제출한 문제 정답 여부", requiredMode = Schema.RequiredMode.REQUIRED)
+	@Schema(description = "필요한 답안을 모두 제출하고 모든 답안이 정답인지 여부", requiredMode = Schema.RequiredMode.REQUIRED)
 	Boolean isCorrect,
 
 	@Schema(description = "문제 유형")
 	QuestionType type,
 
-	@Schema(description = "제출한 정답에 대한 채점 결과")
+	@Schema(description = "제출한 각 답안의 개별 채점 결과")
 	List<? extends GradedAnswerResult> gradedResults
 ) {
 
