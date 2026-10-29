@@ -17,15 +17,18 @@ import com.coniv.mait.domain.solve.service.dto.SubmitAnswerDto;
 public class AnswerGrader {
 
 	private final Map<QuestionType, AnswerChecker<?>> answerCheckers;
+	private final SubmitAnswerValidator submitAnswerValidator;
 
 	@Autowired
-	public AnswerGrader(List<AnswerChecker<?>> checkers) {
+	public AnswerGrader(List<AnswerChecker<?>> checkers, SubmitAnswerValidator submitAnswerValidator) {
 		answerCheckers = checkers.stream()
 			.collect(Collectors.toUnmodifiableMap(AnswerChecker::getQuestionType, Function.identity()));
+		this.submitAnswerValidator = submitAnswerValidator;
 	}
 
 	@SuppressWarnings("unchecked")
 	public boolean gradeAnswer(QuestionEntity question, SubmitAnswerDto<?> submitAnswer) {
+		submitAnswerValidator.validate(question, submitAnswer);
 		AnswerChecker<?> checker = answerCheckers.get(question.getType());
 		if (checker == null) {
 			throw new IllegalArgumentException("지원하지 않는 문제 유형입니다: " + question.getType());
