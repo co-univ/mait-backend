@@ -18,6 +18,8 @@ import com.coniv.mait.domain.question.exception.code.QuestionSetStatusExceptionC
 import com.coniv.mait.domain.question.service.component.QuestionReader;
 import com.coniv.mait.domain.solve.component.QuestionAnswerUpdater;
 import com.coniv.mait.domain.solve.event.QuestionUpdateEvent;
+import com.coniv.mait.domain.solve.exception.QuestionSolveExceptionCode;
+import com.coniv.mait.domain.solve.exception.QuestionSolvingException;
 import com.coniv.mait.global.event.MaitEventPublisher;
 import com.coniv.mait.web.solve.dto.UpdateAnswerPayload;
 
@@ -51,6 +53,9 @@ public class QuestionSolvingManageService {
 		QuestionType type = request.getType();
 		if (type != QuestionType.SHORT && type != QuestionType.FILL_BLANK) {
 			throw new QuestionStatusException(QuestionExceptionCode.UNAVAILABLE_TYPE);
+		}
+		if (question.getType() != type) {
+			throw new QuestionSolvingException(QuestionSolveExceptionCode.INVALID_TYPE);
 		}
 
 		QuestionAnswerUpdater questionAnswerUpdater = getQuestionAnswerUpdater(type);
