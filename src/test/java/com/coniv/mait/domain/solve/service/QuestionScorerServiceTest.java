@@ -17,17 +17,22 @@ import com.coniv.mait.domain.question.entity.MultipleQuestionEntity;
 import com.coniv.mait.domain.question.entity.QuestionEntity;
 import com.coniv.mait.domain.question.entity.QuestionSetEntity;
 import com.coniv.mait.domain.question.repository.QuestionEntityRepository;
+import com.coniv.mait.domain.question.repository.QuestionSetEntityRepository;
 import com.coniv.mait.domain.solve.entity.QuestionScorerEntity;
 import com.coniv.mait.domain.solve.repository.QuestionScorerEntityRepository;
 import com.coniv.mait.domain.solve.service.dto.QuestionScorerDto;
 import com.coniv.mait.domain.user.entity.UserEntity;
+import com.coniv.mait.domain.user.exception.UserRoleException;
 import com.coniv.mait.domain.user.repository.UserEntityRepository;
+import com.coniv.mait.domain.user.service.component.TeamRoleValidator;
 import com.coniv.mait.global.exception.custom.ResourceNotBelongException;
 
 import jakarta.persistence.EntityNotFoundException;
 
 @ExtendWith(MockitoExtension.class)
 class QuestionScorerServiceTest {
+
+	private static final Long REQUESTER_ID = 100L;
 
 	@Mock
 	private UserEntityRepository userEntityRepository;
@@ -37,6 +42,12 @@ class QuestionScorerServiceTest {
 
 	@Mock
 	private QuestionScorerEntityRepository questionScorerEntityRepository;
+
+	@Mock
+	private QuestionSetEntityRepository questionSetEntityRepository;
+
+	@Mock
+	private TeamRoleValidator teamRoleValidator;
 
 	@InjectMocks
 	private QuestionScorerService questionScorerService;
@@ -80,7 +91,7 @@ class QuestionScorerServiceTest {
 			.thenReturn(Optional.of(user));
 
 		// When
-		QuestionScorerDto result = questionScorerService.getScorer(questionSetId, questionId);
+		QuestionScorerDto result = questionScorerService.getScorer(questionSetId, questionId, REQUESTER_ID);
 
 		// Then
 		assertThat(result).isNotNull();
@@ -106,7 +117,7 @@ class QuestionScorerServiceTest {
 			.thenReturn(Optional.empty());
 
 		// When & Then
-		assertThatThrownBy(() -> questionScorerService.getScorer(questionSetId, questionId))
+		assertThatThrownBy(() -> questionScorerService.getScorer(questionSetId, questionId, REQUESTER_ID))
 			.isInstanceOf(EntityNotFoundException.class)
 			.hasMessage("문제 ID에 해당하는 문제가 없습니다.");
 
@@ -138,7 +149,7 @@ class QuestionScorerServiceTest {
 			.thenReturn(Optional.of(question));
 
 		// When & Then
-		assertThatThrownBy(() -> questionScorerService.getScorer(questionSetId, questionId))
+		assertThatThrownBy(() -> questionScorerService.getScorer(questionSetId, questionId, REQUESTER_ID))
 			.isInstanceOf(ResourceNotBelongException.class)
 			.hasMessage("문제 세트 ID와 문제 ID가 일치하지 않습니다.");
 
@@ -171,7 +182,7 @@ class QuestionScorerServiceTest {
 			.thenReturn(Optional.empty());
 
 		// When & Then
-		assertThatThrownBy(() -> questionScorerService.getScorer(questionSetId, questionId))
+		assertThatThrownBy(() -> questionScorerService.getScorer(questionSetId, questionId, REQUESTER_ID))
 			.isInstanceOf(EntityNotFoundException.class)
 			.hasMessage("해당 문제에 대한 득점자가 없습니다.");
 
@@ -214,12 +225,69 @@ class QuestionScorerServiceTest {
 			.thenReturn(Optional.empty());
 
 		// When & Then
-		assertThatThrownBy(() -> questionScorerService.getScorer(questionSetId, questionId))
+		assertThatThrownBy(() -> questionScorerService.getScorer(questionSetId, questionId, REQUESTER_ID))
 			.isInstanceOf(EntityNotFoundException.class)
 			.hasMessage("득점자에 해당하는 사용자가 없습니다.");
 
 		verify(questionEntityRepository).findById(questionId);
 		verify(questionScorerEntityRepository).findByQuestionId(questionId);
 		verify(userEntityRepository).findById(userId);
+	}
+
+	@Test
+	@DisplayName("문제 셋이 속한 팀의 멤버가 아니면 문제별 득점자를 조회할 수 없다")
+	void getScorer_NotTeamMember_ThrowsException() {
+		// Given
+		Long questionSetId = 1L;
+		Long questionId = 1L;
+		Long teamId = 10L;
+
+		QuestionSetEntity questionSet = QuestionSetEntity.builder()
+			.id(questionSetId)
+			.teamId(teamId)
+			.build();
+
+		QuestionEntity question = MultipleQuestionEntity.builder()
+			.id(questionId)
+			.number(1L)
+			.questionSet(questionSet)
+			.build();
+
+		when(questionEntityRepository.findById(questionId))
+			.thenReturn(Optional.of(question));
+		doThrow(new UserRoleException("해당 팀의 멤버가 아닙니다."))
+			.when(teamRoleValidator).checkIsTeamMember(teamId, REQUESTER_ID);
+
+		// When & Then
+		assertThatThrownBy(() -> questionScorerService.getScorer(questionSetId, questionId, REQUESTER_ID))
+			.isInstanceOf(UserRoleException.class)
+			.hasMessage("해당 팀의 멤버가 아닙니다.");
+
+		verify(questionScorerEntityRepository, never()).findByQuestionId(any());
+	}
+
+	@Test
+	@DisplayName("문제 셋이 속한 팀의 멤버가 아니면 문제 셋 득점자 목록을 조회할 수 없다")
+	void getScorers_NotTeamMember_ThrowsException() {
+		// Given
+		Long questionSetId = 1L;
+		Long teamId = 10L;
+
+		QuestionSetEntity questionSet = QuestionSetEntity.builder()
+			.id(questionSetId)
+			.teamId(teamId)
+			.build();
+
+		when(questionSetEntityRepository.findById(questionSetId))
+			.thenReturn(Optional.of(questionSet));
+		doThrow(new UserRoleException("해당 팀의 멤버가 아닙니다."))
+			.when(teamRoleValidator).checkIsTeamMember(teamId, REQUESTER_ID);
+
+		// When & Then
+		assertThatThrownBy(() -> questionScorerService.getScorers(questionSetId, REQUESTER_ID))
+			.isInstanceOf(UserRoleException.class)
+			.hasMessage("해당 팀의 멤버가 아닙니다.");
+
+		verify(questionScorerEntityRepository, never()).findAllByQuestionIdIn(any());
 	}
 }

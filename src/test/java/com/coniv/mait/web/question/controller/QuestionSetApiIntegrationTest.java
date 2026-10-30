@@ -344,8 +344,9 @@ public class QuestionSetApiIntegrationTest extends BaseIntegrationTest {
 	void getQuestionSetApiSuccess() throws Exception {
 		// given
 		String title = "Sample Title";
+		final Long teamId = createTeamWithCurrentPlayer();
 		QuestionSetEntity questionSet = questionSetEntityRepository.save(
-			QuestionSetEntity.builder().title(title).build());
+			QuestionSetEntity.builder().title(title).teamId(teamId).build());
 
 		// when & then
 		mockMvc.perform(get("/api/v1/question-sets/{questionSetId}", questionSet.getId())
@@ -362,6 +363,7 @@ public class QuestionSetApiIntegrationTest extends BaseIntegrationTest {
 		// given
 		QuestionSetEntity questionSet = questionSetEntityRepository.save(
 			QuestionSetEntity.builder()
+				.teamId(createTeamWithCurrentPlayer())
 				.title("유형별 개수 문제")
 				.instruction("이 문제 셋에 대한 보충 설명")
 				.build());
@@ -397,6 +399,7 @@ public class QuestionSetApiIntegrationTest extends BaseIntegrationTest {
 		// given
 		QuestionSetEntity questionSet = questionSetEntityRepository.save(
 			QuestionSetEntity.builder()
+				.teamId(createTeamWithCurrentPlayer())
 				.title("제작 중 실시간 문제")
 				.status(QuestionSetStatus.MAKING)
 				.solveMode(QuestionSetSolveMode.LIVE_TIME)
@@ -773,5 +776,12 @@ public class QuestionSetApiIntegrationTest extends BaseIntegrationTest {
 				jsonPath("$.data[1].questionId").value(invalidQuestion2.getId()),
 				jsonPath("$.data[1].isValid").value(false),
 				jsonPath("$.data[1].number").value(3L));
+	}
+
+	private Long createTeamWithCurrentPlayer() {
+		UserEntity currentUser = userEntityRepository.findByEmail("user@example.com").orElseThrow();
+		TeamEntity team = teamEntityRepository.save(TeamEntity.ofGroup("코니브", currentUser.getId()));
+		teamUserEntityRepository.save(TeamUserEntity.createPlayerUser(currentUser, team));
+		return team.getId();
 	}
 }
