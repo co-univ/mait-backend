@@ -13,6 +13,8 @@ import com.coniv.mait.domain.question.enums.QuestionType;
 import com.coniv.mait.domain.question.exception.QuestionExceptionCode;
 import com.coniv.mait.domain.question.exception.QuestionStatusException;
 import com.coniv.mait.domain.question.service.dto.ReviewAnswerCheckResult;
+import com.coniv.mait.domain.solve.exception.QuestionSolveExceptionCode;
+import com.coniv.mait.domain.solve.exception.QuestionSolvingException;
 import com.coniv.mait.domain.solve.service.dto.FillBlankSubmitAnswer;
 import com.coniv.mait.domain.solve.service.dto.SubmitAnswerDto;
 
@@ -30,6 +32,10 @@ public class ReviewAnswerGrader {
 	@SuppressWarnings("unchecked")
 	public ReviewAnswerCheckResult gradeAnswer(Long questionId, QuestionEntity question,
 		SubmitAnswerDto<?> submitAnswers) {
+		if (question.getType() != submitAnswers.getType()) {
+			throw new QuestionSolvingException(QuestionSolveExceptionCode.INVALID_TYPE);
+		}
+
 		ReviewAnswerChecker<?> checker = checkers.get(question.getType());
 		if (checker == null) {
 			throw new QuestionStatusException(QuestionExceptionCode.UNAVAILABLE_TYPE);
