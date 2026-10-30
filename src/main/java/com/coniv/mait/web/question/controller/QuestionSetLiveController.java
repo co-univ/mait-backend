@@ -1,6 +1,7 @@
 package com.coniv.mait.web.question.controller;
 
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -16,6 +17,7 @@ import com.coniv.mait.domain.question.service.QuestionSetLiveControlService;
 import com.coniv.mait.domain.question.service.QuestionSetParticipantService;
 import com.coniv.mait.domain.question.service.QuestionSetRankService;
 import com.coniv.mait.domain.question.service.dto.CurrentQuestionDto;
+import com.coniv.mait.global.auth.model.MaitUser;
 import com.coniv.mait.global.response.ApiResponse;
 import com.coniv.mait.web.question.dto.CurrentQuestionApiResponse;
 import com.coniv.mait.web.question.dto.ParticipantSendType;
@@ -110,9 +112,9 @@ public class QuestionSetLiveController {
 	@Operation(summary = "실시간 문제셋 정답자 랭킹")
 	@GetMapping("/rank/correct")
 	public ResponseEntity<ApiResponse<ParticipantsCorrectAnswerRankResponse>> getCorrectAnswerRank(
-		@PathVariable Long questionSetId) {
+		@PathVariable Long questionSetId, @AuthenticationPrincipal MaitUser user) {
 		ParticipantsCorrectAnswerRankResponse response = ParticipantsCorrectAnswerRankResponse.from(
-			questionSetRankService.getParticipantCorrectRank(questionSetId));
+			questionSetRankService.getParticipantCorrectRank(questionSetId, user.id()));
 		return ResponseEntity.ok(ApiResponse.ok(response));
 	}
 

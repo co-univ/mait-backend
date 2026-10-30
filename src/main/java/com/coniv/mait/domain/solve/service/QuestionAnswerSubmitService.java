@@ -105,8 +105,10 @@ public class QuestionAnswerSubmitService {
 		return AnswerSubmitDto.from(submitRecord, timeGapMillis);
 	}
 
-	public List<AnswerSubmitRecordDto> getSubmitRecords(final Long questionSetId, final Long questionId) {
-		questionReader.getQuestion(questionId, questionSetId);
+	public List<AnswerSubmitRecordDto> getSubmitRecords(final Long questionSetId, final Long questionId,
+		final Long userId) {
+		final QuestionEntity question = questionReader.getQuestion(questionId, questionSetId);
+		teamRoleValidator.checkIsTeamManager(question.getQuestionSet().getTeamId(), userId);
 
 		List<AnswerSubmitRecordEntity> records = answerSubmitRecordEntityRepository.findAllByQuestionId(questionId);
 		List<Long> userIds = records.stream().map(AnswerSubmitRecordEntity::getUserId).toList();

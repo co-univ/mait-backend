@@ -147,6 +147,7 @@ public class QuestionSetService {
 
 	public QuestionSetDto getQuestionSet(final Long questionSetId, final MaitUser maitUser) {
 		final QuestionSetEntity questionSetEntity = questionSetReader.getQuestionSet(questionSetId);
+		teamRoleValidator.checkIsTeamMember(questionSetEntity.getTeamId(), maitUser.id());
 
 		List<QuestionEntity> questions = questionEntityRepository.findAllByQuestionSetId(questionSetEntity.getId());
 		List<QuestionTypeCount> questionTypeCounts = countByType(questions);

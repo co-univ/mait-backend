@@ -20,6 +20,7 @@ import com.coniv.mait.domain.solve.repository.QuestionScorerEntityRepository;
 import com.coniv.mait.domain.solve.service.dto.QuestionScorerDto;
 import com.coniv.mait.domain.user.entity.UserEntity;
 import com.coniv.mait.domain.user.repository.UserEntityRepository;
+import com.coniv.mait.domain.user.service.component.TeamRoleValidator;
 import com.coniv.mait.global.exception.custom.ResourceNotBelongException;
 
 import jakarta.persistence.EntityNotFoundException;
@@ -39,14 +40,17 @@ public class QuestionScorerService {
 
 	private final QuestionSetEntityRepository questionSetEntityRepository;
 
+	private final TeamRoleValidator teamRoleValidator;
+
 	@Transactional(readOnly = true)
-	public QuestionScorerDto getScorer(final Long questionSetId, final Long questionId) {
+	public QuestionScorerDto getScorer(final Long questionSetId, final Long questionId, final Long userId) {
 		QuestionEntity question = questionEntityRepository.findById(questionId)
 			.orElseThrow(() -> new EntityNotFoundException("문제 ID에 해당하는 문제가 없습니다."));
 
 		if (!question.getQuestionSet().getId().equals(questionSetId)) {
 			throw new ResourceNotBelongException("문제 세트 ID와 문제 ID가 일치하지 않습니다.");
 		}
+		teamRoleValidator.checkIsTeamMember(question.getQuestionSet().getTeamId(), userId);
 
 		QuestionScorerEntity scorer = questionScorerEntityRepository.findByQuestionId(questionId)
 			.orElseThrow(() -> new EntityNotFoundException("해당 문제에 대한 득점자가 없습니다."));
@@ -58,9 +62,10 @@ public class QuestionScorerService {
 	}
 
 	@Transactional(readOnly = true)
-	public List<QuestionScorerDto> getScorers(final Long questionSetId) {
+	public List<QuestionScorerDto> getScorers(final Long questionSetId, final Long userId) {
 		QuestionSetEntity questionSet = questionSetEntityRepository.findById(questionSetId)
 			.orElseThrow(() -> new EntityNotFoundException("해당 문제 셋을 찾을 수 없습니다."));
+		teamRoleValidator.checkIsTeamMember(questionSet.getTeamId(), userId);
 
 		Map<Long, QuestionEntity> questionById = questionReader.getQuestionsByQuestionSet(questionSet).stream()
 			.collect(Collectors.toMap(QuestionEntity::getId, question -> question));

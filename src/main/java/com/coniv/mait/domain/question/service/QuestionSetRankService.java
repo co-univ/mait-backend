@@ -30,6 +30,7 @@ import com.coniv.mait.domain.solve.repository.AnswerSubmitRecordEntityRepository
 import com.coniv.mait.domain.solve.repository.QuestionScorerEntityRepository;
 import com.coniv.mait.domain.solve.service.dto.RankDto;
 import com.coniv.mait.domain.team.service.component.TeamReader;
+import com.coniv.mait.domain.user.service.component.TeamRoleValidator;
 import com.coniv.mait.domain.user.service.component.UserReader;
 import com.coniv.mait.domain.user.service.dto.UserDto;
 
@@ -56,8 +57,11 @@ public class QuestionSetRankService {
 	private final AnswerSubmitRecordEntityRepository answerSubmitRecordEntityRepository;
 	private final QuestionScorerEntityRepository questionScorerEntityRepository;
 
-	public ParticipantCorrectAnswerRankDto getParticipantCorrectRank(Long questionSetId) {
+	private final TeamRoleValidator teamRoleValidator;
+
+	public ParticipantCorrectAnswerRankDto getParticipantCorrectRank(final Long questionSetId, final Long requesterId) {
 		QuestionSetEntity questionSet = questionSetReader.getQuestionSet(questionSetId);
+		teamRoleValidator.checkIsTeamMember(questionSet.getTeamId(), requesterId);
 		List<QuestionSetParticipantEntity> allParticipants =
 			questionSetParticipantRepository.findAllByQuestionSetWithFetchJoinUser(questionSet);
 
@@ -108,8 +112,9 @@ public class QuestionSetRankService {
 	}
 
 	@Transactional(readOnly = true)
-	public List<AnswerRankDto> getCorrectorsByQuestionSetId(final Long questionSetId) {
+	public List<AnswerRankDto> getCorrectorsByQuestionSetId(final Long questionSetId, final Long userId) {
 		QuestionSetEntity questionSet = questionSetReader.getQuestionSet(questionSetId);
+		teamRoleValidator.checkIsTeamMember(questionSet.getTeamId(), userId);
 
 		List<Long> questionIds = questionReader.getQuestionsByQuestionSet(questionSet).stream()
 			.map(QuestionEntity::getId).toList();
@@ -136,8 +141,9 @@ public class QuestionSetRankService {
 	}
 
 	@Transactional(readOnly = true)
-	public List<AnswerRankDto> getScorersByQuestionSetId(final Long questionSetId) {
+	public List<AnswerRankDto> getScorersByQuestionSetId(final Long questionSetId, final Long userId) {
 		QuestionSetEntity questionSet = questionSetReader.getQuestionSet(questionSetId);
+		teamRoleValidator.checkIsTeamMember(questionSet.getTeamId(), userId);
 
 		List<Long> questionIds = questionReader.getQuestionsByQuestionSet(questionSet).stream()
 			.map(QuestionEntity::getId).toList();
@@ -163,8 +169,9 @@ public class QuestionSetRankService {
 	}
 
 	@Transactional(readOnly = true)
-	public List<RankDto> getScorerRankByQuestionSetId(final Long questionSetId) {
+	public List<RankDto> getScorerRankByQuestionSetId(final Long questionSetId, final Long userId) {
 		QuestionSetEntity questionSet = questionSetReader.getQuestionSet(questionSetId);
+		teamRoleValidator.checkIsTeamMember(questionSet.getTeamId(), userId);
 		if (questionSet.getSolveMode() != QuestionSetSolveMode.LIVE_TIME) {
 			throw new QuestionSetStatusException(QuestionSetStatusExceptionCode.ONLY_LIVE_TIME);
 		}
