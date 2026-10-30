@@ -57,9 +57,10 @@ public class QuestionReviewController {
 	public ResponseEntity<ApiResponse<QuestionAnswerReviewSubmitApiResponse>> submitReviewAnswer(
 		@PathVariable("questionId") Long questionId,
 		@PathVariable("questionSetId") Long questionSetId,
-		@RequestBody @Valid QuestionAnswerSubmitApiRequest request) {
+		@RequestBody @Valid QuestionAnswerSubmitApiRequest request,
+		@AuthenticationPrincipal MaitUser user) {
 		return ResponseEntity.ok(ApiResponse.ok(QuestionAnswerReviewSubmitApiResponse.from(
-			questionReviewService.checkReviewAnswer(questionId, questionSetId, request.getUserId(),
+			questionReviewService.checkReviewAnswer(questionId, questionSetId, user.id(),
 				request.getSubmitAnswers()))));
 	}
 }

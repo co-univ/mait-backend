@@ -39,11 +39,11 @@ public class QuestionAnswerSubmitController {
 	@PostMapping("/submit")
 	public ResponseEntity<ApiResponse<QuestionAnswerSubmitApiResponse>> submitAnswer(
 		@Valid @RequestBody QuestionAnswerSubmitApiRequest request,
-		@PathVariable Long questionSetId, @PathVariable Long questionId) throws
-		JsonProcessingException {
+		@PathVariable Long questionSetId, @PathVariable Long questionId,
+		@AuthenticationPrincipal MaitUser user) throws JsonProcessingException {
 		return ResponseEntity.ok().body(ApiResponse.ok(
 			QuestionAnswerSubmitApiResponse.from(questionAnswerSubmitService.submitAnswer(questionSetId, questionId,
-				request.getUserId(), request.getSubmitAnswers()))));
+				user.id(), request.getSubmitAnswers()))));
 	}
 
 	@Operation(summary = "문제별 득점자 조회 API")
