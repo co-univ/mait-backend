@@ -9,6 +9,7 @@ import com.coniv.mait.domain.question.entity.QuestionEntity;
 import com.coniv.mait.domain.question.entity.ShortAnswerEntity;
 import com.coniv.mait.domain.question.enums.QuestionType;
 import com.coniv.mait.domain.question.repository.ShortAnswerEntityRepository;
+import com.coniv.mait.domain.question.service.component.ShortQuestionValidator;
 import com.coniv.mait.web.solve.dto.ShortUpdateAnswerPayload;
 import com.coniv.mait.web.solve.dto.UpdateAnswerPayload;
 
@@ -19,6 +20,7 @@ import lombok.RequiredArgsConstructor;
 public class ShortQuestionAnswerUpdater implements QuestionAnswerUpdater {
 
 	private final ShortAnswerEntityRepository shortAnswerEntityRepository;
+	private final ShortQuestionValidator shortQuestionValidator;
 
 	@Override
 	public QuestionType getQuestionType() {
@@ -32,13 +34,13 @@ public class ShortQuestionAnswerUpdater implements QuestionAnswerUpdater {
 			throw new IllegalArgumentException("단답형 문제에만 ShortQuestionAnswerUpdater를 사용할 수 있습니다.");
 		}
 
-		// Todo: 인정답안이 아닌 경우 및 존재에 대한 검증 필요
+		shortQuestionValidator.validateAcceptedAnswerAddition(question.getId(), answers.shortAnswers());
 
 		List<ShortAnswerEntity> shortAnswers = answers.shortAnswers().stream()
 			.map(dto -> ShortAnswerEntity.builder()
 				.number(dto.getNumber())
 				.answer(dto.getAnswer())
-				.isMain(dto.isMain())
+				.isMain(false)
 				.shortQuestionId(question.getId())
 				.build())
 			.toList();
