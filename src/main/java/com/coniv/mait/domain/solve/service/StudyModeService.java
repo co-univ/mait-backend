@@ -214,6 +214,11 @@ public class StudyModeService {
 		StudyAnswerDraftEntity draft = studyAnswerDraftEntityRepository.findById(draftId)
 			.orElseThrow(() -> new EntityNotFoundException("존재하지 않는 답안 초안 입니다."));
 
+		QuestionEntity question = questionReader.getQuestion(questionId, questionSetId);
+		if (question.getType() != submittedAnswer.getType()) {
+			throw new QuestionSolvingException(QuestionSolveExceptionCode.INVALID_TYPE);
+		}
+
 		draft.updateSubmittedAnswer(objectMapper.writeValueAsString(submittedAnswer));
 
 		return StudyAnswerDraftDto.from(draft);

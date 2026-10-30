@@ -10,6 +10,8 @@ import java.util.Optional;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.EnumSource;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -18,6 +20,7 @@ import com.coniv.mait.domain.question.entity.QuestionEntity;
 import com.coniv.mait.domain.question.entity.QuestionSetEntity;
 import com.coniv.mait.domain.question.enums.QuestionSetSolveMode;
 import com.coniv.mait.domain.question.enums.QuestionSetStatus;
+import com.coniv.mait.domain.question.enums.QuestionType;
 import com.coniv.mait.domain.question.enums.UserStudyStatus;
 import com.coniv.mait.domain.question.repository.QuestionSetEntityRepository;
 import com.coniv.mait.domain.question.service.component.QuestionReader;
@@ -470,6 +473,7 @@ class StudyModeServiceTest {
 		String serializedAnswer = "{\"type\":\"SHORT\",\"submitAnswers\":[\"답안\"]}";
 
 		QuestionSetEntity mockQuestionSet = mock(QuestionSetEntity.class);
+		QuestionEntity question = mock(QuestionEntity.class);
 		UserEntity mockUser = mock(UserEntity.class);
 		SolvingSessionEntity mockSession = mock(SolvingSessionEntity.class);
 
@@ -489,6 +493,8 @@ class StudyModeServiceTest {
 			QuestionSetSolveMode.STUDY)).thenReturn(Optional.of(mockSession));
 		when(mockSession.getId()).thenReturn(solvingSessionId);
 		when(studyAnswerDraftEntityRepository.findById(draftId)).thenReturn(Optional.of(draft));
+		when(questionReader.getQuestion(questionId, QUESTION_SET_ID)).thenReturn(question);
+		when(question.getType()).thenReturn(QuestionType.SHORT);
 		when(objectMapper.writeValueAsString(submitAnswer)).thenReturn(serializedAnswer);
 
 		// when
@@ -500,6 +506,43 @@ class StudyModeServiceTest {
 		assertThat(result.isSubmitted()).isTrue();
 		assertThat(result.getQuestionId()).isEqualTo(questionId);
 		assertThat(result.getSolvingSessionId()).isEqualTo(solvingSessionId);
+	}
+
+	@ParameterizedTest
+	@EnumSource(value = QuestionType.class, names = "SHORT", mode = EnumSource.Mode.EXCLUDE)
+	@DisplayName("updateStudyAnswerDraft - 제출 유형이 다르면 기존 초안을 변경하지 않는다")
+	void updateStudyAnswerDraft_rejectsInvalidAnswer(QuestionType questionType) {
+		// given
+		Long questionId = 101L;
+		Long solvingSessionId = 1000L;
+		SubmitAnswerDto<?> submitAnswer = new ShortQuestionSubmitAnswer(List.of("답안"));
+		QuestionSetEntity questionSet = mock(QuestionSetEntity.class);
+		QuestionEntity question = mock(QuestionEntity.class);
+		UserEntity user = mock(UserEntity.class);
+		SolvingSessionEntity session = mock(SolvingSessionEntity.class);
+		StudyAnswerDraftId draftId = new StudyAnswerDraftId(solvingSessionId, questionId);
+		StudyAnswerDraftEntity draft = StudyAnswerDraftEntity.builder()
+			.id(draftId).solvingSession(session).submittedAnswer("기존 답안").submitted(true).build();
+		when(questionSetReader.getQuestionSet(QUESTION_SET_ID)).thenReturn(questionSet);
+		when(userReader.getById(USER_ID)).thenReturn(user);
+		when(questionSet.getTeamId()).thenReturn(TEAM_ID);
+		when(user.getId()).thenReturn(USER_ID);
+		when(questionSet.getId()).thenReturn(QUESTION_SET_ID);
+		when(solvingSessionEntityRepository.findByUserIdAndQuestionSetIdAndSolveMode(USER_ID, QUESTION_SET_ID,
+			QuestionSetSolveMode.STUDY)).thenReturn(Optional.of(session));
+		when(session.getId()).thenReturn(solvingSessionId);
+		when(studyAnswerDraftEntityRepository.findById(draftId)).thenReturn(Optional.of(draft));
+		when(questionReader.getQuestion(questionId, QUESTION_SET_ID)).thenReturn(question);
+		when(question.getType()).thenReturn(questionType);
+
+		// when & then
+		assertThatThrownBy(() -> studyModeService.updateStudyAnswerDraft(MAIT_USER, QUESTION_SET_ID, questionId,
+			submitAnswer))
+			.isInstanceOfSatisfying(QuestionSolvingException.class, exception ->
+				assertThat(exception.getExceptionCode()).isEqualTo(QuestionSolveExceptionCode.INVALID_TYPE));
+		assertThat(draft.getSubmittedAnswer()).isEqualTo("기존 답안");
+		assertThat(draft.isSubmitted()).isTrue();
+		verifyNoInteractions(objectMapper);
 	}
 
 	@Test

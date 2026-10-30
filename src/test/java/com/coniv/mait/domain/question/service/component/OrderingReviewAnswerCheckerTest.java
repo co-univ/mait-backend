@@ -15,14 +15,14 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import com.coniv.mait.domain.question.entity.QuestionEntity;
 import com.coniv.mait.domain.question.enums.QuestionType;
 import com.coniv.mait.domain.question.service.dto.ReviewAnswerCheckResult;
-import com.coniv.mait.domain.solve.service.component.AnswerGrader;
+import com.coniv.mait.domain.solve.service.component.OrderingQuestionAnswerChecker;
 import com.coniv.mait.domain.solve.service.dto.OrderingQuestionSubmitAnswer;
 
 @ExtendWith(MockitoExtension.class)
 class OrderingReviewAnswerCheckerTest {
 
 	@Mock
-	private AnswerGrader answerGrader;
+	private OrderingQuestionAnswerChecker orderingQuestionAnswerChecker;
 
 	@InjectMocks
 	private OrderingReviewAnswerChecker checker;
@@ -36,7 +36,7 @@ class OrderingReviewAnswerCheckerTest {
 
 		OrderingQuestionSubmitAnswer submitAnswer = new OrderingQuestionSubmitAnswer(List.of(1L, 2L, 3L));
 
-		when(answerGrader.gradeAnswer(question, submitAnswer)).thenReturn(true);
+		when(orderingQuestionAnswerChecker.checkAnswer(question, submitAnswer)).thenReturn(true);
 
 		// when
 		ReviewAnswerCheckResult result = checker.check(questionId, question, submitAnswer);
@@ -57,7 +57,7 @@ class OrderingReviewAnswerCheckerTest {
 
 		OrderingQuestionSubmitAnswer submitAnswer = new OrderingQuestionSubmitAnswer(List.of(3L, 2L, 1L));
 
-		when(answerGrader.gradeAnswer(question, submitAnswer)).thenReturn(false);
+		when(orderingQuestionAnswerChecker.checkAnswer(question, submitAnswer)).thenReturn(false);
 
 		// when
 		ReviewAnswerCheckResult result = checker.check(questionId, question, submitAnswer);
@@ -70,19 +70,19 @@ class OrderingReviewAnswerCheckerTest {
 	}
 
 	@Test
-	@DisplayName("check - AnswerGrader에 채점 위임")
-	void check_delegatesToAnswerGrader() {
+	@DisplayName("check - 순서 문제 채점기에 직접 위임")
+	void check_delegatesToOrderingQuestionAnswerChecker() {
 		// given
 		Long questionId = 1L;
 		QuestionEntity question = mock(QuestionEntity.class);
 		OrderingQuestionSubmitAnswer submitAnswer = new OrderingQuestionSubmitAnswer(List.of(1L, 2L));
 
-		when(answerGrader.gradeAnswer(question, submitAnswer)).thenReturn(true);
+		when(orderingQuestionAnswerChecker.checkAnswer(question, submitAnswer)).thenReturn(true);
 
 		// when
 		checker.check(questionId, question, submitAnswer);
 
 		// then
-		verify(answerGrader).gradeAnswer(question, submitAnswer);
+		verify(orderingQuestionAnswerChecker).checkAnswer(question, submitAnswer);
 	}
 }
