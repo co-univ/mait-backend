@@ -31,7 +31,6 @@ import com.coniv.mait.domain.solve.repository.SolvingSessionEntityRepository;
 import com.coniv.mait.domain.solve.repository.StudyAnswerDraftEntityRepository;
 import com.coniv.mait.domain.solve.service.component.AnswerGrader;
 import com.coniv.mait.domain.solve.service.component.StudyAnswerDraftFactory;
-import com.coniv.mait.domain.solve.service.component.SubmitAnswerValidator;
 import com.coniv.mait.domain.solve.service.dto.SolvingSessionDto;
 import com.coniv.mait.domain.solve.service.dto.StudyAnswerDraftDto;
 import com.coniv.mait.domain.solve.service.dto.StudyGradeResultDto;
@@ -64,7 +63,6 @@ public class StudyModeService {
 	private final StudyAnswerDraftFactory studyAnswerDraftFactory;
 	private final QuestionReader questionReader;
 	private final AnswerGrader answerGrader;
-	private final SubmitAnswerValidator submitAnswerValidator;
 	private final MaitEventPublisher maitEventPublisher;
 
 	private final QuestionSetEntityRepository questionSetEntityRepository;
@@ -217,7 +215,10 @@ public class StudyModeService {
 			.orElseThrow(() -> new EntityNotFoundException("존재하지 않는 답안 초안 입니다."));
 
 		QuestionEntity question = questionReader.getQuestion(questionId, questionSetId);
-		submitAnswerValidator.validate(question, submittedAnswer);
+		if (question.getType() != submittedAnswer.getType()) {
+			throw new QuestionSolvingException(QuestionSolveExceptionCode.INVALID_TYPE);
+		}
+
 		draft.updateSubmittedAnswer(objectMapper.writeValueAsString(submittedAnswer));
 
 		return StudyAnswerDraftDto.from(draft);

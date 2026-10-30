@@ -10,6 +10,8 @@ import org.springframework.stereotype.Component;
 
 import com.coniv.mait.domain.question.entity.QuestionEntity;
 import com.coniv.mait.domain.question.enums.QuestionType;
+import com.coniv.mait.domain.solve.exception.QuestionSolveExceptionCode;
+import com.coniv.mait.domain.solve.exception.QuestionSolvingException;
 import com.coniv.mait.domain.solve.service.dto.FillBlankSubmitAnswer;
 import com.coniv.mait.domain.solve.service.dto.SubmitAnswerDto;
 
@@ -17,18 +19,19 @@ import com.coniv.mait.domain.solve.service.dto.SubmitAnswerDto;
 public class AnswerGrader {
 
 	private final Map<QuestionType, AnswerChecker<?>> answerCheckers;
-	private final SubmitAnswerValidator submitAnswerValidator;
 
 	@Autowired
-	public AnswerGrader(List<AnswerChecker<?>> checkers, SubmitAnswerValidator submitAnswerValidator) {
+	public AnswerGrader(List<AnswerChecker<?>> checkers) {
 		answerCheckers = checkers.stream()
 			.collect(Collectors.toUnmodifiableMap(AnswerChecker::getQuestionType, Function.identity()));
-		this.submitAnswerValidator = submitAnswerValidator;
 	}
 
 	@SuppressWarnings("unchecked")
 	public boolean gradeAnswer(QuestionEntity question, SubmitAnswerDto<?> submitAnswer) {
-		submitAnswerValidator.validate(question, submitAnswer);
+		if (question.getType() != submitAnswer.getType()) {
+			throw new QuestionSolvingException(QuestionSolveExceptionCode.INVALID_TYPE);
+		}
+
 		AnswerChecker<?> checker = answerCheckers.get(question.getType());
 		if (checker == null) {
 			throw new IllegalArgumentException("지원하지 않는 문제 유형입니다: " + question.getType());

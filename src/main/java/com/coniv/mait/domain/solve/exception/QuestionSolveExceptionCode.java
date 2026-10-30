@@ -20,8 +20,7 @@ public enum QuestionSolveExceptionCode implements ExceptionCode {
 
 	ANSWER_COUNT(HttpStatus.BAD_REQUEST, "S-001", "제출된 답변의 개수와 문제의 답변 개수가 일치하지 않습니다."),
 
-	DUPLICATE_ANSWER_NUMBER(HttpStatus.BAD_REQUEST, "S-002", "제출된 답변의 번호가 중복됩니다."),
-	INVALID_ANSWER_FORMAT(HttpStatus.BAD_REQUEST, "S-003", "제출된 답변의 형식이 올바르지 않습니다.");
+	DUPLICATE_ANSWER_NUMBER(HttpStatus.BAD_REQUEST, "S-002", "제출된 답변의 번호가 중복됩니다.");
 
 	private final HttpStatus status;
 	private final String code;

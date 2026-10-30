@@ -13,7 +13,8 @@ import com.coniv.mait.domain.question.enums.QuestionType;
 import com.coniv.mait.domain.question.exception.QuestionExceptionCode;
 import com.coniv.mait.domain.question.exception.QuestionStatusException;
 import com.coniv.mait.domain.question.service.dto.ReviewAnswerCheckResult;
-import com.coniv.mait.domain.solve.service.component.SubmitAnswerValidator;
+import com.coniv.mait.domain.solve.exception.QuestionSolveExceptionCode;
+import com.coniv.mait.domain.solve.exception.QuestionSolvingException;
 import com.coniv.mait.domain.solve.service.dto.FillBlankSubmitAnswer;
 import com.coniv.mait.domain.solve.service.dto.SubmitAnswerDto;
 
@@ -21,19 +22,20 @@ import com.coniv.mait.domain.solve.service.dto.SubmitAnswerDto;
 public class ReviewAnswerGrader {
 
 	private final Map<QuestionType, ReviewAnswerChecker<?>> checkers;
-	private final SubmitAnswerValidator submitAnswerValidator;
 
 	@Autowired
-	public ReviewAnswerGrader(List<ReviewAnswerChecker<?>> checkers, SubmitAnswerValidator submitAnswerValidator) {
+	public ReviewAnswerGrader(List<ReviewAnswerChecker<?>> checkers) {
 		this.checkers = checkers.stream()
 			.collect(Collectors.toUnmodifiableMap(ReviewAnswerChecker::getQuestionType, Function.identity()));
-		this.submitAnswerValidator = submitAnswerValidator;
 	}
 
 	@SuppressWarnings("unchecked")
 	public ReviewAnswerCheckResult gradeAnswer(Long questionId, QuestionEntity question,
 		SubmitAnswerDto<?> submitAnswers) {
-		submitAnswerValidator.validate(question, submitAnswers);
+		if (question.getType() != submitAnswers.getType()) {
+			throw new QuestionSolvingException(QuestionSolveExceptionCode.INVALID_TYPE);
+		}
+
 		ReviewAnswerChecker<?> checker = checkers.get(question.getType());
 		if (checker == null) {
 			throw new QuestionStatusException(QuestionExceptionCode.UNAVAILABLE_TYPE);
