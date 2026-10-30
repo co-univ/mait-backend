@@ -6,6 +6,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import java.util.List;
 
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -13,6 +14,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.http.MediaType;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
@@ -21,6 +24,7 @@ import com.coniv.mait.domain.user.enums.PolicyTiming;
 import com.coniv.mait.domain.user.enums.PolicyType;
 import com.coniv.mait.domain.user.service.PolicyService;
 import com.coniv.mait.domain.user.service.dto.PolicyDto;
+import com.coniv.mait.global.auth.model.MaitUser;
 import com.coniv.mait.global.filter.JwtAuthorizationFilter;
 import com.coniv.mait.global.interceptor.idempotency.IdempotencyInterceptor;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -28,6 +32,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 @WebMvcTest(controllers = PolicyController.class)
 @AutoConfigureMockMvc(addFilters = false)
 class PolicyControllerTest {
+
+	private static final Long USER_ID = 1L;
 
 	@MockitoBean
 	private PolicyService policyService;
@@ -47,6 +53,17 @@ class PolicyControllerTest {
 	@BeforeEach
 	void setUp() throws Exception {
 		when(idempotencyInterceptor.preHandle(any(), any(), any())).thenReturn(true);
+
+		MaitUser user = MaitUser.builder().id(USER_ID).build();
+		var authentication = new UsernamePasswordAuthenticationToken(user, null, List.of());
+		var context = SecurityContextHolder.createEmptyContext();
+		context.setAuthentication(authentication);
+		SecurityContextHolder.setContext(context);
+	}
+
+	@AfterEach
+	void tearDown() {
+		SecurityContextHolder.clearContext();
 	}
 
 	@Test
@@ -97,7 +114,7 @@ class PolicyControllerTest {
 	@DisplayName("미확인 정책 목록 조회 API 테스트")
 	void findUnConfirmedPolicies() throws Exception {
 		// given
-		Long userId = 1L;
+		Long userId = USER_ID;
 		PolicyTiming timing = PolicyTiming.SIGN_UP;
 
 		List<PolicyDto> mockPolicies = List.of(
@@ -124,7 +141,7 @@ class PolicyControllerTest {
 		when(policyService.findUnConfirmedPolicies(userId, timing)).thenReturn(mockPolicies);
 
 		// when & then
-		mockMvc.perform(get("/api/v1/policies/unchecked/" + userId)
+		mockMvc.perform(get("/api/v1/policies/unchecked")
 				.param("timing", timing.name())
 				.contentType(MediaType.APPLICATION_JSON))
 			.andExpect(status().isOk())
