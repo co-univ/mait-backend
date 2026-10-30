@@ -20,6 +20,7 @@ import com.coniv.mait.domain.question.entity.QuestionEntity;
 import com.coniv.mait.domain.question.entity.QuestionSetEntity;
 import com.coniv.mait.domain.question.enums.QuestionSetSolveMode;
 import com.coniv.mait.domain.question.enums.QuestionSetStatus;
+import com.coniv.mait.domain.question.enums.QuestionType;
 import com.coniv.mait.domain.question.enums.UserStudyStatus;
 import com.coniv.mait.domain.question.repository.QuestionSetEntityRepository;
 import com.coniv.mait.domain.question.service.component.QuestionReader;
@@ -36,7 +37,6 @@ import com.coniv.mait.domain.solve.repository.SolvingSessionEntityRepository;
 import com.coniv.mait.domain.solve.repository.StudyAnswerDraftEntityRepository;
 import com.coniv.mait.domain.solve.service.component.AnswerGrader;
 import com.coniv.mait.domain.solve.service.component.StudyAnswerDraftFactory;
-import com.coniv.mait.domain.solve.service.component.SubmitAnswerValidator;
 import com.coniv.mait.domain.solve.service.dto.ShortQuestionSubmitAnswer;
 import com.coniv.mait.domain.solve.service.dto.StudyAnswerDraftDto;
 import com.coniv.mait.domain.solve.service.dto.StudyGradeResultDto;
@@ -93,9 +93,6 @@ class StudyModeServiceTest {
 
 	@Mock
 	private AnswerGrader answerGrader;
-
-	@Mock
-	private SubmitAnswerValidator submitAnswerValidator;
 
 	@Mock
 	private MaitEventPublisher maitEventPublisher;
@@ -497,6 +494,7 @@ class StudyModeServiceTest {
 		when(mockSession.getId()).thenReturn(solvingSessionId);
 		when(studyAnswerDraftEntityRepository.findById(draftId)).thenReturn(Optional.of(draft));
 		when(questionReader.getQuestion(questionId, QUESTION_SET_ID)).thenReturn(question);
+		when(question.getType()).thenReturn(QuestionType.SHORT);
 		when(objectMapper.writeValueAsString(submitAnswer)).thenReturn(serializedAnswer);
 
 		// when
@@ -508,13 +506,12 @@ class StudyModeServiceTest {
 		assertThat(result.isSubmitted()).isTrue();
 		assertThat(result.getQuestionId()).isEqualTo(questionId);
 		assertThat(result.getSolvingSessionId()).isEqualTo(solvingSessionId);
-		verify(submitAnswerValidator).validate(question, submitAnswer);
 	}
 
 	@ParameterizedTest
-	@EnumSource(value = QuestionSolveExceptionCode.class, names = {"INVALID_TYPE", "INVALID_ANSWER_FORMAT"})
-	@DisplayName("updateStudyAnswerDraft - 답안 검증에 실패하면 기존 초안을 변경하지 않는다")
-	void updateStudyAnswerDraft_rejectsInvalidAnswer(QuestionSolveExceptionCode code) {
+	@EnumSource(value = QuestionType.class, names = "SHORT", mode = EnumSource.Mode.EXCLUDE)
+	@DisplayName("updateStudyAnswerDraft - 제출 유형이 다르면 기존 초안을 변경하지 않는다")
+	void updateStudyAnswerDraft_rejectsInvalidAnswer(QuestionType questionType) {
 		// given
 		Long questionId = 101L;
 		Long solvingSessionId = 1000L;
@@ -536,12 +533,13 @@ class StudyModeServiceTest {
 		when(session.getId()).thenReturn(solvingSessionId);
 		when(studyAnswerDraftEntityRepository.findById(draftId)).thenReturn(Optional.of(draft));
 		when(questionReader.getQuestion(questionId, QUESTION_SET_ID)).thenReturn(question);
-		QuestionSolvingException exception = new QuestionSolvingException(code);
-		doThrow(exception).when(submitAnswerValidator).validate(question, submitAnswer);
+		when(question.getType()).thenReturn(questionType);
 
 		// when & then
 		assertThatThrownBy(() -> studyModeService.updateStudyAnswerDraft(MAIT_USER, QUESTION_SET_ID, questionId,
-			submitAnswer)).isSameAs(exception);
+			submitAnswer))
+			.isInstanceOfSatisfying(QuestionSolvingException.class, exception ->
+				assertThat(exception.getExceptionCode()).isEqualTo(QuestionSolveExceptionCode.INVALID_TYPE));
 		assertThat(draft.getSubmittedAnswer()).isEqualTo("기존 답안");
 		assertThat(draft.isSubmitted()).isTrue();
 		verifyNoInteractions(objectMapper);
