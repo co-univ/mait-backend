@@ -9,6 +9,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.stereotype.Component;
 
+import com.coniv.mait.global.auth.jwt.constant.TokenType;
 import com.coniv.mait.global.auth.jwt.repository.BlackListRepository;
 
 import io.jsonwebtoken.Claims;
@@ -20,6 +21,9 @@ import lombok.RequiredArgsConstructor;
 @Component
 @RequiredArgsConstructor
 public class JwtTokenProvider {
+
+	private static final String USER_ID_CLAIM = "id";
+	private static final String TOKEN_TYPE_CLAIM = "type";
 
 	@Value("${jwt.secretKey}")
 	String secretKey;
@@ -34,14 +38,15 @@ public class JwtTokenProvider {
 
 	public Token createToken(final Long userId) {
 		return Token.builder()
-			.accessToken(generateToken(userId, accessExpiration))
-			.refreshToken(generateToken(userId, refreshExpiration))
+			.accessToken(generateToken(userId, TokenType.ACCESS, accessExpiration))
+			.refreshToken(generateToken(userId, TokenType.REFRESH, refreshExpiration))
 			.build();
 	}
 
-	private String generateToken(final Long userId, final long expireTime) {
+	private String generateToken(final Long userId, final TokenType tokenType, final long expireTime) {
 		Claims claims = Jwts.claims();
-		claims.put("id", userId);
+		claims.put(USER_ID_CLAIM, userId);
+		claims.put(TOKEN_TYPE_CLAIM, tokenType.name());
 
 		SecretKey key = Keys.hmacShaKeyFor(secretKey.getBytes(StandardCharsets.UTF_8));
 
@@ -54,8 +59,10 @@ public class JwtTokenProvider {
 	}
 
 	public void validateAccessToken(final String accessToken) {
-		// Todo: 액세스 토큰 타입 검증
 		if (accessToken == null) {
+			throw new BadCredentialsException("Access token is null");
+		}
+		if (!TokenType.ACCESS.name().equals(getTokenType(accessToken))) {
 			throw new BadCredentialsException("Type is not access token");
 		}
 		if (blackListRepository.existsById(accessToken)) {
@@ -67,18 +74,27 @@ public class JwtTokenProvider {
 		if (refreshToken == null) {
 			throw new BadCredentialsException("Refresh token is null");
 		}
+		if (!TokenType.REFRESH.name().equals(getTokenType(refreshToken))) {
+			throw new BadCredentialsException("Type is not refresh token");
+		}
 		if (blackListRepository.existsById(refreshToken)) {
 			throw new BadCredentialsException("Refresh token is blacklisted");
 		}
 	}
 
 	public Long getUserId(String token) {
-		Claims claims = Jwts.parserBuilder()
+		return parseClaims(token).get(USER_ID_CLAIM, Long.class);
+	}
+
+	private String getTokenType(final String token) {
+		return parseClaims(token).get(TOKEN_TYPE_CLAIM, String.class);
+	}
+
+	private Claims parseClaims(final String token) {
+		return Jwts.parserBuilder()
 			.setSigningKey(Keys.hmacShaKeyFor(secretKey.getBytes(StandardCharsets.UTF_8)))
 			.build()
 			.parseClaimsJws(token)
 			.getBody();
-
-		return claims.get("id", Long.class);
 	}
 }
