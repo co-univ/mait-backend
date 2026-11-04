@@ -22,6 +22,8 @@ import com.coniv.mait.domain.question.enums.QuestionSetSolveMode;
 import com.coniv.mait.domain.question.enums.QuestionSetStatus;
 import com.coniv.mait.domain.question.enums.QuestionType;
 import com.coniv.mait.domain.question.enums.UserStudyStatus;
+import com.coniv.mait.domain.question.exception.QuestionException;
+import com.coniv.mait.domain.question.exception.QuestionExceptionCode;
 import com.coniv.mait.domain.question.repository.QuestionSetEntityRepository;
 import com.coniv.mait.domain.question.service.component.QuestionReader;
 import com.coniv.mait.domain.question.service.component.QuestionSetReader;
@@ -538,8 +540,8 @@ class StudyModeServiceTest {
 		// when & then
 		assertThatThrownBy(() -> studyModeService.updateStudyAnswerDraft(MAIT_USER, QUESTION_SET_ID, questionId,
 			submitAnswer))
-			.isInstanceOfSatisfying(QuestionSolvingException.class, exception ->
-				assertThat(exception.getExceptionCode()).isEqualTo(QuestionSolveExceptionCode.INVALID_TYPE));
+			.isInstanceOfSatisfying(QuestionException.class, exception ->
+				assertThat(exception.getExceptionCode()).isEqualTo(QuestionExceptionCode.TYPE_MISMATCH));
 		assertThat(draft.getSubmittedAnswer()).isEqualTo("기존 답안");
 		assertThat(draft.isSubmitted()).isTrue();
 		verifyNoInteractions(objectMapper);

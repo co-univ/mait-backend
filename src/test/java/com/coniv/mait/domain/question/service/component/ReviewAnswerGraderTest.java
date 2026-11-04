@@ -15,9 +15,9 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import com.coniv.mait.domain.question.entity.QuestionEntity;
 import com.coniv.mait.domain.question.enums.QuestionType;
+import com.coniv.mait.domain.question.exception.QuestionException;
+import com.coniv.mait.domain.question.exception.QuestionExceptionCode;
 import com.coniv.mait.domain.question.service.dto.ReviewAnswerCheckResult;
-import com.coniv.mait.domain.solve.exception.QuestionSolveExceptionCode;
-import com.coniv.mait.domain.solve.exception.QuestionSolvingException;
 import com.coniv.mait.domain.solve.service.dto.SubmitAnswerDto;
 
 @ExtendWith(MockitoExtension.class)
@@ -70,8 +70,8 @@ class ReviewAnswerGraderTest {
 
 		// when & then
 		assertThatThrownBy(() -> grader.gradeAnswer(1L, question, submittedAnswer))
-			.isInstanceOfSatisfying(QuestionSolvingException.class, exception ->
-				assertThat(exception.getExceptionCode()).isEqualTo(QuestionSolveExceptionCode.INVALID_TYPE));
+			.isInstanceOfSatisfying(QuestionException.class, exception ->
+				assertThat(exception.getExceptionCode()).isEqualTo(QuestionExceptionCode.TYPE_MISMATCH));
 		verify(checker, never()).check(anyLong(), any(), any());
 	}
 }
