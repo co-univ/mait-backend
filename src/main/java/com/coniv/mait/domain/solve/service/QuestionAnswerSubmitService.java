@@ -11,6 +11,7 @@ import org.springframework.transaction.annotation.Transactional;
 import com.coniv.mait.domain.question.entity.QuestionEntity;
 import com.coniv.mait.domain.question.entity.QuestionSetEntity;
 import com.coniv.mait.domain.question.service.component.QuestionReader;
+import com.coniv.mait.domain.question.service.component.QuestionSetReader;
 import com.coniv.mait.domain.solve.entity.AnswerSubmitRecordEntity;
 import com.coniv.mait.domain.solve.exception.QuestionSolveExceptionCode;
 import com.coniv.mait.domain.solve.exception.QuestionSolvingException;
@@ -40,6 +41,8 @@ public class QuestionAnswerSubmitService {
 	private final UserEntityRepository userEntityRepository;
 
 	private final QuestionReader questionReader;
+
+	private final QuestionSetReader questionSetReader;
 
 	private final AnswerSubmitRecordEntityRepository answerSubmitRecordEntityRepository;
 
@@ -107,8 +110,9 @@ public class QuestionAnswerSubmitService {
 
 	public List<AnswerSubmitRecordDto> getSubmitRecords(final Long questionSetId, final Long questionId,
 		final Long userId) {
-		final QuestionEntity question = questionReader.getQuestion(questionId, questionSetId);
-		teamRoleValidator.checkIsTeamManager(question.getQuestionSet().getTeamId(), userId);
+		questionReader.getQuestion(questionId, questionSetId);
+		final QuestionSetEntity questionSet = questionSetReader.getQuestionSet(questionSetId);
+		teamRoleValidator.checkIsTeamManager(questionSet.getTeamId(), userId);
 
 		List<AnswerSubmitRecordEntity> records = answerSubmitRecordEntityRepository.findAllByQuestionId(questionId);
 		List<Long> userIds = records.stream().map(AnswerSubmitRecordEntity::getUserId).toList();

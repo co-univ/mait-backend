@@ -20,6 +20,7 @@ import com.coniv.mait.domain.question.entity.MultipleQuestionEntity;
 import com.coniv.mait.domain.question.entity.QuestionEntity;
 import com.coniv.mait.domain.question.entity.QuestionSetEntity;
 import com.coniv.mait.domain.question.service.component.QuestionReader;
+import com.coniv.mait.domain.question.service.component.QuestionSetReader;
 import com.coniv.mait.domain.solve.entity.AnswerSubmitRecordEntity;
 import com.coniv.mait.domain.solve.exception.QuestionSolveExceptionCode;
 import com.coniv.mait.domain.solve.exception.QuestionSolvingException;
@@ -50,6 +51,9 @@ class QuestionAnswerSubmitServiceTest {
 
 	@Mock
 	private QuestionReader questionReader;
+
+	@Mock
+	private QuestionSetReader questionSetReader;
 
 	@Mock
 	private AnswerSubmitRecordEntityRepository answerSubmitRecordEntityRepository;
@@ -342,7 +346,7 @@ class QuestionAnswerSubmitServiceTest {
 			QuestionEntity question = mock(QuestionEntity.class);
 			QuestionSetEntity questionSet = mock(QuestionSetEntity.class);
 			when(questionReader.getQuestion(questionId, questionSetId)).thenReturn(question);
-			when(question.getQuestionSet()).thenReturn(questionSet);
+			when(questionSetReader.getQuestionSet(questionSetId)).thenReturn(questionSet);
 			when(questionSet.getTeamId()).thenReturn(teamId);
 
 			UserEntity firstUser = mock(UserEntity.class);
@@ -394,7 +398,7 @@ class QuestionAnswerSubmitServiceTest {
 			QuestionEntity question = mock(QuestionEntity.class);
 			QuestionSetEntity questionSet = mock(QuestionSetEntity.class);
 			when(questionReader.getQuestion(questionId, questionSetId)).thenReturn(question);
-			when(question.getQuestionSet()).thenReturn(questionSet);
+			when(questionSetReader.getQuestionSet(questionSetId)).thenReturn(questionSet);
 			when(questionSet.getTeamId()).thenReturn(teamId);
 			doThrow(new UserRoleException("팀 관리 권한이 없습니다."))
 				.when(teamRoleValidator).checkIsTeamManager(teamId, requesterId);
