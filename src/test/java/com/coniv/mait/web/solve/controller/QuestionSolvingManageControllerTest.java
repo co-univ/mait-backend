@@ -4,8 +4,11 @@ import static org.mockito.Mockito.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
+import java.util.List;
 import java.util.stream.Stream;
 
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
@@ -14,16 +17,21 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.http.MediaType;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
 import com.coniv.mait.domain.solve.service.QuestionSolvingManageService;
+import com.coniv.mait.global.auth.model.MaitUser;
 import com.coniv.mait.global.filter.JwtAuthorizationFilter;
 import com.coniv.mait.global.interceptor.idempotency.IdempotencyInterceptor;
 
 @WebMvcTest(controllers = QuestionSolvingManageController.class)
 @AutoConfigureMockMvc(addFilters = false)
 class QuestionSolvingManageControllerTest {
+
+	private static final Long USER_ID = 1L;
 
 	@Autowired
 	private MockMvc mockMvc;
@@ -36,6 +44,20 @@ class QuestionSolvingManageControllerTest {
 
 	@MockitoBean
 	private IdempotencyInterceptor idempotencyInterceptor;
+
+	@BeforeEach
+	void setUp() {
+		MaitUser user = MaitUser.builder().id(USER_ID).build();
+		var authentication = new UsernamePasswordAuthenticationToken(user, null, List.of());
+		var context = SecurityContextHolder.createEmptyContext();
+		context.setAuthentication(authentication);
+		SecurityContextHolder.setContext(context);
+	}
+
+	@AfterEach
+	void tearDown() {
+		SecurityContextHolder.clearContext();
+	}
 
 	@ParameterizedTest
 	@CsvSource({"SHORT, shortAnswers", "FILL_BLANK, answers"})
@@ -51,7 +73,7 @@ class QuestionSolvingManageControllerTest {
 				.contentType(MediaType.APPLICATION_JSON).content(body))
 			.andExpectAll(status().isOk(), jsonPath("$.isSuccess").value(true));
 		verify(service).updateQuestionAnswers(eq(1L), eq(2L),
-			argThat(payload -> payload.getType().name().equals(type)));
+			argThat(payload -> payload.getType().name().equals(type)), eq(USER_ID));
 	}
 
 	@ParameterizedTest

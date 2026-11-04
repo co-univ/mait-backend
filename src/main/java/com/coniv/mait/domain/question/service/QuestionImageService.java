@@ -12,6 +12,7 @@ import com.coniv.mait.domain.question.entity.QuestionSetEntity;
 import com.coniv.mait.domain.question.repository.QuestionImageEntityRepository;
 import com.coniv.mait.domain.question.repository.QuestionSetEntityRepository;
 import com.coniv.mait.domain.question.service.dto.QuestionImageDto;
+import com.coniv.mait.domain.user.service.component.TeamRoleValidator;
 import com.coniv.mait.global.component.dto.FileInfo;
 import com.coniv.mait.global.s3.dto.FileType;
 import com.coniv.mait.global.s3.service.S3FileUploader;
@@ -26,11 +27,13 @@ public class QuestionImageService {
 	private final QuestionSetEntityRepository questionSetEntityRepository;
 	private final S3FileUploader imageUploader;
 	private final QuestionImageEntityRepository questionImageEntityRepository;
+	private final TeamRoleValidator teamRoleValidator;
 
 	@Transactional
-	public QuestionImageDto uploadImage(final Long questionSetId, final MultipartFile image) {
+	public QuestionImageDto uploadImage(final Long questionSetId, final MultipartFile image, final Long userId) {
 		QuestionSetEntity questionSet = questionSetEntityRepository.findById(questionSetId)
 			.orElseThrow(() -> new EntityNotFoundException("Question Set not found with id: " + questionSetId));
+		teamRoleValidator.checkIsTeamManager(questionSet.getTeamId(), userId);
 
 		FileInfo imageInfo = imageUploader.uploadFile(image, FileType.QUESTION_IMAGE);
 
