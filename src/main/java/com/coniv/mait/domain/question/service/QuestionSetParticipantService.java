@@ -22,6 +22,7 @@ import com.coniv.mait.domain.question.repository.QuestionSetParticipantRepositor
 import com.coniv.mait.domain.question.service.component.QuestionWebSocketSender;
 import com.coniv.mait.domain.user.entity.UserEntity;
 import com.coniv.mait.domain.user.repository.UserEntityRepository;
+import com.coniv.mait.domain.user.service.component.TeamRoleValidator;
 import com.coniv.mait.global.event.MaitEventPublisher;
 import com.coniv.mait.global.exception.custom.UserParameterException;
 
@@ -44,6 +45,8 @@ public class QuestionSetParticipantService {
 
 	private final MaitEventPublisher maitEventPublisher;
 
+	private final TeamRoleValidator teamRoleValidator;
+
 	public List<ParticipantDto> getParticipants(final Long questionSetId) {
 		QuestionSetEntity questionSet = questionSetEntityRepository.findById(questionSetId)
 			.orElseThrow(() -> new EntityNotFoundException("해당 문제 셋을 조회할 수 없음 id: " + questionSetId));
@@ -56,11 +59,12 @@ public class QuestionSetParticipantService {
 
 	@Transactional
 	public List<ParticipantDto> updateParticipantsStatus(final Long questionSetId,
-		final List<ParticipantDto> activeUsers, final List<ParticipantDto> eliminatedUsers) {
+		final List<ParticipantDto> activeUsers, final List<ParticipantDto> eliminatedUsers, final Long userId) {
 		validateParticipants(activeUsers, eliminatedUsers);
 
 		QuestionSetEntity questionSet = questionSetEntityRepository.findById(questionSetId)
 			.orElseThrow(() -> new EntityNotFoundException("해당 문제 셋을 조회할 수 없음 id: " + questionSetId));
+		teamRoleValidator.checkIsTeamManager(questionSet.getTeamId(), userId);
 
 		questionSet.markAdvancementSelected();
 
@@ -101,9 +105,10 @@ public class QuestionSetParticipantService {
 	}
 
 	@Transactional
-	public void updateWinners(final Long questionSetId, final List<ParticipantDto> winners) {
+	public void updateWinners(final Long questionSetId, final List<ParticipantDto> winners, final Long userId) {
 		QuestionSetEntity questionSet = questionSetEntityRepository.findById(questionSetId)
 			.orElseThrow(() -> new EntityNotFoundException("해당 문제 셋을 조회할 수 없음 id: " + questionSetId));
+		teamRoleValidator.checkIsTeamManager(questionSet.getTeamId(), userId);
 
 		Set<Long> winnerParticipantIds = winners.stream()
 			.map(ParticipantDto::getParticipantId)

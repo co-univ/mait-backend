@@ -27,6 +27,7 @@ import com.coniv.mait.domain.question.repository.QuestionSetEntityRepository;
 import com.coniv.mait.domain.question.repository.QuestionSetParticipantRepository;
 import com.coniv.mait.domain.question.service.component.QuestionWebSocketSender;
 import com.coniv.mait.domain.question.service.dto.CurrentQuestionDto;
+import com.coniv.mait.domain.user.service.component.TeamRoleValidator;
 import com.coniv.mait.global.constant.WebSocketConstants;
 import com.coniv.mait.global.exception.custom.ResourceNotBelongException;
 import com.coniv.mait.web.question.dto.ParticipantSendType;
@@ -47,10 +48,12 @@ public class QuestionSetLiveControlService {
 	private final SimpMessagingTemplate messagingTemplate;
 	private final QuestionSetParticipantService questionSetParticipantService;
 	private final QuestionService questionService;
+	private final TeamRoleValidator teamRoleValidator;
 
 	@Transactional
-	public void startLiveQuestionSet(Long questionSetId) {
+	public void startLiveQuestionSet(Long questionSetId, Long userId) {
 		QuestionSetEntity questionSet = findQuestionSetById(questionSetId);
+		teamRoleValidator.checkIsTeamManager(questionSet.getTeamId(), userId);
 		questionSet.startLiveQuestionSet();
 
 		QuestionSetStatusMessage message = QuestionSetStatusMessage.builder()
@@ -63,8 +66,9 @@ public class QuestionSetLiveControlService {
 	}
 
 	@Transactional
-	public void endLiveQuestionSet(Long questionSetId) {
+	public void endLiveQuestionSet(Long questionSetId, Long userId) {
 		QuestionSetEntity questionSet = findQuestionSetById(questionSetId);
+		teamRoleValidator.checkIsTeamManager(questionSet.getTeamId(), userId);
 		questionSet.endLiveQuestionSet();
 		List<QuestionEntity> openQuestions = questionEntityRepository.findAllByQuestionSetIdAndQuestionStatusIn(
 			questionSetId, QuestionStatusType.openStatuses());
@@ -94,8 +98,9 @@ public class QuestionSetLiveControlService {
 	}
 
 	@Transactional(readOnly = true)
-	public void sendWinner(Long questionSetId, List<Long> winnerIds) {
+	public void sendWinner(Long questionSetId, List<Long> winnerIds, Long userId) {
 		QuestionSetEntity questionSet = findQuestionSetById(questionSetId);
+		teamRoleValidator.checkIsTeamManager(questionSet.getTeamId(), userId);
 
 		List<QuestionSetParticipantEntity> participants =
 			questionSetParticipantRepository.findAllByQuestionSetWithFetchJoinUser(questionSet);
@@ -191,8 +196,9 @@ public class QuestionSetLiveControlService {
 			currentQuestion.getQuestionId(), currentQuestion.getQuestionStatus());
 	}
 
-	public void sendParticipants(Long questionSetId, ParticipantSendType type) {
+	public void sendParticipants(Long questionSetId, ParticipantSendType type, Long userId) {
 		QuestionSetEntity questionSet = findQuestionSetById(questionSetId);
+		teamRoleValidator.checkIsTeamManager(questionSet.getTeamId(), userId);
 
 		List<ParticipantDto> activeParticipants =
 			questionSetParticipantRepository.findAllByQuestionSetWithFetchJoinUser(questionSet).stream()
