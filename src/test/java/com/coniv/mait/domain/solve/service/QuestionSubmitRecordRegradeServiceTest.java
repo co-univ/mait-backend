@@ -16,8 +16,8 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import com.coniv.mait.domain.question.entity.QuestionEntity;
 import com.coniv.mait.domain.question.enums.QuestionType;
+import com.coniv.mait.domain.question.exception.QuestionException;
 import com.coniv.mait.domain.question.exception.QuestionExceptionCode;
-import com.coniv.mait.domain.question.exception.QuestionStatusException;
 import com.coniv.mait.domain.question.service.component.QuestionReader;
 import com.coniv.mait.domain.solve.entity.AnswerSubmitRecordEntity;
 import com.coniv.mait.domain.solve.repository.AnswerSubmitRecordEntityRepository;
@@ -84,10 +84,10 @@ class QuestionSubmitRecordRegradeServiceTest {
 
 		// when & then
 		assertThatThrownBy(() -> questionSubmitRecordRegradeService.regradeSubmitRecords(questionId))
-			.isInstanceOf(QuestionStatusException.class)
+			.isInstanceOf(QuestionException.class)
 			.satisfies(ex -> {
-				QuestionStatusException qse = (QuestionStatusException)ex;
-				assertThat(qse.getQuestionExceptionCode())
+				QuestionException qse = (QuestionException)ex;
+				assertThat(qse.getExceptionCode())
 					.isEqualTo(QuestionExceptionCode.UNAVAILABLE_TYPE);
 			});
 	}
