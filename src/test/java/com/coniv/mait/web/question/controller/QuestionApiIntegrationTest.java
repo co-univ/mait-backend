@@ -179,7 +179,12 @@ public class QuestionApiIntegrationTest extends BaseIntegrationTest {
 	@DisplayName("실시간 객관식 조회는 정답 여부를 숨기고 정답 개수를 반환한다")
 	void getMultipleQuestionInLiveTimeReturnsAnswerCount() throws Exception {
 		// given
+		QuestionSetEntity teamQuestionSet = questionSetInMakerTeam("실시간 문제 셋");
+		TeamUserEntity member = teamUserEntityRepository.findByTeamIdAndUserRole(teamQuestionSet.getTeamId(),
+			TeamUserRole.MAKER).orElseThrow();
+		member.updateUserRole(TeamUserRole.PLAYER);
 		QuestionSetEntity questionSet = questionSetEntityRepository.save(QuestionSetEntity.builder()
+			.teamId(teamQuestionSet.getTeamId())
 			.title("실시간 문제 셋")
 			.solveMode(QuestionSetSolveMode.LIVE_TIME)
 			.status(QuestionSetStatus.ONGOING)

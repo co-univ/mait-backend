@@ -13,7 +13,6 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import com.coniv.mait.domain.question.enums.DeliveryMode;
 import com.coniv.mait.domain.question.enums.QuestionType;
 import com.coniv.mait.domain.question.service.QuestionService;
 import com.coniv.mait.domain.question.service.dto.MultipleQuestionDto;
@@ -54,7 +53,7 @@ class QuestionAnswerStatisticServiceTest {
 			record(3L, 1L, false, ANSWER_1),
 			record(4L, 1L, true, ANSWER_1_2));
 
-		when(questionService.getQuestion(QUESTION_SET_ID, QUESTION_ID, DeliveryMode.MANAGING)).thenReturn(question());
+		when(questionService.getQuestionForAdmin(QUESTION_SET_ID, QUESTION_ID)).thenReturn(question());
 		when(answerSubmitRecordEntityRepository.findAllByQuestionId(QUESTION_ID)).thenReturn(records);
 
 		// when
@@ -93,7 +92,7 @@ class QuestionAnswerStatisticServiceTest {
 			record(3L, 1L, false, ANSWER_1),
 			record(4L, 1L, true, ANSWER_1_2));
 
-		when(questionService.getQuestion(QUESTION_SET_ID, QUESTION_ID, DeliveryMode.MANAGING)).thenReturn(question());
+		when(questionService.getQuestionForAdmin(QUESTION_SET_ID, QUESTION_ID)).thenReturn(question());
 		when(answerSubmitRecordEntityRepository.findAllByQuestionId(QUESTION_ID)).thenReturn(records);
 
 		// when
@@ -118,7 +117,7 @@ class QuestionAnswerStatisticServiceTest {
 	@DisplayName("getAnswerDistribution - 제출 기록이 없으면 그룹은 비어있고 카운트는 0, 정답률은 null이다")
 	void getAnswerDistribution_noRecords() {
 		// given
-		when(questionService.getQuestion(QUESTION_SET_ID, QUESTION_ID, DeliveryMode.MANAGING)).thenReturn(question());
+		when(questionService.getQuestionForAdmin(QUESTION_SET_ID, QUESTION_ID)).thenReturn(question());
 		when(answerSubmitRecordEntityRepository.findAllByQuestionId(QUESTION_ID)).thenReturn(List.of());
 
 		// when
@@ -137,7 +136,7 @@ class QuestionAnswerStatisticServiceTest {
 	@DisplayName("getAnswerDistribution - 문제를 찾지 못하면 예외가 전파되고 제출 기록은 조회하지 않는다")
 	void getAnswerDistribution_questionNotFound() {
 		// given
-		when(questionService.getQuestion(QUESTION_SET_ID, QUESTION_ID, DeliveryMode.MANAGING))
+		when(questionService.getQuestionForAdmin(QUESTION_SET_ID, QUESTION_ID))
 			.thenThrow(new EntityNotFoundException("Question not found with id: " + QUESTION_ID));
 
 		// when & then

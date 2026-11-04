@@ -23,15 +23,16 @@ public class TeamRoleValidator {
 
 	private final TeamUserEntityRepository teamUserEntityRepository;
 
-	public void checkIsTeamManager(final Long teamId, final Long userId) {
+	public TeamUserRole getTeamRole(final Long teamId, final Long userId) {
 		TeamEntity team = teamReader.getActiveTeam(teamId);
-
 		UserEntity user = userReader.getById(userId);
+		return teamUserEntityRepository.findByTeamAndUser(team, user)
+			.orElseThrow(() -> new UserRoleException("해당 팀의 멤버가 아닙니다."))
+			.getUserRole();
+	}
 
-		TeamUserEntity teamUser = teamUserEntityRepository.findByTeamAndUser(team, user)
-			.orElseThrow(() -> new UserRoleException("해당 팀의 멤버가 아닙니다."));
-
-		if (!teamUser.getUserRole().covers(TeamUserRole.MAKER)) {
+	public void checkIsTeamManager(final Long teamId, final Long userId) {
+		if (!getTeamRole(teamId, userId).covers(TeamUserRole.MAKER)) {
 			throw new UserRoleException("팀 관리 권한이 없습니다.");
 		}
 	}

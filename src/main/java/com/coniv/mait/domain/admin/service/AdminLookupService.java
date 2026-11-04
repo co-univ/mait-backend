@@ -7,7 +7,6 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.coniv.mait.domain.admin.service.dto.AdminQuestionSetDto;
 import com.coniv.mait.domain.admin.service.dto.AdminTeamDto;
-import com.coniv.mait.domain.question.enums.DeliveryMode;
 import com.coniv.mait.domain.question.repository.QuestionSetEntityRepository;
 import com.coniv.mait.domain.question.service.QuestionService;
 import com.coniv.mait.domain.question.service.dto.QuestionDto;
@@ -39,7 +38,7 @@ public class AdminLookupService {
 
 	@Transactional(readOnly = true)
 	public List<QuestionDto> getQuestions(final Long questionSetId) {
-		// 어드민은 실제 정답까지 확인해야 하므로 정답이 노출되는 MANAGING 모드로 조회한다.
-		return questionService.getQuestions(questionSetId, DeliveryMode.MANAGING);
+		// 어드민 전용 조회에서는 실제 정답을 포함한다.
+		return questionService.getQuestionsForAdmin(questionSetId);
 	}
 }

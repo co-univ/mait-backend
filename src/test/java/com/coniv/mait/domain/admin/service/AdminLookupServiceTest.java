@@ -15,7 +15,6 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import com.coniv.mait.domain.admin.service.dto.AdminQuestionSetDto;
 import com.coniv.mait.domain.admin.service.dto.AdminTeamDto;
 import com.coniv.mait.domain.question.entity.QuestionSetEntity;
-import com.coniv.mait.domain.question.enums.DeliveryMode;
 import com.coniv.mait.domain.question.enums.QuestionSetSolveMode;
 import com.coniv.mait.domain.question.enums.QuestionSetStatus;
 import com.coniv.mait.domain.question.repository.QuestionSetEntityRepository;
@@ -91,13 +90,13 @@ class AdminLookupServiceTest {
 	void getQuestions() {
 		// given
 		List<QuestionDto> questions = List.of(MultipleQuestionDto.builder().id(1L).choices(List.of()).build());
-		when(questionService.getQuestions(QUESTION_SET_ID, DeliveryMode.MANAGING)).thenReturn(questions);
+		when(questionService.getQuestionsForAdmin(QUESTION_SET_ID)).thenReturn(questions);
 
 		// when
 		List<QuestionDto> result = adminLookupService.getQuestions(QUESTION_SET_ID);
 
 		// then
 		assertThat(result).isEqualTo(questions);
-		verify(questionService).getQuestions(QUESTION_SET_ID, DeliveryMode.MANAGING);
+		verify(questionService).getQuestionsForAdmin(QUESTION_SET_ID);
 	}
 }

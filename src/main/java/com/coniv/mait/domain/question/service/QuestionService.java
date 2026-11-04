@@ -19,6 +19,8 @@ import com.coniv.mait.domain.question.entity.QuestionEntity;
 import com.coniv.mait.domain.question.entity.QuestionSetEntity;
 import com.coniv.mait.domain.question.enums.AiRequestStatus;
 import com.coniv.mait.domain.question.enums.DeliveryMode;
+import com.coniv.mait.domain.question.enums.QuestionSetSolveMode;
+import com.coniv.mait.domain.question.enums.QuestionSetStatus;
 import com.coniv.mait.domain.question.enums.QuestionStatusType;
 import com.coniv.mait.domain.question.enums.QuestionType;
 import com.coniv.mait.domain.question.exception.QuestionSetStatusException;
@@ -31,10 +33,15 @@ import com.coniv.mait.domain.question.repository.MultipleChoiceEntityRepository;
 import com.coniv.mait.domain.question.repository.QuestionEntityRepository;
 import com.coniv.mait.domain.question.repository.QuestionSetEntityRepository;
 import com.coniv.mait.domain.question.service.component.QuestionFactory;
+import com.coniv.mait.domain.question.service.component.QuestionSetReader;
 import com.coniv.mait.domain.question.service.dto.CurrentQuestionDto;
 import com.coniv.mait.domain.question.service.dto.QuestionCount;
 import com.coniv.mait.domain.question.service.dto.QuestionDto;
 import com.coniv.mait.domain.question.util.LexoRank;
+import com.coniv.mait.domain.solve.enums.SolvingStatus;
+import com.coniv.mait.domain.solve.repository.SolvingSessionEntityRepository;
+import com.coniv.mait.domain.team.enums.TeamUserRole;
+import com.coniv.mait.domain.user.exception.UserRoleException;
 import com.coniv.mait.domain.user.service.component.TeamRoleValidator;
 import com.coniv.mait.global.exception.custom.ResourceNotBelongException;
 
@@ -63,6 +70,10 @@ public class QuestionService {
 
 	private final TeamRoleValidator teamRoleValidator;
 
+	private final QuestionSetReader questionSetReader;
+
+	private final SolvingSessionEntityRepository solvingSessionEntityRepository;
+
 	@Autowired
 	public QuestionService(
 		List<QuestionFactory<?>> factories,
@@ -72,7 +83,9 @@ public class QuestionService {
 		QuestionImageService questionImageService,
 		AiCreateApiService aiCreateApiService,
 		AiRequestStatusManager aiRequestStatusManager,
-		TeamRoleValidator teamRoleValidator) {
+		TeamRoleValidator teamRoleValidator,
+		QuestionSetReader questionSetReader,
+		SolvingSessionEntityRepository solvingSessionEntityRepository) {
 		questionFactories = factories.stream()
 			.collect(Collectors.toUnmodifiableMap(QuestionFactory::getQuestionType, Function.identity()));
 		this.questionEntityRepository = questionEntityRepository;
@@ -82,6 +95,8 @@ public class QuestionService {
 		this.aiCreateApiService = aiCreateApiService;
 		this.aiRequestStatusManager = aiRequestStatusManager;
 		this.teamRoleValidator = teamRoleValidator;
+		this.questionSetReader = questionSetReader;
+		this.solvingSessionEntityRepository = solvingSessionEntityRepository;
 	}
 
 	public <T extends QuestionDto> void createQuestion(
@@ -138,29 +153,66 @@ public class QuestionService {
 	}
 
 	@Transactional(readOnly = true)
-	public QuestionDto getQuestion(final Long questionSetId, final Long questionId, final DeliveryMode mode) {
-		QuestionEntity question = questionEntityRepository.findById(questionId)
-			.orElseThrow(() -> new EntityNotFoundException("Question not found with id: " + questionId));
+	public QuestionDto getQuestion(final Long questionSetId, final Long questionId, final DeliveryMode mode,
+		final Long userId) {
+		QuestionEntity question = findQuestion(questionSetId, questionId);
+		QuestionSetEntity questionSet = questionSetReader.getQuestionSet(questionSetId);
+		boolean answerVisible = canViewAnswers(questionSet, userId);
 
-		if (!question.getQuestionSet().getId().equals(questionSetId)) {
-			throw new ResourceNotBelongException("해당 문제 셋에 속한 문제가 아닙니다.");
-		}
-
-		if (mode == DeliveryMode.LIVE_TIME && !question.getQuestionSet().isOnLive()) {
+		if (mode == DeliveryMode.LIVE_TIME && !questionSet.isOnLive()) {
 			throw new QuestionSetStatusException(QuestionSetStatusExceptionCode.ONLY_LIVE_TIME);
 		}
 
-		boolean answerVisible = mode == null || mode.isAnswerVisible();
-
-		return questionFactories.get(question.getType()).getQuestion(question, answerVisible);
+		return getQuestionFactory(question.getType()).getQuestion(question, answerVisible);
 	}
 
 	// Todo: 조회 성능 개선
-	public List<QuestionDto> getQuestions(final Long questionSetId, final DeliveryMode mode) {
-		List<QuestionEntity> questions = questionEntityRepository.findAllByQuestionSetId(questionSetId);
-		return questions.stream()
+	public List<QuestionDto> getQuestions(final Long questionSetId, final DeliveryMode mode, final Long userId) {
+		QuestionSetEntity questionSet = questionSetReader.getQuestionSet(questionSetId);
+		boolean answerVisible = canViewAnswers(questionSet, userId);
+		return findQuestions(questionSetId, mode == null ? DeliveryMode.MAKING : mode, answerVisible);
+	}
+
+	public QuestionDto getQuestionForAdmin(final Long questionSetId, final Long questionId) {
+		QuestionEntity question = findQuestion(questionSetId, questionId);
+		return getQuestionFactory(question.getType()).getQuestion(question, true);
+	}
+
+	public List<QuestionDto> getQuestionsForAdmin(final Long questionSetId) {
+		return findQuestions(questionSetId, DeliveryMode.MANAGING, true);
+	}
+
+	private boolean canViewAnswers(final QuestionSetEntity questionSet, final Long userId) {
+		TeamUserRole role = teamRoleValidator.getTeamRole(questionSet.getTeamId(), userId);
+		if (role.covers(TeamUserRole.MAKER)) {
+			return true;
+		}
+		if (questionSet.getStatus() == QuestionSetStatus.MAKING) {
+			throw new UserRoleException("제작 중인 문제는 관리자만 조회할 수 있습니다.");
+		}
+		if (questionSet.canReview()) {
+			return true;
+		}
+		return questionSet.getSolveMode() == QuestionSetSolveMode.STUDY
+			&& solvingSessionEntityRepository.findByUserIdAndQuestionSetIdAndSolveMode(userId,
+				questionSet.getId(), QuestionSetSolveMode.STUDY)
+			.map(session -> session.getStatus() == SolvingStatus.COMPLETE)
+			.orElse(false);
+	}
+
+	private QuestionEntity findQuestion(final Long questionSetId, final Long questionId) {
+		QuestionEntity question = questionEntityRepository.findById(questionId)
+			.orElseThrow(() -> new EntityNotFoundException("Question not found with id: " + questionId));
+		if (!question.getQuestionSet().getId().equals(questionSetId)) {
+			throw new ResourceNotBelongException("해당 문제 셋에 속한 문제가 아닙니다.");
+		}
+		return question;
+	}
+
+	private List<QuestionDto> findQuestions(final Long questionSetId, final DeliveryMode mode, boolean answerVisible) {
+		return questionEntityRepository.findAllByQuestionSetId(questionSetId).stream()
 			.sorted(mode.questionComparator())
-			.map(question -> getQuestionFactory(question.getType()).getQuestion(question, mode.isAnswerVisible()))
+			.map(question -> getQuestionFactory(question.getType()).getQuestion(question, answerVisible))
 			.toList();
 	}
 
