@@ -47,9 +47,10 @@ public class QuestionSetParticipantService {
 
 	private final TeamRoleValidator teamRoleValidator;
 
-	public List<ParticipantDto> getParticipants(final Long questionSetId) {
+	public List<ParticipantDto> getParticipants(final Long questionSetId, final Long userId) {
 		QuestionSetEntity questionSet = questionSetEntityRepository.findById(questionSetId)
 			.orElseThrow(() -> new EntityNotFoundException("해당 문제 셋을 조회할 수 없음 id: " + questionSetId));
+		teamRoleValidator.checkIsTeamManager(questionSet.getTeamId(), userId);
 
 		return questionSetParticipantRepository.findAllByQuestionSetWithFetchJoinUser(questionSet).stream()
 			.map(ParticipantDto::from)
