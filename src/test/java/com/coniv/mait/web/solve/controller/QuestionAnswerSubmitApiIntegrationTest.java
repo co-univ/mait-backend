@@ -1,6 +1,7 @@
 package com.coniv.mait.web.solve.controller;
 
 import static org.hamcrest.Matchers.*;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
@@ -12,6 +13,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.http.MediaType;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.test.web.servlet.MockMvc;
 
 import com.coniv.mait.domain.question.entity.MultipleChoiceEntity;
@@ -35,13 +37,14 @@ import com.coniv.mait.domain.solve.repository.QuestionScorerEntityRepository;
 import com.coniv.mait.domain.solve.service.dto.MultipleQuestionSubmitAnswer;
 import com.coniv.mait.domain.team.entity.TeamEntity;
 import com.coniv.mait.domain.team.entity.TeamUserEntity;
+import com.coniv.mait.domain.team.enums.TeamUserRole;
 import com.coniv.mait.domain.team.repository.TeamEntityRepository;
 import com.coniv.mait.domain.team.repository.TeamUserEntityRepository;
 import com.coniv.mait.domain.user.entity.UserEntity;
 import com.coniv.mait.domain.user.repository.UserEntityRepository;
+import com.coniv.mait.global.auth.model.MaitUser;
 import com.coniv.mait.login.WithCustomUser;
 import com.coniv.mait.web.integration.BaseIntegrationTest;
-import com.coniv.mait.web.solve.dto.MultipleQuestionSubmitApiRequest;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
@@ -109,7 +112,8 @@ public class QuestionAnswerSubmitApiIntegrationTest extends BaseIntegrationTest 
 	@DisplayName("객관식 문제 정답 제출 성공 API 테스트")
 	void submitMultipleChoiceQuestionAnswer_Success() throws Exception {
 		// Given
-		UserEntity user = userEntityRepository.save(
+		UserEntity user = userEntityRepository.findByEmail("user@example.com").orElseThrow();
+		UserEntity otherUser = userEntityRepository.save(
 			UserEntity.localLoginUser("email", "testUser", "youth", "singsing"));
 		TeamEntity team = teamEntityRepository.save(TeamEntity.ofGroup("coniv", user.getId()));
 		final Long teamId = team.getId();
@@ -152,15 +156,10 @@ public class QuestionAnswerSubmitApiIntegrationTest extends BaseIntegrationTest 
 
 		multipleChoiceEntityRepository.saveAll(List.of(multipleChoice1, multipleChoice2));
 
-		// 요청 DTO 생성
-		MultipleQuestionSubmitApiRequest request = MultipleQuestionSubmitApiRequest.builder()
-			.userId(1L)
-			.submitAnswers(List.of(1L))
-			.build();
-
 		ObjectNode node = objectMapper.createObjectNode();
 		node.put("type", "MULTIPLE");
-		node.put("userId", user.getId());
+		// body의 userId는 무시하고 인증된 사용자 기준으로 제출한다
+		node.put("userId", otherUser.getId());
 		node.set("submitAnswers", objectMapper.valueToTree(List.of(1L)));
 
 		// When & Then
@@ -182,9 +181,9 @@ public class QuestionAnswerSubmitApiIntegrationTest extends BaseIntegrationTest 
 	@DisplayName("문제별 득점자 조회 성공 API 테스트")
 	void getScorer_Success() throws Exception {
 		// Given
-		final Long teamId = 1L;
 		UserEntity user = userEntityRepository.save(
 			UserEntity.localLoginUser("email", "testUser", "테스트사용자", "singsing"));
+		final Long teamId = createTeamWithCurrentUser(TeamUserRole.PLAYER);
 
 		QuestionSetEntity questionSet = questionSetEntityRepository.save(
 			QuestionSetEntity.builder()
@@ -242,6 +241,7 @@ public class QuestionAnswerSubmitApiIntegrationTest extends BaseIntegrationTest 
 
 		QuestionSetEntity questionSet = questionSetEntityRepository.save(QuestionSetEntity.builder()
 			.title("테스트 문제집")
+			.teamId(createTeamWithCurrentUser(TeamUserRole.MAKER))
 			.build());
 
 		MultipleQuestionEntity multipleQuestion = questionEntityRepository.save(
@@ -312,6 +312,7 @@ public class QuestionAnswerSubmitApiIntegrationTest extends BaseIntegrationTest 
 
 		QuestionSetEntity questionSet = questionSetEntityRepository.save(QuestionSetEntity.builder()
 			.title("학습 모드 테스트 문제집")
+			.teamId(createTeamWithCurrentUser(TeamUserRole.MAKER))
 			.build());
 
 		MultipleQuestionEntity question = questionEntityRepository.save(
@@ -401,7 +402,8 @@ public class QuestionAnswerSubmitApiIntegrationTest extends BaseIntegrationTest 
 		mockMvc.perform(post("/api/v1/question-sets/{questionSetId}/questions/{questionId}/submit",
 				questionSet.getId(), question.getId())
 				.contentType(MediaType.APPLICATION_JSON)
-				.content(multipleSubmitBody(firstUser.getId(), List.of(2L))))
+				.with(authentication(authenticationOf(firstUser)))
+				.content(multipleSubmitBody(List.of(2L))))
 			.andExpect(status().isOk())
 			.andExpectAll(
 				jsonPath("$.data.isCorrect").value(false),
@@ -411,18 +413,29 @@ public class QuestionAnswerSubmitApiIntegrationTest extends BaseIntegrationTest 
 		mockMvc.perform(post("/api/v1/question-sets/{questionSetId}/questions/{questionId}/submit",
 				questionSet.getId(), question.getId())
 				.contentType(MediaType.APPLICATION_JSON)
-				.content(multipleSubmitBody(secondUser.getId(), List.of(1L))))
+				.with(authentication(authenticationOf(secondUser)))
+				.content(multipleSubmitBody(List.of(1L))))
 			.andExpect(status().isOk())
 			.andExpectAll(
 				jsonPath("$.data.isCorrect").value(true),
 				jsonPath("$.data.timeGapMillis", greaterThanOrEqualTo(0)));
 	}
 
-	private String multipleSubmitBody(Long userId, List<Long> submitAnswers) throws Exception {
+	private String multipleSubmitBody(List<Long> submitAnswers) throws Exception {
 		ObjectNode node = objectMapper.createObjectNode();
 		node.put("type", "MULTIPLE");
-		node.put("userId", userId);
 		node.set("submitAnswers", objectMapper.valueToTree(submitAnswers));
 		return objectMapper.writeValueAsString(node);
+	}
+
+	private Long createTeamWithCurrentUser(TeamUserRole role) {
+		UserEntity currentUser = userEntityRepository.findByEmail("user@example.com").orElseThrow();
+		TeamEntity team = teamEntityRepository.save(TeamEntity.ofGroup("coniv", currentUser.getId()));
+		teamUserEntityRepository.save(TeamUserEntity.createTeamUser(currentUser, team, role));
+		return team.getId();
+	}
+
+	private UsernamePasswordAuthenticationToken authenticationOf(UserEntity user) {
+		return new UsernamePasswordAuthenticationToken(MaitUser.from(user), null, List.of());
 	}
 }

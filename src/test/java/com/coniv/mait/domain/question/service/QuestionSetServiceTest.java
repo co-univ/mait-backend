@@ -395,6 +395,27 @@ class QuestionSetServiceTest {
 	}
 
 	@Test
+	@DisplayName("문제 셋 단건 조회 테스트 - 실패 (문제 셋이 속한 팀의 멤버가 아님)")
+	void getQuestionSetTest_Fail_NotTeamMember() {
+		// given
+		final Long questionSetId = 1L;
+		final Long teamId = 10L;
+		final MaitUser user = MaitUser.builder().id(USER_ID).build();
+		final QuestionSetEntity questionSetEntity = mock(QuestionSetEntity.class);
+		when(questionSetEntity.getTeamId()).thenReturn(teamId);
+		when(questionSetReader.getQuestionSet(questionSetId)).thenReturn(questionSetEntity);
+		doThrow(new UserRoleException("해당 팀의 멤버가 아닙니다."))
+			.when(teamRoleValidator).checkIsTeamMember(teamId, USER_ID);
+
+		// when & then
+		assertThatThrownBy(() -> questionSetService.getQuestionSet(questionSetId, user))
+			.isInstanceOf(UserRoleException.class)
+			.hasMessage("해당 팀의 멤버가 아닙니다.");
+
+		verify(questionEntityRepository, never()).findAllByQuestionSetId(any());
+	}
+
+	@Test
 	@DisplayName("문제 셋 완료 처리 테스트")
 	void completeQuestionSetTest() {
 		// given

@@ -8,6 +8,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import java.util.List;
 import java.util.stream.Stream;
 
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -18,6 +19,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.http.MediaType;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
@@ -26,6 +29,7 @@ import com.coniv.mait.domain.solve.service.QuestionScorerService;
 import com.coniv.mait.domain.solve.service.dto.AnswerSubmitDto;
 import com.coniv.mait.domain.solve.service.dto.AnswerSubmitRecordDto;
 import com.coniv.mait.domain.solve.service.dto.QuestionScorerDto;
+import com.coniv.mait.global.auth.model.MaitUser;
 import com.coniv.mait.global.filter.JwtAuthorizationFilter;
 import com.coniv.mait.global.interceptor.idempotency.IdempotencyInterceptor;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -34,6 +38,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 @AutoConfigureMockMvc(addFilters = false)
 class QuestionAnswerSubmitControllerTest {
 	// todo: 디테일한 테스트 추가 필요
+
+	private static final Long USER_ID = 1L;
 
 	@Autowired
 	private MockMvc mockMvc;
@@ -56,6 +62,17 @@ class QuestionAnswerSubmitControllerTest {
 	@BeforeEach
 	void setUp() throws Exception {
 		when(idempotencyInterceptor.preHandle(any(), any(), any())).thenReturn(true);
+
+		MaitUser user = MaitUser.builder().id(USER_ID).build();
+		var authentication = new UsernamePasswordAuthenticationToken(user, null, List.of());
+		var context = SecurityContextHolder.createEmptyContext();
+		context.setAuthentication(authentication);
+		SecurityContextHolder.setContext(context);
+	}
+
+	@AfterEach
+	void tearDown() {
+		SecurityContextHolder.clearContext();
 	}
 
 	@Test
@@ -372,7 +389,7 @@ class QuestionAnswerSubmitControllerTest {
 			.build();
 
 		// When & Then
-		when(questionScorerService.getScorer(questionSetId, questionId))
+		when(questionScorerService.getScorer(questionSetId, questionId, USER_ID))
 			.thenReturn(mockResponse);
 
 		mockMvc.perform(
@@ -386,7 +403,7 @@ class QuestionAnswerSubmitControllerTest {
 				jsonPath("$.data.userName").value("테스트사용자"),
 				jsonPath("$.data.submitOrder").value(1));
 
-		verify(questionScorerService).getScorer(questionSetId, questionId);
+		verify(questionScorerService).getScorer(questionSetId, questionId, USER_ID);
 	}
 
 	@Test
@@ -417,7 +434,7 @@ class QuestionAnswerSubmitControllerTest {
 				.build());
 
 		// When & Then
-		when(questionAnswerSubmitService.getSubmitRecords(questionSetId, questionId))
+		when(questionAnswerSubmitService.getSubmitRecords(questionSetId, questionId, USER_ID))
 			.thenReturn(mockRecords);
 
 		mockMvc.perform(
@@ -440,6 +457,6 @@ class QuestionAnswerSubmitControllerTest {
 				jsonPath("$.data.submitRecords[1].isCorrect").value(false),
 				jsonPath("$.data.submitRecords[1].submitOrder").value(2));
 
-		verify(questionAnswerSubmitService).getSubmitRecords(questionSetId, questionId);
+		verify(questionAnswerSubmitService).getSubmitRecords(questionSetId, questionId, USER_ID);
 	}
 }

@@ -2,6 +2,7 @@ package com.coniv.mait.domain.question.service;
 
 import static org.assertj.core.api.Assertions.*;
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
 import java.util.List;
@@ -34,6 +35,8 @@ import com.coniv.mait.domain.solve.repository.QuestionScorerEntityRepository;
 import com.coniv.mait.domain.solve.service.dto.RankDto;
 import com.coniv.mait.domain.team.service.component.TeamReader;
 import com.coniv.mait.domain.user.entity.UserEntity;
+import com.coniv.mait.domain.user.exception.UserRoleException;
+import com.coniv.mait.domain.user.service.component.TeamRoleValidator;
 import com.coniv.mait.domain.user.service.component.UserReader;
 import com.coniv.mait.domain.user.service.dto.UserDto;
 
@@ -41,6 +44,8 @@ import jakarta.persistence.EntityNotFoundException;
 
 @ExtendWith(MockitoExtension.class)
 class QuestionSetRankServiceTest {
+
+	private static final Long REQUESTER_ID = 100L;
 
 	@InjectMocks
 	private QuestionSetRankService questionSetRankService;
@@ -68,6 +73,9 @@ class QuestionSetRankServiceTest {
 
 	@Mock
 	private QuestionReader questionReader;
+
+	@Mock
+	private TeamRoleValidator teamRoleValidator;
 
 	@Test
 	@DisplayName("참가자 정답 랭킹 조회 성공 - 활성/탈락 참가자 분류 및 정답 수 기준 정렬")
@@ -141,7 +149,8 @@ class QuestionSetRankServiceTest {
 			.thenReturn(List.of(answer1, answer2, answer3, answer4, answer5, answer6));
 
 		// when
-		ParticipantCorrectAnswerRankDto result = questionSetRankService.getParticipantCorrectRank(questionSetId);
+		ParticipantCorrectAnswerRankDto result =
+			questionSetRankService.getParticipantCorrectRank(questionSetId, REQUESTER_ID);
 
 		// then
 		assertNotNull(result);
@@ -183,7 +192,8 @@ class QuestionSetRankServiceTest {
 			.thenReturn(List.of());
 
 		// when
-		ParticipantCorrectAnswerRankDto result = questionSetRankService.getParticipantCorrectRank(questionSetId);
+		ParticipantCorrectAnswerRankDto result =
+			questionSetRankService.getParticipantCorrectRank(questionSetId, REQUESTER_ID);
 
 		// then
 		assertNotNull(result);
@@ -233,7 +243,8 @@ class QuestionSetRankServiceTest {
 			.thenReturn(List.of());
 
 		// when
-		ParticipantCorrectAnswerRankDto result = questionSetRankService.getParticipantCorrectRank(questionSetId);
+		ParticipantCorrectAnswerRankDto result =
+			questionSetRankService.getParticipantCorrectRank(questionSetId, REQUESTER_ID);
 
 		// then
 		assertNotNull(result);
@@ -297,7 +308,8 @@ class QuestionSetRankServiceTest {
 			.thenReturn(List.of(answer1, answer2));
 
 		// when
-		ParticipantCorrectAnswerRankDto result = questionSetRankService.getParticipantCorrectRank(questionSetId);
+		ParticipantCorrectAnswerRankDto result =
+			questionSetRankService.getParticipantCorrectRank(questionSetId, REQUESTER_ID);
 
 		// then
 		assertNotNull(result);
@@ -345,7 +357,8 @@ class QuestionSetRankServiceTest {
 			.thenReturn(List.of(answer1));
 
 		// when
-		ParticipantCorrectAnswerRankDto result = questionSetRankService.getParticipantCorrectRank(questionSetId);
+		ParticipantCorrectAnswerRankDto result =
+			questionSetRankService.getParticipantCorrectRank(questionSetId, REQUESTER_ID);
 
 		// then
 		assertNotNull(result);
@@ -432,7 +445,7 @@ class QuestionSetRankServiceTest {
 			.thenReturn(List.of(participant1, participant2, participant3));
 
 		// when
-		List<AnswerRankDto> result = questionSetRankService.getCorrectorsByQuestionSetId(questionSetId);
+		List<AnswerRankDto> result = questionSetRankService.getCorrectorsByQuestionSetId(questionSetId, REQUESTER_ID);
 
 		// then
 		assertNotNull(result);
@@ -505,7 +518,7 @@ class QuestionSetRankServiceTest {
 			.thenReturn(List.of(participant1, participant2));
 
 		// when
-		List<AnswerRankDto> result = questionSetRankService.getCorrectorsByQuestionSetId(questionSetId);
+		List<AnswerRankDto> result = questionSetRankService.getCorrectorsByQuestionSetId(questionSetId, REQUESTER_ID);
 
 		// then
 		assertNotNull(result);
@@ -589,7 +602,7 @@ class QuestionSetRankServiceTest {
 			.thenReturn(List.of(participant1, participant2, participant3));
 
 		// when
-		List<AnswerRankDto> result = questionSetRankService.getCorrectorsByQuestionSetId(questionSetId);
+		List<AnswerRankDto> result = questionSetRankService.getCorrectorsByQuestionSetId(questionSetId, REQUESTER_ID);
 
 		// then
 		assertNotNull(result);
@@ -621,7 +634,7 @@ class QuestionSetRankServiceTest {
 			new EntityNotFoundException(questionSetId + " : 해당 문제 셋을 찾을 수 없습니다."));
 
 		// when & then
-		assertThatThrownBy(() -> questionSetRankService.getCorrectorsByQuestionSetId(questionSetId))
+		assertThatThrownBy(() -> questionSetRankService.getCorrectorsByQuestionSetId(questionSetId, REQUESTER_ID))
 			.isInstanceOf(EntityNotFoundException.class)
 			.hasMessageContaining("해당 문제 셋을 찾을 수 없습니다.");
 
@@ -652,7 +665,7 @@ class QuestionSetRankServiceTest {
 			.thenReturn(List.of());
 
 		// when
-		List<AnswerRankDto> result = questionSetRankService.getCorrectorsByQuestionSetId(questionSetId);
+		List<AnswerRankDto> result = questionSetRankService.getCorrectorsByQuestionSetId(questionSetId, REQUESTER_ID);
 
 		// then
 		assertNotNull(result);
@@ -737,7 +750,7 @@ class QuestionSetRankServiceTest {
 			.thenReturn(List.of(participant1, participant2, participant3));
 
 		// when
-		List<AnswerRankDto> result = questionSetRankService.getScorersByQuestionSetId(questionSetId);
+		List<AnswerRankDto> result = questionSetRankService.getScorersByQuestionSetId(questionSetId, REQUESTER_ID);
 
 		// then
 		assertNotNull(result);
@@ -809,7 +822,7 @@ class QuestionSetRankServiceTest {
 			.thenReturn(List.of(participant1, participant2));
 
 		// when
-		List<AnswerRankDto> result = questionSetRankService.getScorersByQuestionSetId(questionSetId);
+		List<AnswerRankDto> result = questionSetRankService.getScorersByQuestionSetId(questionSetId, REQUESTER_ID);
 
 		// then
 		assertNotNull(result);
@@ -892,7 +905,7 @@ class QuestionSetRankServiceTest {
 			.thenReturn(List.of(participant1, participant2, participant3));
 
 		// when
-		List<AnswerRankDto> result = questionSetRankService.getScorersByQuestionSetId(questionSetId);
+		List<AnswerRankDto> result = questionSetRankService.getScorersByQuestionSetId(questionSetId, REQUESTER_ID);
 
 		// then
 		assertNotNull(result);
@@ -924,7 +937,7 @@ class QuestionSetRankServiceTest {
 			new EntityNotFoundException(questionSetId + " : 해당 문제 셋을 찾을 수 없습니다."));
 
 		// when & then
-		assertThatThrownBy(() -> questionSetRankService.getScorersByQuestionSetId(questionSetId))
+		assertThatThrownBy(() -> questionSetRankService.getScorersByQuestionSetId(questionSetId, REQUESTER_ID))
 			.isInstanceOf(EntityNotFoundException.class)
 			.hasMessageContaining("해당 문제 셋을 찾을 수 없습니다.");
 
@@ -954,7 +967,7 @@ class QuestionSetRankServiceTest {
 			.thenReturn(List.of());
 
 		// when
-		List<AnswerRankDto> result = questionSetRankService.getScorersByQuestionSetId(questionSetId);
+		List<AnswerRankDto> result = questionSetRankService.getScorersByQuestionSetId(questionSetId, REQUESTER_ID);
 
 		// then
 		assertNotNull(result);
@@ -1000,7 +1013,7 @@ class QuestionSetRankServiceTest {
 			.thenReturn(List.of(score1, score2, score3));
 
 		// when
-		List<RankDto> result = questionSetRankService.getScorerRankByQuestionSetId(questionSetId);
+		List<RankDto> result = questionSetRankService.getScorerRankByQuestionSetId(questionSetId, REQUESTER_ID);
 
 		// then
 		assertThat(result).hasSize(3);
@@ -1061,7 +1074,7 @@ class QuestionSetRankServiceTest {
 			.thenReturn(List.of(score1, score2, score3, score4, score5));
 
 		// when
-		List<RankDto> result = questionSetRankService.getScorerRankByQuestionSetId(questionSetId);
+		List<RankDto> result = questionSetRankService.getScorerRankByQuestionSetId(questionSetId, REQUESTER_ID);
 
 		// then
 		assertThat(result).hasSize(3);
@@ -1086,7 +1099,7 @@ class QuestionSetRankServiceTest {
 		when(questionReader.getQuestionsByQuestionSet(questionSet)).thenReturn(List.of());
 
 		// when
-		List<RankDto> result = questionSetRankService.getScorerRankByQuestionSetId(questionSetId);
+		List<RankDto> result = questionSetRankService.getScorerRankByQuestionSetId(questionSetId, REQUESTER_ID);
 
 		// then
 		assertThat(result).isEmpty();
@@ -1112,7 +1125,7 @@ class QuestionSetRankServiceTest {
 			.thenReturn(List.of());
 
 		// when
-		List<RankDto> result = questionSetRankService.getScorerRankByQuestionSetId(questionSetId);
+		List<RankDto> result = questionSetRankService.getScorerRankByQuestionSetId(questionSetId, REQUESTER_ID);
 
 		// then
 		assertThat(result).isEmpty();
@@ -1129,7 +1142,7 @@ class QuestionSetRankServiceTest {
 		when(questionSet.getSolveMode()).thenReturn(QuestionSetSolveMode.STUDY);
 
 		// when & then
-		assertThatThrownBy(() -> questionSetRankService.getScorerRankByQuestionSetId(questionSetId))
+		assertThatThrownBy(() -> questionSetRankService.getScorerRankByQuestionSetId(questionSetId, REQUESTER_ID))
 			.isInstanceOf(QuestionSetStatusException.class)
 			.hasMessage(QuestionSetStatusExceptionCode.ONLY_LIVE_TIME.getMessage());
 
@@ -1149,7 +1162,7 @@ class QuestionSetRankServiceTest {
 		when(questionSet.getStatus()).thenReturn(QuestionSetStatus.ONGOING);
 
 		// when & then
-		assertThatThrownBy(() -> questionSetRankService.getScorerRankByQuestionSetId(questionSetId))
+		assertThatThrownBy(() -> questionSetRankService.getScorerRankByQuestionSetId(questionSetId, REQUESTER_ID))
 			.isInstanceOf(QuestionSetStatusException.class)
 			.hasMessage(QuestionSetStatusExceptionCode.ONLY_AFTER.getMessage());
 
@@ -1173,5 +1186,85 @@ class QuestionSetRankServiceTest {
 		QuestionSetParticipantEntity participant = mock(QuestionSetParticipantEntity.class);
 		when(participant.getUser()).thenReturn(user);
 		return participant;
+	}
+
+	@Test
+	@DisplayName("참가자 정답 랭킹 조회 실패 - 문제 셋이 속한 팀의 멤버가 아님")
+	void getParticipantCorrectRank_Fail_NotTeamMember() {
+		// given
+		final Long questionSetId = 1L;
+		final Long teamId = 10L;
+		QuestionSetEntity questionSet = mock(QuestionSetEntity.class);
+		when(questionSet.getTeamId()).thenReturn(teamId);
+		when(questionSetReader.getQuestionSet(questionSetId)).thenReturn(questionSet);
+		doThrow(new UserRoleException("해당 팀의 멤버가 아닙니다."))
+			.when(teamRoleValidator).checkIsTeamMember(teamId, REQUESTER_ID);
+
+		// when & then
+		assertThatThrownBy(() -> questionSetRankService.getParticipantCorrectRank(questionSetId, REQUESTER_ID))
+			.isInstanceOf(UserRoleException.class)
+			.hasMessage("해당 팀의 멤버가 아닙니다.");
+
+		verify(questionSetParticipantRepository, never()).findAllByQuestionSetWithFetchJoinUser(any());
+	}
+
+	@Test
+	@DisplayName("정답 개수 등수 조회 실패 - 문제 셋이 속한 팀의 멤버가 아님")
+	void getCorrectorsByQuestionSetId_Fail_NotTeamMember() {
+		// given
+		final Long questionSetId = 1L;
+		final Long teamId = 10L;
+		QuestionSetEntity questionSet = mock(QuestionSetEntity.class);
+		when(questionSet.getTeamId()).thenReturn(teamId);
+		when(questionSetReader.getQuestionSet(questionSetId)).thenReturn(questionSet);
+		doThrow(new UserRoleException("해당 팀의 멤버가 아닙니다."))
+			.when(teamRoleValidator).checkIsTeamMember(teamId, REQUESTER_ID);
+
+		// when & then
+		assertThatThrownBy(() -> questionSetRankService.getCorrectorsByQuestionSetId(questionSetId, REQUESTER_ID))
+			.isInstanceOf(UserRoleException.class)
+			.hasMessage("해당 팀의 멤버가 아닙니다.");
+
+		verify(answerSubmitRecordEntityRepository, never()).findAllByQuestionIdInAndIsCorrect(any(), anyBoolean());
+	}
+
+	@Test
+	@DisplayName("득점 개수 등수 조회 실패 - 문제 셋이 속한 팀의 멤버가 아님")
+	void getScorersByQuestionSetId_Fail_NotTeamMember() {
+		// given
+		final Long questionSetId = 1L;
+		final Long teamId = 10L;
+		QuestionSetEntity questionSet = mock(QuestionSetEntity.class);
+		when(questionSet.getTeamId()).thenReturn(teamId);
+		when(questionSetReader.getQuestionSet(questionSetId)).thenReturn(questionSet);
+		doThrow(new UserRoleException("해당 팀의 멤버가 아닙니다."))
+			.when(teamRoleValidator).checkIsTeamMember(teamId, REQUESTER_ID);
+
+		// when & then
+		assertThatThrownBy(() -> questionSetRankService.getScorersByQuestionSetId(questionSetId, REQUESTER_ID))
+			.isInstanceOf(UserRoleException.class)
+			.hasMessage("해당 팀의 멤버가 아닙니다.");
+
+		verify(questionScorerEntityRepository, never()).findAllByQuestionIdIn(any());
+	}
+
+	@Test
+	@DisplayName("득점자 랭킹 조회 실패 - 문제 셋이 속한 팀의 멤버가 아님")
+	void getScorerRankByQuestionSetId_Fail_NotTeamMember() {
+		// given
+		final Long questionSetId = 1L;
+		final Long teamId = 10L;
+		QuestionSetEntity questionSet = mock(QuestionSetEntity.class);
+		when(questionSet.getTeamId()).thenReturn(teamId);
+		when(questionSetReader.getQuestionSet(questionSetId)).thenReturn(questionSet);
+		doThrow(new UserRoleException("해당 팀의 멤버가 아닙니다."))
+			.when(teamRoleValidator).checkIsTeamMember(teamId, REQUESTER_ID);
+
+		// when & then
+		assertThatThrownBy(() -> questionSetRankService.getScorerRankByQuestionSetId(questionSetId, REQUESTER_ID))
+			.isInstanceOf(UserRoleException.class)
+			.hasMessage("해당 팀의 멤버가 아닙니다.");
+
+		verify(questionScorerEntityRepository, never()).findAllByQuestionIdIn(any());
 	}
 }
