@@ -29,11 +29,17 @@ import com.coniv.mait.domain.question.repository.QuestionSetParticipantRepositor
 import com.coniv.mait.domain.question.service.component.QuestionWebSocketSender;
 import com.coniv.mait.domain.team.repository.TeamUserEntityRepository;
 import com.coniv.mait.domain.user.entity.UserEntity;
+import com.coniv.mait.domain.user.service.component.TeamRoleValidator;
 
 import jakarta.persistence.EntityNotFoundException;
 
 @ExtendWith(MockitoExtension.class)
 class QuestionSetLiveControlServiceTest {
+
+	private static final Long USER_ID = 1L;
+
+	@Mock
+	private TeamRoleValidator teamRoleValidator;
 
 	@Mock
 	private QuestionSetEntityRepository questionSetEntityRepository;
@@ -93,7 +99,7 @@ class QuestionSetLiveControlServiceTest {
 			.thenReturn(List.of(accessQuestion, solveQuestion));
 
 		// when
-		questionSetLiveControlService.endLiveQuestionSet(questionSetId);
+		questionSetLiveControlService.endLiveQuestionSet(questionSetId, USER_ID);
 
 		// then
 		verify(questionSetEntity).endLiveQuestionSet();
@@ -374,7 +380,7 @@ class QuestionSetLiveControlServiceTest {
 		when(user3.getId()).thenReturn(3L);
 
 		// when
-		questionSetLiveControlService.sendWinner(questionSetId, winnerIds);
+		questionSetLiveControlService.sendWinner(questionSetId, winnerIds, USER_ID);
 
 		// then
 		verify(questionSetEntityRepository).findById(questionSetId);
@@ -404,7 +410,7 @@ class QuestionSetLiveControlServiceTest {
 		when(user2.getId()).thenReturn(2L);
 
 		// when
-		questionSetLiveControlService.sendWinner(questionSetId, winnerIds);
+		questionSetLiveControlService.sendWinner(questionSetId, winnerIds, USER_ID);
 
 		// then
 		// 빈 우승자 목록으로도 메시지가 전송되어야 함

@@ -1,5 +1,6 @@
 package com.coniv.mait.web.question.controller;
 
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
@@ -7,6 +8,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import java.util.List;
 import java.util.stream.Stream;
 
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -17,6 +19,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.http.MediaType;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
@@ -29,6 +33,7 @@ import com.coniv.mait.domain.question.service.dto.MultipleQuestionDto;
 import com.coniv.mait.domain.question.service.dto.OrderingQuestionOptionDto;
 import com.coniv.mait.domain.question.service.dto.ShortAnswerDto;
 import com.coniv.mait.domain.question.service.dto.ShortQuestionDto;
+import com.coniv.mait.global.auth.model.MaitUser;
 import com.coniv.mait.global.exception.custom.ResourceNotBelongException;
 import com.coniv.mait.global.filter.JwtAuthorizationFilter;
 import com.coniv.mait.global.interceptor.idempotency.IdempotencyInterceptor;
@@ -49,6 +54,8 @@ import jakarta.persistence.EntityNotFoundException;
 @WebMvcTest(controllers = QuestionController.class)
 @AutoConfigureMockMvc(addFilters = false)
 class QuestionControllerTest {
+
+	private static final Long USER_ID = 1L;
 
 	@MockitoBean
 	private QuestionService questionService;
@@ -71,6 +78,17 @@ class QuestionControllerTest {
 	@BeforeEach
 	void setUp() throws Exception {
 		when(idempotencyInterceptor.preHandle(any(), any(), any())).thenReturn(true);
+
+		MaitUser user = MaitUser.builder().id(USER_ID).build();
+		var authentication = new UsernamePasswordAuthenticationToken(user, null, List.of());
+		var context = SecurityContextHolder.createEmptyContext();
+		context.setAuthentication(authentication);
+		SecurityContextHolder.setContext(context);
+	}
+
+	@AfterEach
+	void tearDown() {
+		SecurityContextHolder.clearContext();
 	}
 
 	@Test
@@ -107,7 +125,7 @@ class QuestionControllerTest {
 			.andExpect(status().isOk());
 
 		verify(questionService).createQuestion(eq(questionSetId),
-			eq(com.coniv.mait.domain.question.enums.QuestionType.MULTIPLE), any());
+			eq(com.coniv.mait.domain.question.enums.QuestionType.MULTIPLE), any(), eq(USER_ID));
 	}
 
 	@ParameterizedTest(name = "{index} - {0}")
@@ -139,7 +157,7 @@ class QuestionControllerTest {
 				jsonPath("$.reasons[0]").value(expectedMessage)
 			);
 
-		verify(questionService, never()).createQuestion(anyLong(), any(), any());
+		verify(questionService, never()).createQuestion(anyLong(), any(), any(), any());
 	}
 
 	static Stream<Arguments> invalidCreateMultipleQuestionRequests() {
@@ -207,7 +225,7 @@ class QuestionControllerTest {
 				jsonPath("$.reasons[0]").value("객관식 선지의 내용은 필수입니다.")
 			);
 
-		verify(questionService, never()).createQuestion(anyLong(), any(), any());
+		verify(questionService, never()).createQuestion(anyLong(), any(), any(), any());
 	}
 
 	@Test
@@ -244,7 +262,7 @@ class QuestionControllerTest {
 			.andExpect(status().isOk());
 
 		verify(questionService).createQuestion(eq(questionSetId),
-			eq(com.coniv.mait.domain.question.enums.QuestionType.SHORT), any());
+			eq(com.coniv.mait.domain.question.enums.QuestionType.SHORT), any(), eq(USER_ID));
 	}
 
 	@ParameterizedTest(name = "{index} - {0}")
@@ -274,7 +292,7 @@ class QuestionControllerTest {
 				jsonPath("$.reasons[0]").value(expectedMessage)
 			);
 
-		verify(questionService, never()).createQuestion(anyLong(), any(), any());
+		verify(questionService, never()).createQuestion(anyLong(), any(), any(), any());
 	}
 
 	static Stream<Arguments> invalidCreateShortQuestionRequests() {
@@ -340,7 +358,7 @@ class QuestionControllerTest {
 			.andExpect(status().isOk());
 
 		verify(questionService).createQuestion(eq(questionSetId),
-			eq(com.coniv.mait.domain.question.enums.QuestionType.ORDERING), any());
+			eq(com.coniv.mait.domain.question.enums.QuestionType.ORDERING), any(), eq(USER_ID));
 	}
 
 	@Test
@@ -371,7 +389,7 @@ class QuestionControllerTest {
 				jsonPath("$.reasons[0]").value("선택지는 필수입니다.")
 			);
 
-		verify(questionService, never()).createQuestion(anyLong(), any(), any());
+		verify(questionService, never()).createQuestion(anyLong(), any(), any(), any());
 	}
 
 	@Test
@@ -409,7 +427,7 @@ class QuestionControllerTest {
 				jsonPath("$.reasons[0]").value("문제 번호는 필수입니다.")
 			);
 
-		verify(questionService, never()).createQuestion(anyLong(), any(), any());
+		verify(questionService, never()).createQuestion(anyLong(), any(), any(), any());
 	}
 
 	@Test
@@ -447,7 +465,7 @@ class QuestionControllerTest {
 			.andExpect(status().isOk());
 
 		verify(questionService).createQuestion(eq(questionSetId),
-			eq(com.coniv.mait.domain.question.enums.QuestionType.FILL_BLANK), any());
+			eq(com.coniv.mait.domain.question.enums.QuestionType.FILL_BLANK), any(), eq(USER_ID));
 	}
 
 	@Test
@@ -478,7 +496,7 @@ class QuestionControllerTest {
 				jsonPath("$.reasons[0]").value("빈칸 문제 정답은 필수입니다.")
 			);
 
-		verify(questionService, never()).createQuestion(anyLong(), any(), any());
+		verify(questionService, never()).createQuestion(anyLong(), any(), any(), any());
 	}
 
 	@Test
@@ -516,7 +534,7 @@ class QuestionControllerTest {
 				jsonPath("$.reasons[0]").value("문제 번호는 필수입니다.")
 			);
 
-		verify(questionService, never()).createQuestion(anyLong(), any(), any());
+		verify(questionService, never()).createQuestion(anyLong(), any(), any(), any());
 	}
 
 	@Test
@@ -704,7 +722,8 @@ class QuestionControllerTest {
 				.answerCount(2)
 				.build();
 
-		when(questionService.updateQuestion(eq(questionSetId), eq(questionId), any())).thenReturn(mockResponse);
+		when(questionService.updateQuestion(eq(questionSetId), eq(questionId), any(), eq(USER_ID)))
+			.thenReturn(mockResponse);
 
 		// when & then
 		mockMvc.perform(put("/api/v1/question-sets/{questionSetId}/questions/{questionId}", questionSetId, questionId)
@@ -712,7 +731,7 @@ class QuestionControllerTest {
 				.content(json))
 			.andExpect(status().isOk());
 
-		verify(questionService).updateQuestion(eq(questionSetId), eq(questionId), any());
+		verify(questionService).updateQuestion(eq(questionSetId), eq(questionId), any(), eq(USER_ID));
 	}
 
 	@Test
@@ -756,7 +775,8 @@ class QuestionControllerTest {
 			.choices(request.getChoices())
 			.build();
 
-		when(questionService.updateQuestion(eq(questionSetId), eq(questionId), any())).thenReturn(mockResponse);
+		when(questionService.updateQuestion(eq(questionSetId), eq(questionId), any(), eq(USER_ID)))
+			.thenReturn(mockResponse);
 
 		// when & then
 		mockMvc.perform(put("/api/v1/question-sets/{questionSetId}/questions/{questionId}", questionSetId, questionId)
@@ -764,7 +784,7 @@ class QuestionControllerTest {
 				.content(json))
 			.andExpect(status().isOk());
 
-		verify(questionService).updateQuestion(eq(questionSetId), eq(questionId), any());
+		verify(questionService).updateQuestion(eq(questionSetId), eq(questionId), any(), eq(USER_ID));
 	}
 
 	@Test
@@ -809,7 +829,8 @@ class QuestionControllerTest {
 				.options(request.getOptions())
 				.build();
 
-		when(questionService.updateQuestion(eq(questionSetId), eq(questionId), any())).thenReturn(mockResponse);
+		when(questionService.updateQuestion(eq(questionSetId), eq(questionId), any(), eq(USER_ID)))
+			.thenReturn(mockResponse);
 
 		// when & then
 		mockMvc.perform(put("/api/v1/question-sets/{questionSetId}/questions/{questionId}", questionSetId, questionId)
@@ -817,7 +838,7 @@ class QuestionControllerTest {
 				.content(json))
 			.andExpect(status().isOk());
 
-		verify(questionService).updateQuestion(eq(questionSetId), eq(questionId), any());
+		verify(questionService).updateQuestion(eq(questionSetId), eq(questionId), any(), eq(USER_ID));
 	}
 
 	@Test
@@ -857,7 +878,8 @@ class QuestionControllerTest {
 				.answers(request.getAnswers())
 				.build();
 
-		when(questionService.updateQuestion(eq(questionSetId), eq(questionId), any())).thenReturn(mockResponse);
+		when(questionService.updateQuestion(eq(questionSetId), eq(questionId), any(), eq(USER_ID)))
+			.thenReturn(mockResponse);
 
 		// when & then
 		mockMvc.perform(put("/api/v1/question-sets/{questionSetId}/questions/{questionId}", questionSetId, questionId)
@@ -865,7 +887,7 @@ class QuestionControllerTest {
 				.content(json))
 			.andExpect(status().isOk());
 
-		verify(questionService).updateQuestion(eq(questionSetId), eq(questionId), any());
+		verify(questionService).updateQuestion(eq(questionSetId), eq(questionId), any(), eq(USER_ID));
 	}
 
 	@Test
@@ -905,7 +927,8 @@ class QuestionControllerTest {
 			.choices(choices)
 			.build();
 
-		when(questionService.updateQuestion(eq(questionSetId), eq(questionId), any())).thenReturn(mockResponse);
+		when(questionService.updateQuestion(eq(questionSetId), eq(questionId), any(), eq(USER_ID)))
+			.thenReturn(mockResponse);
 
 		// when & then
 		mockMvc.perform(put("/api/v1/question-sets/{questionSetId}/questions/{questionId}", questionSetId, questionId)
@@ -918,7 +941,7 @@ class QuestionControllerTest {
 				jsonPath("$.data.explanation").value("수정된 문제 해설")
 			);
 
-		verify(questionService).updateQuestion(eq(questionSetId), eq(questionId), any());
+		verify(questionService).updateQuestion(eq(questionSetId), eq(questionId), any(), eq(USER_ID));
 	}
 
 	@Test
@@ -960,7 +983,8 @@ class QuestionControllerTest {
 				.answerCount(2)
 				.build();
 
-		when(questionService.updateQuestion(eq(questionSetId), eq(questionId), any())).thenReturn(mockResponse);
+		when(questionService.updateQuestion(eq(questionSetId), eq(questionId), any(), eq(USER_ID)))
+			.thenReturn(mockResponse);
 
 		// when & then
 		mockMvc.perform(put("/api/v1/question-sets/{questionSetId}/questions/{questionId}", questionSetId, questionId)
@@ -973,7 +997,7 @@ class QuestionControllerTest {
 				jsonPath("$.data.explanation").value("변경된 해설")
 			);
 
-		verify(questionService).updateQuestion(eq(questionSetId), eq(questionId), any());
+		verify(questionService).updateQuestion(eq(questionSetId), eq(questionId), any(), eq(USER_ID));
 	}
 
 	@Test
@@ -983,7 +1007,7 @@ class QuestionControllerTest {
 		Long questionSetId = 1L;
 		Long questionId = 1L;
 
-		doNothing().when(questionService).deleteQuestion(questionSetId, questionId);
+		doNothing().when(questionService).deleteQuestion(questionSetId, questionId, USER_ID);
 
 		// when & then
 		mockMvc.perform(
@@ -991,7 +1015,7 @@ class QuestionControllerTest {
 					.contentType(MediaType.APPLICATION_JSON))
 			.andExpect(status().isOk());
 
-		verify(questionService).deleteQuestion(questionSetId, questionId);
+		verify(questionService).deleteQuestion(questionSetId, questionId, USER_ID);
 	}
 
 	@Test
@@ -1002,7 +1026,7 @@ class QuestionControllerTest {
 		CreateDefaultQuestionApiRequest request = new CreateDefaultQuestionApiRequest(1L);
 		MultipleQuestionDto questionDto = mock(MultipleQuestionDto.class);
 		when(questionDto.getNumber()).thenReturn(1L);
-		when(questionService.createDefaultQuestion(questionSetId)).thenReturn(questionDto);
+		when(questionService.createDefaultQuestion(questionSetId, USER_ID)).thenReturn(questionDto);
 
 		// when & then
 		mockMvc.perform(post("/api/v1/question-sets/{questionSetId}/questions/default", questionSetId)
@@ -1013,7 +1037,7 @@ class QuestionControllerTest {
 				jsonPath("$.data.number").value(1L)
 			);
 
-		verify(questionService).createDefaultQuestion(eq(questionSetId));
+		verify(questionService).createDefaultQuestion(eq(questionSetId), eq(USER_ID));
 	}
 
 	@Test
@@ -1034,7 +1058,8 @@ class QuestionControllerTest {
 					.content(objectMapper.writeValueAsString(request)))
 			.andExpect(status().isOk());
 
-		verify(questionService).changeQuestionOrder(questionSetId, sourceQuestionId, prevQuestionId, nextQuestionId);
+		verify(questionService).changeQuestionOrder(questionSetId, sourceQuestionId, prevQuestionId, nextQuestionId,
+			USER_ID);
 	}
 
 	@Test
@@ -1059,6 +1084,6 @@ class QuestionControllerTest {
 				jsonPath("$.reasons[0]").value("이전 문제 ID와 다음 문제 ID가 모두 null일 수 없습니다.")
 			);
 
-		verify(questionService, never()).changeQuestionOrder(anyLong(), anyLong(), any(), any());
+		verify(questionService, never()).changeQuestionOrder(anyLong(), anyLong(), any(), any(), any());
 	}
 }

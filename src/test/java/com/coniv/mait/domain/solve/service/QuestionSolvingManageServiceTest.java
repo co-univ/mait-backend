@@ -30,6 +30,7 @@ import com.coniv.mait.domain.question.service.dto.FillBlankAnswerDto;
 import com.coniv.mait.domain.question.service.dto.ShortAnswerDto;
 import com.coniv.mait.domain.solve.component.QuestionAnswerUpdater;
 import com.coniv.mait.domain.solve.event.QuestionUpdateEvent;
+import com.coniv.mait.domain.user.service.component.TeamRoleValidator;
 import com.coniv.mait.global.event.MaitEventPublisher;
 import com.coniv.mait.global.exception.custom.UserParameterException;
 import com.coniv.mait.web.solve.dto.FillBlankUpdateAnswerPayload;
@@ -39,6 +40,11 @@ import com.coniv.mait.web.solve.dto.UpdateAnswerPayload;
 
 @ExtendWith(MockitoExtension.class)
 class QuestionSolvingManageServiceTest {
+
+	private static final Long USER_ID = 1L;
+
+	@Mock
+	private TeamRoleValidator teamRoleValidator;
 
 	private QuestionSolvingManageService questionSolvingManageService;
 
@@ -62,7 +68,8 @@ class QuestionSolvingManageServiceTest {
 		questionSolvingManageService = new QuestionSolvingManageService(
 			List.of(shortQuestionAnswerUpdater, fillBlankQuestionAnswerUpdater),
 			questionReader,
-			maitEventPublisher
+			maitEventPublisher,
+			teamRoleValidator
 		);
 	}
 
@@ -84,7 +91,7 @@ class QuestionSolvingManageServiceTest {
 		when(question.getType()).thenReturn(QuestionType.SHORT);
 
 		// when
-		questionSolvingManageService.updateQuestionAnswers(questionSetId, questionId, request);
+		questionSolvingManageService.updateQuestionAnswers(questionSetId, questionId, request, USER_ID);
 
 		// then
 		verify(questionReader).getQuestion(questionId, questionSetId);
@@ -114,7 +121,7 @@ class QuestionSolvingManageServiceTest {
 		when(question.getType()).thenReturn(QuestionType.FILL_BLANK);
 
 		// when
-		questionSolvingManageService.updateQuestionAnswers(questionSetId, questionId, request);
+		questionSolvingManageService.updateQuestionAnswers(questionSetId, questionId, request, USER_ID);
 
 		// then
 		verify(questionReader).getQuestion(questionId, questionSetId);
@@ -144,7 +151,7 @@ class QuestionSolvingManageServiceTest {
 
 		// when, then
 		QuestionSetStatusException exception = assertThrows(QuestionSetStatusException.class,
-			() -> questionSolvingManageService.updateQuestionAnswers(questionSetId, questionId, request));
+			() -> questionSolvingManageService.updateQuestionAnswers(questionSetId, questionId, request, USER_ID));
 		assertThat(exception.getExceptionCode()).isEqualTo(QuestionSetStatusExceptionCode.ONLY_LIVE_TIME);
 
 		verify(shortQuestionAnswerUpdater, never()).updateAnswer(any(), any());
@@ -168,7 +175,7 @@ class QuestionSolvingManageServiceTest {
 
 		// when, then
 		QuestionException exception = assertThrows(QuestionException.class,
-			() -> questionSolvingManageService.updateQuestionAnswers(questionSetId, questionId, request));
+			() -> questionSolvingManageService.updateQuestionAnswers(questionSetId, questionId, request, USER_ID));
 		assertThat(exception.getExceptionCode()).isEqualTo(QuestionExceptionCode.UNAVAILABLE_TYPE);
 
 		verify(shortQuestionAnswerUpdater, never()).updateAnswer(any(), any());
@@ -201,7 +208,7 @@ class QuestionSolvingManageServiceTest {
 		when(question.getType()).thenReturn(questionType);
 
 		// when & then
-		assertThatThrownBy(() -> questionSolvingManageService.updateQuestionAnswers(1L, 2L, request))
+		assertThatThrownBy(() -> questionSolvingManageService.updateQuestionAnswers(1L, 2L, request, USER_ID))
 			.isInstanceOfSatisfying(QuestionException.class, exception ->
 				assertThat(exception.getExceptionCode()).isEqualTo(QuestionExceptionCode.TYPE_MISMATCH));
 		verify(shortQuestionAnswerUpdater, never()).updateAnswer(any(), any());
@@ -225,7 +232,7 @@ class QuestionSolvingManageServiceTest {
 		doThrow(exception).when(shortQuestionAnswerUpdater).updateAnswer(question, request);
 
 		// when & then
-		assertThatThrownBy(() -> questionSolvingManageService.updateQuestionAnswers(1L, 2L, request))
+		assertThatThrownBy(() -> questionSolvingManageService.updateQuestionAnswers(1L, 2L, request, USER_ID))
 			.isSameAs(exception);
 		verify(maitEventPublisher, never()).publishEvent(any());
 	}

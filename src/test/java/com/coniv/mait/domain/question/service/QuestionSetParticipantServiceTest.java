@@ -30,12 +30,18 @@ import com.coniv.mait.domain.question.repository.QuestionSetParticipantRepositor
 import com.coniv.mait.domain.question.service.component.QuestionWebSocketSender;
 import com.coniv.mait.domain.user.entity.UserEntity;
 import com.coniv.mait.domain.user.repository.UserEntityRepository;
+import com.coniv.mait.domain.user.service.component.TeamRoleValidator;
 import com.coniv.mait.global.event.MaitEventPublisher;
 
 import jakarta.persistence.EntityNotFoundException;
 
 @ExtendWith(MockitoExtension.class)
 class QuestionSetParticipantServiceTest {
+
+	private static final Long USER_ID = 1L;
+
+	@Mock
+	private TeamRoleValidator teamRoleValidator;
 
 	@InjectMocks
 	private QuestionSetParticipantService questionSetParticipantService;
@@ -236,7 +242,7 @@ class QuestionSetParticipantServiceTest {
 			.willReturn(List.of());
 
 		// when
-		questionSetParticipantService.updateParticipantsStatus(questionSetId, List.of(), List.of());
+		questionSetParticipantService.updateParticipantsStatus(questionSetId, List.of(), List.of(), USER_ID);
 
 		// then
 		assertThat(questionSet.isAdvancementSelected()).isTrue();
@@ -278,7 +284,7 @@ class QuestionSetParticipantServiceTest {
 			ParticipantDto.builder().userId(3L).build());
 
 		// when
-		questionSetParticipantService.updateParticipantsStatus(questionSetId, activeUsers, eliminatedUsers);
+		questionSetParticipantService.updateParticipantsStatus(questionSetId, activeUsers, eliminatedUsers, USER_ID);
 
 		// then
 		then(questionWebSocketSender).should()
@@ -304,7 +310,7 @@ class QuestionSetParticipantServiceTest {
 		// when & then
 		assertThatThrownBy(
 			() -> questionSetParticipantService.updateParticipantsStatus(
-				questionSetId, activeUsers, eliminatedUsers))
+				questionSetId, activeUsers, eliminatedUsers, USER_ID))
 			.isInstanceOf(Exception.class);
 	}
 }

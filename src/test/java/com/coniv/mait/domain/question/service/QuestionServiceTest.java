@@ -40,12 +40,18 @@ import com.coniv.mait.domain.question.service.dto.OrderingQuestionDto;
 import com.coniv.mait.domain.question.service.dto.QuestionDto;
 import com.coniv.mait.domain.question.service.dto.ShortQuestionDto;
 import com.coniv.mait.domain.question.util.LexoRank;
+import com.coniv.mait.domain.user.service.component.TeamRoleValidator;
 import com.coniv.mait.global.exception.custom.ResourceNotBelongException;
 
 import jakarta.persistence.EntityNotFoundException;
 
 @ExtendWith(MockitoExtension.class)
 class QuestionServiceTest {
+
+	private static final Long USER_ID = 1L;
+
+	@Mock
+	private TeamRoleValidator teamRoleValidator;
 
 	// @InjectMocks
 	private QuestionService questionService;
@@ -102,7 +108,8 @@ class QuestionServiceTest {
 			multipleChoiceEntityRepository,
 			questionImageService,
 			aiCreateApiService,
-			aiRequestStatusManager);
+			aiRequestStatusManager,
+			teamRoleValidator);
 	}
 
 	@Test
@@ -129,7 +136,7 @@ class QuestionServiceTest {
 		String expected = LexoRank.prevBefore("B");
 
 		// when
-		questionService.changeQuestionOrder(questionSetId, sourceQuestionId, null, nextQuestionId);
+		questionService.changeQuestionOrder(questionSetId, sourceQuestionId, null, nextQuestionId, USER_ID);
 
 		// then
 		verify(source).updateRank(expected);
@@ -159,7 +166,7 @@ class QuestionServiceTest {
 		String expected = LexoRank.nextAfter("A");
 
 		// when
-		questionService.changeQuestionOrder(questionSetId, sourceQuestionId, prevQuestionId, null);
+		questionService.changeQuestionOrder(questionSetId, sourceQuestionId, prevQuestionId, null, USER_ID);
 
 		// then
 		verify(source).updateRank(expected);
@@ -195,7 +202,7 @@ class QuestionServiceTest {
 		String expected = LexoRank.between("A", "C");
 
 		// when
-		questionService.changeQuestionOrder(questionSetId, sourceQuestionId, prevQuestionId, nextQuestionId);
+		questionService.changeQuestionOrder(questionSetId, sourceQuestionId, prevQuestionId, nextQuestionId, USER_ID);
 
 		// then
 		verify(source).updateRank(expected);
@@ -211,7 +218,7 @@ class QuestionServiceTest {
 		MultipleQuestionDto questionDto = mock(MultipleQuestionDto.class);
 
 		// when
-		questionService.createQuestion(questionSetId, QuestionType.MULTIPLE, questionDto);
+		questionService.createQuestion(questionSetId, QuestionType.MULTIPLE, questionDto, USER_ID);
 
 		// then
 		verify(questionSetEntityRepository).findById(questionSetId);
@@ -234,7 +241,7 @@ class QuestionServiceTest {
 
 		// when, then
 		assertThrows(EntityNotFoundException.class,
-			() -> questionService.createQuestion(questionSetId, QuestionType.MULTIPLE, questionDto));
+			() -> questionService.createQuestion(questionSetId, QuestionType.MULTIPLE, questionDto, USER_ID));
 
 		verify(questionSetEntityRepository).findById(questionSetId);
 		// 어떤 팩토리도 호출되지 않아야 함
@@ -493,7 +500,7 @@ class QuestionServiceTest {
 		when(questionEntityRepository.findById(questionId)).thenReturn(Optional.of(existingQuestion));
 
 		// when
-		QuestionDto result = questionService.updateQuestion(questionSetId, questionId, questionDto);
+		QuestionDto result = questionService.updateQuestion(questionSetId, questionId, questionDto, USER_ID);
 
 		// then
 		assertNotNull(result);
@@ -541,7 +548,7 @@ class QuestionServiceTest {
 		when(questionEntityRepository.findById(questionId)).thenReturn(Optional.of(existingQuestion));
 
 		// when
-		QuestionDto result = questionService.updateQuestion(questionSetId, questionId, questionDto);
+		QuestionDto result = questionService.updateQuestion(questionSetId, questionId, questionDto, USER_ID);
 
 		// then
 		assertNotNull(result);
@@ -575,7 +582,7 @@ class QuestionServiceTest {
 
 		// when & then
 		EntityNotFoundException exception = assertThrows(EntityNotFoundException.class,
-			() -> questionService.updateQuestion(questionSetId, questionId, questionDto));
+			() -> questionService.updateQuestion(questionSetId, questionId, questionDto, USER_ID));
 
 		assertEquals("Question not found with id: " + questionId, exception.getMessage());
 
@@ -609,7 +616,7 @@ class QuestionServiceTest {
 
 		// when & then
 		ResourceNotBelongException exception = assertThrows(ResourceNotBelongException.class,
-			() -> questionService.updateQuestion(questionSetId, questionId, questionDto));
+			() -> questionService.updateQuestion(questionSetId, questionId, questionDto, USER_ID));
 
 		assertEquals("해당 문제 셋에 속한 문제가 아닙니다.", exception.getMessage());
 
@@ -643,7 +650,7 @@ class QuestionServiceTest {
 		when(questionEntityRepository.findById(questionId)).thenReturn(Optional.of(existingQuestion));
 
 		// when
-		questionService.deleteQuestion(questionSetId, questionId);
+		questionService.deleteQuestion(questionSetId, questionId, USER_ID);
 
 		// then
 		verify(questionEntityRepository).findById(questionId);
@@ -672,7 +679,7 @@ class QuestionServiceTest {
 		when(multipleQuestionFactory.getQuestion(any(QuestionEntity.class), eq(true))).thenReturn(expectedQuestionDto);
 
 		// when
-		QuestionDto result = questionService.createDefaultQuestion(questionSetId);
+		QuestionDto result = questionService.createDefaultQuestion(questionSetId, USER_ID);
 
 		// then
 		assertNotNull(result);

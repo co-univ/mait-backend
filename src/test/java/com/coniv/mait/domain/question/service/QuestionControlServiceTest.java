@@ -18,6 +18,7 @@ import com.coniv.mait.domain.question.entity.QuestionSetEntity;
 import com.coniv.mait.domain.question.enums.QuestionStatusType;
 import com.coniv.mait.domain.question.repository.QuestionEntityRepository;
 import com.coniv.mait.domain.question.service.component.QuestionWebSocketSender;
+import com.coniv.mait.domain.user.service.component.TeamRoleValidator;
 import com.coniv.mait.global.exception.custom.QuestionSetLiveException;
 import com.coniv.mait.global.exception.custom.ResourceNotBelongException;
 
@@ -25,6 +26,11 @@ import jakarta.persistence.EntityNotFoundException;
 
 @ExtendWith(MockitoExtension.class)
 class QuestionControlServiceTest {
+
+	private static final Long USER_ID = 1L;
+
+	@Mock
+	private TeamRoleValidator teamRoleValidator;
 
 	@Mock
 	private QuestionWebSocketSender questionWebSocketSender;
@@ -54,7 +60,7 @@ class QuestionControlServiceTest {
 		when(questionSetEntity.isOnLive()).thenReturn(true);
 
 		// when
-		questionControlService.allowQuestionAccess(questionSetId, questionId);
+		questionControlService.allowQuestionAccess(questionSetId, questionId, USER_ID);
 
 		// then
 		verify(questionEntity).updateQuestionStatus(QuestionStatusType.ACCESS_PERMISSION);
@@ -76,7 +82,7 @@ class QuestionControlServiceTest {
 		when(questionEntity.getQuestionStatus()).thenReturn(QuestionStatusType.ACCESS_PERMISSION);
 
 		// when
-		questionControlService.allowQuestionSolve(questionSetId, questionId);
+		questionControlService.allowQuestionSolve(questionSetId, questionId, USER_ID);
 
 		// then
 		verify(questionEntity).updateQuestionStatus(QuestionStatusType.SOLVE_PERMISSION);
@@ -95,7 +101,7 @@ class QuestionControlServiceTest {
 
 		// when & then
 		assertThrows(EntityNotFoundException.class, () ->
-			questionControlService.allowQuestionAccess(questionSetId, questionId));
+			questionControlService.allowQuestionAccess(questionSetId, questionId, USER_ID));
 	}
 
 	@Test
@@ -109,7 +115,7 @@ class QuestionControlServiceTest {
 
 		// when & then
 		assertThrows(EntityNotFoundException.class, () ->
-			questionControlService.allowQuestionSolve(questionSetId, questionId));
+			questionControlService.allowQuestionSolve(questionSetId, questionId, USER_ID));
 	}
 
 	@Test
@@ -127,7 +133,7 @@ class QuestionControlServiceTest {
 
 		// when & then
 		assertThrows(ResourceNotBelongException.class, () ->
-			questionControlService.allowQuestionAccess(questionSetId, questionId));
+			questionControlService.allowQuestionAccess(questionSetId, questionId, USER_ID));
 	}
 
 	@Test
@@ -145,7 +151,7 @@ class QuestionControlServiceTest {
 
 		// when & then
 		assertThrows(ResourceNotBelongException.class, () ->
-			questionControlService.allowQuestionSolve(questionSetId, questionId));
+			questionControlService.allowQuestionSolve(questionSetId, questionId, USER_ID));
 	}
 
 	@Test
@@ -162,7 +168,7 @@ class QuestionControlServiceTest {
 
 		// when & then
 		assertThrows(QuestionSetLiveException.class, () ->
-			questionControlService.allowQuestionAccess(questionSetId, questionId));
+			questionControlService.allowQuestionAccess(questionSetId, questionId, USER_ID));
 	}
 
 	@Test
@@ -179,7 +185,7 @@ class QuestionControlServiceTest {
 
 		// when & then
 		assertThrows(QuestionSetLiveException.class, () ->
-			questionControlService.allowQuestionSolve(questionSetId, questionId));
+			questionControlService.allowQuestionSolve(questionSetId, questionId, USER_ID));
 	}
 
 	@Test
@@ -197,6 +203,6 @@ class QuestionControlServiceTest {
 
 		// when & then
 		assertThrows(QuestionSetLiveException.class, () ->
-			questionControlService.allowQuestionSolve(questionSetId, questionId));
+			questionControlService.allowQuestionSolve(questionSetId, questionId, USER_ID));
 	}
 }
