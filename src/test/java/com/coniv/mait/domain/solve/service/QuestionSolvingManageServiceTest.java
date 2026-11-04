@@ -1,6 +1,7 @@
 package com.coniv.mait.domain.solve.service;
 
 import static org.assertj.core.api.Assertions.*;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
@@ -30,6 +31,7 @@ import com.coniv.mait.domain.question.service.dto.FillBlankAnswerDto;
 import com.coniv.mait.domain.question.service.dto.ShortAnswerDto;
 import com.coniv.mait.domain.solve.component.QuestionAnswerUpdater;
 import com.coniv.mait.domain.solve.event.QuestionUpdateEvent;
+import com.coniv.mait.domain.user.exception.UserRoleException;
 import com.coniv.mait.domain.user.service.component.TeamRoleValidator;
 import com.coniv.mait.global.event.MaitEventPublisher;
 import com.coniv.mait.global.exception.custom.UserParameterException;
@@ -42,6 +44,8 @@ import com.coniv.mait.web.solve.dto.UpdateAnswerPayload;
 class QuestionSolvingManageServiceTest {
 
 	private static final Long USER_ID = 1L;
+
+	private static final Long TEAM_ID = 10L;
 
 	@Mock
 	private TeamRoleValidator teamRoleValidator;
@@ -234,6 +238,31 @@ class QuestionSolvingManageServiceTest {
 		// when & then
 		assertThatThrownBy(() -> questionSolvingManageService.updateQuestionAnswers(1L, 2L, request, USER_ID))
 			.isSameAs(exception);
+		verify(maitEventPublisher, never()).publishEvent(any());
+	}
+
+	@Test
+	@DisplayName("문제 셋 팀의 MAKER 이상이 아니면 인정답안을 변경할 수 없다")
+	void updateQuestionAnswers_NotTeamManager_ThrowsException() {
+		// given
+		Long questionSetId = 1L;
+		Long questionId = 1L;
+		QuestionSetEntity questionSet = mock(QuestionSetEntity.class);
+		when(questionSet.getTeamId()).thenReturn(TEAM_ID);
+		QuestionEntity question = mock(QuestionEntity.class);
+		when(question.getQuestionSet()).thenReturn(questionSet);
+		when(questionReader.getQuestion(questionId, questionSetId)).thenReturn(question);
+		ShortUpdateAnswerPayload request = new ShortUpdateAnswerPayload(List.of());
+		doThrow(new UserRoleException("팀 관리 권한이 없습니다."))
+			.when(teamRoleValidator).checkIsTeamManager(TEAM_ID, USER_ID);
+
+		// when & then
+		assertThatThrownBy(() -> questionSolvingManageService.updateQuestionAnswers(questionSetId, questionId, request,
+			USER_ID))
+			.isInstanceOf(UserRoleException.class)
+			.hasMessage("팀 관리 권한이 없습니다.");
+
+		verify(shortQuestionAnswerUpdater, never()).updateAnswer(any(), any());
 		verify(maitEventPublisher, never()).publishEvent(any());
 	}
 }

@@ -1,5 +1,6 @@
 package com.coniv.mait.domain.question.service;
 
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
@@ -17,7 +18,9 @@ import com.coniv.mait.domain.question.entity.QuestionEntity;
 import com.coniv.mait.domain.question.entity.QuestionSetEntity;
 import com.coniv.mait.domain.question.enums.QuestionStatusType;
 import com.coniv.mait.domain.question.repository.QuestionEntityRepository;
+import com.coniv.mait.domain.question.service.component.QuestionReader;
 import com.coniv.mait.domain.question.service.component.QuestionWebSocketSender;
+import com.coniv.mait.domain.user.exception.UserRoleException;
 import com.coniv.mait.domain.user.service.component.TeamRoleValidator;
 import com.coniv.mait.global.exception.custom.QuestionSetLiveException;
 import com.coniv.mait.global.exception.custom.ResourceNotBelongException;
@@ -31,6 +34,11 @@ class QuestionControlServiceTest {
 
 	@Mock
 	private TeamRoleValidator teamRoleValidator;
+
+	@Mock
+	private QuestionReader questionReader;
+
+	private static final Long TEAM_ID = 10L;
 
 	@Mock
 	private QuestionWebSocketSender questionWebSocketSender;
@@ -204,5 +212,79 @@ class QuestionControlServiceTest {
 		// when & then
 		assertThrows(QuestionSetLiveException.class, () ->
 			questionControlService.allowQuestionSolve(questionSetId, questionId, USER_ID));
+	}
+
+	@Test
+	@DisplayName("문제 셋 팀의 MAKER 이상이 아니면 문제 접근을 허용할 수 없다")
+	void allowQuestionAccess_NotTeamManager_ThrowsException() {
+		// given
+		Long questionSetId = 1L;
+		Long questionId = 1L;
+		QuestionSetEntity questionSet = mock(QuestionSetEntity.class);
+		when(questionSet.getId()).thenReturn(questionSetId);
+		when(questionSet.getTeamId()).thenReturn(TEAM_ID);
+		QuestionEntity question = mock(QuestionEntity.class);
+		when(question.getQuestionSet()).thenReturn(questionSet);
+		when(questionSet.isOnLive()).thenReturn(true);
+		when(questionEntityRepository.findById(questionId)).thenReturn(Optional.of(question));
+		doThrow(new UserRoleException("팀 관리 권한이 없습니다."))
+			.when(teamRoleValidator).checkIsTeamManager(TEAM_ID, USER_ID);
+
+		// when & then
+		assertThatThrownBy(() -> questionControlService.allowQuestionAccess(questionSetId, questionId, USER_ID))
+			.isInstanceOf(UserRoleException.class)
+			.hasMessage("팀 관리 권한이 없습니다.");
+
+		verifyNoInteractions(questionWebSocketSender);
+		verify(question, never()).updateQuestionStatus(any());
+	}
+
+	@Test
+	@DisplayName("문제 셋 팀의 MAKER 이상이 아니면 문제 풀이를 허용할 수 없다")
+	void allowQuestionSolve_NotTeamManager_ThrowsException() {
+		// given
+		Long questionSetId = 1L;
+		Long questionId = 1L;
+		QuestionSetEntity questionSet = mock(QuestionSetEntity.class);
+		when(questionSet.getId()).thenReturn(questionSetId);
+		when(questionSet.getTeamId()).thenReturn(TEAM_ID);
+		QuestionEntity question = mock(QuestionEntity.class);
+		when(question.getQuestionSet()).thenReturn(questionSet);
+		when(questionSet.isOnLive()).thenReturn(true);
+		when(questionEntityRepository.findById(questionId)).thenReturn(Optional.of(question));
+		doThrow(new UserRoleException("팀 관리 권한이 없습니다."))
+			.when(teamRoleValidator).checkIsTeamManager(TEAM_ID, USER_ID);
+
+		// when & then
+		assertThatThrownBy(() -> questionControlService.allowQuestionSolve(questionSetId, questionId, USER_ID))
+			.isInstanceOf(UserRoleException.class)
+			.hasMessage("팀 관리 권한이 없습니다.");
+
+		verifyNoInteractions(questionWebSocketSender);
+		verify(question, never()).updateQuestionStatus(any());
+	}
+
+	@Test
+	@DisplayName("문제 셋 팀의 MAKER 이상이 아니면 문제 상태를 변경할 수 없다")
+	void updateQuestionStatus_NotTeamManager_ThrowsException() {
+		// given
+		Long questionSetId = 1L;
+		Long questionId = 1L;
+		QuestionSetEntity questionSet = mock(QuestionSetEntity.class);
+		when(questionSet.getTeamId()).thenReturn(TEAM_ID);
+		QuestionEntity question = mock(QuestionEntity.class);
+		when(question.getQuestionSet()).thenReturn(questionSet);
+		when(questionReader.getQuestion(questionId, questionSetId)).thenReturn(question);
+		doThrow(new UserRoleException("팀 관리 권한이 없습니다."))
+			.when(teamRoleValidator).checkIsTeamManager(TEAM_ID, USER_ID);
+
+		// when & then
+		assertThatThrownBy(() -> questionControlService.updateQuestionStatus(questionSetId, questionId,
+			QuestionStatusType.ACCESS_PERMISSION, USER_ID))
+			.isInstanceOf(UserRoleException.class)
+			.hasMessage("팀 관리 권한이 없습니다.");
+
+		verifyNoInteractions(questionWebSocketSender);
+		verify(question, never()).updateQuestionStatus(any());
 	}
 }

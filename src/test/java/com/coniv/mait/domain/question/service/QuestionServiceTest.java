@@ -1,5 +1,6 @@
 package com.coniv.mait.domain.question.service;
 
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
@@ -40,6 +41,7 @@ import com.coniv.mait.domain.question.service.dto.OrderingQuestionDto;
 import com.coniv.mait.domain.question.service.dto.QuestionDto;
 import com.coniv.mait.domain.question.service.dto.ShortQuestionDto;
 import com.coniv.mait.domain.question.util.LexoRank;
+import com.coniv.mait.domain.user.exception.UserRoleException;
 import com.coniv.mait.domain.user.service.component.TeamRoleValidator;
 import com.coniv.mait.global.exception.custom.ResourceNotBelongException;
 
@@ -49,6 +51,8 @@ import jakarta.persistence.EntityNotFoundException;
 class QuestionServiceTest {
 
 	private static final Long USER_ID = 1L;
+
+	private static final Long TEAM_ID = 10L;
 
 	@Mock
 	private TeamRoleValidator teamRoleValidator;
@@ -693,5 +697,118 @@ class QuestionServiceTest {
 		verify(questionSetEntityRepository).findById(questionSetId);
 		verify(questionEntityRepository).save(any(QuestionEntity.class));
 		verify(multipleQuestionFactory).getQuestion(any(QuestionEntity.class), eq(true));
+	}
+
+	@Test
+	@DisplayName("문제 셋 팀의 MAKER 이상이 아니면 문제를 생성할 수 없다")
+	void createQuestion_NotTeamManager_ThrowsException() {
+		// given
+		Long questionSetId = 1L;
+		QuestionSetEntity questionSet = mock(QuestionSetEntity.class);
+		when(questionSet.getTeamId()).thenReturn(TEAM_ID);
+		when(questionSetEntityRepository.findById(questionSetId)).thenReturn(Optional.of(questionSet));
+		doThrow(new UserRoleException("팀 관리 권한이 없습니다."))
+			.when(teamRoleValidator).checkIsTeamManager(TEAM_ID, USER_ID);
+
+		// when & then
+		assertThatThrownBy(() -> questionService.createQuestion(questionSetId, QuestionType.MULTIPLE,
+			mock(MultipleQuestionDto.class), USER_ID))
+			.isInstanceOf(UserRoleException.class)
+			.hasMessage("팀 관리 권한이 없습니다.");
+
+		verify(multipleQuestionFactory, never()).save(any(), any());
+	}
+
+	@Test
+	@DisplayName("문제 셋 팀의 MAKER 이상이 아니면 기본 문제를 생성할 수 없다")
+	void createDefaultQuestion_NotTeamManager_ThrowsException() {
+		// given
+		Long questionSetId = 1L;
+		QuestionSetEntity questionSet = mock(QuestionSetEntity.class);
+		when(questionSet.getTeamId()).thenReturn(TEAM_ID);
+		when(questionSetEntityRepository.findById(questionSetId)).thenReturn(Optional.of(questionSet));
+		doThrow(new UserRoleException("팀 관리 권한이 없습니다."))
+			.when(teamRoleValidator).checkIsTeamManager(TEAM_ID, USER_ID);
+
+		// when & then
+		assertThatThrownBy(() -> questionService.createDefaultQuestion(questionSetId, USER_ID))
+			.isInstanceOf(UserRoleException.class)
+			.hasMessage("팀 관리 권한이 없습니다.");
+
+		verify(questionEntityRepository, never()).save(any());
+	}
+
+	@Test
+	@DisplayName("문제 셋 팀의 MAKER 이상이 아니면 문제를 수정할 수 없다")
+	void updateQuestion_NotTeamManager_ThrowsException() {
+		// given
+		Long questionSetId = 1L;
+		Long questionId = 1L;
+		QuestionSetEntity questionSet = mock(QuestionSetEntity.class);
+		when(questionSet.getId()).thenReturn(questionSetId);
+		when(questionSet.getTeamId()).thenReturn(TEAM_ID);
+		QuestionEntity question = mock(QuestionEntity.class);
+		when(question.getQuestionSet()).thenReturn(questionSet);
+		when(questionEntityRepository.findById(questionId)).thenReturn(Optional.of(question));
+		doThrow(new UserRoleException("팀 관리 권한이 없습니다."))
+			.when(teamRoleValidator).checkIsTeamManager(TEAM_ID, USER_ID);
+
+		// when & then
+		assertThatThrownBy(() -> questionService.updateQuestion(questionSetId, questionId,
+			mock(MultipleQuestionDto.class), USER_ID))
+			.isInstanceOf(UserRoleException.class)
+			.hasMessage("팀 관리 권한이 없습니다.");
+
+		verify(multipleQuestionFactory, never()).deleteSubEntities(any());
+		verify(questionEntityRepository, never()).save(any());
+	}
+
+	@Test
+	@DisplayName("문제 셋 팀의 MAKER 이상이 아니면 문제를 삭제할 수 없다")
+	void deleteQuestion_NotTeamManager_ThrowsException() {
+		// given
+		Long questionSetId = 1L;
+		Long questionId = 1L;
+		QuestionSetEntity questionSet = mock(QuestionSetEntity.class);
+		when(questionSet.getId()).thenReturn(questionSetId);
+		when(questionSet.getTeamId()).thenReturn(TEAM_ID);
+		QuestionEntity question = mock(QuestionEntity.class);
+		when(question.getQuestionSet()).thenReturn(questionSet);
+		when(questionEntityRepository.findById(questionId)).thenReturn(Optional.of(question));
+		doThrow(new UserRoleException("팀 관리 권한이 없습니다."))
+			.when(teamRoleValidator).checkIsTeamManager(TEAM_ID, USER_ID);
+
+		// when & then
+		assertThatThrownBy(() -> questionService.deleteQuestion(questionSetId, questionId, USER_ID))
+			.isInstanceOf(UserRoleException.class)
+			.hasMessage("팀 관리 권한이 없습니다.");
+
+		verify(questionEntityRepository, never()).deleteById(any());
+	}
+
+	@Test
+	@DisplayName("문제 셋 팀의 MAKER 이상이 아니면 문제 순서를 변경할 수 없다")
+	void changeQuestionOrder_NotTeamManager_ThrowsException() {
+		// given
+		Long questionSetId = 1L;
+		Long questionId = 1L;
+		Long nextQuestionId = 2L;
+		QuestionSetEntity questionSet = mock(QuestionSetEntity.class);
+		when(questionSet.getId()).thenReturn(questionSetId);
+		when(questionSet.getTeamId()).thenReturn(TEAM_ID);
+		QuestionEntity question = mock(QuestionEntity.class);
+		when(question.getQuestionSet()).thenReturn(questionSet);
+		when(questionEntityRepository.findById(questionId)).thenReturn(Optional.of(question));
+		doThrow(new UserRoleException("팀 관리 권한이 없습니다."))
+			.when(teamRoleValidator).checkIsTeamManager(TEAM_ID, USER_ID);
+
+		// when & then
+		assertThatThrownBy(() -> questionService.changeQuestionOrder(questionSetId, questionId, null, nextQuestionId,
+			USER_ID))
+			.isInstanceOf(UserRoleException.class)
+			.hasMessage("팀 관리 권한이 없습니다.");
+
+		verify(questionEntityRepository, never()).findById(nextQuestionId);
+		verify(question, never()).updateRank(any());
 	}
 }
