@@ -1,6 +1,7 @@
 package com.coniv.mait.web.solve.controller;
 
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -8,6 +9,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.coniv.mait.domain.solve.service.QuestionSolvingManageService;
+import com.coniv.mait.global.auth.model.MaitUser;
 import com.coniv.mait.global.response.ApiResponse;
 import com.coniv.mait.web.solve.dto.UpdateQuestionAnswerApiRequest;
 
@@ -29,8 +31,9 @@ public class QuestionSolvingManageController {
 	public ResponseEntity<ApiResponse<Void>> regradeQuestionSubmitRecords(
 		@PathVariable("questionSetId") Long questionSetId,
 		@PathVariable("questionId") Long questionId,
-		@RequestBody @Valid UpdateQuestionAnswerApiRequest request) {
-		questionSolvingManageService.updateQuestionAnswers(questionSetId, questionId, request.payload());
+		@RequestBody @Valid UpdateQuestionAnswerApiRequest request,
+		@AuthenticationPrincipal MaitUser user) {
+		questionSolvingManageService.updateQuestionAnswers(questionSetId, questionId, request.payload(), user.id());
 		return ResponseEntity.ok(ApiResponse.noContent());
 	}
 }

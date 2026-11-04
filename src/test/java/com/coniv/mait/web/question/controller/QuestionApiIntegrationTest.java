@@ -39,6 +39,13 @@ import com.coniv.mait.domain.question.service.dto.FillBlankAnswerDto;
 import com.coniv.mait.domain.question.service.dto.MultipleChoiceDto;
 import com.coniv.mait.domain.question.service.dto.OrderingQuestionOptionDto;
 import com.coniv.mait.domain.question.service.dto.ShortAnswerDto;
+import com.coniv.mait.domain.team.entity.TeamEntity;
+import com.coniv.mait.domain.team.entity.TeamUserEntity;
+import com.coniv.mait.domain.team.enums.TeamUserRole;
+import com.coniv.mait.domain.team.repository.TeamEntityRepository;
+import com.coniv.mait.domain.team.repository.TeamUserEntityRepository;
+import com.coniv.mait.domain.user.entity.UserEntity;
+import com.coniv.mait.domain.user.repository.UserEntityRepository;
 import com.coniv.mait.login.WithCustomUser;
 import com.coniv.mait.web.integration.BaseIntegrationTest;
 import com.coniv.mait.web.question.dto.UpdateFillBlankQuestionApiRequest;
@@ -49,6 +56,15 @@ import com.coniv.mait.web.question.dto.UpdateShortQuestionApiRequest;
 
 @WithCustomUser
 public class QuestionApiIntegrationTest extends BaseIntegrationTest {
+
+	@Autowired
+	private UserEntityRepository userEntityRepository;
+
+	@Autowired
+	private TeamEntityRepository teamEntityRepository;
+
+	@Autowired
+	private TeamUserEntityRepository teamUserEntityRepository;
 
 	@Autowired
 	private QuestionSetEntityRepository questionSetEntityRepository;
@@ -83,7 +99,7 @@ public class QuestionApiIntegrationTest extends BaseIntegrationTest {
 	void createDefaultMultipleQuestionHasZeroAnswers() throws Exception {
 		// given
 		QuestionSetEntity questionSet = questionSetEntityRepository.save(
-			QuestionSetEntity.of("기본 문제 테스트", QuestionSetCreationType.MANUAL));
+			questionSetInMakerTeam("기본 문제 테스트"));
 
 		// when
 		mockMvc.perform(post("/api/v1/question-sets/{questionSetId}/questions/default", questionSet.getId()))
@@ -106,7 +122,7 @@ public class QuestionApiIntegrationTest extends BaseIntegrationTest {
 	@DisplayName("객관식 문제 조회 API 성공 테스트")
 	void getMultipleQuestionApiSuccess() throws Exception {
 		// given
-		QuestionSetEntity questionSet = QuestionSetEntity.of("Sample Title", QuestionSetCreationType.MANUAL);
+		QuestionSetEntity questionSet = questionSetInMakerTeam("Sample Title");
 		QuestionSetEntity savedQuestionSet = questionSetEntityRepository.save(questionSet);
 
 		MultipleQuestionEntity question = MultipleQuestionEntity.builder()
@@ -199,7 +215,7 @@ public class QuestionApiIntegrationTest extends BaseIntegrationTest {
 	@DisplayName("주관식 문제 조회 API 성공 테스트")
 	void getShortQuestionApiSuccess() throws Exception {
 		// given
-		QuestionSetEntity questionSet = QuestionSetEntity.of("Sample Title", QuestionSetCreationType.MANUAL);
+		QuestionSetEntity questionSet = questionSetInMakerTeam("Sample Title");
 		QuestionSetEntity savedQuestionSet = questionSetEntityRepository.save(questionSet);
 
 		ShortQuestionEntity question = ShortQuestionEntity.builder()
@@ -254,7 +270,7 @@ public class QuestionApiIntegrationTest extends BaseIntegrationTest {
 	@DisplayName("순서배열 문제 조회 API 성공 테스트")
 	void getOrderingQuestionApiSuccess() throws Exception {
 		// given
-		QuestionSetEntity questionSet = QuestionSetEntity.of("Sample Title", QuestionSetCreationType.MANUAL);
+		QuestionSetEntity questionSet = questionSetInMakerTeam("Sample Title");
 		QuestionSetEntity savedQuestionSet = questionSetEntityRepository.save(questionSet);
 
 		OrderingQuestionEntity question = OrderingQuestionEntity.builder()
@@ -308,7 +324,7 @@ public class QuestionApiIntegrationTest extends BaseIntegrationTest {
 	@DisplayName("빈칸 문제 조회 API 성공 테스트")
 	void getFillBlankQuestionApiSuccess() throws Exception {
 		// given
-		QuestionSetEntity questionSet = QuestionSetEntity.of("Sample Title", QuestionSetCreationType.MANUAL);
+		QuestionSetEntity questionSet = questionSetInMakerTeam("Sample Title");
 		QuestionSetEntity savedQuestionSet = questionSetEntityRepository.save(questionSet);
 
 		FillBlankQuestionEntity question = FillBlankQuestionEntity.builder()
@@ -363,7 +379,7 @@ public class QuestionApiIntegrationTest extends BaseIntegrationTest {
 	@DisplayName("문제 셋의 모든 문제 조회 API 성공 테스트 - 다양한 타입")
 	void getQuestionsApiSuccess() throws Exception {
 		// given
-		QuestionSetEntity questionSet = QuestionSetEntity.of("Sample Title", QuestionSetCreationType.MANUAL);
+		QuestionSetEntity questionSet = questionSetInMakerTeam("Sample Title");
 		QuestionSetEntity savedQuestionSet = questionSetEntityRepository.save(questionSet);
 
 		// 객관식 문제 생성 (number: 2)
@@ -482,7 +498,7 @@ public class QuestionApiIntegrationTest extends BaseIntegrationTest {
 	@DisplayName("단답형 문제 수정 API 성공 테스트")
 	void updateShortQuestionApiSuccess() throws Exception {
 		// given - 문제셋과 기존 문제 생성
-		QuestionSetEntity questionSet = QuestionSetEntity.of("Sample Title", QuestionSetCreationType.MANUAL);
+		QuestionSetEntity questionSet = questionSetInMakerTeam("Sample Title");
 		QuestionSetEntity savedQuestionSet = questionSetEntityRepository.save(questionSet);
 
 		ShortQuestionEntity originalQuestion = ShortQuestionEntity.builder()
@@ -556,7 +572,7 @@ public class QuestionApiIntegrationTest extends BaseIntegrationTest {
 	@DisplayName("객관식 문제 수정 API 성공 테스트")
 	void updateMultipleQuestionApiSuccess() throws Exception {
 		// given - 문제셋과 기존 문제 생성
-		QuestionSetEntity questionSet = QuestionSetEntity.of("Sample Title", QuestionSetCreationType.MANUAL);
+		QuestionSetEntity questionSet = questionSetInMakerTeam("Sample Title");
 		QuestionSetEntity savedQuestionSet = questionSetEntityRepository.save(questionSet);
 
 		MultipleQuestionEntity originalQuestion = MultipleQuestionEntity.builder()
@@ -652,7 +668,7 @@ public class QuestionApiIntegrationTest extends BaseIntegrationTest {
 	@DisplayName("순서맞추기 문제 수정 API 성공 테스트")
 	void updateOrderingQuestionApiSuccess() throws Exception {
 		// given - 문제셋과 기존 문제 생성
-		QuestionSetEntity questionSet = QuestionSetEntity.of("Sample Title", QuestionSetCreationType.MANUAL);
+		QuestionSetEntity questionSet = questionSetInMakerTeam("Sample Title");
 		QuestionSetEntity savedQuestionSet = questionSetEntityRepository.save(questionSet);
 
 		OrderingQuestionEntity originalQuestion = OrderingQuestionEntity.builder()
@@ -740,7 +756,7 @@ public class QuestionApiIntegrationTest extends BaseIntegrationTest {
 	@DisplayName("빈칸채우기 문제 수정 API 성공 테스트")
 	void updateFillBlankQuestionApiSuccess() throws Exception {
 		// given - 문제셋과 기존 문제 생성
-		QuestionSetEntity questionSet = QuestionSetEntity.of("Sample Title", QuestionSetCreationType.MANUAL);
+		QuestionSetEntity questionSet = questionSetInMakerTeam("Sample Title");
 		QuestionSetEntity savedQuestionSet = questionSetEntityRepository.save(questionSet);
 
 		FillBlankQuestionEntity originalQuestion = FillBlankQuestionEntity.builder()
@@ -827,7 +843,7 @@ public class QuestionApiIntegrationTest extends BaseIntegrationTest {
 	@Transactional(propagation = Propagation.NOT_SUPPORTED)
 	void deleteQuestionApiSuccess() throws Exception {
 		// given - 문제셋과 기존 문제 생성
-		QuestionSetEntity questionSet = QuestionSetEntity.of("Sample Title", QuestionSetCreationType.MANUAL);
+		QuestionSetEntity questionSet = questionSetInMakerTeam("Sample Title");
 		QuestionSetEntity savedQuestionSet = questionSetEntityRepository.save(questionSet);
 
 		MultipleQuestionEntity question = MultipleQuestionEntity.builder()
@@ -876,7 +892,7 @@ public class QuestionApiIntegrationTest extends BaseIntegrationTest {
 	void createBasicQuestionApiSuccess() throws Exception {
 		// given
 		QuestionSetEntity questionSet = questionSetEntityRepository.save(
-			QuestionSetEntity.of("Sample Title", QuestionSetCreationType.MANUAL));
+			questionSetInMakerTeam("Sample Title"));
 
 		// when
 		mockMvc.perform(post("/api/v1/question-sets/{questionSetId}/questions/default", questionSet.getId())
@@ -900,7 +916,7 @@ public class QuestionApiIntegrationTest extends BaseIntegrationTest {
 	void updateQuestionOrderApiSuccess() throws Exception {
 		// given
 		QuestionSetEntity questionSet = questionSetEntityRepository.save(
-			QuestionSetEntity.of("Sample Title", QuestionSetCreationType.MANUAL));
+			questionSetInMakerTeam("Sample Title"));
 
 		QuestionEntity defaultQuestion = questionEntityRepository.save(
 			QuestionEntity.createDefaultQuestion(questionSet, "123"));
@@ -932,5 +948,16 @@ public class QuestionApiIntegrationTest extends BaseIntegrationTest {
 		assertThat(questions.get(0).getId()).isEqualTo(prevQuestion.getId());
 		assertThat(questions.get(1).getId()).isEqualTo(defaultQuestion.getId());
 		assertThat(questions.get(2).getId()).isEqualTo(nextQuestion.getId());
+	}
+
+	private QuestionSetEntity questionSetInMakerTeam(String title) {
+		UserEntity currentUser = userEntityRepository.findByEmail("user@example.com").orElseThrow();
+		TeamEntity team = teamEntityRepository.save(TeamEntity.ofGroup("coniv", currentUser.getId()));
+		teamUserEntityRepository.save(TeamUserEntity.createTeamUser(currentUser, team, TeamUserRole.MAKER));
+		return QuestionSetEntity.builder()
+			.title(title)
+			.creationType(QuestionSetCreationType.MANUAL)
+			.teamId(team.getId())
+			.build();
 	}
 }

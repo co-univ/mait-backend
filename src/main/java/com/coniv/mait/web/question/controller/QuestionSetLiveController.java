@@ -51,42 +51,48 @@ public class QuestionSetLiveController {
 	@Operation(summary = "실시간 문제셋 시작")
 	@PatchMapping("/start")
 	public ResponseEntity<ApiResponse<Void>> startLiveQuestionSet(
-		@PathVariable Long questionSetId) {
-		questionSetLiveControlService.startLiveQuestionSet(questionSetId);
+		@PathVariable Long questionSetId,
+		@AuthenticationPrincipal MaitUser user) {
+		questionSetLiveControlService.startLiveQuestionSet(questionSetId, user.id());
 		return ResponseEntity.ok(ApiResponse.noContent());
 	}
 
 	@Operation(summary = "실시간 문제셋 종료")
 	@PatchMapping("/end")
 	public ResponseEntity<ApiResponse<Void>> endLiveQuestionSet(
-		@PathVariable Long questionSetId) {
-		questionSetLiveControlService.endLiveQuestionSet(questionSetId);
+		@PathVariable Long questionSetId,
+		@AuthenticationPrincipal MaitUser user) {
+		questionSetLiveControlService.endLiveQuestionSet(questionSetId, user.id());
 		return ResponseEntity.ok(ApiResponse.noContent());
 	}
 
 	@Operation(summary = "상태에 따른 실시간 풀이 참여 인원 조회 API", description = "현재 풀이가 가능한 인원 및 불가능한 인원 반환")
 	@GetMapping("/participants")
 	public ResponseEntity<ApiResponse<ParticipantsByStatusApiResponse>> getParticipants(
-		@PathVariable Long questionSetId) {
+		@PathVariable Long questionSetId,
+		@AuthenticationPrincipal MaitUser user) {
 		return ResponseEntity.ok(ApiResponse.ok(
-			ParticipantsByStatusApiResponse.from(questionSetParticipantService.getParticipants(questionSetId))));
+			ParticipantsByStatusApiResponse.from(
+				questionSetParticipantService.getParticipants(questionSetId, user.id()))));
 	}
 
 	@Operation(summary = "다음 문제 진출자 수정")
 	@PutMapping("/participants")
 	public ResponseEntity<ApiResponse<ParticipantsByStatusApiResponse>> updateActiveParticipants(
 		@PathVariable Long questionSetId,
-		@RequestBody UpdateActiveParticipantsRequest request) {
+		@RequestBody UpdateActiveParticipantsRequest request,
+		@AuthenticationPrincipal MaitUser user) {
 		return ResponseEntity.ok(ApiResponse.ok(
 			ParticipantsByStatusApiResponse.from(questionSetParticipantService.updateParticipantsStatus(questionSetId,
-				request.activeParticipants(), request.eliminatedParticipants()))));
+				request.activeParticipants(), request.eliminatedParticipants(), user.id()))));
 	}
 
 	@Operation(summary = "다음 단계 진출자 전송 API", description = "다음 단계 진출 예정인 사용자에게 알림을 소켓으로 전송")
 	@PostMapping("/participants/send")
 	public ResponseEntity<ApiResponse<Void>> sendParticipants(@PathVariable Long questionSetId,
-		@RequestParam("type") ParticipantSendType type) {
-		questionSetLiveControlService.sendParticipants(questionSetId, type);
+		@RequestParam("type") ParticipantSendType type,
+		@AuthenticationPrincipal MaitUser user) {
+		questionSetLiveControlService.sendParticipants(questionSetId, type, user.id());
 		return ResponseEntity.ok(ApiResponse.noContent());
 
 	}
@@ -94,8 +100,9 @@ public class QuestionSetLiveController {
 	@Operation(summary = "우승자 확정하기")
 	@PutMapping("/participants/winners")
 	public ResponseEntity<ApiResponse<Void>> updateWinner(
-		@PathVariable Long questionSetId, @RequestBody @Valid UpdateWinnerApiRequest request) {
-		questionSetParticipantService.updateWinners(questionSetId, request.winners());
+		@PathVariable Long questionSetId, @RequestBody @Valid UpdateWinnerApiRequest request,
+		@AuthenticationPrincipal MaitUser user) {
+		questionSetParticipantService.updateWinners(questionSetId, request.winners(), user.id());
 		return ResponseEntity.ok(ApiResponse.noContent());
 	}
 
@@ -104,8 +111,9 @@ public class QuestionSetLiveController {
 	@PostMapping("/winner")
 	public ResponseEntity<ApiResponse<Void>> sendWinner(
 		@PathVariable Long questionSetId,
-		@RequestBody SendWinnerRequest request) {
-		questionSetLiveControlService.sendWinner(questionSetId, request.winnerUserIds());
+		@RequestBody SendWinnerRequest request,
+		@AuthenticationPrincipal MaitUser user) {
+		questionSetLiveControlService.sendWinner(questionSetId, request.winnerUserIds(), user.id());
 		return ResponseEntity.ok(ApiResponse.noContent());
 	}
 
