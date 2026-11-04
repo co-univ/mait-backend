@@ -11,15 +11,13 @@ import org.springframework.transaction.annotation.Transactional;
 import com.coniv.mait.domain.question.entity.QuestionEntity;
 import com.coniv.mait.domain.question.entity.QuestionSetEntity;
 import com.coniv.mait.domain.question.enums.QuestionType;
+import com.coniv.mait.domain.question.exception.QuestionException;
 import com.coniv.mait.domain.question.exception.QuestionExceptionCode;
 import com.coniv.mait.domain.question.exception.QuestionSetStatusException;
-import com.coniv.mait.domain.question.exception.QuestionStatusException;
 import com.coniv.mait.domain.question.exception.code.QuestionSetStatusExceptionCode;
 import com.coniv.mait.domain.question.service.component.QuestionReader;
 import com.coniv.mait.domain.solve.component.QuestionAnswerUpdater;
 import com.coniv.mait.domain.solve.event.QuestionUpdateEvent;
-import com.coniv.mait.domain.solve.exception.QuestionSolveExceptionCode;
-import com.coniv.mait.domain.solve.exception.QuestionSolvingException;
 import com.coniv.mait.global.event.MaitEventPublisher;
 import com.coniv.mait.web.solve.dto.UpdateAnswerPayload;
 
@@ -52,10 +50,10 @@ public class QuestionSolvingManageService {
 
 		QuestionType type = request.getType();
 		if (type != QuestionType.SHORT && type != QuestionType.FILL_BLANK) {
-			throw new QuestionStatusException(QuestionExceptionCode.UNAVAILABLE_TYPE);
+			throw new QuestionException(QuestionExceptionCode.UNAVAILABLE_TYPE);
 		}
 		if (question.getType() != type) {
-			throw new QuestionSolvingException(QuestionSolveExceptionCode.INVALID_TYPE);
+			throw new QuestionException(QuestionExceptionCode.TYPE_MISMATCH);
 		}
 
 		QuestionAnswerUpdater questionAnswerUpdater = getQuestionAnswerUpdater(type);

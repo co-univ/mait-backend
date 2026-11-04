@@ -15,6 +15,8 @@ import com.coniv.mait.domain.question.entity.QuestionEntity;
 import com.coniv.mait.domain.question.entity.QuestionSetEntity;
 import com.coniv.mait.domain.question.enums.QuestionSetSolveMode;
 import com.coniv.mait.domain.question.enums.QuestionSetStatus;
+import com.coniv.mait.domain.question.exception.QuestionException;
+import com.coniv.mait.domain.question.exception.QuestionExceptionCode;
 import com.coniv.mait.domain.question.repository.QuestionSetEntityRepository;
 import com.coniv.mait.domain.question.service.component.QuestionReader;
 import com.coniv.mait.domain.question.service.component.QuestionSetReader;
@@ -216,7 +218,7 @@ public class StudyModeService {
 
 		QuestionEntity question = questionReader.getQuestion(questionId, questionSetId);
 		if (question.getType() != submittedAnswer.getType()) {
-			throw new QuestionSolvingException(QuestionSolveExceptionCode.INVALID_TYPE);
+			throw new QuestionException(QuestionExceptionCode.TYPE_MISMATCH);
 		}
 
 		draft.updateSubmittedAnswer(objectMapper.writeValueAsString(submittedAnswer));
