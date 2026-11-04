@@ -10,8 +10,8 @@ import org.springframework.stereotype.Component;
 
 import com.coniv.mait.domain.question.entity.QuestionEntity;
 import com.coniv.mait.domain.question.enums.QuestionType;
-import com.coniv.mait.domain.solve.exception.QuestionSolveExceptionCode;
-import com.coniv.mait.domain.solve.exception.QuestionSolvingException;
+import com.coniv.mait.domain.question.exception.QuestionException;
+import com.coniv.mait.domain.question.exception.QuestionExceptionCode;
 import com.coniv.mait.domain.solve.service.dto.FillBlankSubmitAnswer;
 import com.coniv.mait.domain.solve.service.dto.SubmitAnswerDto;
 
@@ -29,7 +29,7 @@ public class AnswerGrader {
 	@SuppressWarnings("unchecked")
 	public boolean gradeAnswer(QuestionEntity question, SubmitAnswerDto<?> submitAnswer) {
 		if (question.getType() != submitAnswer.getType()) {
-			throw new QuestionSolvingException(QuestionSolveExceptionCode.INVALID_TYPE);
+			throw new QuestionException(QuestionExceptionCode.TYPE_MISMATCH);
 		}
 
 		AnswerChecker<?> checker = answerCheckers.get(question.getType());

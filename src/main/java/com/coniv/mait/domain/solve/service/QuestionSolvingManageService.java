@@ -11,9 +11,9 @@ import org.springframework.transaction.annotation.Transactional;
 import com.coniv.mait.domain.question.entity.QuestionEntity;
 import com.coniv.mait.domain.question.entity.QuestionSetEntity;
 import com.coniv.mait.domain.question.enums.QuestionType;
+import com.coniv.mait.domain.question.exception.QuestionException;
 import com.coniv.mait.domain.question.exception.QuestionExceptionCode;
 import com.coniv.mait.domain.question.exception.QuestionSetStatusException;
-import com.coniv.mait.domain.question.exception.QuestionStatusException;
 import com.coniv.mait.domain.question.exception.code.QuestionSetStatusExceptionCode;
 import com.coniv.mait.domain.question.service.component.QuestionReader;
 import com.coniv.mait.domain.solve.component.QuestionAnswerUpdater;
@@ -50,7 +50,10 @@ public class QuestionSolvingManageService {
 
 		QuestionType type = request.getType();
 		if (type != QuestionType.SHORT && type != QuestionType.FILL_BLANK) {
-			throw new QuestionStatusException(QuestionExceptionCode.UNAVAILABLE_TYPE);
+			throw new QuestionException(QuestionExceptionCode.UNAVAILABLE_TYPE);
+		}
+		if (question.getType() != type) {
+			throw new QuestionException(QuestionExceptionCode.TYPE_MISMATCH);
 		}
 
 		QuestionAnswerUpdater questionAnswerUpdater = getQuestionAnswerUpdater(type);

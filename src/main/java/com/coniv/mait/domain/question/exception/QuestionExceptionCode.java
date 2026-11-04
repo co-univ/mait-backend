@@ -11,7 +11,8 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public enum QuestionExceptionCode implements ExceptionCode {
 
-	UNAVAILABLE_TYPE(HttpStatus.BAD_REQUEST, "T-001", "해당 타입의 문제는 처리가 불가능합니다.");
+	UNAVAILABLE_TYPE(HttpStatus.BAD_REQUEST, "T-001", "해당 타입의 문제는 처리가 불가능합니다."),
+	TYPE_MISMATCH(HttpStatus.BAD_REQUEST, "T-002", "실제 문제 유형과 요청 유형이 일치하지 않습니다.");
 
 	private final HttpStatus status;
 	private final String code;

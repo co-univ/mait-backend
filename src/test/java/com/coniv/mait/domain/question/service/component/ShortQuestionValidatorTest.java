@@ -4,10 +4,14 @@ import static org.assertj.core.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 import java.util.List;
+import java.util.stream.Stream;
 
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -18,6 +22,8 @@ import com.coniv.mait.domain.question.enums.QuestionType;
 import com.coniv.mait.domain.question.enums.QuestionValidationResult;
 import com.coniv.mait.domain.question.repository.ShortAnswerEntityRepository;
 import com.coniv.mait.domain.question.service.dto.QuestionValidateDto;
+import com.coniv.mait.domain.question.service.dto.ShortAnswerDto;
+import com.coniv.mait.global.exception.custom.UserParameterException;
 
 @ExtendWith(MockitoExtension.class)
 class ShortQuestionValidatorTest {
@@ -184,5 +190,65 @@ class ShortQuestionValidatorTest {
 		assertThat(result.getNumber()).isEqualTo(1L);
 		assertThat(result.getReason()).isEqualTo(QuestionValidationResult.INVALID_ANSWER_COUNT);
 		verify(shortAnswerEntityRepository).findAllByShortQuestionId(1L);
+	}
+
+	@ParameterizedTest
+	@MethodSource("acceptedAnswerAdditions")
+	@DisplayName("기존 그룹에 인정답안을 추가하며 서로 다른 그룹 간 같은 답안도 허용한다")
+	void validateAcceptedAnswerAddition_valid(List<ShortAnswerDto> newAnswers) {
+		// given
+		when(shortAnswerEntityRepository.findAllByShortQuestionId(1L)).thenReturn(List.of(
+			ShortAnswerEntity.builder().number(1L).answer("alpha").isMain(true).build(),
+			ShortAnswerEntity.builder().number(1L).answer("beta").isMain(false).build(),
+			ShortAnswerEntity.builder().number(2L).answer("delta").isMain(true).build()
+		));
+
+		// when & then
+		assertThatCode(() -> shortQuestionValidator.validateAcceptedAnswerAddition(1L, newAnswers))
+			.doesNotThrowAnyException();
+		verify(shortAnswerEntityRepository).findAllByShortQuestionId(1L);
+	}
+
+	@ParameterizedTest
+	@MethodSource("invalidAcceptedAnswerAdditions")
+	@DisplayName("존재하지 않는 그룹과 정규화한 기존·요청 내 중복을 거절한다")
+	void validateAcceptedAnswerAddition_invalid(List<ShortAnswerDto> newAnswers, String message) {
+		// given
+		when(shortAnswerEntityRepository.findAllByShortQuestionId(1L)).thenReturn(List.of(
+			ShortAnswerEntity.builder().number(1L).answer("alpha").isMain(true).build(),
+			ShortAnswerEntity.builder().number(1L).answer("beta").isMain(false).build(),
+			ShortAnswerEntity.builder().number(2L).answer("delta").isMain(true).build()
+		));
+
+		// when & then
+		assertThatThrownBy(() -> shortQuestionValidator.validateAcceptedAnswerAddition(1L, newAnswers))
+			.isInstanceOf(UserParameterException.class).hasMessage(message);
+		verify(shortAnswerEntityRepository, never()).saveAll(any());
+	}
+
+	static Stream<Arguments> acceptedAnswerAdditions() {
+		return Stream.of(
+			Arguments.of(List.of(
+				ShortAnswerDto.builder().number(1L).answer("gamma").main(false).build(),
+				ShortAnswerDto.builder().number(2L).answer("epsilon").main(false).build())),
+			Arguments.of(List.of(
+				ShortAnswerDto.builder().number(1L).answer("gamma").main(false).build(),
+				ShortAnswerDto.builder().number(2L).answer("gamma").main(false).build()))
+		);
+	}
+
+	static Stream<Arguments> invalidAcceptedAnswerAdditions() {
+		return Stream.of(
+			Arguments.of(List.of(
+				ShortAnswerDto.builder().number(1L).answer("gamma").main(false).build(),
+				ShortAnswerDto.builder().number(3L).answer("epsilon").main(false).build()), "해당 문제에 존재하지 않는 정답 그룹입니다."),
+			Arguments.of(List.of(
+				ShortAnswerDto.builder().number(1L).answer(" ALPHA ").main(false).build()), "같은 정답 그룹에 이미 존재하는 답안입니다."),
+			Arguments.of(List.of(
+				ShortAnswerDto.builder().number(1L).answer(" BETA ").main(false).build()), "같은 정답 그룹에 이미 존재하는 답안입니다."),
+			Arguments.of(List.of(
+				ShortAnswerDto.builder().number(1L).answer("gamma").main(false).build(),
+				ShortAnswerDto.builder().number(1L).answer(" GAMMA ").main(false).build()), "같은 정답 그룹에 이미 존재하는 답안입니다.")
+		);
 	}
 }

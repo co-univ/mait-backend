@@ -12,6 +12,8 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -19,9 +21,9 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import com.coniv.mait.domain.question.entity.QuestionEntity;
 import com.coniv.mait.domain.question.entity.QuestionSetEntity;
 import com.coniv.mait.domain.question.enums.QuestionType;
+import com.coniv.mait.domain.question.exception.QuestionException;
 import com.coniv.mait.domain.question.exception.QuestionExceptionCode;
 import com.coniv.mait.domain.question.exception.QuestionSetStatusException;
-import com.coniv.mait.domain.question.exception.QuestionStatusException;
 import com.coniv.mait.domain.question.exception.code.QuestionSetStatusExceptionCode;
 import com.coniv.mait.domain.question.service.component.QuestionReader;
 import com.coniv.mait.domain.question.service.dto.FillBlankAnswerDto;
@@ -29,9 +31,11 @@ import com.coniv.mait.domain.question.service.dto.ShortAnswerDto;
 import com.coniv.mait.domain.solve.component.QuestionAnswerUpdater;
 import com.coniv.mait.domain.solve.event.QuestionUpdateEvent;
 import com.coniv.mait.global.event.MaitEventPublisher;
+import com.coniv.mait.global.exception.custom.UserParameterException;
 import com.coniv.mait.web.solve.dto.FillBlankUpdateAnswerPayload;
 import com.coniv.mait.web.solve.dto.MultipleChoiceUpdateAnswerPayload;
 import com.coniv.mait.web.solve.dto.ShortUpdateAnswerPayload;
+import com.coniv.mait.web.solve.dto.UpdateAnswerPayload;
 
 @ExtendWith(MockitoExtension.class)
 class QuestionSolvingManageServiceTest {
@@ -69,7 +73,7 @@ class QuestionSolvingManageServiceTest {
 		final Long questionSetId = 1L;
 		final Long questionId = 2L;
 		ShortUpdateAnswerPayload request = new ShortUpdateAnswerPayload(List.of(
-			ShortAnswerDto.builder().id(10L).answer("answer").main(true).number(1L).build()
+			ShortAnswerDto.builder().id(10L).answer("answer").main(false).number(1L).build()
 		));
 
 		QuestionEntity question = mock(QuestionEntity.class);
@@ -77,6 +81,7 @@ class QuestionSolvingManageServiceTest {
 		when(questionReader.getQuestion(questionId, questionSetId)).thenReturn(question);
 		when(question.getQuestionSet()).thenReturn(questionSet);
 		when(questionSet.isOnLive()).thenReturn(true);
+		when(question.getType()).thenReturn(QuestionType.SHORT);
 
 		// when
 		questionSolvingManageService.updateQuestionAnswers(questionSetId, questionId, request);
@@ -98,7 +103,7 @@ class QuestionSolvingManageServiceTest {
 		final Long questionSetId = 1L;
 		final Long questionId = 2L;
 		FillBlankUpdateAnswerPayload request = new FillBlankUpdateAnswerPayload(List.of(
-			FillBlankAnswerDto.builder().id(10L).answer("answer").main(true).number(1L).build()
+			FillBlankAnswerDto.builder().id(10L).answer("answer").main(false).number(1L).build()
 		));
 
 		QuestionEntity question = mock(QuestionEntity.class);
@@ -106,6 +111,7 @@ class QuestionSolvingManageServiceTest {
 		when(questionReader.getQuestion(questionId, questionSetId)).thenReturn(question);
 		when(question.getQuestionSet()).thenReturn(questionSet);
 		when(questionSet.isOnLive()).thenReturn(true);
+		when(question.getType()).thenReturn(QuestionType.FILL_BLANK);
 
 		// when
 		questionSolvingManageService.updateQuestionAnswers(questionSetId, questionId, request);
@@ -161,12 +167,66 @@ class QuestionSolvingManageServiceTest {
 		when(questionSet.isOnLive()).thenReturn(true);
 
 		// when, then
-		QuestionStatusException exception = assertThrows(QuestionStatusException.class,
+		QuestionException exception = assertThrows(QuestionException.class,
 			() -> questionSolvingManageService.updateQuestionAnswers(questionSetId, questionId, request));
-		assertThat(exception.getQuestionExceptionCode()).isEqualTo(QuestionExceptionCode.UNAVAILABLE_TYPE);
+		assertThat(exception.getExceptionCode()).isEqualTo(QuestionExceptionCode.UNAVAILABLE_TYPE);
 
 		verify(shortQuestionAnswerUpdater, never()).updateAnswer(any(), any());
 		verify(fillBlankQuestionAnswerUpdater, never()).updateAnswer(any(), any());
+		verify(maitEventPublisher, never()).publishEvent(any());
+	}
+
+	@ParameterizedTest
+	@CsvSource({
+		"SHORT, FILL_BLANK", "FILL_BLANK, SHORT",
+		"MULTIPLE, SHORT", "MULTIPLE, FILL_BLANK",
+		"ORDERING, SHORT", "ORDERING, FILL_BLANK"
+	})
+	@DisplayName("실제 문제와 요청 유형이 다르면 답안 추가와 재채점 이벤트를 차단한다")
+	void updateQuestionAnswers_rejectsMismatchedType(QuestionType questionType, QuestionType requestType) {
+		// given
+		UpdateAnswerPayload request;
+		if (requestType == QuestionType.SHORT) {
+			request = new ShortUpdateAnswerPayload(List.of(
+				ShortAnswerDto.builder().number(1L).answer("answer").main(false).build()));
+		} else {
+			request = new FillBlankUpdateAnswerPayload(List.of(
+				FillBlankAnswerDto.builder().number(1L).answer("answer").main(false).build()));
+		}
+		QuestionEntity question = mock(QuestionEntity.class);
+		QuestionSetEntity questionSet = mock(QuestionSetEntity.class);
+		when(questionReader.getQuestion(2L, 1L)).thenReturn(question);
+		when(question.getQuestionSet()).thenReturn(questionSet);
+		when(questionSet.isOnLive()).thenReturn(true);
+		when(question.getType()).thenReturn(questionType);
+
+		// when & then
+		assertThatThrownBy(() -> questionSolvingManageService.updateQuestionAnswers(1L, 2L, request))
+			.isInstanceOfSatisfying(QuestionException.class, exception ->
+				assertThat(exception.getExceptionCode()).isEqualTo(QuestionExceptionCode.TYPE_MISMATCH));
+		verify(shortQuestionAnswerUpdater, never()).updateAnswer(any(), any());
+		verify(fillBlankQuestionAnswerUpdater, never()).updateAnswer(any(), any());
+		verify(maitEventPublisher, never()).publishEvent(any());
+	}
+
+	@Test
+	@DisplayName("인정답안 검증에 실패하면 재채점 이벤트를 발행하지 않는다")
+	void updateQuestionAnswers_doesNotPublishWhenValidationFails() {
+		// given
+		ShortUpdateAnswerPayload request = new ShortUpdateAnswerPayload(List.of(
+			ShortAnswerDto.builder().number(3L).answer("answer").main(false).build()));
+		QuestionEntity question = mock(QuestionEntity.class);
+		QuestionSetEntity questionSet = mock(QuestionSetEntity.class);
+		when(questionReader.getQuestion(2L, 1L)).thenReturn(question);
+		when(question.getQuestionSet()).thenReturn(questionSet);
+		when(questionSet.isOnLive()).thenReturn(true);
+		when(question.getType()).thenReturn(QuestionType.SHORT);
+		UserParameterException exception = new UserParameterException("해당 문제에 존재하지 않는 정답 그룹입니다.");
+		doThrow(exception).when(shortQuestionAnswerUpdater).updateAnswer(question, request);
+
+		// when & then
+		assertThatThrownBy(() -> questionSolvingManageService.updateQuestionAnswers(1L, 2L, request))
+			.isSameAs(exception);
 		verify(maitEventPublisher, never()).publishEvent(any());
 	}
 }
