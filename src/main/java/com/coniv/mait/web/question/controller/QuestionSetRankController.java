@@ -41,16 +41,16 @@ public class QuestionSetRankController {
 	})
 	@GetMapping(value = "/ranks", params = "type=CORRECT")
 	public ResponseEntity<ApiResponse<CorrectorRanksApiResponse>> getCorrectorsByQuestionSetId(
-		@PathVariable Long questionSetId) {
-		List<AnswerRankDto> answerRanks = questionSetRankService.getCorrectorsByQuestionSetId(questionSetId);
+		@PathVariable Long questionSetId, @AuthenticationPrincipal MaitUser user) {
+		List<AnswerRankDto> answerRanks = questionSetRankService.getCorrectorsByQuestionSetId(questionSetId, user.id());
 		return ResponseEntity.ok(ApiResponse.ok(CorrectorRanksApiResponse.of(questionSetId, answerRanks)));
 	}
 
 	@Operation(summary = "문제 풀이 정답 제출 기록 조회 API")
 	@GetMapping(value = "/ranks", params = "type=SCORER")
 	public ResponseEntity<ApiResponse<ScorerRanksApiResponse>> getScorersByQuestionSetId(
-		@PathVariable Long questionSetId) {
-		List<AnswerRankDto> scoreRanks = questionSetRankService.getScorersByQuestionSetId(questionSetId);
+		@PathVariable Long questionSetId, @AuthenticationPrincipal MaitUser user) {
+		List<AnswerRankDto> scoreRanks = questionSetRankService.getScorersByQuestionSetId(questionSetId, user.id());
 		return ResponseEntity.ok().body(ApiResponse.ok(ScorerRanksApiResponse.of(questionSetId, scoreRanks)));
 	}
 
@@ -61,7 +61,7 @@ public class QuestionSetRankController {
 		@PathVariable Long questionSetId, @AuthenticationPrincipal MaitUser user,
 		@Parameter(description = "노출할 랭크 개수")
 		@RequestParam(value = "rankCount", required = false, defaultValue = "3") int rankCount) {
-		List<RankDto> ranks = questionSetRankService.getScorerRankByQuestionSetId(questionSetId);
+		List<RankDto> ranks = questionSetRankService.getScorerRankByQuestionSetId(questionSetId, user.id());
 		return ResponseEntity.ok(
 			ApiResponse.ok(QuestionSetScorerRankApiResponse.of(ranks, questionSetId, user.id(), rankCount)));
 	}
@@ -69,8 +69,8 @@ public class QuestionSetRankController {
 	@Operation(summary = "문제 셋 문제별 득점자 조회")
 	@GetMapping("/scorers")
 	public ResponseEntity<ApiResponse<List<QuestionScorerApiResponse>>> getScorers(
-		@PathVariable Long questionSetId) {
-		List<QuestionScorerApiResponse> scorers = questionScorerService.getScorers(questionSetId).stream()
+		@PathVariable Long questionSetId, @AuthenticationPrincipal MaitUser user) {
+		List<QuestionScorerApiResponse> scorers = questionScorerService.getScorers(questionSetId, user.id()).stream()
 			.map(QuestionScorerApiResponse::from)
 			.toList();
 		return ResponseEntity.ok(ApiResponse.ok(scorers));

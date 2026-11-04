@@ -17,6 +17,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import com.coniv.mait.domain.question.entity.MultipleQuestionEntity;
+import com.coniv.mait.domain.question.entity.QuestionEntity;
 import com.coniv.mait.domain.question.entity.QuestionSetEntity;
 import com.coniv.mait.domain.question.service.component.QuestionReader;
 import com.coniv.mait.domain.solve.entity.AnswerSubmitRecordEntity;
@@ -333,8 +334,16 @@ class QuestionAnswerSubmitServiceTest {
 			// given
 			Long questionSetId = 1L;
 			Long questionId = 10L;
+			Long teamId = 5L;
+			Long requesterId = 300L;
 			Long firstUserId = 100L;
 			Long secondUserId = 200L;
+
+			QuestionEntity question = mock(QuestionEntity.class);
+			QuestionSetEntity questionSet = mock(QuestionSetEntity.class);
+			when(questionReader.getQuestion(questionId, questionSetId)).thenReturn(question);
+			when(question.getQuestionSet()).thenReturn(questionSet);
+			when(questionSet.getTeamId()).thenReturn(teamId);
 
 			UserEntity firstUser = mock(UserEntity.class);
 			UserEntity secondUser = mock(UserEntity.class);
@@ -364,13 +373,39 @@ class QuestionAnswerSubmitServiceTest {
 
 			// when
 			List<AnswerSubmitRecordDto> result =
-				questionAnswerSubmitService.getSubmitRecords(questionSetId, questionId);
+				questionAnswerSubmitService.getSubmitRecords(questionSetId, questionId, requesterId);
 
 			// then
 			assertThat(result).extracting(AnswerSubmitRecordDto::getId)
 				.containsExactly(1L, 2L);
 			assertThat(result.get(0).getSubmittedAnswer()).isNotNull();
 			assertThat(result.get(1).getSubmittedAnswer()).isNull();
+		}
+
+		@Test
+		@DisplayName("팀 MAKER 이상이 아니면 제출 기록을 조회할 수 없다")
+		void getSubmitRecords_NotTeamManager_ThrowsException() {
+			// given
+			Long questionSetId = 1L;
+			Long questionId = 10L;
+			Long teamId = 5L;
+			Long requesterId = 300L;
+
+			QuestionEntity question = mock(QuestionEntity.class);
+			QuestionSetEntity questionSet = mock(QuestionSetEntity.class);
+			when(questionReader.getQuestion(questionId, questionSetId)).thenReturn(question);
+			when(question.getQuestionSet()).thenReturn(questionSet);
+			when(questionSet.getTeamId()).thenReturn(teamId);
+			doThrow(new UserRoleException("팀 관리 권한이 없습니다."))
+				.when(teamRoleValidator).checkIsTeamManager(teamId, requesterId);
+
+			// when & then
+			assertThatThrownBy(() -> questionAnswerSubmitService.getSubmitRecords(questionSetId, questionId,
+				requesterId))
+				.isInstanceOf(UserRoleException.class)
+				.hasMessage("팀 관리 권한이 없습니다.");
+
+			verify(answerSubmitRecordEntityRepository, never()).findAllByQuestionId(any());
 		}
 	}
 }

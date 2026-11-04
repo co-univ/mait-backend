@@ -6,7 +6,6 @@ import java.util.List;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -46,10 +45,10 @@ public class PolicyController {
 	}
 
 	@Operation(summary = "타이밍별 미확인 정책 목록 조회")
-	@GetMapping("/unchecked/{userId}")
+	@GetMapping("/unchecked")
 	public ResponseEntity<ApiResponse<List<UnconfirmedPoliciesApiResponse>>> findUnConfirmedPolicies(
-		@RequestParam("timing") PolicyTiming timing, @PathVariable("userId") Long userId) {
-		List<PolicyDto> policies = policyService.findUnConfirmedPolicies(userId, timing);
+		@RequestParam("timing") PolicyTiming timing, @AuthenticationPrincipal MaitUser userPrincipal) {
+		List<PolicyDto> policies = policyService.findUnConfirmedPolicies(userPrincipal.id(), timing);
 
 		return ResponseEntity.ok(ApiResponse.ok(policies.stream().map(UnconfirmedPoliciesApiResponse::from).toList()));
 	}
