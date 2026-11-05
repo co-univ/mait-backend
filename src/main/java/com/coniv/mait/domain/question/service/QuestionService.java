@@ -33,6 +33,7 @@ import com.coniv.mait.domain.question.repository.MultipleChoiceEntityRepository;
 import com.coniv.mait.domain.question.repository.QuestionEntityRepository;
 import com.coniv.mait.domain.question.repository.QuestionSetEntityRepository;
 import com.coniv.mait.domain.question.service.component.QuestionFactory;
+import com.coniv.mait.domain.question.service.component.QuestionReader;
 import com.coniv.mait.domain.question.service.component.QuestionSetReader;
 import com.coniv.mait.domain.question.service.dto.CurrentQuestionDto;
 import com.coniv.mait.domain.question.service.dto.QuestionCount;
@@ -72,6 +73,8 @@ public class QuestionService {
 
 	private final QuestionSetReader questionSetReader;
 
+	private final QuestionReader questionReader;
+
 	private final SolvingSessionEntityRepository solvingSessionEntityRepository;
 
 	@Autowired
@@ -85,6 +88,7 @@ public class QuestionService {
 		AiRequestStatusManager aiRequestStatusManager,
 		TeamRoleValidator teamRoleValidator,
 		QuestionSetReader questionSetReader,
+		QuestionReader questionReader,
 		SolvingSessionEntityRepository solvingSessionEntityRepository) {
 		questionFactories = factories.stream()
 			.collect(Collectors.toUnmodifiableMap(QuestionFactory::getQuestionType, Function.identity()));
@@ -96,6 +100,7 @@ public class QuestionService {
 		this.aiRequestStatusManager = aiRequestStatusManager;
 		this.teamRoleValidator = teamRoleValidator;
 		this.questionSetReader = questionSetReader;
+		this.questionReader = questionReader;
 		this.solvingSessionEntityRepository = solvingSessionEntityRepository;
 	}
 
@@ -155,7 +160,7 @@ public class QuestionService {
 	@Transactional(readOnly = true)
 	public QuestionDto getQuestion(final Long questionSetId, final Long questionId, final DeliveryMode mode,
 		final Long userId) {
-		QuestionEntity question = findQuestion(questionSetId, questionId);
+		QuestionEntity question = questionReader.getQuestion(questionId, questionSetId);
 		QuestionSetEntity questionSet = questionSetReader.getQuestionSet(questionSetId);
 		boolean answerVisible = canViewAnswers(questionSet, userId);
 
@@ -170,16 +175,26 @@ public class QuestionService {
 	public List<QuestionDto> getQuestions(final Long questionSetId, final DeliveryMode mode, final Long userId) {
 		QuestionSetEntity questionSet = questionSetReader.getQuestionSet(questionSetId);
 		boolean answerVisible = canViewAnswers(questionSet, userId);
-		return findQuestions(questionSetId, mode == null ? DeliveryMode.MAKING : mode, answerVisible);
+		DeliveryMode deliveryMode = mode;
+		if (deliveryMode == null) {
+			deliveryMode = DeliveryMode.MAKING;
+		}
+		return questionReader.getQuestionsByQuestionSet(questionSetId).stream()
+			.sorted(deliveryMode.questionComparator())
+			.map(question -> getQuestionFactory(question.getType()).getQuestion(question, answerVisible))
+			.toList();
 	}
 
 	public QuestionDto getQuestionForAdmin(final Long questionSetId, final Long questionId) {
-		QuestionEntity question = findQuestion(questionSetId, questionId);
+		QuestionEntity question = questionReader.getQuestion(questionId, questionSetId);
 		return getQuestionFactory(question.getType()).getQuestion(question, true);
 	}
 
 	public List<QuestionDto> getQuestionsForAdmin(final Long questionSetId) {
-		return findQuestions(questionSetId, DeliveryMode.MANAGING, true);
+		return questionReader.getQuestionsByQuestionSet(questionSetId).stream()
+			.sorted(DeliveryMode.MANAGING.questionComparator())
+			.map(question -> getQuestionFactory(question.getType()).getQuestion(question, true))
+			.toList();
 	}
 
 	private boolean canViewAnswers(final QuestionSetEntity questionSet, final Long userId) {
@@ -198,22 +213,6 @@ public class QuestionService {
 				questionSet.getId(), QuestionSetSolveMode.STUDY)
 			.map(session -> session.getStatus() == SolvingStatus.COMPLETE)
 			.orElse(false);
-	}
-
-	private QuestionEntity findQuestion(final Long questionSetId, final Long questionId) {
-		QuestionEntity question = questionEntityRepository.findById(questionId)
-			.orElseThrow(() -> new EntityNotFoundException("Question not found with id: " + questionId));
-		if (!question.getQuestionSet().getId().equals(questionSetId)) {
-			throw new ResourceNotBelongException("해당 문제 셋에 속한 문제가 아닙니다.");
-		}
-		return question;
-	}
-
-	private List<QuestionDto> findQuestions(final Long questionSetId, final DeliveryMode mode, boolean answerVisible) {
-		return questionEntityRepository.findAllByQuestionSetId(questionSetId).stream()
-			.sorted(mode.questionComparator())
-			.map(question -> getQuestionFactory(question.getType()).getQuestion(question, answerVisible))
-			.toList();
 	}
 
 	@SuppressWarnings("unchecked")
