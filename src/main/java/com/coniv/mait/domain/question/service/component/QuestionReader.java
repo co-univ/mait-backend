@@ -35,11 +35,7 @@ public class QuestionReader {
 	}
 
 	public List<QuestionEntity> getQuestionsByQuestionSet(QuestionSetEntity questionSet) {
-		return getQuestionsByQuestionSet(questionSet.getId());
-	}
-
-	public List<QuestionEntity> getQuestionsByQuestionSet(final Long questionSetId) {
-		return questionEntityRepository.findAllByQuestionSetId(questionSetId);
+		return questionEntityRepository.findAllByQuestionSetId(questionSet.getId());
 	}
 
 	public List<QuestionEntity> getOrderedQuestions(final Long questionSetId) {

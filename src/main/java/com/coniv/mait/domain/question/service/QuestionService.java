@@ -179,7 +179,7 @@ public class QuestionService {
 		if (deliveryMode == null) {
 			deliveryMode = DeliveryMode.MAKING;
 		}
-		return questionReader.getQuestionsByQuestionSet(questionSetId).stream()
+		return questionReader.getQuestionsByQuestionSet(questionSet).stream()
 			.sorted(deliveryMode.questionComparator())
 			.map(question -> getQuestionFactory(question.getType()).getQuestion(question, answerVisible))
 			.toList();
@@ -191,7 +191,7 @@ public class QuestionService {
 	}
 
 	public List<QuestionDto> getQuestionsForAdmin(final Long questionSetId) {
-		return questionReader.getQuestionsByQuestionSet(questionSetId).stream()
+		return questionEntityRepository.findAllByQuestionSetId(questionSetId).stream()
 			.sorted(DeliveryMode.MANAGING.questionComparator())
 			.map(question -> getQuestionFactory(question.getType()).getQuestion(question, true))
 			.toList();

@@ -372,7 +372,7 @@ class QuestionServiceTest {
 
 		// Repository에서 lexoRank와 다른 순서로 반환 (뒤섞인 상태)
 		List<QuestionEntity> questions = List.of(fillBlankQuestion, multipleQuestion, shortQuestion, orderingQuestion);
-		when(questionReader.getQuestionsByQuestionSet(questionSetId)).thenReturn(questions);
+		when(questionReader.getQuestionsByQuestionSet(questionSetEntity)).thenReturn(questions);
 
 		// 각 factory의 getQuestion 메서드 모킹
 		MultipleQuestionDto multipleDto = mock(MultipleQuestionDto.class);
@@ -406,7 +406,7 @@ class QuestionServiceTest {
 		assertEquals(4L, result.get(3).getId()); // fillBlankQuestion (lexoRank: dddd)
 
 		// factory 메서드들이 올바르게 호출되었는지 확인
-		verify(questionReader).getQuestionsByQuestionSet(questionSetId);
+		verify(questionReader).getQuestionsByQuestionSet(questionSetEntity);
 		verify(shortQuestionFactory).getQuestion(shortQuestion, true);
 		verify(orderingQuestionFactory).getQuestion(orderingQuestion, true);
 		verify(multipleQuestionFactory).getQuestion(multipleQuestion, true);
