@@ -43,8 +43,6 @@ import com.coniv.mait.domain.question.service.dto.OrderingQuestionDto;
 import com.coniv.mait.domain.question.service.dto.QuestionDto;
 import com.coniv.mait.domain.question.service.dto.ShortQuestionDto;
 import com.coniv.mait.domain.question.util.LexoRank;
-import com.coniv.mait.domain.solve.repository.SolvingSessionEntityRepository;
-import com.coniv.mait.domain.team.enums.TeamUserRole;
 import com.coniv.mait.domain.user.exception.UserRoleException;
 import com.coniv.mait.domain.user.service.component.TeamRoleValidator;
 import com.coniv.mait.global.exception.custom.ResourceNotBelongException;
@@ -66,9 +64,6 @@ class QuestionServiceTest {
 
 	@Mock
 	private QuestionReader questionReader;
-
-	@Mock
-	private SolvingSessionEntityRepository solvingSessionEntityRepository;
 
 	// @InjectMocks
 	private QuestionService questionService;
@@ -128,8 +123,7 @@ class QuestionServiceTest {
 			aiRequestStatusManager,
 			teamRoleValidator,
 			questionSetReader,
-			questionReader,
-			solvingSessionEntityRepository);
+			questionReader);
 	}
 
 	@Test
@@ -280,7 +274,7 @@ class QuestionServiceTest {
 
 		QuestionSetEntity questionSetEntity = mock(QuestionSetEntity.class);
 		when(questionSetReader.getQuestionSet(questionSetId)).thenReturn(questionSetEntity);
-		when(teamRoleValidator.getTeamRole(questionSetEntity.getTeamId(), USER_ID)).thenReturn(TeamUserRole.MAKER);
+		when(teamRoleValidator.canViewQuestionAnswers(questionSetEntity, USER_ID)).thenReturn(true);
 
 
 		MultipleQuestionEntity multipleQuestion = mock(MultipleQuestionEntity.class);
@@ -351,7 +345,7 @@ class QuestionServiceTest {
 		final Long questionSetId = 1L;
 		QuestionSetEntity questionSetEntity = mock(QuestionSetEntity.class);
 		when(questionSetReader.getQuestionSet(questionSetId)).thenReturn(questionSetEntity);
-		when(teamRoleValidator.getTeamRole(questionSetEntity.getTeamId(), USER_ID)).thenReturn(TeamUserRole.MAKER);
+		when(teamRoleValidator.canViewQuestionAnswers(questionSetEntity, USER_ID)).thenReturn(true);
 
 
 		MultipleQuestionEntity multipleQuestion = mock(MultipleQuestionEntity.class);
@@ -422,7 +416,7 @@ class QuestionServiceTest {
 
 		QuestionSetEntity questionSetEntity = mock(QuestionSetEntity.class);
 		when(questionSetReader.getQuestionSet(questionSetId)).thenReturn(questionSetEntity);
-		when(teamRoleValidator.getTeamRole(questionSetEntity.getTeamId(), USER_ID)).thenReturn(TeamUserRole.PLAYER);
+		when(teamRoleValidator.canViewQuestionAnswers(questionSetEntity, USER_ID)).thenReturn(false);
 
 
 		ShortQuestionEntity shortQuestion = mock(ShortQuestionEntity.class);
@@ -449,7 +443,7 @@ class QuestionServiceTest {
 
 		QuestionSetEntity questionSetEntity = mock(QuestionSetEntity.class);
 		when(questionSetReader.getQuestionSet(questionSetId)).thenReturn(questionSetEntity);
-		when(teamRoleValidator.getTeamRole(questionSetEntity.getTeamId(), USER_ID)).thenReturn(TeamUserRole.MAKER);
+		when(teamRoleValidator.canViewQuestionAnswers(questionSetEntity, USER_ID)).thenReturn(true);
 
 
 		ShortQuestionEntity shortQuestion = mock(ShortQuestionEntity.class);
@@ -477,7 +471,7 @@ class QuestionServiceTest {
 
 		QuestionSetEntity questionSetEntity = mock(QuestionSetEntity.class);
 		when(questionSetReader.getQuestionSet(questionSetId)).thenReturn(questionSetEntity);
-		when(teamRoleValidator.getTeamRole(questionSetEntity.getTeamId(), USER_ID)).thenReturn(TeamUserRole.MAKER);
+		when(teamRoleValidator.canViewQuestionAnswers(questionSetEntity, USER_ID)).thenReturn(true);
 
 
 		ShortQuestionEntity shortQuestion = mock(ShortQuestionEntity.class);
