@@ -22,7 +22,13 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.data.redis.core.StringRedisTemplate;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpMethod;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -49,13 +55,21 @@ import com.coniv.mait.domain.team.repository.TeamEntityRepository;
 import com.coniv.mait.domain.team.repository.TeamUserEntityRepository;
 import com.coniv.mait.domain.user.entity.UserEntity;
 import com.coniv.mait.domain.user.repository.UserEntityRepository;
+import com.coniv.mait.global.auth.jwt.JwtTokenProvider;
 import com.coniv.mait.global.auth.model.MaitUser;
 import com.coniv.mait.login.WithCustomUser;
 import com.coniv.mait.web.integration.BaseIntegrationTest;
 
 @WithCustomUser
+@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @Transactional(propagation = Propagation.NOT_SUPPORTED)
 class IdempotencyIntegrationTest extends BaseIntegrationTest {
+
+	@Autowired
+	private TestRestTemplate http;
+
+	@Autowired
+	private JwtTokenProvider jwtTokenProvider;
 
 	@Autowired
 	private UserEntityRepository users;
@@ -120,6 +134,29 @@ class IdempotencyIntegrationTest extends BaseIntegrationTest {
 		String scope = fixture.userId() + ":" + digest(path()) + ":" + digest(clientKey);
 		redis.delete(List.of("$Idempotency:v2:" + scope, QuestionRedisKeys.submitOrder(fixture.questionId()),
 			QuestionRedisKeys.submitFirstTime(fixture.questionId())));
+	}
+
+	@Test
+	@DisplayName("실제 Tomcat HTTP 재시도는 상태·본문·Content-Type을 복원하고 DB 기록을 한 건 유지한다")
+	void realHttpRetryRestoresResponseAndSingleRecord() {
+		// given
+		HttpHeaders headers = new HttpHeaders();
+		headers.setBearerAuth(jwtTokenProvider.createToken(fixture.userId()).accessToken());
+		headers.setContentType(MediaType.APPLICATION_JSON);
+		headers.set("Idempotency-Key", clientKey);
+		HttpEntity<String> request = new HttpEntity<>(body, headers);
+
+		// when
+		var first = http.exchange(path(), HttpMethod.POST, request, byte[].class);
+		var replay = http.exchange(path(), HttpMethod.POST, request, byte[].class);
+
+		// then
+		assertThat(first.getStatusCode()).isEqualTo(HttpStatus.OK);
+		assertThat(replay.getStatusCode()).isEqualTo(first.getStatusCode());
+		assertThat(replay.getBody()).isEqualTo(first.getBody());
+		assertThat(first.getHeaders().getContentType()).isEqualTo(MediaType.APPLICATION_JSON);
+		assertThat(replay.getHeaders().getContentType()).isEqualTo(first.getHeaders().getContentType());
+		assertThat(submissions.findAllByQuestionId(fixture.questionId())).hasSize(1);
 	}
 
 	@Test
