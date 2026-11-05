@@ -16,6 +16,7 @@ import com.coniv.mait.domain.admin.entity.AnalyticsEventEntity;
 import com.coniv.mait.domain.admin.entity.AnalyticsFeatureEntity;
 import com.coniv.mait.domain.admin.repository.AnalyticsEventRepository;
 import com.coniv.mait.domain.admin.repository.AnalyticsFeatureRepository;
+import com.coniv.mait.domain.user.enums.UserRole;
 import com.coniv.mait.global.filter.JwtAuthorizationFilter;
 import com.coniv.mait.login.WithCustomUser;
 import com.coniv.mait.web.integration.BaseIntegrationTest;
@@ -24,7 +25,7 @@ import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletRequest;
 import jakarta.servlet.ServletResponse;
 
-@WithCustomUser
+@WithCustomUser(role = UserRole.ADMIN)
 public class AnalyticsAdminIntegrationTest extends BaseIntegrationTest {
 
 	private static final String SESSION_A = "550e8400-e29b-41d4-a716-446655440000";

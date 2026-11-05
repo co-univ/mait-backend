@@ -16,6 +16,7 @@ import com.coniv.mait.domain.admin.entity.AnalyticsFeatureEntity;
 import com.coniv.mait.domain.admin.service.AnalyticsEventQueryService;
 import com.coniv.mait.domain.admin.service.dto.AnalyticsEventStatsDto;
 import com.coniv.mait.domain.admin.service.dto.AnalyticsEventStepCountDto;
+import com.coniv.mait.domain.user.enums.UserRole;
 import com.coniv.mait.global.filter.JwtAuthorizationFilter;
 import com.coniv.mait.login.WithCustomUser;
 import com.coniv.mait.web.integration.BaseIntegrationTest;
@@ -24,7 +25,7 @@ import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletRequest;
 import jakarta.servlet.ServletResponse;
 
-@WithCustomUser
+@WithCustomUser(role = UserRole.ADMIN)
 public class AnalyticsAdminControllerTest extends BaseIntegrationTest {
 
 	@MockitoBean
