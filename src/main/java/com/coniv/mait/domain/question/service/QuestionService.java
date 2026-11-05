@@ -185,15 +185,20 @@ public class QuestionService {
 			.toList();
 	}
 
-	public QuestionDto getQuestionForAdmin(final Long questionSetId, final Long questionId) {
+	@Transactional(readOnly = true)
+	public QuestionDto getQuestion(final Long questionSetId, final Long questionId, final DeliveryMode mode) {
 		QuestionEntity question = questionReader.getQuestion(questionId, questionSetId);
-		return getQuestionFactory(question.getType()).getQuestion(question, true);
+		if (mode == DeliveryMode.LIVE_TIME && !question.getQuestionSet().isOnLive()) {
+			throw new QuestionSetStatusException(QuestionSetStatusExceptionCode.ONLY_LIVE_TIME);
+		}
+		boolean answerVisible = mode == null || mode.isAnswerVisible();
+		return getQuestionFactory(question.getType()).getQuestion(question, answerVisible);
 	}
 
-	public List<QuestionDto> getQuestionsForAdmin(final Long questionSetId) {
+	public List<QuestionDto> getQuestions(final Long questionSetId, final DeliveryMode mode) {
 		return questionEntityRepository.findAllByQuestionSetId(questionSetId).stream()
-			.sorted(DeliveryMode.MANAGING.questionComparator())
-			.map(question -> getQuestionFactory(question.getType()).getQuestion(question, true))
+			.sorted(mode.questionComparator())
+			.map(question -> getQuestionFactory(question.getType()).getQuestion(question, mode.isAnswerVisible()))
 			.toList();
 	}
 
