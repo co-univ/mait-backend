@@ -8,10 +8,18 @@ import java.util.Optional;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import com.coniv.mait.domain.question.entity.QuestionSetEntity;
+import com.coniv.mait.domain.question.enums.QuestionSetSolveMode;
+import com.coniv.mait.domain.question.enums.QuestionSetStatus;
+import com.coniv.mait.domain.solve.entity.SolvingSessionEntity;
+import com.coniv.mait.domain.solve.enums.SolvingStatus;
+import com.coniv.mait.domain.solve.repository.SolvingSessionEntityRepository;
 import com.coniv.mait.domain.team.entity.TeamEntity;
 import com.coniv.mait.domain.team.entity.TeamUserEntity;
 import com.coniv.mait.domain.team.enums.TeamUserRole;
@@ -36,6 +44,75 @@ class TeamRoleValidatorTest {
 
 	@Mock
 	private TeamUserEntityRepository teamUserEntityRepository;
+
+	@Mock
+	private SolvingSessionEntityRepository solvingSessionEntityRepository;
+
+	@ParameterizedTest
+	@CsvSource({"OWNER, MAKING, true", "MAKER, MAKING, true", "PLAYER, REVIEW, true",
+		"PLAYER, BEFORE, false", "PLAYER, ONGOING, false", "PLAYER, AFTER, false"})
+	@DisplayName("정답 공개는 팀 역할과 문제셋 상태를 기준으로 판단한다")
+	void canViewQuestionAnswers_byRoleAndStatus(TeamUserRole role, QuestionSetStatus status, boolean expected) {
+		// given
+		prepareAnswerAccess(role);
+		QuestionSetEntity questionSet = QuestionSetEntity.builder().id(2L).teamId(1L)
+			.solveMode(QuestionSetSolveMode.LIVE_TIME).status(status).build();
+
+		// when & then
+		assertThat(teamRoleValidator.canViewQuestionAnswers(questionSet, 100L)).isEqualTo(expected);
+		verifyNoInteractions(solvingSessionEntityRepository);
+	}
+
+	@ParameterizedTest
+	@CsvSource({"false, PROGRESSING, false", "true, PROGRESSING, false", "true, COMPLETE, true"})
+	@DisplayName("학습 문제의 정답은 요청자 본인의 채점 완료 세션이 있을 때 공개한다")
+	void canViewQuestionAnswers_ownStudySession(boolean exists, SolvingStatus status, boolean expected) {
+		// given
+		UserEntity user = prepareAnswerAccess(TeamUserRole.PLAYER);
+		QuestionSetEntity questionSet = QuestionSetEntity.builder().id(2L).teamId(1L)
+			.solveMode(QuestionSetSolveMode.STUDY).status(QuestionSetStatus.ONGOING).build();
+		SolvingSessionEntity session = SolvingSessionEntity.studySession(user, questionSet);
+		if (status == SolvingStatus.COMPLETE) {
+			session.submit(4, 4);
+		}
+		Optional<SolvingSessionEntity> result = Optional.empty();
+		if (exists) {
+			result = Optional.of(session);
+		}
+		when(solvingSessionEntityRepository.findByUserIdAndQuestionSetIdAndSolveMode(100L, 2L,
+			QuestionSetSolveMode.STUDY)).thenReturn(result);
+
+		// when & then
+		assertThat(teamRoleValidator.canViewQuestionAnswers(questionSet, 100L)).isEqualTo(expected);
+	}
+
+	@ParameterizedTest
+	@CsvSource({"PLAYER, 제작 중인 문제는 관리자만 조회할 수 있습니다.", ", 해당 팀의 멤버가 아닙니다."})
+	@DisplayName("제작 중인 문제의 PLAYER 조회와 비멤버 조회를 거절한다")
+	void canViewQuestionAnswers_forbidden(TeamUserRole role, String message) {
+		// given
+		prepareAnswerAccess(role);
+		QuestionSetEntity questionSet = QuestionSetEntity.builder().id(2L).teamId(1L)
+			.solveMode(QuestionSetSolveMode.STUDY).status(QuestionSetStatus.MAKING).build();
+
+		// when & then
+		assertThatThrownBy(() -> teamRoleValidator.canViewQuestionAnswers(questionSet, 100L))
+			.isInstanceOf(UserRoleException.class).hasMessage(message);
+		verifyNoInteractions(solvingSessionEntityRepository);
+	}
+
+	private UserEntity prepareAnswerAccess(TeamUserRole role) {
+		TeamEntity team = TeamEntity.ofGroup("팀", 100L);
+		UserEntity user = UserEntity.localLoginUser("user@test.com", "password", "사용자", "user");
+		when(teamReader.getActiveTeam(1L)).thenReturn(team);
+		when(userReader.getById(100L)).thenReturn(user);
+		Optional<TeamUserEntity> membership = Optional.empty();
+		if (role != null) {
+			membership = Optional.of(TeamUserEntity.createTeamUser(user, team, role));
+		}
+		when(teamUserEntityRepository.findByTeamAndUser(team, user)).thenReturn(membership);
+		return user;
+	}
 
 	@Test
 	@DisplayName("checkIsTeamManager - OWNER 권한을 가진 사용자는 팀 관리자 권한 확인 성공")

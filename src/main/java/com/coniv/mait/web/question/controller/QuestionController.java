@@ -73,17 +73,20 @@ public class QuestionController {
 	public ResponseEntity<ApiResponse<QuestionApiResponse>> getQuestion(
 		@PathVariable("questionSetId") final Long questionSetId,
 		@PathVariable("questionId") final Long questionId,
-		@RequestParam(value = "mode", required = false) DeliveryMode mode) {
+		@RequestParam(value = "mode", required = false) DeliveryMode mode,
+		@AuthenticationPrincipal MaitUser user) {
 		return ResponseEntity.ok(
-			ApiResponse.ok(QuestionApiResponse.from(questionService.getQuestion(questionSetId, questionId, mode))));
+			ApiResponse.ok(QuestionApiResponse.from(
+				questionService.getQuestion(questionSetId, questionId, mode, user.id()))));
 	}
 
 	@Operation(summary = "문제 셋에 속한 모든 문제 조회 API")
 	@GetMapping
 	public ResponseEntity<ApiResponse<List<QuestionApiResponse>>> getQuestions(
 		@PathVariable("questionSetId") final Long questionSetId,
-		@RequestParam(value = "mode", defaultValue = "MAKING") DeliveryMode mode) {
-		final List<QuestionApiResponse> result = questionService.getQuestions(questionSetId, mode).stream()
+		@RequestParam(value = "mode", defaultValue = "MAKING") DeliveryMode mode,
+		@AuthenticationPrincipal MaitUser user) {
+		final List<QuestionApiResponse> result = questionService.getQuestions(questionSetId, mode, user.id()).stream()
 			.map(QuestionApiResponse::from)
 			.toList();
 		return ResponseEntity.ok(ApiResponse.ok(result));
