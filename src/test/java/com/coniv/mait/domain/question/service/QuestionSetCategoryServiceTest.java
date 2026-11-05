@@ -70,7 +70,7 @@ class QuestionSetCategoryServiceTest {
 		assertThat(result.getTeamId()).isEqualTo(teamId);
 		assertThat(result.getName()).isEqualTo(name);
 
-		verify(teamRoleValidator).checkHasCreateQuestionSetAuthority(teamId, userId);
+		verify(teamRoleValidator).checkIsTeamManager(teamId, userId);
 		verify(questionSetCategoryEntityRepository).saveAndFlush(any(QuestionSetCategoryEntity.class));
 	}
 
@@ -125,7 +125,7 @@ class QuestionSetCategoryServiceTest {
 		String name = "알고리즘";
 
 		doThrow(new RuntimeException("권한 없음"))
-			.when(teamRoleValidator).checkHasCreateQuestionSetAuthority(teamId, userId);
+			.when(teamRoleValidator).checkIsTeamManager(teamId, userId);
 
 		// when & then
 		assertThatThrownBy(() -> questionSetCategoryService.createCategory(teamId, name, userId))
@@ -275,7 +275,7 @@ class QuestionSetCategoryServiceTest {
 		assertThat(result.getTeamId()).isEqualTo(teamId);
 		assertThat(result.getName()).isEqualTo(newName);
 
-		verify(teamRoleValidator).checkHasCreateQuestionSetAuthority(teamId, userId);
+		verify(teamRoleValidator).checkIsTeamManager(teamId, userId);
 		verify(questionSetCategoryEntityRepository).saveAndFlush(category);
 	}
 
@@ -373,7 +373,7 @@ class QuestionSetCategoryServiceTest {
 			.isInstanceOf(EntityNotFoundException.class)
 			.hasMessageContaining("해당 카테고리를 찾을 수 없습니다.");
 
-		verify(teamRoleValidator, never()).checkHasCreateQuestionSetAuthority(anyLong(), anyLong());
+		verify(teamRoleValidator, never()).checkIsTeamManager(anyLong(), anyLong());
 		verify(questionSetCategoryEntityRepository, never())
 			.existsByTeamIdAndNameAndDeletedAtIsNull(anyLong(), anyString());
 		verify(questionSetCategoryEntityRepository, never())
@@ -415,7 +415,7 @@ class QuestionSetCategoryServiceTest {
 
 		// then
 		assertThat(category.deleted()).isTrue();
-		verify(teamRoleValidator).checkHasCreateQuestionSetAuthority(teamId, userId);
+		verify(teamRoleValidator).checkIsTeamManager(teamId, userId);
 	}
 
 	@Test
@@ -436,7 +436,7 @@ class QuestionSetCategoryServiceTest {
 
 		// then
 		assertThat(category.getDeletedAt()).isEqualTo(originalDeletedAt);
-		verify(teamRoleValidator).checkHasCreateQuestionSetAuthority(teamId, userId);
+		verify(teamRoleValidator).checkIsTeamManager(teamId, userId);
 	}
 
 	@Test
@@ -453,7 +453,7 @@ class QuestionSetCategoryServiceTest {
 			.isInstanceOf(EntityNotFoundException.class)
 			.hasMessageContaining("해당 카테고리를 찾을 수 없습니다.");
 
-		verify(teamRoleValidator, never()).checkHasCreateQuestionSetAuthority(anyLong(), anyLong());
+		verify(teamRoleValidator, never()).checkIsTeamManager(anyLong(), anyLong());
 	}
 
 	@Test
@@ -467,7 +467,7 @@ class QuestionSetCategoryServiceTest {
 		QuestionSetCategoryEntity category = QuestionSetCategoryEntity.of(teamId, "알고리즘");
 		when(questionSetCategoryEntityRepository.findById(categoryId)).thenReturn(Optional.of(category));
 		doThrow(new RuntimeException("권한 없음"))
-			.when(teamRoleValidator).checkHasCreateQuestionSetAuthority(teamId, userId);
+			.when(teamRoleValidator).checkIsTeamManager(teamId, userId);
 
 		// when & then
 		assertThatThrownBy(() -> questionSetCategoryService.deleteCategory(categoryId, userId))
@@ -499,7 +499,7 @@ class QuestionSetCategoryServiceTest {
 		assertThat(result.getTeamId()).isEqualTo(teamId);
 		assertThat(result.getName()).isEqualTo(name);
 
-		verify(teamRoleValidator).checkHasCreateQuestionSetAuthority(teamId, userId);
+		verify(teamRoleValidator).checkIsTeamManager(teamId, userId);
 	}
 
 	@Test
@@ -511,7 +511,7 @@ class QuestionSetCategoryServiceTest {
 		String name = "알고리즘";
 
 		doThrow(new RuntimeException("권한 없음"))
-			.when(teamRoleValidator).checkHasCreateQuestionSetAuthority(teamId, userId);
+			.when(teamRoleValidator).checkIsTeamManager(teamId, userId);
 
 		// when & then
 		assertThatThrownBy(() -> questionSetCategoryService.restoreCategory(teamId, name, userId))
@@ -581,7 +581,7 @@ class QuestionSetCategoryServiceTest {
 		questionSetCategoryService.detachCategory(questionSetId, categoryId, userId);
 
 		// then
-		verify(teamRoleValidator).checkHasCreateQuestionSetAuthority(teamId, userId);
+		verify(teamRoleValidator).checkIsTeamManager(teamId, userId);
 		verify(questionSetCategoryLinkEntityRepository)
 			.deleteByQuestionSetIdAndCategoryId(questionSetId, categoryId);
 	}
@@ -670,7 +670,7 @@ class QuestionSetCategoryServiceTest {
 		questionSetCategoryService.attachCategory(questionSetId, categoryId, userId);
 
 		// then
-		verify(teamRoleValidator).checkHasCreateQuestionSetAuthority(teamId, userId);
+		verify(teamRoleValidator).checkIsTeamManager(teamId, userId);
 		verify(questionSetCategoryLinkEntityRepository).save(any(QuestionSetCategoryLinkEntity.class));
 	}
 

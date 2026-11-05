@@ -65,7 +65,8 @@ public class FillBlankReviewAnswerChecker implements ReviewAnswerChecker<FillBla
 			})
 			.toList();
 
-		boolean isCorrect = gradedResults.stream().allMatch(GradedAnswerFillBlankResult::isCorrect);
+		boolean isCorrect = blanks.size() == answersByNumber.size()
+			&& gradedResults.stream().allMatch(GradedAnswerFillBlankResult::isCorrect);
 
 		return ReviewAnswerCheckResult.builder()
 			.questionId(questionId)

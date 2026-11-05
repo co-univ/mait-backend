@@ -18,7 +18,6 @@ import org.springframework.transaction.annotation.Transactional;
 import com.coniv.mait.domain.user.entity.PolicyEntity;
 import com.coniv.mait.domain.user.entity.UserEntity;
 import com.coniv.mait.domain.user.entity.UserPolicyCheckHistory;
-import com.coniv.mait.domain.user.enums.LoginProvider;
 import com.coniv.mait.domain.user.enums.PolicyCategory;
 import com.coniv.mait.domain.user.enums.PolicyTiming;
 import com.coniv.mait.domain.user.enums.PolicyType;
@@ -150,14 +149,8 @@ public class PolicyApiIntegrationTest extends BaseIntegrationTest {
 	@WithCustomUser(email = "test@example.com", name = "테스트유저")
 	@DisplayName("미확인 정책 목록 조회 API 통합 테스트 - 일부 정책만 확인한 경우")
 	void findUnConfirmedPolicies_Success() throws Exception {
-		// given - 사용자 생성
-		UserEntity user = UserEntity.socialLoginUser(
-			"user@example.com",
-			"사용자",
-			"socialId",
-			LoginProvider.GOOGLE
-		);
-		userEntityRepository.save(user);
+		// given - 인증된 사용자
+		UserEntity user = userEntityRepository.findByEmail("test@example.com").orElseThrow();
 
 		// 정책 생성
 		PolicyEntity policy1 = PolicyEntity.builder()
@@ -203,7 +196,7 @@ public class PolicyApiIntegrationTest extends BaseIntegrationTest {
 		userPolicyCheckHistoryRepository.save(history);
 
 		// when & then
-		mockMvc.perform(get("/api/v1/policies/unchecked/" + user.getId())
+		mockMvc.perform(get("/api/v1/policies/unchecked")
 				.param("timing", PolicyTiming.SIGN_UP.name())
 				.contentType(MediaType.APPLICATION_JSON)
 				.with(csrf())
@@ -221,13 +214,7 @@ public class PolicyApiIntegrationTest extends BaseIntegrationTest {
 	@DisplayName("미확인 정책 목록 조회 API 통합 테스트 - 모든 정책을 확인한 경우")
 	void findUnConfirmedPolicies_AllConfirmed() throws Exception {
 		// given
-		UserEntity user = UserEntity.socialLoginUser(
-			"user@example.com",
-			"사용자",
-			"socialId",
-			LoginProvider.GOOGLE
-		);
-		userEntityRepository.save(user);
+		UserEntity user = userEntityRepository.findByEmail("test@example.com").orElseThrow();
 
 		PolicyEntity policy1 = PolicyEntity.builder()
 			.title("서비스 이용약관")
@@ -244,7 +231,7 @@ public class PolicyApiIntegrationTest extends BaseIntegrationTest {
 		userPolicyCheckHistoryRepository.save(history);
 
 		// when & then
-		mockMvc.perform(get("/api/v1/policies/unchecked/" + user.getId())
+		mockMvc.perform(get("/api/v1/policies/unchecked")
 				.param("timing", PolicyTiming.SIGN_UP.name())
 				.contentType(MediaType.APPLICATION_JSON)
 				.with(csrf())

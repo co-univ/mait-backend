@@ -10,8 +10,8 @@ import org.springframework.stereotype.Component;
 
 import com.coniv.mait.domain.question.entity.QuestionEntity;
 import com.coniv.mait.domain.question.enums.QuestionType;
+import com.coniv.mait.domain.question.exception.QuestionException;
 import com.coniv.mait.domain.question.exception.QuestionExceptionCode;
-import com.coniv.mait.domain.question.exception.QuestionStatusException;
 import com.coniv.mait.domain.question.service.dto.ReviewAnswerCheckResult;
 import com.coniv.mait.domain.solve.service.dto.FillBlankSubmitAnswer;
 import com.coniv.mait.domain.solve.service.dto.SubmitAnswerDto;
@@ -30,9 +30,13 @@ public class ReviewAnswerGrader {
 	@SuppressWarnings("unchecked")
 	public ReviewAnswerCheckResult gradeAnswer(Long questionId, QuestionEntity question,
 		SubmitAnswerDto<?> submitAnswers) {
+		if (question.getType() != submitAnswers.getType()) {
+			throw new QuestionException(QuestionExceptionCode.TYPE_MISMATCH);
+		}
+
 		ReviewAnswerChecker<?> checker = checkers.get(question.getType());
 		if (checker == null) {
-			throw new QuestionStatusException(QuestionExceptionCode.UNAVAILABLE_TYPE);
+			throw new QuestionException(QuestionExceptionCode.UNAVAILABLE_TYPE);
 		}
 		return switch (question.getType()) {
 			case MULTIPLE -> ((ReviewAnswerChecker<Long>)checker).check(questionId, question,

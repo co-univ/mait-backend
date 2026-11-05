@@ -11,8 +11,6 @@ import com.coniv.mait.domain.question.entity.MultipleChoiceEntity;
 import com.coniv.mait.domain.question.entity.QuestionEntity;
 import com.coniv.mait.domain.question.enums.QuestionType;
 import com.coniv.mait.domain.question.repository.MultipleChoiceEntityRepository;
-import com.coniv.mait.domain.solve.exception.QuestionSolveExceptionCode;
-import com.coniv.mait.domain.solve.exception.QuestionSolvingException;
 import com.coniv.mait.domain.solve.service.dto.MultipleQuestionSubmitAnswer;
 import com.coniv.mait.domain.solve.service.dto.SubmitAnswerDto;
 
@@ -36,10 +34,6 @@ public class MultipleQuestionAnswerChecker implements AnswerChecker<Long> {
 			.map(MultipleChoiceEntity::getNumber)
 			.map(Long::valueOf)
 			.collect(Collectors.toSet());
-
-		if (request.getType() != QuestionType.MULTIPLE) {
-			throw new QuestionSolvingException(QuestionSolveExceptionCode.INVALID_TYPE);
-		}
 
 		MultipleQuestionSubmitAnswer submitAnswer = (MultipleQuestionSubmitAnswer)request;
 

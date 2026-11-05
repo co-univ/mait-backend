@@ -6,9 +6,9 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
+import com.coniv.mait.domain.question.exception.QuestionException;
 import com.coniv.mait.domain.question.exception.QuestionSetCategoryException;
 import com.coniv.mait.domain.question.exception.QuestionSetStatusException;
-import com.coniv.mait.domain.question.exception.QuestionStatusException;
 import com.coniv.mait.domain.solve.exception.QuestionSolvingException;
 import com.coniv.mait.domain.team.exception.TeamInvitationFailException;
 import com.coniv.mait.domain.team.exception.TeamManagerException;
@@ -16,6 +16,7 @@ import com.coniv.mait.domain.user.exception.UserRoleException;
 import com.coniv.mait.global.exception.CommonExceptionCode;
 import com.coniv.mait.global.exception.custom.DistributedLockException;
 import com.coniv.mait.global.exception.custom.EmailSendException;
+import com.coniv.mait.global.exception.custom.IdempotencyException;
 import com.coniv.mait.global.exception.custom.LoginFailException;
 import com.coniv.mait.global.exception.custom.PolicyException;
 import com.coniv.mait.global.exception.custom.QuestionSetLiveException;
@@ -147,11 +148,11 @@ public class CustomExceptionHandler {
 			.body(ErrorResponse.from(exception.getExceptionCode()));
 	}
 
-	@ExceptionHandler(QuestionStatusException.class)
-	public ResponseEntity<ErrorResponse> handleQuestionStatusException(QuestionStatusException exception,
+	@ExceptionHandler(QuestionException.class)
+	public ResponseEntity<ErrorResponse> handleQuestionException(QuestionException exception,
 		HttpServletRequest request) {
-		return ResponseEntity.status(exception.getQuestionExceptionCode().getStatus())
-			.body(ErrorResponse.from(exception.getQuestionExceptionCode()));
+		return ResponseEntity.status(exception.getExceptionCode().getStatus())
+			.body(ErrorResponse.from(exception.getExceptionCode()));
 	}
 
 	@ExceptionHandler(QuestionSetCategoryException.class)
@@ -167,5 +168,13 @@ public class CustomExceptionHandler {
 		log.info("DistributedLockException 발생: {}, {}", exception.getLockKey(), request.getRequestURI());
 		return ResponseEntity.status(CommonExceptionCode.LOCK_ACQUISITION_FAILED.getStatus())
 			.body(ErrorResponse.from(CommonExceptionCode.LOCK_ACQUISITION_FAILED));
+	}
+
+	@ExceptionHandler(IdempotencyException.class)
+	public ResponseEntity<ErrorResponse> handleIdempotencyException(IdempotencyException exception,
+		HttpServletRequest request) {
+		log.info("IdempotencyException 발생: {}, {}", exception.getExceptionCode(), request.getRequestURI());
+		return ResponseEntity.status(exception.getExceptionCode().getStatus())
+			.body(ErrorResponse.from(exception.getExceptionCode()));
 	}
 }

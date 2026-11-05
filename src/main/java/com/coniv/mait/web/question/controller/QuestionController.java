@@ -4,6 +4,7 @@ import java.util.List;
 
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
@@ -21,6 +22,7 @@ import com.coniv.mait.domain.question.enums.DeliveryMode;
 import com.coniv.mait.domain.question.enums.QuestionType;
 import com.coniv.mait.domain.question.service.QuestionImageService;
 import com.coniv.mait.domain.question.service.QuestionService;
+import com.coniv.mait.global.auth.model.MaitUser;
 import com.coniv.mait.global.exception.custom.UserParameterException;
 import com.coniv.mait.global.response.ApiResponse;
 import com.coniv.mait.web.question.dto.CreateQuestionApiRequest;
@@ -51,17 +53,19 @@ public class QuestionController {
 	public ResponseEntity<ApiResponse<Void>> createQuestion(
 		@Parameter(required = true, schema = @Schema(enumAsRef = true)) @RequestParam("type") QuestionType type,
 		@Valid @RequestBody CreateQuestionApiRequest request,
-		@PathVariable("questionSetId") final Long questionSetId) {
-		questionService.createQuestion(questionSetId, type, request.toQuestionDto());
+		@PathVariable("questionSetId") final Long questionSetId,
+		@AuthenticationPrincipal MaitUser user) {
+		questionService.createQuestion(questionSetId, type, request.toQuestionDto(), user.id());
 		return ResponseEntity.ok(ApiResponse.noContent());
 	}
 
 	@Operation(summary = "기본 문제 생성 API", description = "문제 생성 과정에서 추가 버튼을 통해 기본 문제를 생성한다.")
 	@PostMapping("/default")
 	public ResponseEntity<ApiResponse<QuestionApiResponse>> createDefaultQuestion(
-		@PathVariable("questionSetId") final Long questionSetId) {
+		@PathVariable("questionSetId") final Long questionSetId,
+		@AuthenticationPrincipal MaitUser user) {
 		return ResponseEntity.ok(
-			ApiResponse.ok(QuestionApiResponse.from(questionService.createDefaultQuestion(questionSetId))));
+			ApiResponse.ok(QuestionApiResponse.from(questionService.createDefaultQuestion(questionSetId, user.id()))));
 	}
 
 	@Operation(summary = "문제 조회 API")
@@ -90,16 +94,18 @@ public class QuestionController {
 	public ResponseEntity<ApiResponse<QuestionApiResponse>> updateQuestion(
 		@PathVariable("questionSetId") final Long questionSetId,
 		@PathVariable("questionId") final Long questionId,
-		@RequestBody UpdateQuestionApiRequest request) {
+		@RequestBody UpdateQuestionApiRequest request,
+		@AuthenticationPrincipal MaitUser user) {
 		return ResponseEntity.ok(ApiResponse.ok(QuestionApiResponse.from(
-			questionService.updateQuestion(questionSetId, questionId, request.toQuestionDto()))));
+			questionService.updateQuestion(questionSetId, questionId, request.toQuestionDto(), user.id()))));
 	}
 
 	@Operation(summary = "문제 단건 삭제 API", description = "생성 중인 문제 단건 삭제를 진행")
 	@DeleteMapping("/{questionId}")
 	public ResponseEntity<ApiResponse<Void>> deleteQuestion(@PathVariable("questionSetId") final Long questionSetId,
-		@PathVariable("questionId") final Long questionId) {
-		questionService.deleteQuestion(questionSetId, questionId);
+		@PathVariable("questionId") final Long questionId,
+		@AuthenticationPrincipal MaitUser user) {
+		questionService.deleteQuestion(questionSetId, questionId, user.id());
 		return ResponseEntity.ok(ApiResponse.noContent());
 	}
 
@@ -108,14 +114,15 @@ public class QuestionController {
 	public ResponseEntity<ApiResponse<Void>> changeQuestionOrder(
 		@PathVariable("questionSetId") final Long questionSetId,
 		@PathVariable("questionId") final Long questionId,
-		@RequestBody UpdateQuestionOrderApiRequest request) {
+		@RequestBody UpdateQuestionOrderApiRequest request,
+		@AuthenticationPrincipal MaitUser user) {
 
 		if (request.prevQuestionId() == null && request.nextQuestionId() == null) {
 			throw new UserParameterException("이전 문제 ID와 다음 문제 ID가 모두 null일 수 없습니다.");
 		}
 
 		questionService.changeQuestionOrder(questionSetId, questionId, request.prevQuestionId(),
-			request.nextQuestionId());
+			request.nextQuestionId(), user.id());
 		return ResponseEntity.ok(ApiResponse.noContent());
 	}
 
@@ -123,9 +130,11 @@ public class QuestionController {
 	@PostMapping(value = "/images", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
 	public ResponseEntity<ApiResponse<QuestionImageApiResponse>> uploadImage(
 		@PathVariable("questionSetId") final Long questionSetId,
-		@RequestPart("image") MultipartFile image
+		@RequestPart("image") MultipartFile image,
+		@AuthenticationPrincipal MaitUser user
 	) {
 		return ResponseEntity.ok(
-			ApiResponse.ok(QuestionImageApiResponse.from(questionImageService.uploadImage(questionSetId, image))));
+			ApiResponse.ok(
+				QuestionImageApiResponse.from(questionImageService.uploadImage(questionSetId, image, user.id()))));
 	}
 }

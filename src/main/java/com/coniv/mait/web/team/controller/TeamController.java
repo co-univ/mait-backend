@@ -149,8 +149,9 @@ public class TeamController {
 
 	@Operation(summary = "팀 유저 삭제 API")
 	@DeleteMapping("/team-users/{teamUserId}")
-	public ResponseEntity<ApiResponse<Void>> deleteTeamUser(@PathVariable Long teamUserId) {
-		teamService.deleteTeamUser(teamUserId);
+	public ResponseEntity<ApiResponse<Void>> deleteTeamUser(@PathVariable Long teamUserId,
+		@AuthenticationPrincipal MaitUser userPrincipal) {
+		teamService.deleteTeamUser(teamUserId, userPrincipal.id());
 		return ResponseEntity.ok(ApiResponse.noContent());
 	}
 
@@ -173,16 +174,16 @@ public class TeamController {
 	@Operation(summary = "팀 유저 역할 변경 API")
 	@PatchMapping("/team-users/{teamUserId}/role")
 	public ResponseEntity<ApiResponse<Void>> updateTeamUserRole(@PathVariable Long teamUserId,
-		@Valid @RequestBody UpdateTeamUserRoleApiRequest request) {
-		teamService.updateTeamUserRole(teamUserId, request.role());
+		@Valid @RequestBody UpdateTeamUserRoleApiRequest request, @AuthenticationPrincipal MaitUser userPrincipal) {
+		teamService.updateTeamUserRole(teamUserId, request.role(), userPrincipal.id());
 		return ResponseEntity.ok(ApiResponse.noContent());
 	}
 
 	@Operation(summary = "팀에 유저 추가 API")
 	@PostMapping("/{teamId}/team-users")
 	public ResponseEntity<ApiResponse<Void>> addUserInTeam(@PathVariable Long teamId,
-		@Valid @RequestBody AddTeamUserApiRequest request) {
-		teamService.addUserInTeam(teamId, request.userId(), request.role());
+		@Valid @RequestBody AddTeamUserApiRequest request, @AuthenticationPrincipal MaitUser userPrincipal) {
+		teamService.addUserInTeam(teamId, request.userId(), request.role(), userPrincipal.id());
 		return ResponseEntity.ok(ApiResponse.noContent());
 	}
 }

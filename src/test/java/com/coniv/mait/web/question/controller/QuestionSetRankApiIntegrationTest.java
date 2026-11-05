@@ -1,8 +1,11 @@
 package com.coniv.mait.web.question.controller;
 
 import static org.assertj.core.api.Assertions.*;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
+
+import java.util.List;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -10,6 +13,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 
 import com.coniv.mait.config.TestRedisConfig;
 import com.coniv.mait.domain.question.entity.MultipleQuestionEntity;
@@ -30,6 +34,7 @@ import com.coniv.mait.domain.team.repository.TeamEntityRepository;
 import com.coniv.mait.domain.team.repository.TeamUserEntityRepository;
 import com.coniv.mait.domain.user.entity.UserEntity;
 import com.coniv.mait.domain.user.repository.UserEntityRepository;
+import com.coniv.mait.global.auth.model.MaitUser;
 import com.coniv.mait.login.WithCustomUser;
 import com.coniv.mait.web.integration.BaseIntegrationTest;
 
@@ -90,6 +95,7 @@ public class QuestionSetRankApiIntegrationTest extends BaseIntegrationTest {
 		teamUserEntityRepository.save(TeamUserEntity.createPlayerUser(user1, team));
 		teamUserEntityRepository.save(TeamUserEntity.createPlayerUser(user2, team));
 		teamUserEntityRepository.save(TeamUserEntity.createPlayerUser(user3, team));
+		UserEntity requester = saveTeamPlayer(team);
 
 		QuestionSetEntity questionSet = questionSetEntityRepository.save(
 			QuestionSetEntity.builder()
@@ -185,6 +191,7 @@ public class QuestionSetRankApiIntegrationTest extends BaseIntegrationTest {
 		// when & then
 		mockMvc.perform(get("/api/v1/question-sets/{questionSetId}/ranks", questionSet.getId())
 				.param("type", "CORRECT")
+				.with(authentication(authenticationOf(requester)))
 				.accept(MediaType.APPLICATION_JSON))
 			.andExpectAll(
 				status().isOk(),
@@ -209,7 +216,8 @@ public class QuestionSetRankApiIntegrationTest extends BaseIntegrationTest {
 		// then
 		assertThat(answerSubmitRecordEntityRepository.count()).isEqualTo(6);
 		assertThat(questionSetEntityRepository.count()).isEqualTo(1);
-		assertThat(userEntityRepository.count()).isEqualTo(3);
+		// 참가자 3명 + 조회자 1명
+		assertThat(userEntityRepository.count()).isEqualTo(4);
 	}
 
 	@Test
@@ -229,6 +237,7 @@ public class QuestionSetRankApiIntegrationTest extends BaseIntegrationTest {
 		teamUserEntityRepository.save(TeamUserEntity.createPlayerUser(user1, team));
 		teamUserEntityRepository.save(TeamUserEntity.createPlayerUser(user2, team));
 		teamUserEntityRepository.save(TeamUserEntity.createPlayerUser(user3, team));
+		UserEntity requester = saveTeamPlayer(team);
 
 		QuestionSetEntity questionSet = questionSetEntityRepository.save(
 			QuestionSetEntity.builder()
@@ -270,6 +279,7 @@ public class QuestionSetRankApiIntegrationTest extends BaseIntegrationTest {
 
 		// when & then
 		mockMvc.perform(get("/api/v1/question-sets/{questionSetId}/live/scorer-ranks", questionSet.getId())
+				.with(authentication(authenticationOf(requester)))
 				.accept(MediaType.APPLICATION_JSON))
 			.andExpectAll(
 				status().isOk(),
@@ -293,5 +303,16 @@ public class QuestionSetRankApiIntegrationTest extends BaseIntegrationTest {
 		// then
 		assertThat(questionScorerEntityRepository.count()).isEqualTo(5);
 		assertThat(questionSetParticipantRepository.count()).isEqualTo(3);
+	}
+
+	private UserEntity saveTeamPlayer(TeamEntity team) {
+		UserEntity requester = userEntityRepository.save(
+			UserEntity.localLoginUser("requester@test.com", "password", "조회자", "requester"));
+		teamUserEntityRepository.save(TeamUserEntity.createPlayerUser(requester, team));
+		return requester;
+	}
+
+	private UsernamePasswordAuthenticationToken authenticationOf(UserEntity user) {
+		return new UsernamePasswordAuthenticationToken(MaitUser.from(user), null, List.of());
 	}
 }

@@ -1,6 +1,7 @@
 package com.coniv.mait.web.solve.controller;
 
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -10,6 +11,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.coniv.mait.domain.solve.service.QuestionAnswerSubmitService;
 import com.coniv.mait.domain.solve.service.QuestionScorerService;
+import com.coniv.mait.global.auth.model.MaitUser;
 import com.coniv.mait.global.response.ApiResponse;
 import com.coniv.mait.web.solve.dto.QuestionAnswerSubmitApiRequest;
 import com.coniv.mait.web.solve.dto.QuestionAnswerSubmitApiResponse;
@@ -37,30 +39,31 @@ public class QuestionAnswerSubmitController {
 	@PostMapping("/submit")
 	public ResponseEntity<ApiResponse<QuestionAnswerSubmitApiResponse>> submitAnswer(
 		@Valid @RequestBody QuestionAnswerSubmitApiRequest request,
-		@PathVariable Long questionSetId, @PathVariable Long questionId) throws
-		JsonProcessingException {
+		@PathVariable Long questionSetId, @PathVariable Long questionId,
+		@AuthenticationPrincipal MaitUser user) throws JsonProcessingException {
 		return ResponseEntity.ok().body(ApiResponse.ok(
 			QuestionAnswerSubmitApiResponse.from(questionAnswerSubmitService.submitAnswer(questionSetId, questionId,
-				request.getUserId(), request.getSubmitAnswers()))));
+				user.id(), request.getSubmitAnswers()))));
 	}
 
 	@Operation(summary = "문제별 득점자 조회 API")
 	@GetMapping("/scorers")
 	public ResponseEntity<ApiResponse<QuestionScorerApiResponse>> getScorer(
 		@PathVariable Long questionSetId,
-		@PathVariable Long questionId
+		@PathVariable Long questionId,
+		@AuthenticationPrincipal MaitUser user
 	) {
 		return ResponseEntity.ok().body(ApiResponse.ok(
-			QuestionScorerApiResponse.from(questionScorerService.getScorer(questionSetId, questionId))));
+			QuestionScorerApiResponse.from(questionScorerService.getScorer(questionSetId, questionId, user.id()))));
 	}
 
 	@Operation(summary = "문제 풀이 정답 제출 기록 조회 API")
 	@GetMapping("/submit-records")
 	public ResponseEntity<ApiResponse<QuestionAnswerSubmitRecordsApiResponse>> getSubmitRecords(
-		@PathVariable Long questionSetId, @PathVariable Long questionId) {
+		@PathVariable Long questionSetId, @PathVariable Long questionId, @AuthenticationPrincipal MaitUser user) {
 		return ResponseEntity.ok().body(ApiResponse.ok(
 			QuestionAnswerSubmitRecordsApiResponse.from(QuestionAnswerSubmitRecordApiResponse.from(
-				questionAnswerSubmitService.getSubmitRecords(questionSetId, questionId)))
+				questionAnswerSubmitService.getSubmitRecords(questionSetId, questionId, user.id())))
 		));
 	}
 }

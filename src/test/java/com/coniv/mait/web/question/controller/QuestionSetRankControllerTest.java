@@ -114,7 +114,7 @@ class QuestionSetRankControllerTest {
 
 		List<AnswerRankDto> answerRanks = List.of(rank1, rank2, rank3);
 
-		when(questionSetRankService.getCorrectorsByQuestionSetId(questionSetId)).thenReturn(answerRanks);
+		when(questionSetRankService.getCorrectorsByQuestionSetId(questionSetId, USER_ID)).thenReturn(answerRanks);
 
 		// when & then
 		mockMvc.perform(get("/api/v1/question-sets/{questionSetId}/ranks", questionSetId)
@@ -136,7 +136,7 @@ class QuestionSetRankControllerTest {
 			.andExpect(jsonPath("$.data.ranksGroup[2].users.length()").value(1))
 			.andExpect(jsonPath("$.data.ranksGroup[2].users[0].userId").value(1L));
 
-		verify(questionSetRankService).getCorrectorsByQuestionSetId(questionSetId);
+		verify(questionSetRankService).getCorrectorsByQuestionSetId(questionSetId, USER_ID);
 	}
 
 	@Test
@@ -156,7 +156,7 @@ class QuestionSetRankControllerTest {
 			.count(1L)
 			.build();
 
-		when(questionSetRankService.getScorerRankByQuestionSetId(questionSetId))
+		when(questionSetRankService.getScorerRankByQuestionSetId(questionSetId, USER_ID))
 			.thenReturn(List.of(myRank, otherRank));
 
 		// when & then
@@ -174,7 +174,7 @@ class QuestionSetRankControllerTest {
 				jsonPath("$.data.userRank.rank").value(1),
 				jsonPath("$.data.containsUserRank").value(true));
 
-		verify(questionSetRankService).getScorerRankByQuestionSetId(questionSetId);
+		verify(questionSetRankService).getScorerRankByQuestionSetId(questionSetId, USER_ID);
 	}
 
 	@Test
@@ -194,7 +194,7 @@ class QuestionSetRankControllerTest {
 			.count(1L)
 			.build();
 
-		when(questionSetRankService.getScorerRankByQuestionSetId(questionSetId))
+		when(questionSetRankService.getScorerRankByQuestionSetId(questionSetId, USER_ID))
 			.thenReturn(List.of(otherRank, myRank));
 
 		// when & then

@@ -1,5 +1,6 @@
 package com.coniv.mait.domain.question.service;
 
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
@@ -29,11 +30,21 @@ import com.coniv.mait.domain.question.repository.QuestionSetParticipantRepositor
 import com.coniv.mait.domain.question.service.component.QuestionWebSocketSender;
 import com.coniv.mait.domain.team.repository.TeamUserEntityRepository;
 import com.coniv.mait.domain.user.entity.UserEntity;
+import com.coniv.mait.domain.user.exception.UserRoleException;
+import com.coniv.mait.domain.user.service.component.TeamRoleValidator;
+import com.coniv.mait.web.question.dto.ParticipantSendType;
 
 import jakarta.persistence.EntityNotFoundException;
 
 @ExtendWith(MockitoExtension.class)
 class QuestionSetLiveControlServiceTest {
+
+	private static final Long USER_ID = 1L;
+
+	private static final Long TEAM_ID = 10L;
+
+	@Mock
+	private TeamRoleValidator teamRoleValidator;
 
 	@Mock
 	private QuestionSetEntityRepository questionSetEntityRepository;
@@ -93,7 +104,7 @@ class QuestionSetLiveControlServiceTest {
 			.thenReturn(List.of(accessQuestion, solveQuestion));
 
 		// when
-		questionSetLiveControlService.endLiveQuestionSet(questionSetId);
+		questionSetLiveControlService.endLiveQuestionSet(questionSetId, USER_ID);
 
 		// then
 		verify(questionSetEntity).endLiveQuestionSet();
@@ -374,7 +385,7 @@ class QuestionSetLiveControlServiceTest {
 		when(user3.getId()).thenReturn(3L);
 
 		// when
-		questionSetLiveControlService.sendWinner(questionSetId, winnerIds);
+		questionSetLiveControlService.sendWinner(questionSetId, winnerIds, USER_ID);
 
 		// then
 		verify(questionSetEntityRepository).findById(questionSetId);
@@ -404,11 +415,90 @@ class QuestionSetLiveControlServiceTest {
 		when(user2.getId()).thenReturn(2L);
 
 		// when
-		questionSetLiveControlService.sendWinner(questionSetId, winnerIds);
+		questionSetLiveControlService.sendWinner(questionSetId, winnerIds, USER_ID);
 
 		// then
 		// 빈 우승자 목록으로도 메시지가 전송되어야 함
 		verify(questionSetEntityRepository).findById(questionSetId);
 		verify(questionSetParticipantRepository).findAllByQuestionSetWithFetchJoinUser(questionSetEntity);
+	}
+
+	@Test
+	@DisplayName("문제 셋 팀의 MAKER 이상이 아니면 실시간 문제 셋을 시작할 수 없다")
+	void startLiveQuestionSet_NotTeamManager_ThrowsException() {
+		// given
+		Long questionSetId = 1L;
+		QuestionSetEntity questionSet = mock(QuestionSetEntity.class);
+		when(questionSet.getTeamId()).thenReturn(TEAM_ID);
+		when(questionSetEntityRepository.findById(questionSetId)).thenReturn(Optional.of(questionSet));
+		doThrow(new UserRoleException("팀 관리 권한이 없습니다."))
+			.when(teamRoleValidator).checkIsTeamManager(TEAM_ID, USER_ID);
+
+		// when & then
+		assertThatThrownBy(() -> questionSetLiveControlService.startLiveQuestionSet(questionSetId, USER_ID))
+			.isInstanceOf(UserRoleException.class)
+			.hasMessage("팀 관리 권한이 없습니다.");
+
+		verifyNoInteractions(questionWebSocketSender);
+		verify(questionSet, never()).startLiveQuestionSet();
+	}
+
+	@Test
+	@DisplayName("문제 셋 팀의 MAKER 이상이 아니면 실시간 문제 셋을 종료할 수 없다")
+	void endLiveQuestionSet_NotTeamManager_ThrowsException() {
+		// given
+		Long questionSetId = 1L;
+		QuestionSetEntity questionSet = mock(QuestionSetEntity.class);
+		when(questionSet.getTeamId()).thenReturn(TEAM_ID);
+		when(questionSetEntityRepository.findById(questionSetId)).thenReturn(Optional.of(questionSet));
+		doThrow(new UserRoleException("팀 관리 권한이 없습니다."))
+			.when(teamRoleValidator).checkIsTeamManager(TEAM_ID, USER_ID);
+
+		// when & then
+		assertThatThrownBy(() -> questionSetLiveControlService.endLiveQuestionSet(questionSetId, USER_ID))
+			.isInstanceOf(UserRoleException.class)
+			.hasMessage("팀 관리 권한이 없습니다.");
+
+		verifyNoInteractions(questionWebSocketSender);
+		verify(questionSet, never()).endLiveQuestionSet();
+	}
+
+	@Test
+	@DisplayName("문제 셋 팀의 MAKER 이상이 아니면 우승자를 전송할 수 없다")
+	void sendWinner_NotTeamManager_ThrowsException() {
+		// given
+		Long questionSetId = 1L;
+		QuestionSetEntity questionSet = mock(QuestionSetEntity.class);
+		when(questionSet.getTeamId()).thenReturn(TEAM_ID);
+		when(questionSetEntityRepository.findById(questionSetId)).thenReturn(Optional.of(questionSet));
+		doThrow(new UserRoleException("팀 관리 권한이 없습니다."))
+			.when(teamRoleValidator).checkIsTeamManager(TEAM_ID, USER_ID);
+
+		// when & then
+		assertThatThrownBy(() -> questionSetLiveControlService.sendWinner(questionSetId, List.of(2L), USER_ID))
+			.isInstanceOf(UserRoleException.class)
+			.hasMessage("팀 관리 권한이 없습니다.");
+
+		verifyNoInteractions(questionWebSocketSender);
+	}
+
+	@Test
+	@DisplayName("문제 셋 팀의 MAKER 이상이 아니면 진출자를 전송할 수 없다")
+	void sendParticipants_NotTeamManager_ThrowsException() {
+		// given
+		Long questionSetId = 1L;
+		QuestionSetEntity questionSet = mock(QuestionSetEntity.class);
+		when(questionSet.getTeamId()).thenReturn(TEAM_ID);
+		when(questionSetEntityRepository.findById(questionSetId)).thenReturn(Optional.of(questionSet));
+		doThrow(new UserRoleException("팀 관리 권한이 없습니다."))
+			.when(teamRoleValidator).checkIsTeamManager(TEAM_ID, USER_ID);
+
+		// when & then
+		assertThatThrownBy(() -> questionSetLiveControlService.sendParticipants(questionSetId,
+			ParticipantSendType.NEXT_ROUND, USER_ID))
+			.isInstanceOf(UserRoleException.class)
+			.hasMessage("팀 관리 권한이 없습니다.");
+
+		verifyNoInteractions(questionWebSocketSender);
 	}
 }

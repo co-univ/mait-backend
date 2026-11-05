@@ -1,6 +1,7 @@
 package com.coniv.mait.web.question.controller;
 
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -9,6 +10,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.coniv.mait.domain.question.service.QuestionControlService;
+import com.coniv.mait.global.auth.model.MaitUser;
 import com.coniv.mait.global.response.ApiResponse;
 import com.coniv.mait.web.question.dto.UpdateQuestionStatusApiRequest;
 
@@ -31,9 +33,10 @@ public class QuestionControlController {
 	@PostMapping("/questions/{questionId}/control/access")
 	public ResponseEntity<ApiResponse<Void>> allowQuestionAccess(
 		@PathVariable Long questionSetId,
-		@PathVariable Long questionId) {
+		@PathVariable Long questionId,
+		@AuthenticationPrincipal MaitUser user) {
 
-		questionControlService.allowQuestionAccess(questionSetId, questionId);
+		questionControlService.allowQuestionAccess(questionSetId, questionId, user.id());
 		return ResponseEntity.ok(ApiResponse.noContent());
 	}
 
@@ -44,9 +47,10 @@ public class QuestionControlController {
 	@PostMapping("/questions/{questionId}/control/solve")
 	public ResponseEntity<ApiResponse<Void>> allowQuestionSolve(
 		@PathVariable Long questionSetId,
-		@PathVariable Long questionId) {
+		@PathVariable Long questionId,
+		@AuthenticationPrincipal MaitUser user) {
 
-		questionControlService.allowQuestionSolve(questionSetId, questionId);
+		questionControlService.allowQuestionSolve(questionSetId, questionId, user.id());
 		return ResponseEntity.ok(ApiResponse.noContent());
 	}
 
@@ -55,9 +59,10 @@ public class QuestionControlController {
 	public ResponseEntity<ApiResponse<Void>> updateQuestionStatus(
 		@PathVariable("questionSetId") Long questionSetId,
 		@PathVariable("questionId") Long questionId,
-		@RequestBody UpdateQuestionStatusApiRequest request) {
+		@RequestBody UpdateQuestionStatusApiRequest request,
+		@AuthenticationPrincipal MaitUser user) {
 
-		questionControlService.updateQuestionStatus(questionSetId, questionId, request.statusType());
+		questionControlService.updateQuestionStatus(questionSetId, questionId, request.statusType(), user.id());
 		return ResponseEntity.ok(ApiResponse.noContent());
 	}
 }

@@ -15,6 +15,8 @@ import com.coniv.mait.domain.question.entity.QuestionEntity;
 import com.coniv.mait.domain.question.entity.QuestionSetEntity;
 import com.coniv.mait.domain.question.enums.QuestionSetSolveMode;
 import com.coniv.mait.domain.question.enums.QuestionSetStatus;
+import com.coniv.mait.domain.question.exception.QuestionException;
+import com.coniv.mait.domain.question.exception.QuestionExceptionCode;
 import com.coniv.mait.domain.question.repository.QuestionSetEntityRepository;
 import com.coniv.mait.domain.question.service.component.QuestionReader;
 import com.coniv.mait.domain.question.service.component.QuestionSetReader;
@@ -213,6 +215,11 @@ public class StudyModeService {
 
 		StudyAnswerDraftEntity draft = studyAnswerDraftEntityRepository.findById(draftId)
 			.orElseThrow(() -> new EntityNotFoundException("존재하지 않는 답안 초안 입니다."));
+
+		QuestionEntity question = questionReader.getQuestion(questionId, questionSetId);
+		if (question.getType() != submittedAnswer.getType()) {
+			throw new QuestionException(QuestionExceptionCode.TYPE_MISMATCH);
+		}
 
 		draft.updateSubmittedAnswer(objectMapper.writeValueAsString(submittedAnswer));
 

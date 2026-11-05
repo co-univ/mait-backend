@@ -11,13 +11,14 @@ import org.springframework.transaction.annotation.Transactional;
 import com.coniv.mait.domain.question.entity.QuestionEntity;
 import com.coniv.mait.domain.question.entity.QuestionSetEntity;
 import com.coniv.mait.domain.question.enums.QuestionType;
+import com.coniv.mait.domain.question.exception.QuestionException;
 import com.coniv.mait.domain.question.exception.QuestionExceptionCode;
 import com.coniv.mait.domain.question.exception.QuestionSetStatusException;
-import com.coniv.mait.domain.question.exception.QuestionStatusException;
 import com.coniv.mait.domain.question.exception.code.QuestionSetStatusExceptionCode;
 import com.coniv.mait.domain.question.service.component.QuestionReader;
 import com.coniv.mait.domain.solve.component.QuestionAnswerUpdater;
 import com.coniv.mait.domain.solve.event.QuestionUpdateEvent;
+import com.coniv.mait.domain.user.service.component.TeamRoleValidator;
 import com.coniv.mait.global.event.MaitEventPublisher;
 import com.coniv.mait.web.solve.dto.UpdateAnswerPayload;
 
@@ -29,20 +30,24 @@ public class QuestionSolvingManageService {
 
 	private final MaitEventPublisher maitEventPublisher;
 
+	private final TeamRoleValidator teamRoleValidator;
+
 	public QuestionSolvingManageService(List<QuestionAnswerUpdater> updaters, QuestionReader questionReader,
-		MaitEventPublisher maitEventPublisher) {
+		MaitEventPublisher maitEventPublisher, TeamRoleValidator teamRoleValidator) {
 		this.questionAnswerUpdaters = updaters.stream()
 			.collect(Collectors.toUnmodifiableMap(QuestionAnswerUpdater::getQuestionType, Function.identity()));
 		this.questionReader = questionReader;
 		this.maitEventPublisher = maitEventPublisher;
+		this.teamRoleValidator = teamRoleValidator;
 	}
 
 	@Transactional
 	public void updateQuestionAnswers(final Long questionSetId, final Long questionId,
-		final UpdateAnswerPayload request) {
+		final UpdateAnswerPayload request, final Long userId) {
 		QuestionEntity question = questionReader.getQuestion(questionId, questionSetId);
 
 		QuestionSetEntity questionSet = question.getQuestionSet();
+		teamRoleValidator.checkIsTeamManager(questionSet.getTeamId(), userId);
 
 		if (!questionSet.isOnLive()) {
 			throw new QuestionSetStatusException(QuestionSetStatusExceptionCode.ONLY_LIVE_TIME);
@@ -50,7 +55,10 @@ public class QuestionSolvingManageService {
 
 		QuestionType type = request.getType();
 		if (type != QuestionType.SHORT && type != QuestionType.FILL_BLANK) {
-			throw new QuestionStatusException(QuestionExceptionCode.UNAVAILABLE_TYPE);
+			throw new QuestionException(QuestionExceptionCode.UNAVAILABLE_TYPE);
+		}
+		if (question.getType() != type) {
+			throw new QuestionException(QuestionExceptionCode.TYPE_MISMATCH);
 		}
 
 		QuestionAnswerUpdater questionAnswerUpdater = getQuestionAnswerUpdater(type);

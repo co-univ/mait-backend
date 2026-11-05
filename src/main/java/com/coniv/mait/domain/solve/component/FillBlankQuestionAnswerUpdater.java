@@ -9,6 +9,7 @@ import com.coniv.mait.domain.question.entity.FillBlankAnswerEntity;
 import com.coniv.mait.domain.question.entity.QuestionEntity;
 import com.coniv.mait.domain.question.enums.QuestionType;
 import com.coniv.mait.domain.question.repository.FillBlankAnswerEntityRepository;
+import com.coniv.mait.domain.question.service.component.FillBlankQuestionValidator;
 import com.coniv.mait.web.solve.dto.FillBlankUpdateAnswerPayload;
 import com.coniv.mait.web.solve.dto.UpdateAnswerPayload;
 
@@ -19,6 +20,7 @@ import lombok.RequiredArgsConstructor;
 public class FillBlankQuestionAnswerUpdater implements QuestionAnswerUpdater {
 
 	private final FillBlankAnswerEntityRepository fillBlankAnswerEntityRepository;
+	private final FillBlankQuestionValidator fillBlankQuestionValidator;
 
 	@Override
 	public QuestionType getQuestionType() {
@@ -32,13 +34,14 @@ public class FillBlankQuestionAnswerUpdater implements QuestionAnswerUpdater {
 			throw new IllegalArgumentException("빈칸 채우기 문제에만 FillBlankQuestionAnswerUpdater를 사용할 수 있습니다.");
 		}
 
-		// Todo: 인정답안이 아닌 경우 및 존재에 대한 검증 필요
+		fillBlankQuestionValidator.validateAcceptedAnswerAddition(question.getId(), fillBlankPayload.answers());
+
 		List<FillBlankAnswerEntity> answers = fillBlankPayload.answers().stream()
 			.map(dto -> FillBlankAnswerEntity.builder()
 				.fillBlankQuestionId(question.getId())
 				.number(dto.getNumber())
 				.answer(dto.getAnswer())
-				.isMain(dto.isMain())
+				.isMain(false)
 				.build())
 			.toList();
 		fillBlankAnswerEntityRepository.saveAll(answers);

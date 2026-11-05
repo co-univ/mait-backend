@@ -78,7 +78,7 @@ public class QuestionSetDeleteService {
 		QuestionSetEntity questionSet = questionSetEntityRepository.findById(questionSetId)
 			.orElseThrow(() -> new EntityNotFoundException("QuestionSet not found with id: " + questionSetId));
 
-		teamRoleValidator.checkHasCreateQuestionSetAuthority(questionSet.getTeamId(), userId);
+		teamRoleValidator.checkIsTeamManager(questionSet.getTeamId(), userId);
 		if (questionSet.getStatus() == QuestionSetStatus.ONGOING
 			&& questionSet.getSolveMode() == QuestionSetSolveMode.LIVE_TIME) {
 			throw new QuestionSetStatusException(QuestionSetStatusExceptionCode.CANNOT_DELETE_ONGOING);
@@ -121,7 +121,7 @@ public class QuestionSetDeleteService {
 			.imageIds(imageIds)
 			.build());
 
-		log.info("[문제셋 삭제] questionSetId={}, teamId={}, questionCount={},  deletedBy={}",
+		log.info("[문제 셋 삭제] questionSetId={}, teamId={}, questionCount={},  deletedBy={}",
 			questionSetId, questionSet.getTeamId(), questionIds.size(), userId);
 	}
 }

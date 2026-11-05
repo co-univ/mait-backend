@@ -7,8 +7,8 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.coniv.mait.domain.question.entity.QuestionEntity;
 import com.coniv.mait.domain.question.enums.QuestionType;
+import com.coniv.mait.domain.question.exception.QuestionException;
 import com.coniv.mait.domain.question.exception.QuestionExceptionCode;
-import com.coniv.mait.domain.question.exception.QuestionStatusException;
 import com.coniv.mait.domain.question.service.component.QuestionReader;
 import com.coniv.mait.domain.solve.entity.AnswerSubmitRecordEntity;
 import com.coniv.mait.domain.solve.repository.AnswerSubmitRecordEntityRepository;
@@ -32,7 +32,7 @@ public class QuestionSubmitRecordRegradeService {
 		QuestionEntity question = questionReader.getQuestion(questionId);
 		if (question.getType() != QuestionType.SHORT && question.getType() != QuestionType.FILL_BLANK) {
 			log.warn("[재채점 실패] 예상치 못한 타입의 재채점 시도 type={}", question.getType());
-			throw new QuestionStatusException(QuestionExceptionCode.UNAVAILABLE_TYPE);
+			throw new QuestionException(QuestionExceptionCode.UNAVAILABLE_TYPE);
 		}
 
 		List<AnswerSubmitRecordEntity> submitRecords = answerSubmitRecordEntityRepository.findAllByQuestionId(

@@ -14,8 +14,8 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 
+import com.coniv.mait.domain.question.exception.QuestionException;
 import com.coniv.mait.domain.question.exception.QuestionExceptionCode;
-import com.coniv.mait.domain.question.exception.QuestionStatusException;
 import com.coniv.mait.domain.solve.exception.QuestionSolveExceptionCode;
 import com.coniv.mait.domain.solve.exception.QuestionSolvingException;
 import com.coniv.mait.domain.user.exception.UserRoleException;
@@ -153,14 +153,14 @@ class CustomExceptionHandlerTest {
 	}
 
 	@Test
-	@DisplayName("QuestionStatusException 처리 테스트 - 처리 불가능한 문제 타입")
-	void handleQuestionStatusException() {
+	@DisplayName("QuestionException 처리 테스트 - 처리 불가능한 문제 타입")
+	void handleQuestionException_unavailableType() {
 		// given
 		QuestionExceptionCode exceptionCode = QuestionExceptionCode.UNAVAILABLE_TYPE;
-		QuestionStatusException exception = new QuestionStatusException(exceptionCode);
+		QuestionException exception = new QuestionException(exceptionCode);
 
 		// when
-		ResponseEntity<ErrorResponse> errorResponse = customExceptionHandler.handleQuestionStatusException(
+		ResponseEntity<ErrorResponse> errorResponse = customExceptionHandler.handleQuestionException(
 			exception, httpServletRequest);
 
 		// then
@@ -168,5 +168,23 @@ class CustomExceptionHandlerTest {
 		assertThat(errorResponse.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
 		assertThat(errorResponse.getBody().getCode()).isEqualTo("T-001");
 		assertThat(errorResponse.getBody().getMessage()).isEqualTo("해당 타입의 문제는 처리가 불가능합니다.");
+	}
+
+	@Test
+	@DisplayName("문제 유형 불일치는 400과 T-002로 응답한다")
+	void handleQuestionException_typeMismatch() {
+		// given
+		QuestionException exception = new QuestionException(QuestionExceptionCode.TYPE_MISMATCH);
+
+		// when
+		ResponseEntity<ErrorResponse> errorResponse = customExceptionHandler.handleQuestionException(
+			exception, httpServletRequest);
+
+		// then
+		assertThat(errorResponse.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
+		assertThat(errorResponse.getBody().getStatus()).isEqualTo(HttpStatus.BAD_REQUEST);
+		assertThat(errorResponse.getBody().getCode()).isEqualTo("T-002");
+		assertThat(errorResponse.getBody().getMessage()).isEqualTo("실제 문제 유형과 요청 유형이 일치하지 않습니다.");
+		assertThat(errorResponse.getBody().getReasons()).isNull();
 	}
 }

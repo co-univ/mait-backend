@@ -153,7 +153,7 @@ class QuestionSetCopyServiceTest {
 			.isInstanceOf(UserRoleException.class)
 			.hasMessage("해당 팀의 멤버가 아닙니다.");
 
-		verify(teamRoleValidator, never()).checkHasCreateQuestionSetAuthority(anyLong(), anyLong());
+		verify(teamRoleValidator, never()).checkIsTeamManager(anyLong(), anyLong());
 		verify(questionSetEntityRepository, never()).save(any());
 	}
 
@@ -162,13 +162,13 @@ class QuestionSetCopyServiceTest {
 	void copyQuestionSet_noAuthorityInTargetTeam_throws() {
 		// given
 		doReturn(sourceBuilder().build()).when(questionSetReader).getQuestionSet(QUESTION_SET_ID);
-		doThrow(new UserRoleException("문제 세트 생성 권한이 없습니다."))
-			.when(teamRoleValidator).checkHasCreateQuestionSetAuthority(TARGET_TEAM_ID, USER_ID);
+		doThrow(new UserRoleException("팀 관리 권한이 없습니다."))
+			.when(teamRoleValidator).checkIsTeamManager(TARGET_TEAM_ID, USER_ID);
 
 		// when & then
 		assertThatThrownBy(this::copyQuestionSet)
 			.isInstanceOf(UserRoleException.class)
-			.hasMessage("문제 세트 생성 권한이 없습니다.");
+			.hasMessage("팀 관리 권한이 없습니다.");
 
 		verify(questionSetEntityRepository, never()).save(any());
 	}
