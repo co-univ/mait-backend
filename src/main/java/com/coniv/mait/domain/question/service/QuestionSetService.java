@@ -173,9 +173,11 @@ public class QuestionSetService {
 		final String title,
 		final QuestionSetSolveMode solveMode,
 		final String difficulty,
-		final List<Long> categoryIds) {
+		final List<Long> categoryIds,
+		final Long userId) {
 		QuestionSetEntity questionSet = questionSetEntityRepository.findById(questionSetId)
 			.orElseThrow(() -> new EntityNotFoundException("Question set not found"));
+		teamRoleValidator.checkIsTeamManager(questionSet.getTeamId(), userId);
 
 		TeamEntity team = validateTeamSolveMode(questionSet.getTeamId(), solveMode);
 
@@ -218,9 +220,10 @@ public class QuestionSetService {
 	}
 
 	@Transactional
-	public void updateQuestionSetField(final Long questionSetId, final String title) {
+	public void updateQuestionSetField(final Long questionSetId, final String title, final Long userId) {
 		QuestionSetEntity questionSet = questionSetEntityRepository.findById(questionSetId)
 			.orElseThrow(() -> new EntityNotFoundException("Question set not found"));
+		teamRoleValidator.checkIsTeamManager(questionSet.getTeamId(), userId);
 
 		questionSet.updateTitle(title);
 	}
