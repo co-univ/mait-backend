@@ -10,6 +10,8 @@ import java.util.Optional;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
@@ -439,7 +441,7 @@ class QuestionSetServiceTest {
 			newTitle,
 			newSolveMode,
 			difficulty,
-			List.of());
+			List.of(), USER_ID);
 
 		// then
 		verify(questionSetEntityRepository, times(1)).findById(questionSetId);
@@ -456,6 +458,7 @@ class QuestionSetServiceTest {
 		assertThat(result.getDifficulty()).isEqualTo(difficulty);
 
 		verify(questionSetCategoryService).updateLinkedCategories(questionSetId, teamId, List.of());
+		verify(teamRoleValidator).checkIsTeamManager(teamId, USER_ID);
 	}
 
 	@Test
@@ -480,7 +483,7 @@ class QuestionSetServiceTest {
 			"새 제목",
 			QuestionSetSolveMode.LIVE_TIME,
 			"난이도",
-			categoryIds);
+			categoryIds, USER_ID);
 
 		// then
 		verify(questionSetCategoryService).updateLinkedCategories(questionSetId, teamId, categoryIds);
@@ -507,7 +510,7 @@ class QuestionSetServiceTest {
 			"제목",
 			QuestionSetSolveMode.LIVE_TIME,
 			"난이도",
-			List.of()))
+			List.of(), USER_ID))
 			.isInstanceOfSatisfying(QuestionSetStatusException.class, ex -> {
 				assertThat(ex.getExceptionCode())
 					.isEqualTo(QuestionSetStatusExceptionCode.CANNOT_CREATE_LIVE_TIME_IN_PERSONAL_TEAM);
@@ -541,7 +544,7 @@ class QuestionSetServiceTest {
 			"제목",
 			QuestionSetSolveMode.STUDY,
 			"난이도",
-			List.of());
+			List.of(), USER_ID);
 
 		// then
 		assertThat(questionSetEntity.getSolveMode()).isEqualTo(QuestionSetSolveMode.STUDY);
@@ -563,7 +566,7 @@ class QuestionSetServiceTest {
 			"제목",
 			QuestionSetSolveMode.LIVE_TIME,
 			"설명",
-			null))
+			null, USER_ID))
 			.isInstanceOf(EntityNotFoundException.class)
 			.hasMessage("Question set not found");
 
@@ -575,21 +578,51 @@ class QuestionSetServiceTest {
 	void updateQuestionSetFieldTest() {
 		// given
 		final Long questionSetId = 1L;
+		final Long teamId = 100L;
 		final String originalTitle = "원래 제목";
 		final String newTitle = "새로운 제목";
 
 		QuestionSetEntity questionSetEntity = QuestionSetEntity.builder()
 			.title(originalTitle)
+			.teamId(teamId)
 			.build();
 
 		when(questionSetEntityRepository.findById(questionSetId)).thenReturn(Optional.of(questionSetEntity));
 
 		// when
-		questionSetService.updateQuestionSetField(questionSetId, newTitle);
+		questionSetService.updateQuestionSetField(questionSetId, newTitle, USER_ID);
 
 		// then
 		verify(questionSetEntityRepository, times(1)).findById(questionSetId);
+		verify(teamRoleValidator).checkIsTeamManager(teamId, USER_ID);
 		assertThat(questionSetEntity.getTitle()).isEqualTo(newTitle);
+	}
+
+	@ParameterizedTest
+	@ValueSource(strings = {"TITLE", "COMPLETE"})
+	@DisplayName("문제셋 수정 권한이 없으면 제목·상태·문제 번호·카테고리 변경 전에 거절한다")
+	void writeQuestionSet_NotManager_RejectsBeforeMutation(String operation) {
+		// given
+		Long questionSetId = 1L;
+		Long teamId = 100L;
+		QuestionSetEntity questionSet = mock(QuestionSetEntity.class);
+		when(questionSetEntityRepository.findById(questionSetId)).thenReturn(Optional.of(questionSet));
+		when(questionSet.getTeamId()).thenReturn(teamId);
+		doThrow(new UserRoleException("팀 관리 권한이 없습니다."))
+			.when(teamRoleValidator).checkIsTeamManager(teamId, USER_ID);
+
+		// when & then
+		assertThatThrownBy(() -> {
+			if (operation.equals("TITLE")) {
+				questionSetService.updateQuestionSetField(questionSetId, "새 제목", USER_ID);
+			} else {
+				questionSetService.completeQuestionSet(questionSetId, "새 제목", QuestionSetSolveMode.STUDY,
+					"난이도", List.of(1L), USER_ID);
+			}
+		}).isInstanceOf(UserRoleException.class);
+		verify(questionSet, never()).updateTitle(anyString());
+		verify(questionSet, never()).completeQuestionSet(anyString(), any(), anyString());
+		verifyNoInteractions(questionEntityRepository, questionSetCategoryService, teamReader);
 	}
 
 	@Test

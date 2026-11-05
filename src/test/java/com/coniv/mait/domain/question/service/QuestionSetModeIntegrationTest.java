@@ -238,7 +238,7 @@ class QuestionSetModeIntegrationTest {
 		QuestionSetEntity questionSet = saveQuestionSet(QuestionSetStatus.MAKING, solveMode);
 		var question = questions.save(ShortQuestionEntity.builder().questionSet(questionSet)
 			.content("문제").lexoRank("a").build());
-		service.completeQuestionSet(questionSet.getId(), "최종 제목", solveMode, "난이도", List.of());
+		service.completeQuestionSet(questionSet.getId(), "최종 제목", solveMode, "난이도", List.of(), user.getId());
 		entityManager.flush();
 		entityManager.clear();
 		QuestionSetEntity saved = questionSets.findById(questionSet.getId()).orElseThrow();

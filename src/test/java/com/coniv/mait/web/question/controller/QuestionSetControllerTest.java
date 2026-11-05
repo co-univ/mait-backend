@@ -437,7 +437,7 @@ class QuestionSetControllerTest {
 			.difficulty(difficulty)
 			.build();
 
-		when(questionSetService.completeQuestionSet(questionSetId, title, solveMode, difficulty, categoryIds))
+		when(questionSetService.completeQuestionSet(questionSetId, title, solveMode, difficulty, categoryIds, USER_ID))
 			.thenReturn(questionSetDto);
 
 		// when & then
@@ -452,7 +452,8 @@ class QuestionSetControllerTest {
 				jsonPath("$.data.difficulty").value(difficulty),
 				jsonPath("$.data.visibility").doesNotExist());
 
-		verify(questionSetService).completeQuestionSet(questionSetId, title, solveMode, difficulty, categoryIds);
+		verify(questionSetService).completeQuestionSet(questionSetId, title, solveMode, difficulty,
+			categoryIds, USER_ID);
 	}
 
 	@Test
@@ -507,7 +508,8 @@ class QuestionSetControllerTest {
 				jsonPath("$.reasons[*]").value(org.hamcrest.Matchers.hasItems(
 					expectedErrorMessages.toArray(new String[0]))));
 
-		verify(questionSetService, never()).completeQuestionSet(anyLong(), anyString(), any(), anyString(), any());
+		verify(questionSetService, never()).completeQuestionSet(anyLong(), anyString(), any(), anyString(),
+			any(), anyLong());
 	}
 
 	static Stream<Arguments> invalidUpdateQuestionSetRequests() {
@@ -548,7 +550,7 @@ class QuestionSetControllerTest {
 				jsonPath("$.data").doesNotExist());
 
 		// then
-		verify(questionSetService).updateQuestionSetField(questionSetId, newTitle);
+		verify(questionSetService).updateQuestionSetField(questionSetId, newTitle, USER_ID);
 	}
 
 	@Test
