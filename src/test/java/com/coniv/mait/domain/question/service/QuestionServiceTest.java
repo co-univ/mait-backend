@@ -1,5 +1,6 @@
 package com.coniv.mait.domain.question.service;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
@@ -23,6 +24,8 @@ import com.coniv.mait.domain.question.entity.QuestionSetEntity;
 import com.coniv.mait.domain.question.entity.ShortQuestionEntity;
 import com.coniv.mait.domain.question.enums.DeliveryMode;
 import com.coniv.mait.domain.question.enums.QuestionType;
+import com.coniv.mait.domain.question.exception.QuestionException;
+import com.coniv.mait.domain.question.exception.QuestionExceptionCode;
 import com.coniv.mait.domain.question.exception.QuestionSetStatusException;
 import com.coniv.mait.domain.question.exception.code.QuestionSetStatusExceptionCode;
 import com.coniv.mait.domain.question.external.AiCreateApiService;
@@ -40,10 +43,10 @@ import com.coniv.mait.domain.question.service.dto.MultipleQuestionDto;
 import com.coniv.mait.domain.question.service.dto.OrderingQuestionDto;
 import com.coniv.mait.domain.question.service.dto.QuestionDto;
 import com.coniv.mait.domain.question.service.dto.ShortQuestionDto;
-import com.coniv.mait.domain.question.util.LexoRank;
 import com.coniv.mait.domain.user.exception.UserRoleException;
 import com.coniv.mait.domain.user.service.component.TeamRoleValidator;
 import com.coniv.mait.global.exception.custom.ResourceNotBelongException;
+import com.coniv.mait.global.exception.custom.UserParameterException;
 
 import jakarta.persistence.EntityNotFoundException;
 
@@ -114,102 +117,137 @@ class QuestionServiceTest {
 			aiCreateApiService,
 			aiRequestStatusManager,
 			teamRoleValidator);
+		lenient().when(questionSetEntityRepository.findByIdForUpdate(anyLong()))
+			.thenAnswer(invocation -> Optional.of(QuestionSetEntity.builder()
+				.id(invocation.getArgument(0)).teamId(TEAM_ID).build()));
 	}
 
 	@Test
-	@DisplayName("순서 변경 - prev=null 이면 맨 앞으로 이동 (next 이전 키 생성)")
+	@DisplayName("순서 변경 - 맨 앞으로 이동")
 	void changeOrder_MoveToFront_WhenPrevNull() {
 		// given
-		final Long questionSetId = 1L;
-		final Long sourceQuestionId = 10L;
-		final Long nextQuestionId = 20L;
-
-		QuestionSetEntity questionSet = mock(QuestionSetEntity.class);
-		when(questionSet.getId()).thenReturn(questionSetId);
-
-		QuestionEntity source = mock(QuestionEntity.class);
-		when(source.getQuestionSet()).thenReturn(questionSet);
-
-		QuestionEntity next = mock(QuestionEntity.class);
-		when(next.getQuestionSet()).thenReturn(questionSet);
-		when(next.getLexoRank()).thenReturn("B");
-
-		when(questionEntityRepository.findById(sourceQuestionId)).thenReturn(Optional.of(source));
-		when(questionEntityRepository.findById(nextQuestionId)).thenReturn(Optional.of(next));
-
-		String expected = LexoRank.prevBefore("B");
+		QuestionEntity source = orderQuestion(10L, "Z");
+		QuestionEntity next = orderQuestion(20L, "B");
+		when(questionEntityRepository.findAllByQuestionSetIdForUpdate(1L)).thenReturn(List.of(source, next));
 
 		// when
-		questionService.changeQuestionOrder(questionSetId, sourceQuestionId, null, nextQuestionId, USER_ID);
+		questionService.changeQuestionOrder(1L, 10L, null, 20L, USER_ID);
 
 		// then
-		verify(source).updateRank(expected);
+		assertThat(source.getLexoRank()).isLessThan(next.getLexoRank());
 	}
 
 	@Test
-	@DisplayName("순서 변경 - next=null 이면 맨 뒤로 이동 (prev 다음 키 생성)")
+	@DisplayName("순서 변경 - 맨 뒤로 이동")
 	void changeOrder_MoveToEnd_WhenNextNull() {
 		// given
-		final Long questionSetId = 1L;
-		final Long sourceQuestionId = 11L;
-		final Long prevQuestionId = 21L;
-
-		QuestionSetEntity questionSet = mock(QuestionSetEntity.class);
-		when(questionSet.getId()).thenReturn(questionSetId);
-
-		QuestionEntity source = mock(QuestionEntity.class);
-		when(source.getQuestionSet()).thenReturn(questionSet);
-
-		QuestionEntity prev = mock(QuestionEntity.class);
-		when(prev.getQuestionSet()).thenReturn(questionSet);
-		when(prev.getLexoRank()).thenReturn("A");
-
-		when(questionEntityRepository.findById(sourceQuestionId)).thenReturn(Optional.of(source));
-		when(questionEntityRepository.findById(prevQuestionId)).thenReturn(Optional.of(prev));
-
-		String expected = LexoRank.nextAfter("A");
+		QuestionEntity source = orderQuestion(11L, "0");
+		QuestionEntity prev = orderQuestion(21L, "A");
+		when(questionEntityRepository.findAllByQuestionSetIdForUpdate(1L)).thenReturn(List.of(source, prev));
 
 		// when
-		questionService.changeQuestionOrder(questionSetId, sourceQuestionId, prevQuestionId, null, USER_ID);
+		questionService.changeQuestionOrder(1L, 11L, 21L, null, USER_ID);
 
 		// then
-		verify(source).updateRank(expected);
+		assertThat(source.getLexoRank()).isGreaterThan(prev.getLexoRank());
 	}
 
 	@Test
-	@DisplayName("순서 변경 - prev와 next 사이로 이동 (between 생성)")
+	@DisplayName("순서 변경 - 두 문제 사이로 이동")
 	void changeOrder_MoveBetween_WhenPrevAndNextPresent() {
 		// given
-		final Long questionSetId = 1L;
-		final Long sourceQuestionId = 12L;
-		final Long prevQuestionId = 22L;
-		final Long nextQuestionId = 23L;
-
-		QuestionSetEntity questionSet = mock(QuestionSetEntity.class);
-		when(questionSet.getId()).thenReturn(questionSetId);
-
-		QuestionEntity source = mock(QuestionEntity.class);
-		when(source.getQuestionSet()).thenReturn(questionSet);
-
-		QuestionEntity prev = mock(QuestionEntity.class);
-		when(prev.getQuestionSet()).thenReturn(questionSet);
-		when(prev.getLexoRank()).thenReturn("A");
-
-		QuestionEntity next = mock(QuestionEntity.class);
-		when(next.getQuestionSet()).thenReturn(questionSet);
-		when(next.getLexoRank()).thenReturn("C");
-
-		when(questionEntityRepository.findById(sourceQuestionId)).thenReturn(Optional.of(source));
-		when(questionEntityRepository.findById(prevQuestionId)).thenReturn(Optional.of(prev));
-		when(questionEntityRepository.findById(nextQuestionId)).thenReturn(Optional.of(next));
-
-		String expected = LexoRank.between("A", "C");
+		QuestionEntity source = orderQuestion(12L, "Z");
+		QuestionEntity prev = orderQuestion(22L, "A");
+		QuestionEntity next = orderQuestion(23L, "C");
+		when(questionEntityRepository.findAllByQuestionSetIdForUpdate(1L)).thenReturn(List.of(source, prev, next));
 
 		// when
-		questionService.changeQuestionOrder(questionSetId, sourceQuestionId, prevQuestionId, nextQuestionId, USER_ID);
+		questionService.changeQuestionOrder(1L, 12L, 22L, 23L, USER_ID);
 
 		// then
-		verify(source).updateRank(expected);
+		assertThat(source.getLexoRank()).isGreaterThan("A").isLessThan("C");
+	}
+
+	@Test
+	@DisplayName("같은 위치로 이동한 후의 오래된 요청은 중복 키를 만들지 않는다")
+	void changeOrder_staleNeighbors_rejectsWithoutChangingRank() {
+		// given
+		QuestionEntity first = orderQuestion(1L, "A");
+		QuestionEntity last = orderQuestion(2L, "Z");
+		QuestionEntity moved = orderQuestion(3L, "z");
+		QuestionEntity source = orderQuestion(4L, "zz");
+		when(questionEntityRepository.findAllByQuestionSetIdForUpdate(1L))
+			.thenReturn(List.of(first, last, moved, source));
+		questionService.changeQuestionOrder(1L, moved.getId(), first.getId(), last.getId(), USER_ID);
+
+		// when & then
+		assertThatThrownBy(() -> questionService.changeQuestionOrder(1L, source.getId(), first.getId(),
+			last.getId(), USER_ID)).isInstanceOfSatisfying(QuestionException.class,
+				ex -> assertThat(ex.getExceptionCode()).isEqualTo(QuestionExceptionCode.ORDER_CHANGED));
+		assertThat(source.getLexoRank()).isEqualTo("zz");
+	}
+
+	@Test
+	@DisplayName("중간 키를 만들 수 없는 경계에서는 잘못된 위치에 저장하지 않는다")
+	void changeOrder_noSpace_requiresRebalance() {
+		// given
+		QuestionEntity prev = orderQuestion(1L, "123");
+		QuestionEntity next = orderQuestion(2L, "1230");
+		QuestionEntity source = orderQuestion(3L, "Z");
+		when(questionEntityRepository.findAllByQuestionSetIdForUpdate(1L)).thenReturn(List.of(prev, next, source));
+
+		// when & then
+		assertThatThrownBy(() -> questionService.changeQuestionOrder(1L, 3L, 1L, 2L, USER_ID))
+			.isInstanceOfSatisfying(QuestionException.class,
+				ex -> assertThat(ex.getExceptionCode()).isEqualTo(QuestionExceptionCode.ORDER_REBALANCE_REQUIRED));
+		assertThat(source.getLexoRank()).isEqualTo("Z");
+	}
+
+	@Test
+	@DisplayName("동률인 이웃 사이의 이동은 재배치 전까지 차단한다")
+	void changeOrder_duplicateNeighborRanks_requiresRebalance() {
+		// given
+		QuestionEntity source = orderQuestion(3L, "Z");
+		when(questionEntityRepository.findAllByQuestionSetIdForUpdate(1L))
+			.thenReturn(List.of(orderQuestion(2L, "A"), orderQuestion(1L, "A"), source));
+
+		// when & then
+		assertThatThrownBy(() -> questionService.changeQuestionOrder(1L, 3L, 1L, 2L, USER_ID))
+			.isInstanceOfSatisfying(QuestionException.class,
+				ex -> assertThat(ex.getExceptionCode()).isEqualTo(QuestionExceptionCode.ORDER_REBALANCE_REQUIRED));
+		assertThat(source.getLexoRank()).isEqualTo("Z");
+	}
+
+	@Test
+	@DisplayName("자기 자신을 이웃으로 지정할 수 없다")
+	void changeOrder_selfNeighbor_rejects() {
+		// given
+		QuestionEntity source = orderQuestion(1L, "A");
+		when(questionEntityRepository.findAllByQuestionSetIdForUpdate(1L)).thenReturn(List.of(source));
+
+		// when & then
+		assertThatThrownBy(() -> questionService.changeQuestionOrder(1L, 1L, 1L, null, USER_ID))
+			.isInstanceOf(UserParameterException.class);
+		assertThat(source.getLexoRank()).isEqualTo("A");
+	}
+
+	@Test
+	@DisplayName("기본 문제 추가는 순서 키의 저장 길이를 초과하지 않는다")
+	void createDefaultQuestion_rankTooLong_requiresRebalance() {
+		// given
+		when(questionEntityRepository.findAllByQuestionSetIdForUpdate(1L))
+			.thenReturn(List.of(orderQuestion(1L, "z".repeat(255))));
+
+		// when & then
+		assertThatThrownBy(() -> questionService.createDefaultQuestion(1L, USER_ID))
+			.isInstanceOfSatisfying(QuestionException.class,
+				ex -> assertThat(ex.getExceptionCode()).isEqualTo(QuestionExceptionCode.ORDER_REBALANCE_REQUIRED));
+		verify(questionEntityRepository, never()).save(any());
+	}
+
+	private QuestionEntity orderQuestion(Long id, String rank) {
+		return MultipleQuestionEntity.builder().id(id).lexoRank(rank)
+			.questionSet(QuestionSetEntity.builder().id(1L).teamId(TEAM_ID).build()).build();
 	}
 
 	@DisplayName("문제 생성 성공 - 적절한 팩토리 호출 확인")
@@ -669,7 +707,7 @@ class QuestionServiceTest {
 		final Long questionSetId = 1L;
 
 		QuestionSetEntity questionSetEntity = mock(QuestionSetEntity.class);
-		when(questionSetEntityRepository.findById(questionSetId)).thenReturn(Optional.of(questionSetEntity));
+		when(questionSetEntityRepository.findByIdForUpdate(questionSetId)).thenReturn(Optional.of(questionSetEntity));
 
 		// ArgumentCaptor로 save된 QuestionEntity 캡처
 		ArgumentCaptor<QuestionEntity> questionCaptor = ArgumentCaptor.forClass(QuestionEntity.class);
@@ -694,7 +732,7 @@ class QuestionServiceTest {
 		assertNotNull(savedQuestion.getLexoRank());
 		assertEquals(questionSetEntity, savedQuestion.getQuestionSet());
 
-		verify(questionSetEntityRepository).findById(questionSetId);
+		verify(questionSetEntityRepository).findByIdForUpdate(questionSetId);
 		verify(questionEntityRepository).save(any(QuestionEntity.class));
 		verify(multipleQuestionFactory).getQuestion(any(QuestionEntity.class), eq(true));
 	}
@@ -726,7 +764,7 @@ class QuestionServiceTest {
 		Long questionSetId = 1L;
 		QuestionSetEntity questionSet = mock(QuestionSetEntity.class);
 		when(questionSet.getTeamId()).thenReturn(TEAM_ID);
-		when(questionSetEntityRepository.findById(questionSetId)).thenReturn(Optional.of(questionSet));
+		when(questionSetEntityRepository.findByIdForUpdate(questionSetId)).thenReturn(Optional.of(questionSet));
 		doThrow(new UserRoleException("팀 관리 권한이 없습니다."))
 			.when(teamRoleValidator).checkIsTeamManager(TEAM_ID, USER_ID);
 
@@ -794,11 +832,10 @@ class QuestionServiceTest {
 		Long questionId = 1L;
 		Long nextQuestionId = 2L;
 		QuestionSetEntity questionSet = mock(QuestionSetEntity.class);
-		when(questionSet.getId()).thenReturn(questionSetId);
+		when(questionSetEntityRepository.findByIdForUpdate(questionSetId)).thenReturn(Optional.of(questionSet));
 		when(questionSet.getTeamId()).thenReturn(TEAM_ID);
 		QuestionEntity question = mock(QuestionEntity.class);
-		when(question.getQuestionSet()).thenReturn(questionSet);
-		when(questionEntityRepository.findById(questionId)).thenReturn(Optional.of(question));
+
 		doThrow(new UserRoleException("팀 관리 권한이 없습니다."))
 			.when(teamRoleValidator).checkIsTeamManager(TEAM_ID, USER_ID);
 

@@ -2,6 +2,7 @@ package com.coniv.mait.domain.question.service;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -21,6 +22,8 @@ import com.coniv.mait.domain.question.enums.AiRequestStatus;
 import com.coniv.mait.domain.question.enums.DeliveryMode;
 import com.coniv.mait.domain.question.enums.QuestionStatusType;
 import com.coniv.mait.domain.question.enums.QuestionType;
+import com.coniv.mait.domain.question.exception.QuestionException;
+import com.coniv.mait.domain.question.exception.QuestionExceptionCode;
 import com.coniv.mait.domain.question.exception.QuestionSetStatusException;
 import com.coniv.mait.domain.question.exception.code.QuestionSetStatusExceptionCode;
 import com.coniv.mait.domain.question.external.AiCreateApiService;
@@ -37,6 +40,7 @@ import com.coniv.mait.domain.question.service.dto.QuestionDto;
 import com.coniv.mait.domain.question.util.LexoRank;
 import com.coniv.mait.domain.user.service.component.TeamRoleValidator;
 import com.coniv.mait.global.exception.custom.ResourceNotBelongException;
+import com.coniv.mait.global.exception.custom.UserParameterException;
 
 import jakarta.persistence.EntityNotFoundException;
 import lombok.extern.slf4j.Slf4j;
@@ -46,6 +50,8 @@ import lombok.extern.slf4j.Slf4j;
 public class QuestionService {
 
 	private static final QuestionType DEFAULT_QUESTION_TYPE = QuestionType.MULTIPLE;
+
+	private static final int MAX_RANK_LENGTH = 255;
 
 	private final QuestionEntityRepository questionEntityRepository;
 
@@ -101,14 +107,10 @@ public class QuestionService {
 
 	@Transactional
 	public QuestionDto createDefaultQuestion(final Long questionSetId, final Long userId) {
-		QuestionSetEntity questionSet = questionSetEntityRepository.findById(questionSetId)
-			.orElseThrow(() -> new EntityNotFoundException("QuestionSet not found with id: " + questionSetId));
+		QuestionSetEntity questionSet = lockQuestionSet(questionSetId);
 		teamRoleValidator.checkIsTeamManager(questionSet.getTeamId(), userId);
 
-		final String nextRank = questionEntityRepository.findTopByQuestionSetIdOrderByLexoRankDesc(questionSetId)
-			.map(QuestionEntity::getLexoRank)
-			.map(LexoRank::nextAfter)
-			.orElseGet(LexoRank::middle);
+		final String nextRank = nextRank(getQuestionsForOrderUpdate(questionSetId));
 
 		QuestionEntity defaultQuestion = QuestionEntity.createDefaultQuestion(questionSet, nextRank);
 		questionEntityRepository.save(defaultQuestion);
@@ -120,17 +122,15 @@ public class QuestionService {
 		return getQuestionFactory(DEFAULT_QUESTION_TYPE).getQuestion(defaultQuestion, true);
 	}
 
-	// @Async todo 재사용성이 없으면 부모스레드와 다르게 비동기로 태워도 될 것 같기도
+	@Transactional
 	public void createDefaultQuestions(final QuestionSetEntity questionSetEntity, final List<QuestionCount> counts) {
-		String currentRank = questionEntityRepository
-			.findTopByQuestionSetIdOrderByLexoRankDesc(questionSetEntity.getId())
-			.map(QuestionEntity::getLexoRank)
-			.map(LexoRank::nextAfter)
-			.orElseGet(LexoRank::middle);
+		lockQuestionSet(questionSetEntity.getId());
+		String currentRank = nextRank(getQuestionsForOrderUpdate(questionSetEntity.getId()));
 
 		for (QuestionCount count : counts) {
 			QuestionFactory<QuestionDto> questionFactory = getQuestionFactory(count.type());
 			for (int i = 0; i < count.count(); i++) {
+				validateRank(currentRank, null, null);
 				questionFactory.createDefaultQuestion(currentRank, questionSetEntity);
 				currentRank = LexoRank.nextAfter(currentRank);
 			}
@@ -193,6 +193,7 @@ public class QuestionService {
 	@Transactional
 	public QuestionDto updateQuestion(final Long questionSetId, final Long questionId, final QuestionDto questionDto,
 		final Long userId) {
+		lockQuestionSet(questionSetId);
 		QuestionEntity question = questionEntityRepository.findById(questionId)
 			.orElseThrow(() -> new EntityNotFoundException("Question not found with id: " + questionId));
 
@@ -233,6 +234,7 @@ public class QuestionService {
 
 	@Transactional
 	public void deleteQuestion(final Long questionSetId, final Long questionId, final Long userId) {
+		lockQuestionSet(questionSetId);
 		QuestionEntity question = questionEntityRepository.findById(questionId)
 			.orElseThrow(() -> new EntityNotFoundException("Question not found with id: " + questionId));
 
@@ -246,53 +248,101 @@ public class QuestionService {
 		questionEntityRepository.deleteById(question.getId());
 	}
 
+	/**
+	 * 잠금 후 최신 이웃을 검증한다. 위치 충돌 시 목록을 다시 조회해 재요청해야 한다.
+	 * 간격 부족·동률·255자 초과는 저장을 거절하며, 실제 키 재배치는 EDU-180에서 처리한다.
+	 */
 	@Transactional
 	public void changeQuestionOrder(final Long questionSetId, final Long sourceQuestionId, final Long prevQuestionId,
 		final Long nextQuestionId, final Long userId) {
-		QuestionEntity sourceQuestion = questionEntityRepository.findById(sourceQuestionId)
-			.orElseThrow(() -> new EntityNotFoundException("Question not found with id: " + sourceQuestionId));
-		if (!sourceQuestion.getQuestionSet().getId().equals(questionSetId)) {
-			throw new ResourceNotBelongException("해당 문제 셋에 속한 문제가 아닙니다.");
-		}
-		teamRoleValidator.checkIsTeamManager(sourceQuestion.getQuestionSet().getTeamId(), userId);
+		QuestionSetEntity questionSet = lockQuestionSet(questionSetId);
+		teamRoleValidator.checkIsTeamManager(questionSet.getTeamId(), userId);
+		List<QuestionEntity> questions = getQuestionsForOrderUpdate(questionSetId);
+		QuestionEntity source = getOrderQuestion(questions, sourceQuestionId);
 
-		if (prevQuestionId == null) {
-			QuestionEntity next = questionEntityRepository.findById(nextQuestionId)
-				.orElseThrow(() -> new EntityNotFoundException("Next question not found with id: " + nextQuestionId));
-			if (!next.getQuestionSet().getId().equals(questionSetId)) {
-				throw new ResourceNotBelongException("nextQuestionId가 해당 문제 셋에 속한 문제가 아닙니다.");
-			}
-			sourceQuestion.updateRank(LexoRank.prevBefore(next.getLexoRank()));
-			return;
+		if (Objects.equals(sourceQuestionId, prevQuestionId) || Objects.equals(sourceQuestionId, nextQuestionId)
+			|| (prevQuestionId != null && prevQuestionId.equals(nextQuestionId))) {
+			throw new UserParameterException("이동할 문제와 앞뒤 문제는 서로 달라야 합니다.");
 		}
 
-		if (nextQuestionId == null) {
-			QuestionEntity prev = questionEntityRepository.findById(prevQuestionId)
-				.orElseThrow(() -> new EntityNotFoundException("Prev question not found with id: " + prevQuestionId));
-			if (!prev.getQuestionSet().getId().equals(questionSetId)) {
-				throw new ResourceNotBelongException("prevQuestionId가 해당 문제 셋에 속한 문제가 아닙니다.");
-			}
-			sourceQuestion.updateRank(LexoRank.nextAfter(prev.getLexoRank()));
-			return;
+		List<QuestionEntity> remaining = questions.stream()
+			.filter(question -> !question.getId().equals(sourceQuestionId)).toList();
+		QuestionEntity prev = null;
+		QuestionEntity next = null;
+		int prevIndex = -1;
+		int nextIndex = remaining.size();
+		if (prevQuestionId != null) {
+			prev = getOrderQuestion(remaining, prevQuestionId);
+			prevIndex = remaining.indexOf(prev);
+		}
+		if (nextQuestionId != null) {
+			next = getOrderQuestion(remaining, nextQuestionId);
+			nextIndex = remaining.indexOf(next);
+		}
+		if (nextIndex != prevIndex + 1) {
+			throw new QuestionException(QuestionExceptionCode.ORDER_CHANGED);
 		}
 
-		QuestionEntity prev = questionEntityRepository.findById(prevQuestionId)
-			.orElseThrow(() -> new EntityNotFoundException("Prev question not found with id: " + prevQuestionId));
-		QuestionEntity next = questionEntityRepository.findById(nextQuestionId)
-			.orElseThrow(() -> new EntityNotFoundException("Next question not found with id: " + nextQuestionId));
-
-		if (!prev.getQuestionSet().getId().equals(questionSetId)) {
-			throw new ResourceNotBelongException("prevQuestionId가 해당 문제 셋에 속한 문제가 아닙니다.");
+		String prevRank = null;
+		String nextRank = null;
+		if (prev != null) {
+			prevRank = prev.getLexoRank();
 		}
-		if (!next.getQuestionSet().getId().equals(questionSetId)) {
-			throw new ResourceNotBelongException("nextQuestionId가 해당 문제 셋에 속한 문제가 아닙니다.");
+		if (next != null) {
+			nextRank = next.getLexoRank();
 		}
-
-		String prevRank = prev.getLexoRank();
-		String nextRank = next.getLexoRank();
+		if ((prev != null && (prevRank == null || prevRank.isBlank()))
+			|| (next != null && (nextRank == null || nextRank.isBlank()))
+			|| (prevRank != null && nextRank != null && prevRank.compareTo(nextRank) >= 0)) {
+			throw new QuestionException(QuestionExceptionCode.ORDER_REBALANCE_REQUIRED);
+		}
 
 		String newRank = LexoRank.between(prevRank, nextRank);
-		sourceQuestion.updateRank(newRank);
+		validateRank(newRank, prevRank, nextRank);
+		if (remaining.stream().anyMatch(question -> newRank.equals(question.getLexoRank()))) {
+			throw new QuestionException(QuestionExceptionCode.ORDER_REBALANCE_REQUIRED);
+		}
+		source.updateRank(newRank);
+	}
+
+	private QuestionSetEntity lockQuestionSet(final Long questionSetId) {
+		return questionSetEntityRepository.findByIdForUpdate(questionSetId)
+			.orElseThrow(() -> new EntityNotFoundException("QuestionSet not found with id: " + questionSetId));
+	}
+
+	private List<QuestionEntity> getQuestionsForOrderUpdate(final Long questionSetId) {
+		return questionEntityRepository.findAllByQuestionSetIdForUpdate(questionSetId).stream()
+			.sorted(DeliveryMode.MAKING.questionComparator()).toList();
+	}
+
+	private QuestionEntity getOrderQuestion(final List<QuestionEntity> questions, final Long questionId) {
+		return questions.stream().filter(question -> question.getId().equals(questionId)).findFirst()
+			.orElseThrow(() -> {
+				if (!questionEntityRepository.existsById(questionId)) {
+					return new EntityNotFoundException("Question not found with id: " + questionId);
+				}
+				return new ResourceNotBelongException("해당 문제 셋에 속한 문제가 아닙니다.");
+			});
+	}
+
+	private String nextRank(final List<QuestionEntity> questions) {
+		if (questions.isEmpty()) {
+			return LexoRank.middle();
+		}
+		String lastRank = questions.getLast().getLexoRank();
+		if (lastRank == null || lastRank.isBlank()) {
+			throw new QuestionException(QuestionExceptionCode.ORDER_REBALANCE_REQUIRED);
+		}
+		String rank = LexoRank.nextAfter(lastRank);
+		validateRank(rank, lastRank, null);
+		return rank;
+	}
+
+	private void validateRank(final String rank, final String prevRank, final String nextRank) {
+		if (rank.length() > MAX_RANK_LENGTH || (prevRank != null && rank.compareTo(prevRank) <= 0)
+			|| (nextRank != null && rank.compareTo(nextRank) >= 0)) {
+			throw new QuestionException(QuestionExceptionCode.ORDER_REBALANCE_REQUIRED);
+		}
 	}
 
 	@Async("aiUploadThreadPoolExecutor")
@@ -329,14 +379,14 @@ public class QuestionService {
 			aiRequestStatusManager.updateStatus(questionSetId, AiRequestStatus.PROCESSING);
 			List<QuestionDto> questions = createdQuestions.getContent();
 
-			String currentRank = questionEntityRepository.findTopByQuestionSetIdOrderByLexoRankDesc(questionSetId)
-				.map(QuestionEntity::getLexoRank)
-				.map(LexoRank::nextAfter)
-				.orElseGet(LexoRank::middle);
+			// 외부 AI 호출을 마친 뒤 잠금을 잡아 기본 추가·이동과 순서 할당을 직렬화한다.
+			lockQuestionSet(questionSetId);
+			String currentRank = nextRank(getQuestionsForOrderUpdate(questionSetId));
 
 			for (QuestionDto questionDto : questions) {
 				QuestionFactory<QuestionDto> questionFactory = getQuestionFactory(questionDto.getType());
 				QuestionEntity question = questionFactory.create(questionDto, questionSetEntity);
+				validateRank(currentRank, null, null);
 				question.updateLexoRank(currentRank);
 
 				questionEntityRepository.save(question);
