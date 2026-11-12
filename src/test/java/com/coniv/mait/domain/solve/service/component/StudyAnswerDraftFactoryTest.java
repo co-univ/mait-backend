@@ -19,7 +19,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import com.coniv.mait.domain.question.entity.MultipleQuestionEntity;
 import com.coniv.mait.domain.question.entity.QuestionEntity;
-import com.coniv.mait.domain.question.repository.QuestionEntityRepository;
+import com.coniv.mait.domain.question.service.component.QuestionReader;
 import com.coniv.mait.domain.solve.entity.SolvingSessionEntity;
 import com.coniv.mait.domain.solve.entity.StudyAnswerDraftEntity;
 import com.coniv.mait.domain.solve.repository.StudyAnswerDraftEntityRepository;
@@ -28,7 +28,7 @@ import com.coniv.mait.domain.solve.repository.StudyAnswerDraftEntityRepository;
 class StudyAnswerDraftFactoryTest {
 
 	@Mock
-	private QuestionEntityRepository questionEntityRepository;
+	private QuestionReader questionReader;
 
 	@Mock
 	private StudyAnswerDraftEntityRepository studyAnswerDraftEntityRepository;
@@ -56,7 +56,7 @@ class StudyAnswerDraftFactoryTest {
 		when(question2.getId()).thenReturn(101L);
 		when(question3.getId()).thenReturn(102L);
 
-		when(questionEntityRepository.findAllByQuestionSetIdOrderByLexoRankAsc(questionSetId))
+		when(questionReader.getOrderedQuestions(questionSetId))
 			.thenReturn(List.of(question1, question2, question3));
 
 		// when
@@ -85,7 +85,7 @@ class StudyAnswerDraftFactoryTest {
 		// given
 		SolvingSessionEntity solvingSession = mock(SolvingSessionEntity.class);
 
-		when(questionEntityRepository.findAllByQuestionSetIdOrderByLexoRankAsc(questionSetId))
+		when(questionReader.getOrderedQuestions(questionSetId))
 			.thenReturn(Collections.emptyList());
 
 		// when

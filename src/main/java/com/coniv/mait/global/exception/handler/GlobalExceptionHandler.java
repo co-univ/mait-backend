@@ -6,6 +6,7 @@ import java.util.List;
 import org.hibernate.LazyInitializationException;
 import org.springframework.context.support.DefaultMessageSourceResolvable;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.dao.PessimisticLockingFailureException;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.HttpStatusCode;
@@ -80,6 +81,14 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
 		log.info("DataIntegrityViolationException 발생: {}, 경로: {}", exception.getMessage(), request.getRequestURI());
 		return ResponseEntity.status(CommonExceptionCode.DATA_INTEGRITY_VIOLATION.getStatus())
 			.body(ErrorResponse.from(CommonExceptionCode.DATA_INTEGRITY_VIOLATION));
+	}
+
+	@ExceptionHandler(PessimisticLockingFailureException.class)
+	public ResponseEntity<ErrorResponse> handlePessimisticLockingFailureException(
+		PessimisticLockingFailureException exception, HttpServletRequest request) {
+		log.info("PessimisticLockingFailureException 발생: {}, 경로: {}", exception.getMessage(), request.getRequestURI());
+		return ResponseEntity.status(CommonExceptionCode.LOCK_ACQUISITION_FAILED.getStatus())
+			.body(ErrorResponse.from(CommonExceptionCode.LOCK_ACQUISITION_FAILED));
 	}
 
 	@ExceptionHandler(Exception.class)

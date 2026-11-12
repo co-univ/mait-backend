@@ -37,6 +37,7 @@ import com.coniv.mait.domain.question.repository.QuestionEntityRepository;
 import com.coniv.mait.domain.question.repository.QuestionSetCategoryEntityRepository;
 import com.coniv.mait.domain.question.repository.QuestionSetCategoryLinkEntityRepository;
 import com.coniv.mait.domain.question.repository.QuestionSetEntityRepository;
+import com.coniv.mait.domain.question.service.component.QuestionReader;
 import com.coniv.mait.domain.team.entity.TeamEntity;
 import com.coniv.mait.domain.team.entity.TeamUserEntity;
 import com.coniv.mait.domain.team.enums.TeamUserRole;
@@ -51,6 +52,9 @@ import com.coniv.mait.web.integration.BaseIntegrationTest;
 @WithCustomUser
 @Transactional(propagation = Propagation.NOT_SUPPORTED)
 class QuestionSetWriteAuthorizationApiIntegrationTest extends BaseIntegrationTest {
+
+	@Autowired
+	private QuestionReader questionReader;
 
 	@Autowired
 	private TransactionTemplate transactions;
@@ -218,7 +222,7 @@ class QuestionSetWriteAuthorizationApiIntegrationTest extends BaseIntegrationTes
 	private State readState() {
 		return transactions.execute(status -> {
 			QuestionSetEntity questionSet = questionSets.findById(fixture.questionSetId()).orElseThrow();
-			List<Long> questionNumbers = questions.findAllByQuestionSetIdOrderByLexoRankAsc(questionSet.getId())
+			List<Long> questionNumbers = questionReader.getOrderedQuestions(questionSet.getId())
 				.stream().map(QuestionEntity::getNumber).toList();
 			List<Long> categoryIds = categoryLinks.findAllByQuestionSetId(questionSet.getId()).stream()
 				.map(QuestionSetCategoryLinkEntity::getCategoryId).sorted().toList();
