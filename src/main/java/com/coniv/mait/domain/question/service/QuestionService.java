@@ -268,7 +268,10 @@ public class QuestionService {
 		QuestionSetEntity questionSet = questionSetReader.getQuestionSetForUpdate(questionSetId);
 		teamRoleValidator.checkIsTeamManager(questionSet.getTeamId(), userId);
 		List<QuestionEntity> questions = questionReader.getOrderedQuestionsForUpdate(questionSetId);
-		QuestionEntity source = questionReader.getQuestion(questions, sourceQuestionId);
+		QuestionEntity source = questionReader.getQuestion(sourceQuestionId, questionSetId);
+		if (!questions.contains(source)) {
+			throw new QuestionException(QuestionExceptionCode.ORDER_CHANGED);
+		}
 
 		if (Objects.equals(sourceQuestionId, prevQuestionId) || Objects.equals(sourceQuestionId, nextQuestionId)
 			|| (prevQuestionId != null && prevQuestionId.equals(nextQuestionId))) {
@@ -282,12 +285,18 @@ public class QuestionService {
 		int prevIndex = -1;
 		int nextIndex = remaining.size();
 		if (prevQuestionId != null) {
-			prev = questionReader.getQuestion(remaining, prevQuestionId);
+			prev = questionReader.getQuestion(prevQuestionId, questionSetId);
 			prevIndex = remaining.indexOf(prev);
+			if (prevIndex < 0) {
+				throw new QuestionException(QuestionExceptionCode.ORDER_CHANGED);
+			}
 		}
 		if (nextQuestionId != null) {
-			next = questionReader.getQuestion(remaining, nextQuestionId);
+			next = questionReader.getQuestion(nextQuestionId, questionSetId);
 			nextIndex = remaining.indexOf(next);
+			if (nextIndex < 0) {
+				throw new QuestionException(QuestionExceptionCode.ORDER_CHANGED);
+			}
 		}
 		if (nextIndex != prevIndex + 1) {
 			throw new QuestionException(QuestionExceptionCode.ORDER_CHANGED);

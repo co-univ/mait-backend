@@ -5,7 +5,9 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 import org.junit.jupiter.api.BeforeEach;
@@ -58,6 +60,8 @@ class QuestionServiceTest {
 	private static final Long USER_ID = 1L;
 
 	private static final Long TEAM_ID = 10L;
+
+	private final Map<Long, QuestionEntity> orderQuestions = new HashMap<>();
 
 	@Mock
 	private TeamRoleValidator teamRoleValidator;
@@ -130,10 +134,14 @@ class QuestionServiceTest {
 		lenient().when(questionSetReader.getQuestionSetForUpdate(anyLong()))
 			.thenAnswer(invocation -> QuestionSetEntity.builder()
 				.id(invocation.getArgument(0)).teamId(TEAM_ID).build());
-		lenient().when(questionReader.getQuestion(anyList(), anyLong())).thenAnswer(invocation -> {
-			List<QuestionEntity> questions = invocation.getArgument(0);
-			Long questionId = invocation.getArgument(1);
-			return questions.stream().filter(question -> question.getId().equals(questionId)).findFirst().orElseThrow();
+		orderQuestions.clear();
+		lenient().when(questionReader.getQuestion(anyLong(), anyLong())).thenAnswer(invocation -> {
+			Long questionId = invocation.getArgument(0);
+			QuestionEntity question = orderQuestions.get(questionId);
+			if (question == null) {
+				throw new EntityNotFoundException("문제를 찾을 수 없습니다.");
+			}
+			return question;
 		});
 	}
 
@@ -261,8 +269,41 @@ class QuestionServiceTest {
 	}
 
 	private QuestionEntity orderQuestion(Long id, String rank) {
-		return MultipleQuestionEntity.builder().id(id).lexoRank(rank)
+		QuestionEntity question = MultipleQuestionEntity.builder().id(id).lexoRank(rank)
 			.questionSet(QuestionSetEntity.builder().id(1L).teamId(TEAM_ID).build()).build();
+		orderQuestions.put(id, question);
+		return question;
+	}
+
+	@Test
+	@DisplayName("단건 조회에 남아 있어도 최신 잠금 목록에 없는 문제는 이동하지 않는다")
+	void changeOrder_sourceAbsentFromLockedList_rejects() {
+		// given
+		QuestionEntity source = orderQuestion(1L, "Z");
+		QuestionEntity next = orderQuestion(2L, "A");
+		when(questionReader.getOrderedQuestionsForUpdate(1L)).thenReturn(List.of(next));
+
+		// when & then
+		assertThatThrownBy(() -> questionService.changeQuestionOrder(1L, 1L, null, 2L, USER_ID))
+			.isInstanceOfSatisfying(QuestionException.class,
+				ex -> assertThat(ex.getExceptionCode()).isEqualTo(QuestionExceptionCode.ORDER_CHANGED));
+		assertThat(source.getLexoRank()).isEqualTo("Z");
+	}
+
+	@Test
+	@DisplayName("최신 잠금 목록에 없는 앞 문제를 맨 앞 위치로 해석하지 않는다")
+	void changeOrder_previousAbsentFromLockedList_rejects() {
+		// given
+		QuestionEntity source = orderQuestion(1L, "Z");
+		orderQuestion(2L, "0");
+		QuestionEntity next = orderQuestion(3L, "A");
+		when(questionReader.getOrderedQuestionsForUpdate(1L)).thenReturn(List.of(next, source));
+
+		// when & then
+		assertThatThrownBy(() -> questionService.changeQuestionOrder(1L, 1L, 2L, 3L, USER_ID))
+			.isInstanceOfSatisfying(QuestionException.class,
+				ex -> assertThat(ex.getExceptionCode()).isEqualTo(QuestionExceptionCode.ORDER_CHANGED));
+		assertThat(source.getLexoRank()).isEqualTo("Z");
 	}
 
 	@DisplayName("문제 생성 성공 - 적절한 팩토리 호출 확인")

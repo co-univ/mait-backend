@@ -70,6 +70,9 @@ import com.coniv.mait.global.s3.service.S3FileUploader;
 class QuestionOrderConcurrencyIntegrationTest {
 
 	@Autowired
+	private QuestionReader questionReader;
+
+	@Autowired
 	private QuestionService service;
 	@Autowired
 	private QuestionSetEntityRepository questionSets;
@@ -182,7 +185,7 @@ class QuestionOrderConcurrencyIntegrationTest {
 			service.changeQuestionOrder(questionSetId, retryId, ids.get(0), movedId, userId);
 
 			// then
-			assertThat(questions.findAllByQuestionSetIdOrderByLexoRankAsc(questionSetId))
+			assertThat(questionReader.getOrderedQuestions(questionSetId))
 				.extracting(QuestionEntity::getId).containsExactly(ids.get(0), retryId, movedId, ids.get(1));
 		}
 	}
@@ -281,7 +284,7 @@ class QuestionOrderConcurrencyIntegrationTest {
 			List.of(saveQuestion("k"), saveQuestion("V"), saveQuestion("V")));
 
 		// when & then
-		assertThat(questions.findAllByQuestionSetIdOrderByLexoRankAsc(questionSetId))
+		assertThat(questionReader.getOrderedQuestions(questionSetId))
 			.extracting(QuestionEntity::getId).containsExactly(ids.get(1), ids.get(2), ids.get(0));
 		assertThat(service.getQuestions(questionSetId, DeliveryMode.MAKING))
 			.extracting(QuestionDto::getId).containsExactly(ids.get(1), ids.get(2), ids.get(0));
@@ -314,7 +317,7 @@ class QuestionOrderConcurrencyIntegrationTest {
 			generated.get(10, TimeUnit.SECONDS);
 
 			// then
-			assertThat(questions.findAllByQuestionSetIdOrderByLexoRankAsc(questionSetId)).hasSize(2)
+			assertThat(questionReader.getOrderedQuestions(questionSetId)).hasSize(2)
 				.satisfies(saved -> assertThat(saved.getFirst().getId()).isEqualTo(added.getId()))
 				.extracting(QuestionEntity::getLexoRank).doesNotHaveDuplicates();
 		}

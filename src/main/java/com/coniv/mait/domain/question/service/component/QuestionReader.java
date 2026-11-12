@@ -40,22 +40,13 @@ public class QuestionReader {
 	}
 
 	public List<QuestionEntity> getOrderedQuestions(final Long questionSetId) {
-		return questionEntityRepository.findAllByQuestionSetIdOrderByLexoRankAsc(questionSetId);
+		return questionEntityRepository.findAllByQuestionSetId(questionSetId).stream()
+			.sorted(DeliveryMode.MAKING.questionComparator()).toList();
 	}
 
 	public List<QuestionEntity> getOrderedQuestionsForUpdate(final Long questionSetId) {
 		return questionEntityRepository.findAllByQuestionSetIdForUpdate(questionSetId).stream()
 			.sorted(DeliveryMode.MAKING.questionComparator()).toList();
-	}
-
-	public QuestionEntity getQuestion(final List<QuestionEntity> questions, final Long questionId) {
-		return questions.stream().filter(question -> question.getId().equals(questionId)).findFirst()
-			.orElseThrow(() -> {
-				if (!questionEntityRepository.existsById(questionId)) {
-					return new EntityNotFoundException("Question not found with id: " + questionId);
-				}
-				return new ResourceNotBelongException("해당 문제 셋에 속한 문제가 아닙니다.");
-			});
 	}
 
 	public QuestionEntity getQuestion(final Long questionId) {
