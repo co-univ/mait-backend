@@ -11,6 +11,10 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
+import org.junit.jupiter.params.provider.EnumSource;
+import org.junit.jupiter.params.provider.NullSource;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -22,6 +26,8 @@ import com.coniv.mait.domain.question.entity.QuestionEntity;
 import com.coniv.mait.domain.question.entity.QuestionSetEntity;
 import com.coniv.mait.domain.question.entity.ShortQuestionEntity;
 import com.coniv.mait.domain.question.enums.DeliveryMode;
+import com.coniv.mait.domain.question.enums.QuestionSetSolveMode;
+import com.coniv.mait.domain.question.enums.QuestionSetStatus;
 import com.coniv.mait.domain.question.enums.QuestionType;
 import com.coniv.mait.domain.question.exception.QuestionSetStatusException;
 import com.coniv.mait.domain.question.exception.code.QuestionSetStatusExceptionCode;
@@ -34,6 +40,8 @@ import com.coniv.mait.domain.question.service.component.FillBlankQuestionFactory
 import com.coniv.mait.domain.question.service.component.MultipleQuestionFactory;
 import com.coniv.mait.domain.question.service.component.OrderingQuestionFactory;
 import com.coniv.mait.domain.question.service.component.QuestionFactory;
+import com.coniv.mait.domain.question.service.component.QuestionReader;
+import com.coniv.mait.domain.question.service.component.QuestionSetReader;
 import com.coniv.mait.domain.question.service.component.ShortQuestionFactory;
 import com.coniv.mait.domain.question.service.dto.FillBlankQuestionDto;
 import com.coniv.mait.domain.question.service.dto.MultipleQuestionDto;
@@ -41,6 +49,9 @@ import com.coniv.mait.domain.question.service.dto.OrderingQuestionDto;
 import com.coniv.mait.domain.question.service.dto.QuestionDto;
 import com.coniv.mait.domain.question.service.dto.ShortQuestionDto;
 import com.coniv.mait.domain.question.util.LexoRank;
+import com.coniv.mait.domain.solve.entity.SolvingSessionEntity;
+import com.coniv.mait.domain.solve.enums.SolvingStatus;
+import com.coniv.mait.domain.solve.repository.SolvingSessionEntityRepository;
 import com.coniv.mait.domain.user.exception.UserRoleException;
 import com.coniv.mait.domain.user.service.component.TeamRoleValidator;
 import com.coniv.mait.global.exception.custom.ResourceNotBelongException;
@@ -57,7 +68,15 @@ class QuestionServiceTest {
 	@Mock
 	private TeamRoleValidator teamRoleValidator;
 
-	// @InjectMocks
+	@Mock
+	private QuestionSetReader questionSetReader;
+
+	@Mock
+	private QuestionReader questionReader;
+
+	@Mock
+	private SolvingSessionEntityRepository solvingSessionEntityRepository;
+
 	private QuestionService questionService;
 
 	@Mock
@@ -113,7 +132,10 @@ class QuestionServiceTest {
 			questionImageService,
 			aiCreateApiService,
 			aiRequestStatusManager,
-			teamRoleValidator);
+			teamRoleValidator,
+			questionSetReader,
+			questionReader,
+			solvingSessionEntityRepository);
 	}
 
 	@Test
@@ -263,24 +285,24 @@ class QuestionServiceTest {
 		final Long questionId = 1L;
 
 		QuestionSetEntity questionSetEntity = mock(QuestionSetEntity.class);
-		when(questionSetEntity.getId()).thenReturn(questionSetId);
+		when(questionSetReader.getQuestionSet(questionSetId)).thenReturn(questionSetEntity);
+
 
 		MultipleQuestionEntity multipleQuestion = mock(MultipleQuestionEntity.class);
-		when(multipleQuestion.getQuestionSet()).thenReturn(questionSetEntity);
 		when(multipleQuestion.getType()).thenReturn(QuestionType.MULTIPLE);
 
 		MultipleQuestionDto expectedDto = mock(MultipleQuestionDto.class);
 		when(multipleQuestionFactory.getQuestion(multipleQuestion, true)).thenReturn(expectedDto);
 
-		when(questionEntityRepository.findById(questionId)).thenReturn(Optional.of(multipleQuestion));
+		when(questionReader.getQuestion(questionId, questionSetId)).thenReturn(multipleQuestion);
 
 		// when
-		QuestionDto result = questionService.getQuestion(questionSetId, questionId, DeliveryMode.REVIEW);
+		QuestionDto result = questionService.getQuestion(questionSetId, questionId, DeliveryMode.REVIEW, USER_ID);
 
 		// then
 		assertNotNull(result);
 		assertEquals(expectedDto, result);
-		verify(questionEntityRepository).findById(questionId);
+		verify(questionReader).getQuestion(questionId, questionSetId);
 		verify(multipleQuestionFactory).getQuestion(multipleQuestion, true);
 
 		// 다른 팩토리는 호출되지 않아야 함
@@ -296,13 +318,13 @@ class QuestionServiceTest {
 		final Long questionSetId = 1L;
 		final Long questionId = 999L;
 
-		when(questionEntityRepository.findById(questionId)).thenReturn(Optional.empty());
+		when(questionReader.getQuestion(questionId, questionSetId)).thenThrow(new EntityNotFoundException());
 
 		// when & then
 		assertThrows(EntityNotFoundException.class,
-			() -> questionService.getQuestion(questionSetId, questionId, DeliveryMode.REVIEW));
+			() -> questionService.getQuestion(questionSetId, questionId, DeliveryMode.REVIEW, USER_ID));
 
-		verify(questionEntityRepository).findById(questionId);
+		verify(questionReader).getQuestion(questionId, questionSetId);
 		verify(multipleQuestionFactory, never()).getQuestion(any(), anyBoolean());
 		verify(shortQuestionFactory, never()).getQuestion(any(), anyBoolean());
 		verify(orderingQuestionFactory, never()).getQuestion(any(), anyBoolean());
@@ -315,30 +337,28 @@ class QuestionServiceTest {
 		// given
 		final Long questionSetId = 1L;
 		final Long questionId = 1L;
-		final Long differentQuestionSetId = 2L;
-
-		QuestionSetEntity differentQuestionSet = mock(QuestionSetEntity.class);
-		when(differentQuestionSet.getId()).thenReturn(differentQuestionSetId);
-
-		MultipleQuestionEntity multipleQuestion = mock(MultipleQuestionEntity.class);
-		when(multipleQuestion.getQuestionSet()).thenReturn(differentQuestionSet);
-
-		when(questionEntityRepository.findById(questionId)).thenReturn(Optional.of(multipleQuestion));
+		when(questionReader.getQuestion(questionId, questionSetId))
+			.thenThrow(new ResourceNotBelongException("문제가 해당 문제 세트에 속하지 않습니다."));
 
 		// when & then
 		ResourceNotBelongException exception = assertThrows(ResourceNotBelongException.class,
-			() -> questionService.getQuestion(questionSetId, questionId, DeliveryMode.REVIEW));
+			() -> questionService.getQuestion(questionSetId, questionId, DeliveryMode.REVIEW, USER_ID));
 
-		assertEquals("해당 문제 셋에 속한 문제가 아닙니다.", exception.getMessage());
-		verify(questionEntityRepository).findById(questionId);
+		assertEquals("문제가 해당 문제 세트에 속하지 않습니다.", exception.getMessage());
+		verify(questionReader).getQuestion(questionId, questionSetId);
 		verify(multipleQuestionFactory, never()).getQuestion(any(), anyBoolean());
 	}
 
-	@Test
-	@DisplayName("문제 셋의 모든 문제 조회 성공 - lexo rank 순으로 정렬")
-	void getQuestions_Success() {
+	@ParameterizedTest
+	@NullSource
+	@EnumSource(value = DeliveryMode.class, names = "MAKING")
+	@DisplayName("목록은 mode를 생략해도 제작 권한을 검사하고 lexo rank 순으로 정렬한다")
+	void getQuestions_Success(DeliveryMode mode) {
 		// given
 		final Long questionSetId = 1L;
+		QuestionSetEntity questionSetEntity = mock(QuestionSetEntity.class);
+		when(questionSetReader.getQuestionSet(questionSetId)).thenReturn(questionSetEntity);
+
 
 		MultipleQuestionEntity multipleQuestion = mock(MultipleQuestionEntity.class);
 		when(multipleQuestion.getLexoRank()).thenReturn("cccc"); // lexoRank: 3번째
@@ -358,7 +378,7 @@ class QuestionServiceTest {
 
 		// Repository에서 lexoRank와 다른 순서로 반환 (뒤섞인 상태)
 		List<QuestionEntity> questions = List.of(fillBlankQuestion, multipleQuestion, shortQuestion, orderingQuestion);
-		when(questionEntityRepository.findAllByQuestionSetId(questionSetId)).thenReturn(questions);
+		when(questionReader.getQuestionsByQuestionSet(questionSetEntity)).thenReturn(questions);
 
 		// 각 factory의 getQuestion 메서드 모킹
 		MultipleQuestionDto multipleDto = mock(MultipleQuestionDto.class);
@@ -379,7 +399,7 @@ class QuestionServiceTest {
 		when(fillBlankQuestionFactory.getQuestion(fillBlankQuestion, true)).thenReturn(fillBlankDto);
 
 		// when
-		List<QuestionDto> result = questionService.getQuestions(questionSetId, DeliveryMode.MAKING);
+		List<QuestionDto> result = questionService.getQuestions(questionSetId, mode, USER_ID);
 
 		// then
 		assertNotNull(result);
@@ -392,7 +412,9 @@ class QuestionServiceTest {
 		assertEquals(4L, result.get(3).getId()); // fillBlankQuestion (lexoRank: dddd)
 
 		// factory 메서드들이 올바르게 호출되었는지 확인
-		verify(questionEntityRepository).findAllByQuestionSetId(questionSetId);
+		verify(teamRoleValidator).checkQuestionReadAuthority(questionSetEntity, USER_ID, DeliveryMode.MAKING);
+		verify(questionSetEntity).validateDeliveryMode(DeliveryMode.MAKING);
+		verify(questionReader).getQuestionsByQuestionSet(questionSetEntity);
 		verify(shortQuestionFactory).getQuestion(shortQuestion, true);
 		verify(orderingQuestionFactory).getQuestion(orderingQuestion, true);
 		verify(multipleQuestionFactory).getQuestion(multipleQuestion, true);
@@ -400,29 +422,29 @@ class QuestionServiceTest {
 	}
 
 	@Test
-	@DisplayName("DeliveryMode에 따른 answerVisible 파라미터 전달 확인")
-	void getQuestion_DeliveryMode_AnswerVisible() {
+	@DisplayName("PLAYER의 실시간 풀이 조회에서는 정답을 숨긴다")
+	void getQuestion_PlayerLive_HidesAnswers() {
 		// given
 		final Long questionSetId = 1L;
 		final Long questionId = 1L;
 
 		QuestionSetEntity questionSetEntity = mock(QuestionSetEntity.class);
-		when(questionSetEntity.getId()).thenReturn(questionSetId);
+		when(questionSetReader.getQuestionSet(questionSetId)).thenReturn(questionSetEntity);
+
 
 		ShortQuestionEntity shortQuestion = mock(ShortQuestionEntity.class);
-		when(shortQuestion.getQuestionSet()).thenReturn(questionSetEntity);
 		when(shortQuestion.getType()).thenReturn(QuestionType.SHORT);
 
 		ShortQuestionDto expectedDto = mock(ShortQuestionDto.class);
 		when(shortQuestionFactory.getQuestion(shortQuestion, false)).thenReturn(expectedDto);
-		when(questionEntityRepository.findById(questionId)).thenReturn(Optional.of(shortQuestion));
-		when(questionSetEntity.isOnLive()).thenReturn(true);
+		when(questionReader.getQuestion(questionId, questionSetId)).thenReturn(shortQuestion);
 
 		// when - LIVE_TIME 모드 (답안 숨김)
-		questionService.getQuestion(questionSetId, questionId, DeliveryMode.LIVE_TIME);
+		questionService.getQuestion(questionSetId, questionId, DeliveryMode.LIVE_TIME, USER_ID);
 
 		// then - answerVisible = false로 호출되어야 함
 		verify(shortQuestionFactory).getQuestion(shortQuestion, false);
+		verifyNoInteractions(solvingSessionEntityRepository);
 	}
 
 	@Test
@@ -433,48 +455,87 @@ class QuestionServiceTest {
 		final Long questionId = 1L;
 
 		QuestionSetEntity questionSetEntity = mock(QuestionSetEntity.class);
-		when(questionSetEntity.getId()).thenReturn(questionSetId);
+		when(questionSetReader.getQuestionSet(questionSetId)).thenReturn(questionSetEntity);
+		doThrow(new QuestionSetStatusException(QuestionSetStatusExceptionCode.ONLY_LIVE_TIME))
+			.when(questionSetEntity).validateDeliveryMode(DeliveryMode.LIVE_TIME);
+
 
 		ShortQuestionEntity shortQuestion = mock(ShortQuestionEntity.class);
-		when(shortQuestion.getQuestionSet()).thenReturn(questionSetEntity);
 
-		when(questionEntityRepository.findById(questionId)).thenReturn(Optional.of(shortQuestion));
-		when(questionSetEntity.isOnLive()).thenReturn(false);
+		when(questionReader.getQuestion(questionId, questionSetId)).thenReturn(shortQuestion);
 
 		// when
 		QuestionSetStatusException questionSetStatusException = assertThrows(QuestionSetStatusException.class,
-			() -> questionService.getQuestion(questionSetId, questionId, DeliveryMode.LIVE_TIME));
+			() -> questionService.getQuestion(questionSetId, questionId, DeliveryMode.LIVE_TIME, USER_ID));
 
 		// then
 		assertEquals(QuestionSetStatusExceptionCode.ONLY_LIVE_TIME, questionSetStatusException.getExceptionCode());
 		assertEquals("실시간 상태의 문제 셋만 처리가 가능합니다.", questionSetStatusException.getMessage());
-		verify(questionEntityRepository).findById(questionId);
+		verify(questionReader).getQuestion(questionId, questionSetId);
 		verify(shortQuestionFactory, never()).getQuestion(any(), anyBoolean());
 	}
 
-	@Test
-	@DisplayName("REVIEW 모드에서는 답안이 보여야 함")
-	void getQuestion_ReviewMode_AnswerVisible() {
+	@ParameterizedTest
+	@NullSource
+	@EnumSource(value = DeliveryMode.class, names = {"MAKING", "MANAGING"})
+	@DisplayName("단건 조회는 기본 및 관리 모드의 권한을 검사한 뒤 정답을 공개한다")
+	void getQuestion_Manager_SeesAnswers(DeliveryMode mode) {
 		// given
 		final Long questionSetId = 1L;
 		final Long questionId = 1L;
 
 		QuestionSetEntity questionSetEntity = mock(QuestionSetEntity.class);
-		when(questionSetEntity.getId()).thenReturn(questionSetId);
+		when(questionSetReader.getQuestionSet(questionSetId)).thenReturn(questionSetEntity);
+
 
 		ShortQuestionEntity shortQuestion = mock(ShortQuestionEntity.class);
-		when(shortQuestion.getQuestionSet()).thenReturn(questionSetEntity);
 		when(shortQuestion.getType()).thenReturn(QuestionType.SHORT);
 
 		ShortQuestionDto expectedDto = mock(ShortQuestionDto.class);
 		when(shortQuestionFactory.getQuestion(shortQuestion, true)).thenReturn(expectedDto);
-		when(questionEntityRepository.findById(questionId)).thenReturn(Optional.of(shortQuestion));
+		when(questionReader.getQuestion(questionId, questionSetId)).thenReturn(shortQuestion);
 
-		// when - REVIEW 모드 (답안 표시)
-		questionService.getQuestion(questionSetId, questionId, DeliveryMode.REVIEW);
+		// when - 관리자 조회 (답안 표시)
+		questionService.getQuestion(questionSetId, questionId, mode, USER_ID);
 
 		// then - answerVisible = true로 호출되어야 함
+		DeliveryMode expectedMode = mode == null ? DeliveryMode.MAKING : mode;
+		verify(teamRoleValidator).checkQuestionReadAuthority(questionSetEntity, USER_ID, expectedMode);
+		verify(questionSetEntity).validateDeliveryMode(expectedMode);
+		verifyNoInteractions(solvingSessionEntityRepository);
 		verify(shortQuestionFactory).getQuestion(shortQuestion, true);
+	}
+
+	@ParameterizedTest
+	@CsvSource({"false, PROGRESSING, false", "true, PROGRESSING, false", "true, COMPLETE, true"})
+	@DisplayName("학습 조회는 본인 채점 완료 여부를 단건과 목록의 정답 공개에 동일하게 적용한다")
+	void getStudyQuestions_answerVisibility(boolean exists, SolvingStatus status, boolean visible) {
+		// given
+		QuestionSetEntity questionSet = QuestionSetEntity.builder().id(2L).teamId(TEAM_ID)
+			.solveMode(QuestionSetSolveMode.STUDY).status(QuestionSetStatus.ONGOING).build();
+		ShortQuestionEntity question = mock(ShortQuestionEntity.class);
+		when(question.getType()).thenReturn(QuestionType.SHORT);
+		when(questionSetReader.getQuestionSet(2L)).thenReturn(questionSet);
+		when(questionReader.getQuestion(3L, 2L)).thenReturn(question);
+		when(questionReader.getQuestionsByQuestionSet(questionSet)).thenReturn(List.of(question));
+		SolvingSessionEntity session = mock(SolvingSessionEntity.class);
+		if (exists) {
+			when(session.getStatus()).thenReturn(status);
+		}
+		when(solvingSessionEntityRepository.findByUserIdAndQuestionSetIdAndSolveMode(USER_ID, 2L,
+			QuestionSetSolveMode.STUDY)).thenReturn(exists ? Optional.of(session) : Optional.empty());
+		ShortQuestionDto dto = mock(ShortQuestionDto.class);
+		when(shortQuestionFactory.getQuestion(question, visible)).thenReturn(dto);
+
+		// when
+		QuestionDto single = questionService.getQuestion(2L, 3L, DeliveryMode.STUDY, USER_ID);
+		List<QuestionDto> list = questionService.getQuestions(2L, DeliveryMode.STUDY, USER_ID);
+
+		// then
+		assertSame(dto, single);
+		assertEquals(List.of(dto), list);
+		verify(teamRoleValidator, times(2)).checkQuestionReadAuthority(questionSet, USER_ID, DeliveryMode.STUDY);
+		verify(shortQuestionFactory, times(2)).getQuestion(question, visible);
 	}
 
 	@Test

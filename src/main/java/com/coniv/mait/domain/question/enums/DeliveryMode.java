@@ -3,6 +3,7 @@ package com.coniv.mait.domain.question.enums;
 import java.util.Comparator;
 
 import com.coniv.mait.domain.question.entity.QuestionEntity;
+import com.coniv.mait.domain.team.enums.TeamUserRole;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -10,16 +11,16 @@ import lombok.Getter;
 @Getter
 @AllArgsConstructor
 public enum DeliveryMode {
-	MANAGING("문제 관리"),
-	MAKING("문제 제작") {
+	MANAGING("문제 관리", TeamUserRole.MAKER, true),
+	MAKING("문제 제작", TeamUserRole.MAKER, true) {
 		@Override
 		public Comparator<QuestionEntity> questionComparator() {
 			return LEXO_RANK_COMPARATOR;
 		}
 	},
-	LIVE_TIME("실시간"),
-	STUDY("학습"),
-	REVIEW("복습");
+	LIVE_TIME("실시간", TeamUserRole.PLAYER, false),
+	STUDY("학습", TeamUserRole.PLAYER, true),
+	REVIEW("복습", TeamUserRole.PLAYER, true);
 
 	private static final Comparator<QuestionEntity> LEXO_RANK_COMPARATOR = Comparator
 		.comparing(QuestionEntity::getLexoRank, Comparator.nullsLast(String::compareTo));
@@ -28,12 +29,16 @@ public enum DeliveryMode {
 
 	private final String description;
 
+	private final TeamUserRole requiredRole;
+
+	private final boolean answerVisible;
+
 	public Comparator<QuestionEntity> questionComparator() {
 		return NUMBER_COMPARATOR;
 	}
 
 	public boolean isAnswerVisible() {
-		return this != DeliveryMode.LIVE_TIME;
+		return answerVisible;
 	}
 
 	public static DeliveryMode from(QuestionSetSolveMode solveMode) {

@@ -2,6 +2,9 @@ package com.coniv.mait.domain.user.service.component;
 
 import org.springframework.stereotype.Component;
 
+import com.coniv.mait.domain.question.entity.QuestionSetEntity;
+import com.coniv.mait.domain.question.enums.DeliveryMode;
+import com.coniv.mait.domain.question.enums.QuestionSetStatus;
 import com.coniv.mait.domain.team.entity.TeamEntity;
 import com.coniv.mait.domain.team.entity.TeamUserEntity;
 import com.coniv.mait.domain.team.enums.TeamUserRole;
@@ -23,15 +26,27 @@ public class TeamRoleValidator {
 
 	private final TeamUserEntityRepository teamUserEntityRepository;
 
-	public void checkIsTeamManager(final Long teamId, final Long userId) {
+	public void checkQuestionReadAuthority(final QuestionSetEntity questionSet, final Long userId,
+		final DeliveryMode mode) {
+		TeamUserRole role = getTeamRole(questionSet.getTeamId(), userId);
+		if (!role.covers(TeamUserRole.MAKER) && questionSet.getStatus() == QuestionSetStatus.MAKING) {
+			throw new UserRoleException("제작 중인 문제는 관리자만 조회할 수 있습니다.");
+		}
+		if (!role.covers(mode.getRequiredRole())) {
+			throw new UserRoleException("팀 관리 권한이 없습니다.");
+		}
+	}
+
+	public TeamUserRole getTeamRole(final Long teamId, final Long userId) {
 		TeamEntity team = teamReader.getActiveTeam(teamId);
-
 		UserEntity user = userReader.getById(userId);
+		return teamUserEntityRepository.findByTeamAndUser(team, user)
+			.orElseThrow(() -> new UserRoleException("해당 팀의 멤버가 아닙니다."))
+			.getUserRole();
+	}
 
-		TeamUserEntity teamUser = teamUserEntityRepository.findByTeamAndUser(team, user)
-			.orElseThrow(() -> new UserRoleException("해당 팀의 멤버가 아닙니다."));
-
-		if (!teamUser.getUserRole().covers(TeamUserRole.MAKER)) {
+	public void checkIsTeamManager(final Long teamId, final Long userId) {
+		if (!getTeamRole(teamId, userId).covers(TeamUserRole.MAKER)) {
 			throw new UserRoleException("팀 관리 권한이 없습니다.");
 		}
 	}

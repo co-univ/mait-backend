@@ -50,7 +50,7 @@ public class FillBlankQuestionDto extends QuestionDto {
 		return FillBlankQuestionDto.builder()
 			.id(fillBlankQuestion.getId())
 			.content(fillBlankQuestion.getContent())
-			.explanation(fillBlankQuestion.getExplanation())
+			.explanation(answerVisible ? fillBlankQuestion.getExplanation() : null)
 			.number(fillBlankQuestion.getNumber())
 			.imageUrl(fillBlankQuestion.getImageUrl())
 			.imageId(fillBlankQuestion.getImageId())
