@@ -100,6 +100,18 @@ public class QuestionSetEntity extends BaseTimeEntity {
 		return status == QuestionSetStatus.ONGOING && solveMode == QuestionSetSolveMode.LIVE_TIME;
 	}
 
+	public void validateDeliveryMode(final DeliveryMode mode) {
+		if (mode == DeliveryMode.LIVE_TIME && !isOnLive()) {
+			throw new QuestionSetStatusException(QuestionSetStatusExceptionCode.ONLY_LIVE_TIME);
+		}
+		if (mode == DeliveryMode.REVIEW && !canReview()) {
+			throw new QuestionSetStatusException(QuestionSetStatusExceptionCode.ONLY_REVIEW);
+		}
+		if (mode == DeliveryMode.STUDY) {
+			checkStudyMode();
+		}
+	}
+
 	public void startLiveQuestionSet() {
 		checkLiveTimeMode();
 		if (status != QuestionSetStatus.BEFORE) {
