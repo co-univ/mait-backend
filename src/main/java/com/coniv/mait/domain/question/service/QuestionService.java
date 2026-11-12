@@ -152,11 +152,7 @@ public class QuestionService {
 		final Long userId) {
 		QuestionEntity question = questionReader.getQuestion(questionId, questionSetId);
 		QuestionSetEntity questionSet = questionSetReader.getQuestionSet(questionSetId);
-		boolean answerVisible = teamRoleValidator.canViewQuestionAnswers(questionSet, userId);
-
-		if (mode == DeliveryMode.LIVE_TIME && !questionSet.isOnLive()) {
-			throw new QuestionSetStatusException(QuestionSetStatusExceptionCode.ONLY_LIVE_TIME);
-		}
+		boolean answerVisible = teamRoleValidator.canViewQuestionAnswers(questionSet, userId, mode);
 
 		return getQuestionFactory(question.getType()).getQuestion(question, answerVisible);
 	}
@@ -164,7 +160,7 @@ public class QuestionService {
 	// Todo: 조회 성능 개선
 	public List<QuestionDto> getQuestions(final Long questionSetId, final DeliveryMode mode, final Long userId) {
 		QuestionSetEntity questionSet = questionSetReader.getQuestionSet(questionSetId);
-		boolean answerVisible = teamRoleValidator.canViewQuestionAnswers(questionSet, userId);
+		boolean answerVisible = teamRoleValidator.canViewQuestionAnswers(questionSet, userId, mode);
 		DeliveryMode deliveryMode = mode;
 		if (deliveryMode == null) {
 			deliveryMode = DeliveryMode.MAKING;

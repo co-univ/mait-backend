@@ -274,7 +274,8 @@ class QuestionServiceTest {
 
 		QuestionSetEntity questionSetEntity = mock(QuestionSetEntity.class);
 		when(questionSetReader.getQuestionSet(questionSetId)).thenReturn(questionSetEntity);
-		when(teamRoleValidator.canViewQuestionAnswers(questionSetEntity, USER_ID)).thenReturn(true);
+		when(teamRoleValidator.canViewQuestionAnswers(questionSetEntity, USER_ID, DeliveryMode.REVIEW))
+			.thenReturn(true);
 
 
 		MultipleQuestionEntity multipleQuestion = mock(MultipleQuestionEntity.class);
@@ -345,7 +346,8 @@ class QuestionServiceTest {
 		final Long questionSetId = 1L;
 		QuestionSetEntity questionSetEntity = mock(QuestionSetEntity.class);
 		when(questionSetReader.getQuestionSet(questionSetId)).thenReturn(questionSetEntity);
-		when(teamRoleValidator.canViewQuestionAnswers(questionSetEntity, USER_ID)).thenReturn(true);
+		when(teamRoleValidator.canViewQuestionAnswers(questionSetEntity, USER_ID, DeliveryMode.MAKING))
+			.thenReturn(true);
 
 
 		MultipleQuestionEntity multipleQuestion = mock(MultipleQuestionEntity.class);
@@ -416,7 +418,8 @@ class QuestionServiceTest {
 
 		QuestionSetEntity questionSetEntity = mock(QuestionSetEntity.class);
 		when(questionSetReader.getQuestionSet(questionSetId)).thenReturn(questionSetEntity);
-		when(teamRoleValidator.canViewQuestionAnswers(questionSetEntity, USER_ID)).thenReturn(false);
+		when(teamRoleValidator.canViewQuestionAnswers(questionSetEntity, USER_ID, DeliveryMode.LIVE_TIME))
+			.thenReturn(false);
 
 
 		ShortQuestionEntity shortQuestion = mock(ShortQuestionEntity.class);
@@ -425,7 +428,6 @@ class QuestionServiceTest {
 		ShortQuestionDto expectedDto = mock(ShortQuestionDto.class);
 		when(shortQuestionFactory.getQuestion(shortQuestion, false)).thenReturn(expectedDto);
 		when(questionReader.getQuestion(questionId, questionSetId)).thenReturn(shortQuestion);
-		when(questionSetEntity.isOnLive()).thenReturn(true);
 
 		// when - LIVE_TIME 모드 (답안 숨김)
 		questionService.getQuestion(questionSetId, questionId, DeliveryMode.LIVE_TIME, USER_ID);
@@ -443,13 +445,13 @@ class QuestionServiceTest {
 
 		QuestionSetEntity questionSetEntity = mock(QuestionSetEntity.class);
 		when(questionSetReader.getQuestionSet(questionSetId)).thenReturn(questionSetEntity);
-		when(teamRoleValidator.canViewQuestionAnswers(questionSetEntity, USER_ID)).thenReturn(true);
+		when(teamRoleValidator.canViewQuestionAnswers(questionSetEntity, USER_ID, DeliveryMode.LIVE_TIME)).thenThrow(
+			new QuestionSetStatusException(QuestionSetStatusExceptionCode.ONLY_LIVE_TIME));
 
 
 		ShortQuestionEntity shortQuestion = mock(ShortQuestionEntity.class);
 
 		when(questionReader.getQuestion(questionId, questionSetId)).thenReturn(shortQuestion);
-		when(questionSetEntity.isOnLive()).thenReturn(false);
 
 		// when
 		QuestionSetStatusException questionSetStatusException = assertThrows(QuestionSetStatusException.class,
@@ -471,7 +473,8 @@ class QuestionServiceTest {
 
 		QuestionSetEntity questionSetEntity = mock(QuestionSetEntity.class);
 		when(questionSetReader.getQuestionSet(questionSetId)).thenReturn(questionSetEntity);
-		when(teamRoleValidator.canViewQuestionAnswers(questionSetEntity, USER_ID)).thenReturn(true);
+		when(teamRoleValidator.canViewQuestionAnswers(questionSetEntity, USER_ID, DeliveryMode.MANAGING))
+			.thenReturn(true);
 
 
 		ShortQuestionEntity shortQuestion = mock(ShortQuestionEntity.class);
@@ -482,7 +485,7 @@ class QuestionServiceTest {
 		when(questionReader.getQuestion(questionId, questionSetId)).thenReturn(shortQuestion);
 
 		// when - 관리자 조회 (답안 표시)
-		questionService.getQuestion(questionSetId, questionId, DeliveryMode.REVIEW, USER_ID);
+		questionService.getQuestion(questionSetId, questionId, DeliveryMode.MANAGING, USER_ID);
 
 		// then - answerVisible = true로 호출되어야 함
 		verify(shortQuestionFactory).getQuestion(shortQuestion, true);

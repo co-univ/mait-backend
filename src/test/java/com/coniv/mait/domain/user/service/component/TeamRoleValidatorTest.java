@@ -15,8 +15,11 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import com.coniv.mait.domain.question.entity.QuestionSetEntity;
+import com.coniv.mait.domain.question.enums.DeliveryMode;
 import com.coniv.mait.domain.question.enums.QuestionSetSolveMode;
 import com.coniv.mait.domain.question.enums.QuestionSetStatus;
+import com.coniv.mait.domain.question.exception.QuestionSetStatusException;
+import com.coniv.mait.domain.question.exception.code.QuestionSetStatusExceptionCode;
 import com.coniv.mait.domain.solve.entity.SolvingSessionEntity;
 import com.coniv.mait.domain.solve.enums.SolvingStatus;
 import com.coniv.mait.domain.solve.repository.SolvingSessionEntityRepository;
@@ -49,26 +52,34 @@ class TeamRoleValidatorTest {
 	private SolvingSessionEntityRepository solvingSessionEntityRepository;
 
 	@ParameterizedTest
-	@CsvSource({"OWNER, MAKING, true", "MAKER, MAKING, true", "PLAYER, REVIEW, true",
-		"PLAYER, BEFORE, false", "PLAYER, ONGOING, false", "PLAYER, AFTER, false"})
-	@DisplayName("정답 공개는 팀 역할과 문제셋 상태를 기준으로 판단한다")
-	void canViewQuestionAnswers_byRoleAndStatus(TeamUserRole role, QuestionSetStatus status, boolean expected) {
+	@CsvSource({"OWNER, MAKING, MAKING, true", "MAKER, MAKING, MANAGING, true",
+		"OWNER, ONGOING, MANAGING, true", "MAKER, MAKING, , true",
+		"MAKER, ONGOING, LIVE_TIME, false", "OWNER, ONGOING, LIVE_TIME, false",
+		"PLAYER, ONGOING, LIVE_TIME, false", "PLAYER, REVIEW, REVIEW, true",
+		"MAKER, REVIEW, REVIEW, true", "OWNER, REVIEW, REVIEW, true"})
+	@DisplayName("관리 화면은 정답을 공개하고 실시간 풀이 화면은 역할과 무관하게 숨긴다")
+	void canViewQuestionAnswers_byRoleAndMode(TeamUserRole role, QuestionSetStatus status,
+		DeliveryMode mode, boolean expected) {
 		// given
 		prepareAnswerAccess(role);
 		QuestionSetEntity questionSet = QuestionSetEntity.builder().id(2L).teamId(1L)
 			.solveMode(QuestionSetSolveMode.LIVE_TIME).status(status).build();
 
 		// when & then
-		assertThat(teamRoleValidator.canViewQuestionAnswers(questionSet, 100L)).isEqualTo(expected);
+		assertThat(teamRoleValidator.canViewQuestionAnswers(questionSet, 100L, mode)).isEqualTo(expected);
 		verifyNoInteractions(solvingSessionEntityRepository);
 	}
 
 	@ParameterizedTest
-	@CsvSource({"false, PROGRESSING, false", "true, PROGRESSING, false", "true, COMPLETE, true"})
+	@CsvSource({"PLAYER, false, PROGRESSING, false", "PLAYER, true, PROGRESSING, false",
+		"PLAYER, true, COMPLETE, true", "MAKER, false, PROGRESSING, false",
+		"MAKER, true, PROGRESSING, false", "MAKER, true, COMPLETE, true",
+		"OWNER, false, PROGRESSING, false", "OWNER, true, PROGRESSING, false", "OWNER, true, COMPLETE, true"})
 	@DisplayName("학습 문제의 정답은 요청자 본인의 채점 완료 세션이 있을 때 공개한다")
-	void canViewQuestionAnswers_ownStudySession(boolean exists, SolvingStatus status, boolean expected) {
+	void canViewQuestionAnswers_ownStudySession(TeamUserRole role, boolean exists, SolvingStatus status,
+		boolean expected) {
 		// given
-		UserEntity user = prepareAnswerAccess(TeamUserRole.PLAYER);
+		UserEntity user = prepareAnswerAccess(role);
 		QuestionSetEntity questionSet = QuestionSetEntity.builder().id(2L).teamId(1L)
 			.solveMode(QuestionSetSolveMode.STUDY).status(QuestionSetStatus.ONGOING).build();
 		SolvingSessionEntity session = SolvingSessionEntity.studySession(user, questionSet);
@@ -83,7 +94,7 @@ class TeamRoleValidatorTest {
 			QuestionSetSolveMode.STUDY)).thenReturn(result);
 
 		// when & then
-		assertThat(teamRoleValidator.canViewQuestionAnswers(questionSet, 100L)).isEqualTo(expected);
+		assertThat(teamRoleValidator.canViewQuestionAnswers(questionSet, 100L, DeliveryMode.STUDY)).isEqualTo(expected);
 	}
 
 	@ParameterizedTest
@@ -96,8 +107,45 @@ class TeamRoleValidatorTest {
 			.solveMode(QuestionSetSolveMode.STUDY).status(QuestionSetStatus.MAKING).build();
 
 		// when & then
-		assertThatThrownBy(() -> teamRoleValidator.canViewQuestionAnswers(questionSet, 100L))
+		assertThatThrownBy(() -> teamRoleValidator.canViewQuestionAnswers(questionSet, 100L, DeliveryMode.STUDY))
 			.isInstanceOf(UserRoleException.class).hasMessage(message);
+		verifyNoInteractions(solvingSessionEntityRepository);
+	}
+
+	@ParameterizedTest
+	@CsvSource({"ONGOING, MAKING", "ONGOING, MANAGING", "ONGOING, ",
+		"REVIEW, MAKING", "REVIEW, MANAGING", "REVIEW, "})
+	@DisplayName("PLAYER는 mode를 생략하거나 제작 및 관리 모드를 요청할 수 없다")
+	void canViewQuestionAnswers_playerCannotRequestManagement(QuestionSetStatus status, DeliveryMode mode) {
+		// given
+		prepareAnswerAccess(TeamUserRole.PLAYER);
+		QuestionSetEntity questionSet = QuestionSetEntity.builder().id(2L).teamId(1L)
+			.solveMode(QuestionSetSolveMode.STUDY).status(status).build();
+
+		// when & then
+		assertThatThrownBy(() -> teamRoleValidator.canViewQuestionAnswers(questionSet, 100L, mode))
+			.isInstanceOf(UserRoleException.class).hasMessage("팀 관리 권한이 없습니다.");
+		verifyNoInteractions(solvingSessionEntityRepository);
+	}
+
+	@ParameterizedTest
+	@CsvSource({"LIVE_TIME, LIVE_TIME, BEFORE, ONLY_LIVE_TIME",
+		"LIVE_TIME, LIVE_TIME, AFTER, ONLY_LIVE_TIME", "LIVE_TIME, LIVE_TIME, REVIEW, ONLY_LIVE_TIME",
+		"LIVE_TIME, STUDY, ONGOING, ONLY_LIVE_TIME", "REVIEW, LIVE_TIME, BEFORE, ONLY_REVIEW",
+		"REVIEW, LIVE_TIME, ONGOING, ONLY_REVIEW", "REVIEW, LIVE_TIME, AFTER, ONLY_REVIEW",
+		"STUDY, LIVE_TIME, ONGOING, ONLY_STUDY"})
+	@DisplayName("관리자도 실제 문제셋 상태와 다른 풀이 모드를 요청하면 거절한다")
+	void canViewQuestionAnswers_invalidMode(DeliveryMode mode, QuestionSetSolveMode solveMode,
+		QuestionSetStatus status, QuestionSetStatusExceptionCode code) {
+		// given
+		prepareAnswerAccess(TeamUserRole.MAKER);
+		QuestionSetEntity questionSet = QuestionSetEntity.builder().id(2L).teamId(1L)
+			.solveMode(solveMode).status(status).build();
+
+		// when & then
+		assertThatThrownBy(() -> teamRoleValidator.canViewQuestionAnswers(questionSet, 100L, mode))
+			.isInstanceOfSatisfying(QuestionSetStatusException.class,
+				exception -> assertThat(exception.getExceptionCode()).isEqualTo(code));
 		verifyNoInteractions(solvingSessionEntityRepository);
 	}
 

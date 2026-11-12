@@ -3,8 +3,11 @@ package com.coniv.mait.domain.user.service.component;
 import org.springframework.stereotype.Component;
 
 import com.coniv.mait.domain.question.entity.QuestionSetEntity;
+import com.coniv.mait.domain.question.enums.DeliveryMode;
 import com.coniv.mait.domain.question.enums.QuestionSetSolveMode;
 import com.coniv.mait.domain.question.enums.QuestionSetStatus;
+import com.coniv.mait.domain.question.exception.QuestionSetStatusException;
+import com.coniv.mait.domain.question.exception.code.QuestionSetStatusExceptionCode;
 import com.coniv.mait.domain.solve.enums.SolvingStatus;
 import com.coniv.mait.domain.solve.repository.SolvingSessionEntityRepository;
 import com.coniv.mait.domain.team.entity.TeamEntity;
@@ -30,22 +33,42 @@ public class TeamRoleValidator {
 
 	private final SolvingSessionEntityRepository solvingSessionEntityRepository;
 
-	public boolean canViewQuestionAnswers(final QuestionSetEntity questionSet, final Long userId) {
+	public boolean canViewQuestionAnswers(final QuestionSetEntity questionSet, final Long userId,
+		final DeliveryMode mode) {
 		TeamUserRole role = getTeamRole(questionSet.getTeamId(), userId);
-		if (role.covers(TeamUserRole.MAKER)) {
-			return true;
-		}
-		if (questionSet.getStatus() == QuestionSetStatus.MAKING) {
+		if (!role.covers(TeamUserRole.MAKER) && questionSet.getStatus() == QuestionSetStatus.MAKING) {
 			throw new UserRoleException("제작 중인 문제는 관리자만 조회할 수 있습니다.");
 		}
-		if (questionSet.canReview()) {
-			return true;
-		}
-		return questionSet.getSolveMode() == QuestionSetSolveMode.STUDY
-			&& solvingSessionEntityRepository.findByUserIdAndQuestionSetIdAndSolveMode(userId,
-				questionSet.getId(), QuestionSetSolveMode.STUDY)
-			.map(session -> session.getStatus() == SolvingStatus.COMPLETE)
-			.orElse(false);
+		DeliveryMode deliveryMode = mode == null ? DeliveryMode.MAKING : mode;
+		return switch (deliveryMode) {
+			case MAKING, MANAGING -> {
+				if (!role.covers(TeamUserRole.MAKER)) {
+					throw new UserRoleException("팀 관리 권한이 없습니다.");
+				}
+				yield true;
+			}
+			case LIVE_TIME -> {
+				if (!questionSet.isOnLive()) {
+					throw new QuestionSetStatusException(QuestionSetStatusExceptionCode.ONLY_LIVE_TIME);
+				}
+				yield false;
+			}
+			case REVIEW -> {
+				if (!questionSet.canReview()) {
+					throw new QuestionSetStatusException(QuestionSetStatusExceptionCode.ONLY_REVIEW);
+				}
+				yield true;
+			}
+			case STUDY -> {
+				if (questionSet.getSolveMode() != QuestionSetSolveMode.STUDY) {
+					throw new QuestionSetStatusException(QuestionSetStatusExceptionCode.ONLY_STUDY);
+				}
+				yield solvingSessionEntityRepository.findByUserIdAndQuestionSetIdAndSolveMode(userId,
+					questionSet.getId(), QuestionSetSolveMode.STUDY)
+					.map(session -> session.getStatus() == SolvingStatus.COMPLETE)
+					.orElse(false);
+			}
+		};
 	}
 
 	public TeamUserRole getTeamRole(final Long teamId, final Long userId) {

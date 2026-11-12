@@ -1007,14 +1007,24 @@ public class QuestionApiIntegrationTest extends BaseIntegrationTest {
 	@Transactional(propagation = Propagation.NOT_SUPPORTED)
 	@ParameterizedTest
 	@MethodSource("playerRequests")
-	@DisplayName("PLAYER가 mode와 타인 ID를 바꿔도 풀이 중 정답과 해설은 숨긴다")
+	@DisplayName("PLAYER의 풀이 조회는 정답을 숨기고 권한이나 상태에 맞지 않는 mode는 거절한다")
 	void getQuestionsAndQuestion_playerCannotRevealAnswers(QuestionSetSolveMode solveMode, DeliveryMode mode)
 		throws Exception {
 		// given
 		prepareFixture(solveMode, QuestionSetStatus.ONGOING, TeamUserRole.PLAYER);
 
 		// when & then
-		assertResponses(mode, false);
+		if (mode == null || mode == DeliveryMode.MAKING || mode == DeliveryMode.MANAGING) {
+			assertForbidden(mode);
+		} else if (mode == DeliveryMode.REVIEW) {
+			assertRejected(mode, 400, "0002");
+		} else if (mode == DeliveryMode.LIVE_TIME && solveMode != QuestionSetSolveMode.LIVE_TIME) {
+			assertRejected(mode, 400, "2001");
+		} else if (mode == DeliveryMode.STUDY && solveMode != QuestionSetSolveMode.STUDY) {
+			assertRejected(mode, 400, "2002");
+		} else {
+			assertResponses(mode, false);
+		}
 	}
 
 	static Stream<Arguments> playerRequests() {
@@ -1049,7 +1059,11 @@ public class QuestionApiIntegrationTest extends BaseIntegrationTest {
 		});
 
 		// when & then
-		assertResponses(DeliveryMode.STUDY, visible);
+		if (solveMode == QuestionSetSolveMode.STUDY) {
+			assertResponses(DeliveryMode.STUDY, visible);
+		} else {
+			assertRejected(DeliveryMode.STUDY, 400, "2002");
+		}
 	}
 
 	@Transactional(propagation = Propagation.NOT_SUPPORTED)
@@ -1061,20 +1075,26 @@ public class QuestionApiIntegrationTest extends BaseIntegrationTest {
 		prepareFixture(QuestionSetSolveMode.STUDY, status, TeamUserRole.PLAYER);
 
 		// when & then
-		assertResponses(DeliveryMode.REVIEW, false);
+		assertRejected(DeliveryMode.REVIEW, 400, "0002");
 	}
 
 	@Transactional(propagation = Propagation.NOT_SUPPORTED)
 	@ParameterizedTest
-	@CsvSource({"MAKER, MAKING", "OWNER, MAKING", "MAKER, ONGOING", "OWNER, ONGOING", "PLAYER, REVIEW"})
-	@DisplayName("관리자와 복습이 열린 문제셋의 PLAYER는 정답과 해설을 조회한다")
-	void getQuestionsAndQuestion_permittedUsersSeeAnswers(TeamUserRole role, QuestionSetStatus status)
-		throws Exception {
+	@CsvSource({"MAKER, MAKING, STUDY, MAKING, true", "OWNER, MAKING, STUDY, MAKING, true",
+		"MAKER, ONGOING, LIVE_TIME, MANAGING, true", "OWNER, ONGOING, LIVE_TIME, MANAGING, true",
+		"MAKER, MAKING, STUDY, , true", "OWNER, MAKING, STUDY, , true",
+		"MAKER, ONGOING, LIVE_TIME, LIVE_TIME, false", "OWNER, ONGOING, LIVE_TIME, LIVE_TIME, false",
+		"MAKER, ONGOING, STUDY, STUDY, false", "OWNER, ONGOING, STUDY, STUDY, false",
+		"PLAYER, REVIEW, STUDY, REVIEW, true", "MAKER, REVIEW, STUDY, REVIEW, true",
+		"OWNER, REVIEW, LIVE_TIME, REVIEW, true"})
+	@DisplayName("동일한 관리자도 편집 및 관리 화면에서는 정답을 보고 풀이 화면에서는 숨긴다")
+	void getQuestionsAndQuestion_answerVisibilityByMode(TeamUserRole role, QuestionSetStatus status,
+		QuestionSetSolveMode solveMode, DeliveryMode mode, boolean visible) throws Exception {
 		// given
-		prepareFixture(QuestionSetSolveMode.STUDY, status, role);
+		prepareFixture(solveMode, status, role);
 
 		// when & then
-		assertResponses(null, true);
+		assertResponses(mode, visible);
 	}
 
 	@Transactional(propagation = Propagation.NOT_SUPPORTED)
@@ -1107,10 +1127,15 @@ public class QuestionApiIntegrationTest extends BaseIntegrationTest {
 	}
 
 	private void assertForbidden(DeliveryMode mode) throws Exception {
-		mockMvc.perform(request(null, mode)).andExpectAll(status().isForbidden(), jsonPath("$.code").value("C-008"));
+		assertRejected(mode, 403, "C-008");
+	}
+
+	private void assertRejected(DeliveryMode mode, int expectedStatus, String code) throws Exception {
+		mockMvc.perform(request(null, mode))
+			.andExpectAll(status().is(expectedStatus), jsonPath("$.code").value(code));
 		for (Long questionId : fixture.questionIds()) {
 			mockMvc.perform(request(questionId, mode))
-				.andExpectAll(status().isForbidden(), jsonPath("$.code").value("C-008"));
+				.andExpectAll(status().is(expectedStatus), jsonPath("$.code").value(code));
 		}
 	}
 
@@ -1120,11 +1145,7 @@ public class QuestionApiIntegrationTest extends BaseIntegrationTest {
 		assertThat(list.size()).isEqualTo(4);
 		for (JsonNode question : list) {
 			assertQuestion(question, visible);
-			if (mode == DeliveryMode.LIVE_TIME && fixture.solveMode() != QuestionSetSolveMode.LIVE_TIME) {
-				mockMvc.perform(request(question.get("id").asLong(), mode)).andExpect(status().isBadRequest());
-			} else {
-				assertQuestion(data(request(question.get("id").asLong(), mode)), visible);
-			}
+			assertQuestion(data(request(question.get("id").asLong(), mode)), visible);
 		}
 	}
 
