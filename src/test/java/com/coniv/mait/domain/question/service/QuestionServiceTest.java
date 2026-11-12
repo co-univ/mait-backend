@@ -37,6 +37,8 @@ import com.coniv.mait.domain.question.service.component.FillBlankQuestionFactory
 import com.coniv.mait.domain.question.service.component.MultipleQuestionFactory;
 import com.coniv.mait.domain.question.service.component.OrderingQuestionFactory;
 import com.coniv.mait.domain.question.service.component.QuestionFactory;
+import com.coniv.mait.domain.question.service.component.QuestionReader;
+import com.coniv.mait.domain.question.service.component.QuestionSetReader;
 import com.coniv.mait.domain.question.service.component.ShortQuestionFactory;
 import com.coniv.mait.domain.question.service.dto.FillBlankQuestionDto;
 import com.coniv.mait.domain.question.service.dto.MultipleQuestionDto;
@@ -59,6 +61,12 @@ class QuestionServiceTest {
 
 	@Mock
 	private TeamRoleValidator teamRoleValidator;
+
+	@Mock
+	private QuestionReader questionReader;
+
+	@Mock
+	private QuestionSetReader questionSetReader;
 
 	// @InjectMocks
 	private QuestionService questionService;
@@ -116,10 +124,17 @@ class QuestionServiceTest {
 			questionImageService,
 			aiCreateApiService,
 			aiRequestStatusManager,
-			teamRoleValidator);
-		lenient().when(questionSetEntityRepository.findByIdForUpdate(anyLong()))
-			.thenAnswer(invocation -> Optional.of(QuestionSetEntity.builder()
-				.id(invocation.getArgument(0)).teamId(TEAM_ID).build()));
+			teamRoleValidator,
+			questionReader,
+			questionSetReader);
+		lenient().when(questionSetReader.getQuestionSetForUpdate(anyLong()))
+			.thenAnswer(invocation -> QuestionSetEntity.builder()
+				.id(invocation.getArgument(0)).teamId(TEAM_ID).build());
+		lenient().when(questionReader.getQuestion(anyList(), anyLong())).thenAnswer(invocation -> {
+			List<QuestionEntity> questions = invocation.getArgument(0);
+			Long questionId = invocation.getArgument(1);
+			return questions.stream().filter(question -> question.getId().equals(questionId)).findFirst().orElseThrow();
+		});
 	}
 
 	@Test
@@ -128,7 +143,7 @@ class QuestionServiceTest {
 		// given
 		QuestionEntity source = orderQuestion(10L, "Z");
 		QuestionEntity next = orderQuestion(20L, "B");
-		when(questionEntityRepository.findAllByQuestionSetIdForUpdate(1L)).thenReturn(List.of(source, next));
+		when(questionReader.getOrderedQuestionsForUpdate(1L)).thenReturn(List.of(next, source));
 
 		// when
 		questionService.changeQuestionOrder(1L, 10L, null, 20L, USER_ID);
@@ -143,7 +158,7 @@ class QuestionServiceTest {
 		// given
 		QuestionEntity source = orderQuestion(11L, "0");
 		QuestionEntity prev = orderQuestion(21L, "A");
-		when(questionEntityRepository.findAllByQuestionSetIdForUpdate(1L)).thenReturn(List.of(source, prev));
+		when(questionReader.getOrderedQuestionsForUpdate(1L)).thenReturn(List.of(source, prev));
 
 		// when
 		questionService.changeQuestionOrder(1L, 11L, 21L, null, USER_ID);
@@ -159,7 +174,7 @@ class QuestionServiceTest {
 		QuestionEntity source = orderQuestion(12L, "Z");
 		QuestionEntity prev = orderQuestion(22L, "A");
 		QuestionEntity next = orderQuestion(23L, "C");
-		when(questionEntityRepository.findAllByQuestionSetIdForUpdate(1L)).thenReturn(List.of(source, prev, next));
+		when(questionReader.getOrderedQuestionsForUpdate(1L)).thenReturn(List.of(prev, next, source));
 
 		// when
 		questionService.changeQuestionOrder(1L, 12L, 22L, 23L, USER_ID);
@@ -176,8 +191,8 @@ class QuestionServiceTest {
 		QuestionEntity last = orderQuestion(2L, "Z");
 		QuestionEntity moved = orderQuestion(3L, "z");
 		QuestionEntity source = orderQuestion(4L, "zz");
-		when(questionEntityRepository.findAllByQuestionSetIdForUpdate(1L))
-			.thenReturn(List.of(first, last, moved, source));
+		when(questionReader.getOrderedQuestionsForUpdate(1L))
+			.thenReturn(List.of(first, last, moved, source), List.of(first, moved, last, source));
 		questionService.changeQuestionOrder(1L, moved.getId(), first.getId(), last.getId(), USER_ID);
 
 		// when & then
@@ -194,7 +209,7 @@ class QuestionServiceTest {
 		QuestionEntity prev = orderQuestion(1L, "123");
 		QuestionEntity next = orderQuestion(2L, "1230");
 		QuestionEntity source = orderQuestion(3L, "Z");
-		when(questionEntityRepository.findAllByQuestionSetIdForUpdate(1L)).thenReturn(List.of(prev, next, source));
+		when(questionReader.getOrderedQuestionsForUpdate(1L)).thenReturn(List.of(prev, next, source));
 
 		// when & then
 		assertThatThrownBy(() -> questionService.changeQuestionOrder(1L, 3L, 1L, 2L, USER_ID))
@@ -208,8 +223,8 @@ class QuestionServiceTest {
 	void changeOrder_duplicateNeighborRanks_requiresRebalance() {
 		// given
 		QuestionEntity source = orderQuestion(3L, "Z");
-		when(questionEntityRepository.findAllByQuestionSetIdForUpdate(1L))
-			.thenReturn(List.of(orderQuestion(2L, "A"), orderQuestion(1L, "A"), source));
+		when(questionReader.getOrderedQuestionsForUpdate(1L))
+			.thenReturn(List.of(orderQuestion(1L, "A"), orderQuestion(2L, "A"), source));
 
 		// when & then
 		assertThatThrownBy(() -> questionService.changeQuestionOrder(1L, 3L, 1L, 2L, USER_ID))
@@ -223,7 +238,7 @@ class QuestionServiceTest {
 	void changeOrder_selfNeighbor_rejects() {
 		// given
 		QuestionEntity source = orderQuestion(1L, "A");
-		when(questionEntityRepository.findAllByQuestionSetIdForUpdate(1L)).thenReturn(List.of(source));
+		when(questionReader.getOrderedQuestionsForUpdate(1L)).thenReturn(List.of(source));
 
 		// when & then
 		assertThatThrownBy(() -> questionService.changeQuestionOrder(1L, 1L, 1L, null, USER_ID))
@@ -235,7 +250,7 @@ class QuestionServiceTest {
 	@DisplayName("기본 문제 추가는 순서 키의 저장 길이를 초과하지 않는다")
 	void createDefaultQuestion_rankTooLong_requiresRebalance() {
 		// given
-		when(questionEntityRepository.findAllByQuestionSetIdForUpdate(1L))
+		when(questionReader.getOrderedQuestionsForUpdate(1L))
 			.thenReturn(List.of(orderQuestion(1L, "z".repeat(255))));
 
 		// when & then
@@ -707,7 +722,7 @@ class QuestionServiceTest {
 		final Long questionSetId = 1L;
 
 		QuestionSetEntity questionSetEntity = mock(QuestionSetEntity.class);
-		when(questionSetEntityRepository.findByIdForUpdate(questionSetId)).thenReturn(Optional.of(questionSetEntity));
+		when(questionSetReader.getQuestionSetForUpdate(questionSetId)).thenReturn(questionSetEntity);
 
 		// ArgumentCaptor로 save된 QuestionEntity 캡처
 		ArgumentCaptor<QuestionEntity> questionCaptor = ArgumentCaptor.forClass(QuestionEntity.class);
@@ -732,7 +747,7 @@ class QuestionServiceTest {
 		assertNotNull(savedQuestion.getLexoRank());
 		assertEquals(questionSetEntity, savedQuestion.getQuestionSet());
 
-		verify(questionSetEntityRepository).findByIdForUpdate(questionSetId);
+		verify(questionSetReader).getQuestionSetForUpdate(questionSetId);
 		verify(questionEntityRepository).save(any(QuestionEntity.class));
 		verify(multipleQuestionFactory).getQuestion(any(QuestionEntity.class), eq(true));
 	}
@@ -764,7 +779,7 @@ class QuestionServiceTest {
 		Long questionSetId = 1L;
 		QuestionSetEntity questionSet = mock(QuestionSetEntity.class);
 		when(questionSet.getTeamId()).thenReturn(TEAM_ID);
-		when(questionSetEntityRepository.findByIdForUpdate(questionSetId)).thenReturn(Optional.of(questionSet));
+		when(questionSetReader.getQuestionSetForUpdate(questionSetId)).thenReturn(questionSet);
 		doThrow(new UserRoleException("팀 관리 권한이 없습니다."))
 			.when(teamRoleValidator).checkIsTeamManager(TEAM_ID, USER_ID);
 
@@ -832,7 +847,7 @@ class QuestionServiceTest {
 		Long questionId = 1L;
 		Long nextQuestionId = 2L;
 		QuestionSetEntity questionSet = mock(QuestionSetEntity.class);
-		when(questionSetEntityRepository.findByIdForUpdate(questionSetId)).thenReturn(Optional.of(questionSet));
+		when(questionSetReader.getQuestionSetForUpdate(questionSetId)).thenReturn(questionSet);
 		when(questionSet.getTeamId()).thenReturn(TEAM_ID);
 		QuestionEntity question = mock(QuestionEntity.class);
 

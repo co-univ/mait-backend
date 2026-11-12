@@ -34,6 +34,8 @@ import com.coniv.mait.domain.question.repository.MultipleChoiceEntityRepository;
 import com.coniv.mait.domain.question.repository.QuestionEntityRepository;
 import com.coniv.mait.domain.question.repository.QuestionSetEntityRepository;
 import com.coniv.mait.domain.question.service.component.QuestionFactory;
+import com.coniv.mait.domain.question.service.component.QuestionReader;
+import com.coniv.mait.domain.question.service.component.QuestionSetReader;
 import com.coniv.mait.domain.question.service.dto.CurrentQuestionDto;
 import com.coniv.mait.domain.question.service.dto.QuestionCount;
 import com.coniv.mait.domain.question.service.dto.QuestionDto;
@@ -69,6 +71,10 @@ public class QuestionService {
 
 	private final TeamRoleValidator teamRoleValidator;
 
+	private final QuestionReader questionReader;
+
+	private final QuestionSetReader questionSetReader;
+
 	@Autowired
 	public QuestionService(
 		List<QuestionFactory<?>> factories,
@@ -78,7 +84,9 @@ public class QuestionService {
 		QuestionImageService questionImageService,
 		AiCreateApiService aiCreateApiService,
 		AiRequestStatusManager aiRequestStatusManager,
-		TeamRoleValidator teamRoleValidator) {
+		TeamRoleValidator teamRoleValidator,
+		QuestionReader questionReader,
+		QuestionSetReader questionSetReader) {
 		questionFactories = factories.stream()
 			.collect(Collectors.toUnmodifiableMap(QuestionFactory::getQuestionType, Function.identity()));
 		this.questionEntityRepository = questionEntityRepository;
@@ -88,6 +96,8 @@ public class QuestionService {
 		this.aiCreateApiService = aiCreateApiService;
 		this.aiRequestStatusManager = aiRequestStatusManager;
 		this.teamRoleValidator = teamRoleValidator;
+		this.questionReader = questionReader;
+		this.questionSetReader = questionSetReader;
 	}
 
 	public <T extends QuestionDto> void createQuestion(
@@ -107,10 +117,10 @@ public class QuestionService {
 
 	@Transactional
 	public QuestionDto createDefaultQuestion(final Long questionSetId, final Long userId) {
-		QuestionSetEntity questionSet = lockQuestionSet(questionSetId);
+		QuestionSetEntity questionSet = questionSetReader.getQuestionSetForUpdate(questionSetId);
 		teamRoleValidator.checkIsTeamManager(questionSet.getTeamId(), userId);
 
-		final String nextRank = nextRank(getQuestionsForOrderUpdate(questionSetId));
+		final String nextRank = nextRank(questionReader.getOrderedQuestionsForUpdate(questionSetId));
 
 		QuestionEntity defaultQuestion = QuestionEntity.createDefaultQuestion(questionSet, nextRank);
 		questionEntityRepository.save(defaultQuestion);
@@ -124,8 +134,8 @@ public class QuestionService {
 
 	@Transactional
 	public void createDefaultQuestions(final QuestionSetEntity questionSetEntity, final List<QuestionCount> counts) {
-		lockQuestionSet(questionSetEntity.getId());
-		String currentRank = nextRank(getQuestionsForOrderUpdate(questionSetEntity.getId()));
+		questionSetReader.getQuestionSetForUpdate(questionSetEntity.getId());
+		String currentRank = nextRank(questionReader.getOrderedQuestionsForUpdate(questionSetEntity.getId()));
 
 		for (QuestionCount count : counts) {
 			QuestionFactory<QuestionDto> questionFactory = getQuestionFactory(count.type());
@@ -193,7 +203,7 @@ public class QuestionService {
 	@Transactional
 	public QuestionDto updateQuestion(final Long questionSetId, final Long questionId, final QuestionDto questionDto,
 		final Long userId) {
-		lockQuestionSet(questionSetId);
+		questionSetReader.getQuestionSetForUpdate(questionSetId);
 		QuestionEntity question = questionEntityRepository.findById(questionId)
 			.orElseThrow(() -> new EntityNotFoundException("Question not found with id: " + questionId));
 
@@ -234,7 +244,7 @@ public class QuestionService {
 
 	@Transactional
 	public void deleteQuestion(final Long questionSetId, final Long questionId, final Long userId) {
-		lockQuestionSet(questionSetId);
+		questionSetReader.getQuestionSetForUpdate(questionSetId);
 		QuestionEntity question = questionEntityRepository.findById(questionId)
 			.orElseThrow(() -> new EntityNotFoundException("Question not found with id: " + questionId));
 
@@ -255,10 +265,10 @@ public class QuestionService {
 	@Transactional
 	public void changeQuestionOrder(final Long questionSetId, final Long sourceQuestionId, final Long prevQuestionId,
 		final Long nextQuestionId, final Long userId) {
-		QuestionSetEntity questionSet = lockQuestionSet(questionSetId);
+		QuestionSetEntity questionSet = questionSetReader.getQuestionSetForUpdate(questionSetId);
 		teamRoleValidator.checkIsTeamManager(questionSet.getTeamId(), userId);
-		List<QuestionEntity> questions = getQuestionsForOrderUpdate(questionSetId);
-		QuestionEntity source = getOrderQuestion(questions, sourceQuestionId);
+		List<QuestionEntity> questions = questionReader.getOrderedQuestionsForUpdate(questionSetId);
+		QuestionEntity source = questionReader.getQuestion(questions, sourceQuestionId);
 
 		if (Objects.equals(sourceQuestionId, prevQuestionId) || Objects.equals(sourceQuestionId, nextQuestionId)
 			|| (prevQuestionId != null && prevQuestionId.equals(nextQuestionId))) {
@@ -272,11 +282,11 @@ public class QuestionService {
 		int prevIndex = -1;
 		int nextIndex = remaining.size();
 		if (prevQuestionId != null) {
-			prev = getOrderQuestion(remaining, prevQuestionId);
+			prev = questionReader.getQuestion(remaining, prevQuestionId);
 			prevIndex = remaining.indexOf(prev);
 		}
 		if (nextQuestionId != null) {
-			next = getOrderQuestion(remaining, nextQuestionId);
+			next = questionReader.getQuestion(remaining, nextQuestionId);
 			nextIndex = remaining.indexOf(next);
 		}
 		if (nextIndex != prevIndex + 1) {
@@ -303,26 +313,6 @@ public class QuestionService {
 			throw new QuestionException(QuestionExceptionCode.ORDER_REBALANCE_REQUIRED);
 		}
 		source.updateRank(newRank);
-	}
-
-	private QuestionSetEntity lockQuestionSet(final Long questionSetId) {
-		return questionSetEntityRepository.findByIdForUpdate(questionSetId)
-			.orElseThrow(() -> new EntityNotFoundException("QuestionSet not found with id: " + questionSetId));
-	}
-
-	private List<QuestionEntity> getQuestionsForOrderUpdate(final Long questionSetId) {
-		return questionEntityRepository.findAllByQuestionSetIdForUpdate(questionSetId).stream()
-			.sorted(DeliveryMode.MAKING.questionComparator()).toList();
-	}
-
-	private QuestionEntity getOrderQuestion(final List<QuestionEntity> questions, final Long questionId) {
-		return questions.stream().filter(question -> question.getId().equals(questionId)).findFirst()
-			.orElseThrow(() -> {
-				if (!questionEntityRepository.existsById(questionId)) {
-					return new EntityNotFoundException("Question not found with id: " + questionId);
-				}
-				return new ResourceNotBelongException("해당 문제 셋에 속한 문제가 아닙니다.");
-			});
 	}
 
 	private String nextRank(final List<QuestionEntity> questions) {
@@ -380,8 +370,8 @@ public class QuestionService {
 			List<QuestionDto> questions = createdQuestions.getContent();
 
 			// 외부 AI 호출을 마친 뒤 잠금을 잡아 기본 추가·이동과 순서 할당을 직렬화한다.
-			lockQuestionSet(questionSetId);
-			String currentRank = nextRank(getQuestionsForOrderUpdate(questionSetId));
+			questionSetReader.getQuestionSetForUpdate(questionSetId);
+			String currentRank = nextRank(questionReader.getOrderedQuestionsForUpdate(questionSetId));
 
 			for (QuestionDto questionDto : questions) {
 				QuestionFactory<QuestionDto> questionFactory = getQuestionFactory(questionDto.getType());

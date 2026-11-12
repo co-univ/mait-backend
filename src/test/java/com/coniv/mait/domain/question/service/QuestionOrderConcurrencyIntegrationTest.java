@@ -43,6 +43,8 @@ import com.coniv.mait.domain.question.repository.QuestionSetEntityRepository;
 import com.coniv.mait.domain.question.service.component.FillBlankQuestionFactory;
 import com.coniv.mait.domain.question.service.component.MultipleQuestionFactory;
 import com.coniv.mait.domain.question.service.component.OrderingQuestionFactory;
+import com.coniv.mait.domain.question.service.component.QuestionReader;
+import com.coniv.mait.domain.question.service.component.QuestionSetReader;
 import com.coniv.mait.domain.question.service.component.ShortQuestionFactory;
 import com.coniv.mait.domain.question.service.dto.MultipleQuestionDto;
 import com.coniv.mait.domain.question.service.dto.QuestionCount;
@@ -63,7 +65,7 @@ import com.coniv.mait.global.s3.service.S3FileUploader;
 @ActiveProfiles("test")
 @Import({QuestionService.class, MultipleQuestionFactory.class, ShortQuestionFactory.class,
 	FillBlankQuestionFactory.class, OrderingQuestionFactory.class, QuestionImageService.class,
-	TeamRoleValidator.class, TeamReader.class, UserReader.class})
+	TeamRoleValidator.class, TeamReader.class, UserReader.class, QuestionReader.class, QuestionSetReader.class})
 @Transactional(propagation = Propagation.NOT_SUPPORTED)
 class QuestionOrderConcurrencyIntegrationTest {
 
