@@ -31,6 +31,7 @@ import com.coniv.mait.domain.question.exception.code.QuestionSetStatusExceptionC
 import com.coniv.mait.domain.question.repository.AiRequestStatusManager;
 import com.coniv.mait.domain.question.repository.QuestionEntityRepository;
 import com.coniv.mait.domain.question.repository.QuestionSetEntityRepository;
+import com.coniv.mait.domain.question.service.component.QuestionReader;
 import com.coniv.mait.domain.question.service.component.QuestionSetReader;
 import com.coniv.mait.domain.question.service.dto.QuestionSetDto;
 import com.coniv.mait.domain.question.service.dto.QuestionTypeCount;
@@ -75,6 +76,9 @@ class QuestionSetServiceTest {
 
 	@Mock
 	private QuestionSetReader questionSetReader;
+
+	@Mock
+	private QuestionReader questionReader;
 
 	@Mock
 	private AiRequestStatusManager aiRequestStatusManager;

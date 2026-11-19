@@ -6,6 +6,7 @@ import org.springframework.stereotype.Component;
 
 import com.coniv.mait.domain.question.entity.QuestionEntity;
 import com.coniv.mait.domain.question.entity.QuestionSetEntity;
+import com.coniv.mait.domain.question.enums.DeliveryMode;
 import com.coniv.mait.domain.question.enums.QuestionSetSolveMode;
 import com.coniv.mait.domain.question.enums.QuestionSetStatus;
 import com.coniv.mait.domain.question.repository.QuestionEntityRepository;
@@ -39,7 +40,13 @@ public class QuestionReader {
 	}
 
 	public List<QuestionEntity> getOrderedQuestions(final Long questionSetId) {
-		return questionEntityRepository.findAllByQuestionSetIdOrderByLexoRankAsc(questionSetId);
+		return questionEntityRepository.findAllByQuestionSetId(questionSetId).stream()
+			.sorted(DeliveryMode.MAKING.questionComparator()).toList();
+	}
+
+	public List<QuestionEntity> getOrderedQuestionsForUpdate(final Long questionSetId) {
+		return questionEntityRepository.findAllByQuestionSetIdForUpdate(questionSetId).stream()
+			.sorted(DeliveryMode.MAKING.questionComparator()).toList();
 	}
 
 	public QuestionEntity getQuestion(final Long questionId) {
