@@ -25,8 +25,24 @@ COPY src/ src/
 # 애플리케이션 빌드
 RUN ./gradlew clean bootJar --no-daemon
 
-# 2단계: 실행 스테이지
-FROM eclipse-temurin:21-jre-jammy
+# 공식 Jammy 이미지에 CVE-2026-114938 패치가 반영될 때까지
+# 개발·운영 배포 대상인 amd64에는 Adoptium의 패치 JRE를 설치한다.
+FROM eclipse-temurin:21.0.13_9-jre-jammy AS runtime-amd64
+ENV JAVA_VERSION=jdk-21.0.13.1+2
+RUN curl --fail --location --silent --show-error --retry 3 \
+        'https://github.com/adoptium/temurin21-binaries/releases/download/jdk-21.0.13.1%2B2/OpenJDK21U-jre_x64_linux_hotspot_21.0.13.1_2.tar.gz' \
+        --output /tmp/temurin-jre.tar.gz \
+    && echo '18f44fab9065217f3ba61d0eef8a7b5f3c3713aa7293001b0d4ac10ede3850f0  /tmp/temurin-jre.tar.gz' | sha256sum --check - \
+    && rm -rf "$JAVA_HOME" && mkdir -p "$JAVA_HOME" \
+    && tar -xzf /tmp/temurin-jre.tar.gz -C "$JAVA_HOME" --strip-components=1 --no-same-owner \
+    && rm /tmp/temurin-jre.tar.gz \
+    && java -version
+
+FROM eclipse-temurin:21-jre-jammy AS runtime-arm64
+FROM eclipse-temurin:21-jre-jammy AS runtime-ppc64le
+FROM eclipse-temurin:21-jre-jammy AS runtime-s390x
+
+FROM runtime-${TARGETARCH} AS app
 
 # 애플리케이션 실행을 위한 사용자 생성
 RUN groupadd -r mait && useradd -r -g mait mait
