@@ -558,7 +558,7 @@ class QuestionControllerTest {
 			))
 			.build();
 
-		when(questionService.getQuestion(questionSetId, questionId, null)).thenReturn(mockQuestionDto);
+		when(questionService.getQuestion(questionSetId, questionId, null, USER_ID)).thenReturn(mockQuestionDto);
 
 		// when & then
 		mockMvc.perform(get("/api/v1/question-sets/{questionSetId}/questions/{questionId}", questionSetId, questionId)
@@ -570,7 +570,7 @@ class QuestionControllerTest {
 				jsonPath("$.data.content").value("객관식 문제 내용")
 			);
 
-		verify(questionService).getQuestion(questionSetId, questionId, null);
+		verify(questionService).getQuestion(questionSetId, questionId, null, USER_ID);
 	}
 
 	@Test
@@ -580,7 +580,7 @@ class QuestionControllerTest {
 		final Long questionSetId = 1L;
 		final Long questionId = 999L;
 
-		when(questionService.getQuestion(questionSetId, questionId, null))
+		when(questionService.getQuestion(questionSetId, questionId, null, USER_ID))
 			.thenThrow(new EntityNotFoundException("Question not found with id: " + questionId));
 
 		// when & then
@@ -594,7 +594,7 @@ class QuestionControllerTest {
 				jsonPath("$.reasons").value("Question not found with id: " + questionId)
 			);
 
-		verify(questionService).getQuestion(questionSetId, questionId, null);
+		verify(questionService).getQuestion(questionSetId, questionId, null, USER_ID);
 	}
 
 	@Test
@@ -604,7 +604,7 @@ class QuestionControllerTest {
 		final Long questionSetId = 1L;
 		final Long questionId = 1L;
 
-		when(questionService.getQuestion(questionSetId, questionId, null))
+		when(questionService.getQuestion(questionSetId, questionId, null, USER_ID))
 			.thenThrow(new ResourceNotBelongException("해당 문제 셋에 속한 문제가 아닙니다."));
 
 		// when & then
@@ -618,7 +618,7 @@ class QuestionControllerTest {
 				jsonPath("$.reasons").value("해당 문제 셋에 속한 문제가 아닙니다.")
 			);
 
-		verify(questionService).getQuestion(questionSetId, questionId, null);
+		verify(questionService).getQuestion(questionSetId, questionId, null, USER_ID);
 	}
 
 	@Test
@@ -665,7 +665,7 @@ class QuestionControllerTest {
 		List<com.coniv.mait.domain.question.service.dto.QuestionDto> mockQuestions =
 			List.of(multipleQuestionDto, shortQuestionDto);
 
-		when(questionService.getQuestions(questionSetId, DeliveryMode.MAKING)).thenReturn(mockQuestions);
+		when(questionService.getQuestions(questionSetId, DeliveryMode.MAKING, USER_ID)).thenReturn(mockQuestions);
 
 		// when & then
 		mockMvc.perform(get("/api/v1/question-sets/{questionSetId}/questions", questionSetId)
@@ -682,7 +682,7 @@ class QuestionControllerTest {
 				jsonPath("$.data[1].number").value(2)
 			);
 
-		verify(questionService).getQuestions(questionSetId, DeliveryMode.MAKING);
+		verify(questionService).getQuestions(questionSetId, DeliveryMode.MAKING, USER_ID);
 	}
 
 	@Test

@@ -6,14 +6,24 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import java.util.Comparator;
 import java.util.List;
+import java.util.UUID;
+import java.util.stream.Stream;
 
-import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.CsvSource;
+import org.junit.jupiter.params.provider.MethodSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
+import org.springframework.transaction.support.TransactionTemplate;
 
 import com.coniv.mait.domain.question.entity.FillBlankAnswerEntity;
 import com.coniv.mait.domain.question.entity.FillBlankQuestionEntity;
@@ -25,6 +35,7 @@ import com.coniv.mait.domain.question.entity.QuestionEntity;
 import com.coniv.mait.domain.question.entity.QuestionSetEntity;
 import com.coniv.mait.domain.question.entity.ShortAnswerEntity;
 import com.coniv.mait.domain.question.entity.ShortQuestionEntity;
+import com.coniv.mait.domain.question.enums.DeliveryMode;
 import com.coniv.mait.domain.question.enums.QuestionSetCreationType;
 import com.coniv.mait.domain.question.enums.QuestionSetSolveMode;
 import com.coniv.mait.domain.question.enums.QuestionSetStatus;
@@ -39,6 +50,9 @@ import com.coniv.mait.domain.question.service.dto.FillBlankAnswerDto;
 import com.coniv.mait.domain.question.service.dto.MultipleChoiceDto;
 import com.coniv.mait.domain.question.service.dto.OrderingQuestionOptionDto;
 import com.coniv.mait.domain.question.service.dto.ShortAnswerDto;
+import com.coniv.mait.domain.solve.entity.SolvingSessionEntity;
+import com.coniv.mait.domain.solve.enums.SolvingStatus;
+import com.coniv.mait.domain.solve.repository.SolvingSessionEntityRepository;
 import com.coniv.mait.domain.team.entity.TeamEntity;
 import com.coniv.mait.domain.team.entity.TeamUserEntity;
 import com.coniv.mait.domain.team.enums.TeamUserRole;
@@ -46,6 +60,7 @@ import com.coniv.mait.domain.team.repository.TeamEntityRepository;
 import com.coniv.mait.domain.team.repository.TeamUserEntityRepository;
 import com.coniv.mait.domain.user.entity.UserEntity;
 import com.coniv.mait.domain.user.repository.UserEntityRepository;
+import com.coniv.mait.global.auth.model.MaitUser;
 import com.coniv.mait.login.WithCustomUser;
 import com.coniv.mait.web.integration.BaseIntegrationTest;
 import com.coniv.mait.web.question.dto.UpdateFillBlankQuestionApiRequest;
@@ -53,6 +68,7 @@ import com.coniv.mait.web.question.dto.UpdateMultipleQuestionApiRequest;
 import com.coniv.mait.web.question.dto.UpdateOrderingQuestionApiRequest;
 import com.coniv.mait.web.question.dto.UpdateQuestionOrderApiRequest;
 import com.coniv.mait.web.question.dto.UpdateShortQuestionApiRequest;
+import com.fasterxml.jackson.databind.JsonNode;
 
 @WithCustomUser
 public class QuestionApiIntegrationTest extends BaseIntegrationTest {
@@ -84,15 +100,16 @@ public class QuestionApiIntegrationTest extends BaseIntegrationTest {
 	@Autowired
 	private FillBlankAnswerEntityRepository fillBlankAnswerEntityRepository;
 
-	@BeforeEach
-	void setUp() {
-		shortAnswerEntityRepository.deleteAll();
-		multipleChoiceEntityRepository.deleteAll();
-		orderingOptionEntityRepository.deleteAll();
-		fillBlankAnswerEntityRepository.deleteAll();
-		questionEntityRepository.deleteAll();
-		questionSetEntityRepository.deleteAll();
-	}
+
+	@Autowired
+	private TransactionTemplate transactions;
+
+	@Autowired
+	private SolvingSessionEntityRepository sessions;
+
+	private Fixture fixture;
+
+	private Long otherUserId;
 
 	@Test
 	@DisplayName("기본 객관식 문제는 오답 선택지 4개와 정답 개수 0으로 생성된다")
@@ -179,7 +196,12 @@ public class QuestionApiIntegrationTest extends BaseIntegrationTest {
 	@DisplayName("실시간 객관식 조회는 정답 여부를 숨기고 정답 개수를 반환한다")
 	void getMultipleQuestionInLiveTimeReturnsAnswerCount() throws Exception {
 		// given
+		QuestionSetEntity teamQuestionSet = questionSetInMakerTeam("실시간 문제 셋");
+		TeamUserEntity member = teamUserEntityRepository.findByTeamIdAndUserRole(teamQuestionSet.getTeamId(),
+			TeamUserRole.MAKER).orElseThrow();
+		member.updateUserRole(TeamUserRole.PLAYER);
 		QuestionSetEntity questionSet = questionSetEntityRepository.save(QuestionSetEntity.builder()
+			.teamId(teamQuestionSet.getTeamId())
 			.title("실시간 문제 셋")
 			.solveMode(QuestionSetSolveMode.LIVE_TIME)
 			.status(QuestionSetStatus.ONGOING)
@@ -959,5 +981,257 @@ public class QuestionApiIntegrationTest extends BaseIntegrationTest {
 			.creationType(QuestionSetCreationType.MANUAL)
 			.teamId(team.getId())
 			.build();
+	}
+
+	@AfterEach
+	void tearDown() {
+		if (fixture == null) {
+			return;
+		}
+		transactions.executeWithoutResult(status -> {
+			sessions.deleteAllByQuestionSetId(fixture.questionSetId());
+			multipleChoiceEntityRepository.deleteAllByQuestionIdIn(fixture.questionIds());
+			shortAnswerEntityRepository.deleteAllByShortQuestionIdIn(fixture.questionIds());
+			fillBlankAnswerEntityRepository.deleteAllByFillBlankQuestionIdIn(fixture.questionIds());
+			orderingOptionEntityRepository.deleteAllByOrderingQuestionIdIn(fixture.questionIds());
+			questionEntityRepository.deleteAllById(fixture.questionIds());
+			questionSetEntityRepository.deleteById(fixture.questionSetId());
+			teamUserEntityRepository.deleteAllById(fixture.membershipIds());
+			teamEntityRepository.deleteById(fixture.teamId());
+			if (otherUserId != null) {
+				userEntityRepository.deleteById(otherUserId);
+			}
+		});
+	}
+
+	@Transactional(propagation = Propagation.NOT_SUPPORTED)
+	@ParameterizedTest
+	@MethodSource("playerRequests")
+	@DisplayName("PLAYER의 풀이 조회는 정답을 숨기고 권한이나 상태에 맞지 않는 mode는 거절한다")
+	void getQuestionsAndQuestion_playerCannotRevealAnswers(QuestionSetSolveMode solveMode, DeliveryMode mode)
+		throws Exception {
+		// given
+		prepareFixture(solveMode, QuestionSetStatus.ONGOING, TeamUserRole.PLAYER);
+
+		// when & then
+		if (mode == null || mode == DeliveryMode.MAKING || mode == DeliveryMode.MANAGING) {
+			assertForbidden(mode);
+		} else if (mode == DeliveryMode.REVIEW) {
+			assertRejected(mode, 400, "0002");
+		} else if (mode == DeliveryMode.LIVE_TIME && solveMode != QuestionSetSolveMode.LIVE_TIME) {
+			assertRejected(mode, 400, "2001");
+		} else if (mode == DeliveryMode.STUDY && solveMode != QuestionSetSolveMode.STUDY) {
+			assertRejected(mode, 400, "2002");
+		} else {
+			assertResponses(mode, false);
+		}
+	}
+
+	static Stream<Arguments> playerRequests() {
+		return Stream.of(QuestionSetSolveMode.values()).flatMap(solveMode ->
+			Stream.concat(Stream.of((DeliveryMode)null), Stream.of(DeliveryMode.values()))
+				.map(mode -> Arguments.of(solveMode, mode)));
+	}
+
+	@Transactional(propagation = Propagation.NOT_SUPPORTED)
+	@ParameterizedTest
+	@CsvSource({"STUDY, true, PROGRESSING, false", "STUDY, true, COMPLETE, true",
+		"STUDY, false, COMPLETE, false", "LIVE_TIME, true, COMPLETE, false"})
+	@DisplayName("학습모드에서는 본인의 채점 완료 세션만 정답 공개에 사용한다")
+	void getQuestionsAndQuestion_ownCompletedStudySession(QuestionSetSolveMode solveMode, boolean own,
+		SolvingStatus sessionStatus, boolean visible) throws Exception {
+		// given
+		prepareFixture(solveMode, QuestionSetStatus.ONGOING, TeamUserRole.PLAYER);
+		Long requesterId = ((MaitUser)SecurityContextHolder.getContext().getAuthentication().getPrincipal()).id();
+		transactions.executeWithoutResult(status -> {
+			UserEntity user = own ? userEntityRepository.findById(requesterId).orElseThrow()
+				: userEntityRepository.save(UserEntity.localLoginUser(
+				"other-" + UUID.randomUUID() + "@test.com", "password", "다른 사용자", "other"));
+			if (!own) {
+				otherUserId = user.getId();
+			}
+			SolvingSessionEntity session = SolvingSessionEntity.studySession(user,
+				questionSetEntityRepository.findById(fixture.questionSetId()).orElseThrow());
+			if (sessionStatus == SolvingStatus.COMPLETE) {
+				session.submit(4, 4);
+			}
+			sessions.save(session);
+		});
+
+		// when & then
+		if (solveMode == QuestionSetSolveMode.STUDY) {
+			assertResponses(DeliveryMode.STUDY, visible);
+		} else {
+			assertRejected(DeliveryMode.STUDY, 400, "2002");
+		}
+	}
+
+	@Transactional(propagation = Propagation.NOT_SUPPORTED)
+	@ParameterizedTest
+	@CsvSource({"BEFORE", "AFTER"})
+	@DisplayName("복습이 열리기 전에는 REVIEW 요청으로 정답을 공개할 수 없다")
+	void getQuestionsAndQuestion_beforeReview(QuestionSetStatus status) throws Exception {
+		// given
+		prepareFixture(QuestionSetSolveMode.STUDY, status, TeamUserRole.PLAYER);
+
+		// when & then
+		assertRejected(DeliveryMode.REVIEW, 400, "0002");
+	}
+
+	@Transactional(propagation = Propagation.NOT_SUPPORTED)
+	@ParameterizedTest
+	@CsvSource({"MAKER, MAKING, STUDY, MAKING, true", "OWNER, MAKING, STUDY, MAKING, true",
+		"MAKER, ONGOING, LIVE_TIME, MANAGING, true", "OWNER, ONGOING, LIVE_TIME, MANAGING, true",
+		"MAKER, MAKING, STUDY, , true", "OWNER, MAKING, STUDY, , true",
+		"MAKER, ONGOING, LIVE_TIME, LIVE_TIME, false", "OWNER, ONGOING, LIVE_TIME, LIVE_TIME, false",
+		"MAKER, ONGOING, STUDY, STUDY, false", "OWNER, ONGOING, STUDY, STUDY, false",
+		"PLAYER, REVIEW, STUDY, REVIEW, true", "MAKER, REVIEW, STUDY, REVIEW, true",
+		"OWNER, REVIEW, LIVE_TIME, REVIEW, true"})
+	@DisplayName("동일한 관리자도 편집 및 관리 화면에서는 정답을 보고 풀이 화면에서는 숨긴다")
+	void getQuestionsAndQuestion_answerVisibilityByMode(TeamUserRole role, QuestionSetStatus status,
+		QuestionSetSolveMode solveMode, DeliveryMode mode, boolean visible) throws Exception {
+		// given
+		prepareFixture(solveMode, status, role);
+
+		// when & then
+		assertResponses(mode, visible);
+	}
+
+	@Transactional(propagation = Propagation.NOT_SUPPORTED)
+	@ParameterizedTest
+	@MethodSource("allModes")
+	@DisplayName("비멤버는 mode와 타인 ID를 바꿔도 단건과 목록 조회가 차단된다")
+	void getQuestionsAndQuestion_nonMemberForbidden(DeliveryMode mode) throws Exception {
+		// given
+		prepareFixture(QuestionSetSolveMode.LIVE_TIME, QuestionSetStatus.ONGOING, null);
+
+		// when & then
+		assertForbidden(mode);
+	}
+
+	@Transactional(propagation = Propagation.NOT_SUPPORTED)
+	@ParameterizedTest
+	@MethodSource("allModes")
+	@DisplayName("제작 중인 문제는 PLAYER가 어떤 mode로도 읽을 수 없다")
+	void getQuestionsAndQuestion_draftPlayerForbidden(DeliveryMode mode) throws Exception {
+		// given
+		prepareFixture(QuestionSetSolveMode.STUDY, QuestionSetStatus.MAKING, TeamUserRole.PLAYER);
+
+		// when & then
+		assertForbidden(mode);
+	}
+
+	static Stream<Arguments> allModes() {
+		return Stream.concat(Stream.of((DeliveryMode)null), Stream.of(DeliveryMode.values()))
+			.map(Arguments::of);
+	}
+
+	private void assertForbidden(DeliveryMode mode) throws Exception {
+		assertRejected(mode, 403, "C-008");
+	}
+
+	private void assertRejected(DeliveryMode mode, int expectedStatus, String code) throws Exception {
+		mockMvc.perform(request(null, mode))
+			.andExpectAll(status().is(expectedStatus), jsonPath("$.code").value(code));
+		for (Long questionId : fixture.questionIds()) {
+			mockMvc.perform(request(questionId, mode))
+				.andExpectAll(status().is(expectedStatus), jsonPath("$.code").value(code));
+		}
+	}
+
+	private void assertResponses(DeliveryMode mode, boolean visible) throws Exception {
+		assertThat(TransactionSynchronizationManager.isActualTransactionActive()).isFalse();
+		JsonNode list = data(request(null, mode));
+		assertThat(list.size()).isEqualTo(4);
+		for (JsonNode question : list) {
+			assertQuestion(question, visible);
+			assertQuestion(data(request(question.get("id").asLong(), mode)), visible);
+		}
+	}
+
+	private JsonNode data(MockHttpServletRequestBuilder request) throws Exception {
+		String response = mockMvc.perform(request).andExpect(status().isOk()).andReturn().getResponse()
+			.getContentAsString();
+		return objectMapper.readTree(response).get("data");
+	}
+
+	private void assertQuestion(JsonNode question, boolean visible) {
+		assertThat(question.path("content").asText()).isEqualTo("공개 문제");
+		if (visible) {
+			assertThat(question.path("explanation").asText()).isEqualTo("비공개 해설");
+		} else {
+			assertThat(question.path("explanation").isNull() || question.path("explanation").isMissingNode()).isTrue();
+		}
+		switch (question.path("type").asText()) {
+			case "SHORT", "FILL_BLANK" -> {
+				if (visible) {
+					assertThat(question.path("answers").get(0).path("answer").asText()).isEqualTo("비공개 정답");
+				} else {
+					assertThat(question.path("answers").isNull() || question.path("answers").isMissingNode()).isTrue();
+				}
+			}
+			case "MULTIPLE" -> {
+				assertThat(question.path("choices").get(0).path("content").asText()).isEqualTo("공개 보기");
+				JsonNode correct = question.path("choices").get(0).path("isCorrect");
+				assertThat(visible ? correct.asBoolean() : correct.isNull() || correct.isMissingNode()).isTrue();
+			}
+			case "ORDERING" -> {
+				assertThat(question.path("options").get(0).path("content").asText()).isEqualTo("공개 보기");
+				JsonNode answerOrder = question.path("options").get(0).path("answerOrder");
+				assertThat(visible ? answerOrder.asInt() == 2
+					: answerOrder.isNull() || answerOrder.isMissingNode()).isTrue();
+			}
+			default -> throw new AssertionError("지원하지 않는 문제 유형");
+		}
+	}
+
+	private MockHttpServletRequestBuilder request(Long questionId, DeliveryMode mode) {
+		String path = "/api/v1/question-sets/" + fixture.questionSetId() + "/questions";
+		MockHttpServletRequestBuilder request = get(questionId == null ? path : path + "/" + questionId)
+			.param("userId", otherUserId == null ? "999999999" : otherUserId.toString());
+		return mode == null ? request : request.param("mode", mode.name());
+	}
+
+	private void prepareFixture(QuestionSetSolveMode solveMode, QuestionSetStatus state, TeamUserRole role) {
+		Long requesterId = ((MaitUser)SecurityContextHolder.getContext().getAuthentication().getPrincipal()).id();
+		fixture = transactions.execute(status -> {
+			TeamEntity team = teamEntityRepository.save(TeamEntity.ofGroup("정답 공개 테스트", requesterId));
+			List<Long> membershipIds = role == null ? List.of() : List.of(teamUserEntityRepository.save(
+				TeamUserEntity.createTeamUser(userEntityRepository.findById(requesterId).orElseThrow(), team, role))
+				.getId());
+			QuestionSetEntity set = questionSetEntityRepository.save(QuestionSetEntity.builder().title("정답 공개 테스트")
+				.teamId(team.getId()).solveMode(solveMode).status(state).build());
+			MultipleQuestionEntity multiple = questionEntityRepository.save(MultipleQuestionEntity.builder()
+				.questionSet(set)
+				.lexoRank("a").number(1L).content("공개 문제").explanation("비공개 해설").answerCount(1).build());
+			multipleChoiceEntityRepository.save(MultipleChoiceEntity.builder()
+				.question(multiple).number(1).content("공개 보기")
+				.isCorrect(true).build());
+			ShortQuestionEntity shortQuestion = questionEntityRepository.save(ShortQuestionEntity.builder()
+				.questionSet(set)
+				.lexoRank("b").number(2L).content("공개 문제").explanation("비공개 해설").answerCount(1).build());
+			shortAnswerEntityRepository.save(ShortAnswerEntity.builder()
+				.shortQuestionId(shortQuestion.getId()).number(1L)
+				.answer("비공개 정답").isMain(true).build());
+			FillBlankQuestionEntity blank = questionEntityRepository.save(FillBlankQuestionEntity.builder()
+				.questionSet(set)
+				.lexoRank("c").number(3L).content("공개 문제").explanation("비공개 해설").build());
+			fillBlankAnswerEntityRepository.save(FillBlankAnswerEntity.builder()
+				.fillBlankQuestionId(blank.getId()).number(1L)
+				.answer("비공개 정답").isMain(true).build());
+			OrderingQuestionEntity ordering = questionEntityRepository.save(OrderingQuestionEntity.builder()
+				.questionSet(set)
+				.lexoRank("d").number(4L).content("공개 문제").explanation("비공개 해설").build());
+			orderingOptionEntityRepository.save(OrderingOptionEntity.builder()
+				.orderingQuestionId(ordering.getId()).originOrder(1)
+				.content("공개 보기").answerOrder(2).build());
+			return new Fixture(team.getId(), set.getId(),
+				List.of(multiple.getId(), shortQuestion.getId(), blank.getId(), ordering.getId()),
+				membershipIds, solveMode);
+		});
+	}
+
+	private record Fixture(Long teamId, Long questionSetId, List<Long> questionIds, List<Long> membershipIds,
+		QuestionSetSolveMode solveMode) {
 	}
 }
