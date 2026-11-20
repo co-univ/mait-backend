@@ -20,10 +20,11 @@ import com.coniv.mait.domain.question.repository.QuestionEntityRepository;
 import com.coniv.mait.domain.question.repository.QuestionSetEntityRepository;
 import com.coniv.mait.domain.solve.entity.AnswerSubmitRecordEntity;
 import com.coniv.mait.domain.solve.repository.AnswerSubmitRecordEntityRepository;
+import com.coniv.mait.domain.user.enums.UserRole;
 import com.coniv.mait.login.WithCustomUser;
 import com.coniv.mait.web.integration.BaseIntegrationTest;
 
-@WithCustomUser
+@WithCustomUser(role = UserRole.ADMIN)
 public class QuestionAnswerDistributionApiIntegrationTest extends BaseIntegrationTest {
 
 	private static final String ANSWER_1 = "{\"type\":\"MULTIPLE\",\"submitAnswers\":[1]}";
