@@ -19,10 +19,8 @@ import jakarta.persistence.LockModeType;
 public interface QuestionEntityRepository extends JpaRepository<QuestionEntity, Long> {
 	List<QuestionEntity> findAllByQuestionSetId(final Long questionSetId);
 
-	// 현재 읽기로 잠금 대기 전에 만들어진 스냅샷의 순서 키를 재사용하지 않는다.
 	@Lock(LockModeType.PESSIMISTIC_WRITE)
-	@Query("SELECT q FROM QuestionEntity q WHERE q.questionSet.id = :questionSetId ORDER BY q.id")
-	List<QuestionEntity> findAllByQuestionSetIdForUpdate(@Param("questionSetId") Long questionSetId);
+	List<QuestionEntity> findAllForUpdateByQuestionSetIdOrderByIdAsc(Long questionSetId);
 
 	long countByQuestionSetId(Long questionSetId);
 

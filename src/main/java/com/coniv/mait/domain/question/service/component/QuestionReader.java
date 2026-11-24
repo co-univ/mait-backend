@@ -45,7 +45,7 @@ public class QuestionReader {
 	}
 
 	public List<QuestionEntity> getOrderedQuestionsForUpdate(final Long questionSetId) {
-		return questionEntityRepository.findAllByQuestionSetIdForUpdate(questionSetId).stream()
+		return questionEntityRepository.findAllForUpdateByQuestionSetIdOrderByIdAsc(questionSetId).stream()
 			.sorted(DeliveryMode.MAKING.questionComparator()).toList();
 	}
 

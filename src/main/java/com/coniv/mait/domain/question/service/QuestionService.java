@@ -374,7 +374,6 @@ public class QuestionService {
 			aiRequestStatusManager.updateStatus(questionSetId, AiRequestStatus.PROCESSING);
 			List<QuestionDto> questions = createdQuestions.getContent();
 
-			// 외부 AI 호출을 마친 뒤 잠금을 잡아 기본 추가·이동과 순서 할당을 직렬화한다.
 			questionSetReader.getQuestionSetForUpdate(questionSetId);
 			String currentRank = nextRank(questionReader.getOrderedQuestionsForUpdate(questionSetId));
 

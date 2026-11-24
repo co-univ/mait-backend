@@ -49,7 +49,7 @@ class QuestionReaderTest {
 		QuestionEntity second = MultipleQuestionEntity.builder().id(3L).lexoRank("V").build();
 		List<QuestionEntity> unsorted = List.of(lower, second, first);
 		if (forUpdate) {
-			when(questionEntityRepository.findAllByQuestionSetIdForUpdate(10L)).thenReturn(unsorted);
+			when(questionEntityRepository.findAllForUpdateByQuestionSetIdOrderByIdAsc(10L)).thenReturn(unsorted);
 		} else {
 			when(questionEntityRepository.findAllByQuestionSetId(10L)).thenReturn(unsorted);
 		}
