@@ -22,8 +22,10 @@ public interface QuestionEntityRepository extends JpaRepository<QuestionEntity, 
 	@Lock(LockModeType.PESSIMISTIC_WRITE)
 	List<QuestionEntity> findAllForUpdateByQuestionSetIdOrderByIdAsc(Long questionSetId);
 
-	@Query("select q.lexoRank from QuestionEntity q where q.questionSet.id = :questionSetId")
-	List<String> findRanksByQuestionSetId(@Param("questionSetId") Long questionSetId);
+	List<QuestionRank> findLexoRanksByQuestionSetId(Long questionSetId);
+
+	record QuestionRank(String lexoRank) {
+	}
 
 	long countByQuestionSetId(Long questionSetId);
 

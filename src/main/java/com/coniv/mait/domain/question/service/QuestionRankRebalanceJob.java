@@ -7,7 +7,9 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
 import com.coniv.mait.domain.question.repository.QuestionEntityRepository;
+import com.coniv.mait.domain.question.repository.QuestionEntityRepository.QuestionRank;
 import com.coniv.mait.domain.question.repository.QuestionSetEntityRepository;
+import com.coniv.mait.domain.question.repository.QuestionSetEntityRepository.QuestionSetId;
 import com.coniv.mait.domain.question.util.LexoRank;
 
 import lombok.RequiredArgsConstructor;
@@ -27,13 +29,17 @@ public class QuestionRankRebalanceJob {
 	@Scheduled(cron = "${mait.question.rank-rebalance-cron:0 0 4 * * *}", zone = "Asia/Seoul")
 	public void run() {
 		long afterId = 0;
-		List<Long> page;
+		List<QuestionSetId> page;
 		do {
-			page = questionSets.findIdsAfter(afterId, QuestionRankRebalanceService.EDITABLE_STATUSES,
+			page = questionSets.findIdsByIdGreaterThanAndStatusInOrderByIdAsc(afterId,
+				QuestionRankRebalanceService.EDITABLE_STATUSES,
 				PageRequest.ofSize(PAGE_SIZE));
-			for (Long questionSetId : page) {
+			for (QuestionSetId set : page) {
+				Long questionSetId = set.id();
 				try {
-					if (LexoRank.needsRebalance(questions.findRanksByQuestionSetId(questionSetId))) {
+					List<String> ranks = questions.findLexoRanksByQuestionSetId(questionSetId).stream()
+						.map(QuestionRank::lexoRank).toList();
+					if (LexoRank.needsRebalance(ranks)) {
 						service.rebalance(questionSetId);
 					}
 				} catch (RuntimeException ex) {

@@ -355,6 +355,25 @@ class QuestionOrderConcurrencyIntegrationTest {
 	}
 
 	@Test
+	@DisplayName("재배치가 커밋 전에 롤백되면 기존 키가 남고 다음 배치가 다시 처리한다")
+	void rolledBackRebalance_isRetriedOnNextRun() {
+		List<Long> ids = transaction.execute(status -> List.of(saveQuestion("123"), saveQuestion("1230")));
+		transaction.executeWithoutResult(status -> {
+			rebalanceService.rebalance(questionSetId);
+			questions.flush();
+			status.setRollbackOnly();
+		});
+		assertThat(questionReader.getOrderedQuestions(questionSetId)).extracting(QuestionEntity::getLexoRank)
+			.containsExactly("123", "1230");
+
+		rebalanceJob.run();
+		var saved = questionReader.getOrderedQuestions(questionSetId);
+		assertThat(saved).extracting(QuestionEntity::getId).containsExactlyElementsOf(ids);
+		assertThat(saved).extracting(QuestionEntity::getLexoRank)
+			.isSorted().doesNotHaveDuplicates().allMatch(rank -> rank.length() == 6);
+	}
+
+	@Test
 	@DisplayName("재배치 후보를 찾은 뒤 풀이가 시작되면 순서 키를 건드리지 않는다")
 	void rebalance_skipsOngoingSet() {
 		transaction.executeWithoutResult(status -> {
@@ -363,7 +382,8 @@ class QuestionOrderConcurrencyIntegrationTest {
 			questionSets.findById(questionSetId).orElseThrow().markOngoingOnComplete();
 		});
 		rebalanceService.rebalance(questionSetId);
-		assertThat(questions.findRanksByQuestionSetId(questionSetId)).containsExactlyInAnyOrder("123", "1230");
+		assertThat(questions.findAllByQuestionSetId(questionSetId)).extracting(QuestionEntity::getLexoRank)
+			.containsExactlyInAnyOrder("123", "1230");
 	}
 
 	@Test
