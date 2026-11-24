@@ -1,6 +1,8 @@
 package com.coniv.mait.domain.question.util;
 
+import java.util.Collection;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
 
 import lombok.AccessLevel;
@@ -11,6 +13,8 @@ public final class LexoRank {
 
 	private static final String ALPHABET = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
 	private static final int BASE = ALPHABET.length();
+	private static final int REBALANCED_WIDTH = 6;
+	private static final int REBALANCE_LENGTH = 32;
 	private static final Map<Character, Integer> CHAR_TO_INDEX = new HashMap<>();
 
 	static {
@@ -41,12 +45,53 @@ public final class LexoRank {
 
 			if (prevIndex + 1 < nextIndex) {
 				int mid = prevIndex + ((nextIndex - prevIndex) / 2);
-				return prefix.append(ALPHABET.charAt(mid)).toString();
+				String candidate = prefix.append(ALPHABET.charAt(mid)).toString();
+				if (next != null && candidate.compareTo(next) >= 0 && next.length() > 1) {
+					String shorter = next.substring(0, next.length() - 1);
+					if (prev == null || shorter.compareTo(prev) > 0) {
+						return shorter;
+					}
+				}
+				return candidate;
 			}
 
 			prefix.append(ALPHABET.charAt(prevIndex));
 			index++;
 		}
+	}
+
+	public static boolean needsRebalance(Collection<String> ranks) {
+		var distinct = new HashSet<>(ranks);
+		if (distinct.size() != ranks.size()) {
+			return true;
+		}
+		for (String rank : distinct) {
+			if (rank == null || rank.isEmpty() || rank.length() > REBALANCE_LENGTH
+				|| !rank.chars().allMatch(ch -> ALPHABET.indexOf(ch) >= 0)) {
+				return true;
+			}
+			if (rank.equals("0") || (rank.endsWith("0") && distinct.contains(rank.substring(0, rank.length() - 1)))) {
+				return true;
+			}
+		}
+		return false;
+	}
+
+	public static String evenlySpaced(int index, int count) {
+		if (index < 0 || index >= count) {
+			throw new IllegalArgumentException("문제 인덱스가 재배치 범위를 벗어났습니다.");
+		}
+		long space = 1;
+		for (int i = 0; i < REBALANCED_WIDTH; i++) {
+			space *= BASE;
+		}
+		long position = (space / (count + 1L)) * (index + 1L);
+		char[] rank = new char[REBALANCED_WIDTH];
+		for (int i = rank.length - 1; i >= 0; i--) {
+			rank[i] = ALPHABET.charAt((int)(position % BASE));
+			position /= BASE;
+		}
+		return new String(rank);
 	}
 
 	public static String nextAfter(String rank) {
