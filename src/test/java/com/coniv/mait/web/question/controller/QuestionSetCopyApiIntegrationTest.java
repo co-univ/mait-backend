@@ -37,6 +37,7 @@ import com.coniv.mait.domain.question.repository.QuestionEntityRepository;
 import com.coniv.mait.domain.question.repository.QuestionImageEntityRepository;
 import com.coniv.mait.domain.question.repository.QuestionSetEntityRepository;
 import com.coniv.mait.domain.question.repository.ShortAnswerEntityRepository;
+import com.coniv.mait.domain.question.service.component.QuestionReader;
 import com.coniv.mait.domain.team.entity.TeamEntity;
 import com.coniv.mait.domain.team.entity.TeamUserEntity;
 import com.coniv.mait.domain.team.enums.TeamUserRole;
@@ -54,6 +55,9 @@ import com.coniv.mait.web.question.dto.CopyQuestionSetApiRequest;
 
 @WithCustomUser
 public class QuestionSetCopyApiIntegrationTest extends BaseIntegrationTest {
+
+	@Autowired
+	private QuestionReader questionReader;
 
 	@Autowired
 	private UserEntityRepository userEntityRepository;
@@ -205,7 +209,7 @@ public class QuestionSetCopyApiIntegrationTest extends BaseIntegrationTest {
 			.orElseThrow();
 
 		List<QuestionEntity> copiedQuestions =
-			questionEntityRepository.findAllByQuestionSetIdOrderByLexoRankAsc(copiedSet.getId());
+			questionReader.getOrderedQuestions(copiedSet.getId());
 		assertThat(copiedQuestions).hasSize(4);
 		assertThat(copiedQuestions).extracting(QuestionEntity::getContent)
 			.containsExactly("객관식 문제", "단답형 문제", "빈칸 문제", "순서 문제");
@@ -289,7 +293,7 @@ public class QuestionSetCopyApiIntegrationTest extends BaseIntegrationTest {
 			.orElseThrow();
 
 		List<QuestionEntity> copiedQuestions =
-			questionEntityRepository.findAllByQuestionSetIdOrderByLexoRankAsc(copiedSet.getId());
+			questionReader.getOrderedQuestions(copiedSet.getId());
 		assertThat(copiedQuestions).hasSize(2);
 
 		QuestionEntity copiedWithImage = copiedQuestions.get(0);

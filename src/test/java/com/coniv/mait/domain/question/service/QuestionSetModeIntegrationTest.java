@@ -34,6 +34,7 @@ import com.coniv.mait.domain.question.repository.QuestionSetCategoryEntityReposi
 import com.coniv.mait.domain.question.repository.QuestionSetCategoryLinkEntityRepository;
 import com.coniv.mait.domain.question.repository.QuestionSetEntityRepository;
 import com.coniv.mait.domain.question.service.component.QuestionChecker;
+import com.coniv.mait.domain.question.service.component.QuestionReader;
 import com.coniv.mait.domain.question.service.component.QuestionSetReader;
 import com.coniv.mait.domain.question.service.component.QuestionWebSocketSender;
 import com.coniv.mait.domain.question.service.dto.QuestionSetCategoryDto;
@@ -58,7 +59,7 @@ import jakarta.persistence.EntityManager;
 
 @DataJpaTest(showSql = false)
 @ActiveProfiles("test")
-@Import({QuestionSetService.class, QuestionSetReader.class, QuestionSetCategoryService.class,
+@Import({QuestionSetService.class, QuestionSetReader.class, QuestionReader.class, QuestionSetCategoryService.class,
 	TeamRoleValidator.class, TeamReader.class, UserReader.class})
 class QuestionSetModeIntegrationTest {
 

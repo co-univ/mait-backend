@@ -24,6 +24,7 @@ import com.coniv.mait.domain.question.repository.AiRequestStatusManager;
 import com.coniv.mait.domain.question.repository.QuestionEntityRepository;
 import com.coniv.mait.domain.question.repository.QuestionSetEntityRepository;
 import com.coniv.mait.domain.question.service.component.QuestionChecker;
+import com.coniv.mait.domain.question.service.component.QuestionReader;
 import com.coniv.mait.domain.question.service.component.QuestionSetReader;
 import com.coniv.mait.domain.question.service.dto.QuestionCount;
 import com.coniv.mait.domain.question.service.dto.QuestionSetCategoryDto;
@@ -64,6 +65,8 @@ public class QuestionSetService {
 	private final TeamReader teamReader;
 
 	private final QuestionSetReader questionSetReader;
+
+	private final QuestionReader questionReader;
 
 	private final QuestionSetMaterialService questionSetMaterialService;
 
@@ -184,8 +187,7 @@ public class QuestionSetService {
 		// Todo: 현재 생성 단계가 아니면 예외
 		int number = 1;
 
-		List<QuestionEntity> questions = questionEntityRepository.findAllByQuestionSetIdOrderByLexoRankAsc(
-			questionSetId);
+		List<QuestionEntity> questions = questionReader.getOrderedQuestions(questionSetId);
 		for (QuestionEntity question : questions) {
 			question.updateNumber(number++);
 		}
