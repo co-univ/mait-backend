@@ -258,10 +258,6 @@ public class QuestionService {
 		questionEntityRepository.deleteById(question.getId());
 	}
 
-	/**
-	 * 잠금 후 최신 이웃을 검증한다. 위치 충돌 시 목록을 다시 조회해 재요청해야 한다.
-	 * 간격 부족·동률·255자 초과는 저장을 거절하며, 실제 키 재배치는 EDU-180에서 처리한다.
-	 */
 	@Transactional
 	public void changeQuestionOrder(final Long questionSetId, final Long sourceQuestionId, final Long prevQuestionId,
 		final Long nextQuestionId, final Long userId) {
