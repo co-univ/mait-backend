@@ -375,6 +375,14 @@ class QuestionOrderConcurrencyIntegrationTest {
 	}
 
 	@Test
+	@DisplayName("재배치 후보 조회 후 삭제된 문제셋은 건너뛴다")
+	void rebalance_skipsDeletedSet() {
+		questionSets.deleteById(questionSetId);
+
+		assertThatNoException().isThrownBy(() -> rebalanceService.rebalance(questionSetId));
+	}
+
+	@Test
 	@DisplayName("재배치 후보를 찾은 뒤 풀이가 시작되면 순서 키를 건드리지 않는다")
 	void rebalance_skipsOngoingSet() {
 		transaction.executeWithoutResult(status -> {
