@@ -23,24 +23,24 @@ public class QuestionRankRebalanceJob {
 
 	private static final int PAGE_SIZE = 100;
 
-	private final QuestionSetEntityRepository questionSets;
-	private final QuestionEntityRepository questions;
-	private final QuestionRankRebalanceService service;
+	private final QuestionSetEntityRepository questionSetEntityRepository;
+	private final QuestionEntityRepository questionEntityRepository;
+	private final QuestionRankRebalanceService questionRankRebalanceService;
 
 	@Scheduled(cron = "${mait.question.rank-rebalance-cron:0 0 4 * * *}", zone = "Asia/Seoul")
 	public void run() {
 		long afterId = 0;
 		List<QuestionSetEntity> page;
 		do {
-			page = questionSets.findAllByIdGreaterThanAndStatusInOrderByIdAsc(afterId,
+			page = questionSetEntityRepository.findAllByIdGreaterThanAndStatusInOrderByIdAsc(afterId,
 				QuestionRankRebalanceService.EDITABLE_STATUSES, PageRequest.ofSize(PAGE_SIZE));
 			for (QuestionSetEntity questionSet : page) {
 				Long questionSetId = questionSet.getId();
 				try {
-					List<String> ranks = questions.findAllByQuestionSetId(questionSetId).stream()
+					List<String> ranks = questionEntityRepository.findAllByQuestionSetId(questionSetId).stream()
 						.map(QuestionEntity::getLexoRank).toList();
 					if (LexoRank.needsRebalance(ranks)) {
-						service.rebalance(questionSetId);
+						questionRankRebalanceService.rebalance(questionSetId);
 					}
 				} catch (RuntimeException ex) {
 					log.error("문제 순서 키 재배치 실패: questionSetId={}", questionSetId, ex);

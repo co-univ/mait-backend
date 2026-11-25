@@ -4,6 +4,7 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
@@ -61,16 +62,17 @@ public final class LexoRank {
 	}
 
 	public static boolean needsRebalance(Collection<String> ranks) {
-		var distinct = new HashSet<>(ranks);
-		if (distinct.size() != ranks.size()) {
+		Set<String> distinctRanks = new HashSet<>(ranks);
+		if (distinctRanks.size() != ranks.size()) {
 			return true;
 		}
-		for (String rank : distinct) {
+		for (String rank : distinctRanks) {
 			if (rank == null || rank.isEmpty() || rank.length() > REBALANCE_LENGTH
 				|| !rank.chars().allMatch(ch -> ALPHABET.indexOf(ch) >= 0)) {
 				return true;
 			}
-			if (rank.equals("0") || (rank.endsWith("0") && distinct.contains(rank.substring(0, rank.length() - 1)))) {
+			if (rank.equals("0")
+				|| (rank.endsWith("0") && distinctRanks.contains(rank.substring(0, rank.length() - 1)))) {
 				return true;
 			}
 		}
