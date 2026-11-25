@@ -20,11 +20,8 @@ public interface QuestionSetEntityRepository extends JpaRepository<QuestionSetEn
 	@Query("SELECT q FROM QuestionSetEntity q WHERE q.id = :id")
 	Optional<QuestionSetEntity> findByIdForUpdate(@Param("id") Long id);
 
-	List<QuestionSetId> findIdsByIdGreaterThanAndStatusInOrderByIdAsc(long afterId, List<QuestionSetStatus> statuses,
-		Pageable pageable);
-
-	record QuestionSetId(Long id) {
-	}
+	List<QuestionSetEntity> findAllByIdGreaterThanAndStatusInOrderByIdAsc(long afterId,
+		List<QuestionSetStatus> statuses, Pageable pageable);
 
 	List<QuestionSetEntity> findAllByTeamId(Long teamId);
 
