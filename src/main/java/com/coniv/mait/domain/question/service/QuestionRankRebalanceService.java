@@ -17,7 +17,7 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class QuestionRankRebalanceService {
 
-	static final List<QuestionSetStatus> EDITABLE_STATUSES =
+	public static final List<QuestionSetStatus> EDITABLE_STATUSES =
 		List.of(QuestionSetStatus.MAKING, QuestionSetStatus.BEFORE);
 
 	private final QuestionSetEntityRepository questionSets;

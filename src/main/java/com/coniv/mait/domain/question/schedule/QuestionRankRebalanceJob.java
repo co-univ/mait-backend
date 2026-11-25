@@ -1,4 +1,4 @@
-package com.coniv.mait.domain.question.service;
+package com.coniv.mait.domain.question.schedule;
 
 import java.util.List;
 
@@ -10,6 +10,7 @@ import com.coniv.mait.domain.question.entity.QuestionEntity;
 import com.coniv.mait.domain.question.entity.QuestionSetEntity;
 import com.coniv.mait.domain.question.repository.QuestionEntityRepository;
 import com.coniv.mait.domain.question.repository.QuestionSetEntityRepository;
+import com.coniv.mait.domain.question.service.QuestionRankRebalanceService;
 import com.coniv.mait.domain.question.util.LexoRank;
 
 import lombok.RequiredArgsConstructor;
