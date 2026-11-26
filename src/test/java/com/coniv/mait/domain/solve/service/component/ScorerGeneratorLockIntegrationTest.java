@@ -93,8 +93,8 @@ class ScorerGeneratorLockIntegrationTest {
 	}
 
 	@Test
-	@DisplayName("제출 트랜잭션이 롤백되면 득점자도 함께 롤백되고 락은 해제된다")
-	void updateScorer_rollsBackWithCaller() {
+	@DisplayName("제출 트랜잭션이 롤백돼도 득점자 갱신 락은 해제된다")
+	void updateScorer_releasesLockOnCallerRollback() {
 		// when
 		transactionTemplate.executeWithoutResult(status -> {
 			scorerGenerator.updateScorer(questionId, 1L, 1L);
@@ -102,7 +102,6 @@ class ScorerGeneratorLockIntegrationTest {
 		});
 
 		// then
-		assertThat(questionScorerEntityRepository.findByQuestionId(questionId)).isEmpty();
 		assertThat(acquirableByAnotherThread()).isTrue();
 	}
 
@@ -121,8 +120,12 @@ class ScorerGeneratorLockIntegrationTest {
 			for (Long submitOrder : submitOrders) {
 				results.add(executor.submit(() -> {
 					start.await();
-					transactionTemplate.executeWithoutResult(status ->
-						scorerGenerator.updateScorer(questionId, 100L + submitOrder, submitOrder));
+					transactionTemplate.executeWithoutResult(status -> {
+						// 실제 제출처럼 락 획득 전에 조회해 REPEATABLE READ 스냅샷을 먼저 연다.
+						answerSubmitRecordEntityRepository.existsByUserIdAndQuestionIdAndIsCorrectTrue(
+							100L + submitOrder, questionId);
+						scorerGenerator.updateScorer(questionId, 100L + submitOrder, submitOrder);
+					});
 					return null;
 				}));
 			}

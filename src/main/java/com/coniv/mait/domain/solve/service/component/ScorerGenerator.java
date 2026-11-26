@@ -26,10 +26,11 @@ public class ScorerGenerator {
 
 	private final ScorerProcessor scorerProcessor;
 
-	// 제출 트랜잭션에 합류해 득점자와 제출 기록을 함께 커밋한다.
-	// 락은 호출자 트랜잭션이 끝날 때 해제되므로 재계산이 미커밋 제출을 놓치지 않는다.
+	// 락 획득 후 새 트랜잭션을 시작해야 REPEATABLE READ 에서도 직전 보유자가 커밋한 득점자를 읽는다.
+	// 제출 트랜잭션에 합류하면 락 대기 전에 열린 스냅샷을 읽어 득점자 중복 INSERT 로 제출이 실패한다.
+	// 락은 호출자 트랜잭션이 끝날 때 해제되므로 재계산이 미커밋 제출 기록을 놓치지 않는다.
 	@DistributedLock(key = LOCK_KEY, waitTime = LOCK_WAIT_SECONDS)
-	@Transactional
+	@Transactional(propagation = Propagation.REQUIRES_NEW)
 	public void updateScorer(Long questionId, Long userId, Long submitOrder) {
 		questionScorerEntityRepository.findByQuestionId(questionId).ifPresentOrElse(scorer -> {
 			if (scorer.getSubmitOrder() > submitOrder) {
