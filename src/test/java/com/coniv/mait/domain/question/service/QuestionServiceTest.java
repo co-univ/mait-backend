@@ -12,9 +12,8 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.jupiter.params.provider.EnumSource;
-import org.junit.jupiter.params.provider.NullSource;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -49,9 +48,7 @@ import com.coniv.mait.domain.question.service.dto.OrderingQuestionDto;
 import com.coniv.mait.domain.question.service.dto.QuestionDto;
 import com.coniv.mait.domain.question.service.dto.ShortQuestionDto;
 import com.coniv.mait.domain.question.util.LexoRank;
-import com.coniv.mait.domain.solve.entity.SolvingSessionEntity;
-import com.coniv.mait.domain.solve.enums.SolvingStatus;
-import com.coniv.mait.domain.solve.repository.SolvingSessionEntityRepository;
+import com.coniv.mait.domain.solve.service.component.SolvingSessionReader;
 import com.coniv.mait.domain.user.exception.UserRoleException;
 import com.coniv.mait.domain.user.service.component.TeamRoleValidator;
 import com.coniv.mait.global.exception.custom.ResourceNotBelongException;
@@ -75,7 +72,7 @@ class QuestionServiceTest {
 	private QuestionReader questionReader;
 
 	@Mock
-	private SolvingSessionEntityRepository solvingSessionEntityRepository;
+	private SolvingSessionReader solvingSessionReader;
 
 	private QuestionService questionService;
 
@@ -135,7 +132,7 @@ class QuestionServiceTest {
 			teamRoleValidator,
 			questionSetReader,
 			questionReader,
-			solvingSessionEntityRepository);
+			solvingSessionReader);
 	}
 
 	@Test
@@ -349,11 +346,9 @@ class QuestionServiceTest {
 		verify(multipleQuestionFactory, never()).getQuestion(any(), anyBoolean());
 	}
 
-	@ParameterizedTest
-	@NullSource
-	@EnumSource(value = DeliveryMode.class, names = "MAKING")
-	@DisplayName("목록은 mode를 생략해도 제작 권한을 검사하고 lexo rank 순으로 정렬한다")
-	void getQuestions_Success(DeliveryMode mode) {
+	@Test
+	@DisplayName("제작 모드의 목록 조회는 제작 권한을 검사하고 lexo rank 순으로 정렬한다")
+	void getQuestions_Success() {
 		// given
 		final Long questionSetId = 1L;
 		QuestionSetEntity questionSetEntity = mock(QuestionSetEntity.class);
@@ -399,7 +394,7 @@ class QuestionServiceTest {
 		when(fillBlankQuestionFactory.getQuestion(fillBlankQuestion, true)).thenReturn(fillBlankDto);
 
 		// when
-		List<QuestionDto> result = questionService.getQuestions(questionSetId, mode, USER_ID);
+		List<QuestionDto> result = questionService.getQuestions(questionSetId, DeliveryMode.MAKING, USER_ID);
 
 		// then
 		assertNotNull(result);
@@ -413,7 +408,7 @@ class QuestionServiceTest {
 
 		// factory 메서드들이 올바르게 호출되었는지 확인
 		verify(teamRoleValidator).checkQuestionReadAuthority(questionSetEntity, USER_ID, DeliveryMode.MAKING);
-		verify(questionSetEntity).validateDeliveryMode(DeliveryMode.MAKING);
+		verify(questionSetEntity).validateReadableMode(DeliveryMode.MAKING);
 		verify(questionReader).getQuestionsByQuestionSet(questionSetEntity);
 		verify(shortQuestionFactory).getQuestion(shortQuestion, true);
 		verify(orderingQuestionFactory).getQuestion(orderingQuestion, true);
@@ -444,7 +439,7 @@ class QuestionServiceTest {
 
 		// then - answerVisible = false로 호출되어야 함
 		verify(shortQuestionFactory).getQuestion(shortQuestion, false);
-		verifyNoInteractions(solvingSessionEntityRepository);
+		verifyNoInteractions(solvingSessionReader);
 	}
 
 	@Test
@@ -457,7 +452,7 @@ class QuestionServiceTest {
 		QuestionSetEntity questionSetEntity = mock(QuestionSetEntity.class);
 		when(questionSetReader.getQuestionSet(questionSetId)).thenReturn(questionSetEntity);
 		doThrow(new QuestionSetStatusException(QuestionSetStatusExceptionCode.ONLY_LIVE_TIME))
-			.when(questionSetEntity).validateDeliveryMode(DeliveryMode.LIVE_TIME);
+			.when(questionSetEntity).validateReadableMode(DeliveryMode.LIVE_TIME);
 
 
 		ShortQuestionEntity shortQuestion = mock(ShortQuestionEntity.class);
@@ -476,9 +471,8 @@ class QuestionServiceTest {
 	}
 
 	@ParameterizedTest
-	@NullSource
 	@EnumSource(value = DeliveryMode.class, names = {"MAKING", "MANAGING"})
-	@DisplayName("단건 조회는 기본 및 관리 모드의 권한을 검사한 뒤 정답을 공개한다")
+	@DisplayName("단건 조회는 제작 및 관리 모드의 권한을 검사한 뒤 정답을 공개한다")
 	void getQuestion_Manager_SeesAnswers(DeliveryMode mode) {
 		// given
 		final Long questionSetId = 1L;
@@ -499,17 +493,16 @@ class QuestionServiceTest {
 		questionService.getQuestion(questionSetId, questionId, mode, USER_ID);
 
 		// then - answerVisible = true로 호출되어야 함
-		DeliveryMode expectedMode = mode == null ? DeliveryMode.MAKING : mode;
-		verify(teamRoleValidator).checkQuestionReadAuthority(questionSetEntity, USER_ID, expectedMode);
-		verify(questionSetEntity).validateDeliveryMode(expectedMode);
-		verifyNoInteractions(solvingSessionEntityRepository);
+		verify(teamRoleValidator).checkQuestionReadAuthority(questionSetEntity, USER_ID, mode);
+		verify(questionSetEntity).validateReadableMode(mode);
+		verifyNoInteractions(solvingSessionReader);
 		verify(shortQuestionFactory).getQuestion(shortQuestion, true);
 	}
 
 	@ParameterizedTest
-	@CsvSource({"false, PROGRESSING, false", "true, PROGRESSING, false", "true, COMPLETE, true"})
+	@ValueSource(booleans = {false, true})
 	@DisplayName("학습 조회는 본인 채점 완료 여부를 단건과 목록의 정답 공개에 동일하게 적용한다")
-	void getStudyQuestions_answerVisibility(boolean exists, SolvingStatus status, boolean visible) {
+	void getStudyQuestions_answerVisibility(boolean completed) {
 		// given
 		QuestionSetEntity questionSet = QuestionSetEntity.builder().id(2L).teamId(TEAM_ID)
 			.solveMode(QuestionSetSolveMode.STUDY).status(QuestionSetStatus.ONGOING).build();
@@ -518,14 +511,9 @@ class QuestionServiceTest {
 		when(questionSetReader.getQuestionSet(2L)).thenReturn(questionSet);
 		when(questionReader.getQuestion(3L, 2L)).thenReturn(question);
 		when(questionReader.getQuestionsByQuestionSet(questionSet)).thenReturn(List.of(question));
-		SolvingSessionEntity session = mock(SolvingSessionEntity.class);
-		if (exists) {
-			when(session.getStatus()).thenReturn(status);
-		}
-		when(solvingSessionEntityRepository.findByUserIdAndQuestionSetIdAndSolveMode(USER_ID, 2L,
-			QuestionSetSolveMode.STUDY)).thenReturn(exists ? Optional.of(session) : Optional.empty());
+		when(solvingSessionReader.hasCompletedStudySession(USER_ID, 2L)).thenReturn(completed);
 		ShortQuestionDto dto = mock(ShortQuestionDto.class);
-		when(shortQuestionFactory.getQuestion(question, visible)).thenReturn(dto);
+		when(shortQuestionFactory.getQuestion(question, completed)).thenReturn(dto);
 
 		// when
 		QuestionDto single = questionService.getQuestion(2L, 3L, DeliveryMode.STUDY, USER_ID);
@@ -535,7 +523,7 @@ class QuestionServiceTest {
 		assertSame(dto, single);
 		assertEquals(List.of(dto), list);
 		verify(teamRoleValidator, times(2)).checkQuestionReadAuthority(questionSet, USER_ID, DeliveryMode.STUDY);
-		verify(shortQuestionFactory, times(2)).getQuestion(question, visible);
+		verify(shortQuestionFactory, times(2)).getQuestion(question, completed);
 	}
 
 	@Test

@@ -19,7 +19,6 @@ import com.coniv.mait.domain.question.entity.QuestionEntity;
 import com.coniv.mait.domain.question.entity.QuestionSetEntity;
 import com.coniv.mait.domain.question.enums.AiRequestStatus;
 import com.coniv.mait.domain.question.enums.DeliveryMode;
-import com.coniv.mait.domain.question.enums.QuestionSetSolveMode;
 import com.coniv.mait.domain.question.enums.QuestionStatusType;
 import com.coniv.mait.domain.question.enums.QuestionType;
 import com.coniv.mait.domain.question.exception.QuestionSetStatusException;
@@ -38,8 +37,7 @@ import com.coniv.mait.domain.question.service.dto.CurrentQuestionDto;
 import com.coniv.mait.domain.question.service.dto.QuestionCount;
 import com.coniv.mait.domain.question.service.dto.QuestionDto;
 import com.coniv.mait.domain.question.util.LexoRank;
-import com.coniv.mait.domain.solve.enums.SolvingStatus;
-import com.coniv.mait.domain.solve.repository.SolvingSessionEntityRepository;
+import com.coniv.mait.domain.solve.service.component.SolvingSessionReader;
 import com.coniv.mait.domain.user.service.component.TeamRoleValidator;
 import com.coniv.mait.global.exception.custom.ResourceNotBelongException;
 
@@ -72,7 +70,7 @@ public class QuestionService {
 
 	private final QuestionReader questionReader;
 
-	private final SolvingSessionEntityRepository solvingSessionEntityRepository;
+	private final SolvingSessionReader solvingSessionReader;
 
 	@Autowired
 	public QuestionService(
@@ -86,7 +84,7 @@ public class QuestionService {
 		TeamRoleValidator teamRoleValidator,
 		QuestionSetReader questionSetReader,
 		QuestionReader questionReader,
-		SolvingSessionEntityRepository solvingSessionEntityRepository) {
+		SolvingSessionReader solvingSessionReader) {
 		questionFactories = factories.stream()
 			.collect(Collectors.toUnmodifiableMap(QuestionFactory::getQuestionType, Function.identity()));
 		this.questionEntityRepository = questionEntityRepository;
@@ -98,7 +96,7 @@ public class QuestionService {
 		this.teamRoleValidator = teamRoleValidator;
 		this.questionSetReader = questionSetReader;
 		this.questionReader = questionReader;
-		this.solvingSessionEntityRepository = solvingSessionEntityRepository;
+		this.solvingSessionReader = solvingSessionReader;
 	}
 
 	public <T extends QuestionDto> void createQuestion(
@@ -159,10 +157,9 @@ public class QuestionService {
 		final Long userId) {
 		QuestionEntity question = questionReader.getQuestion(questionId, questionSetId);
 		QuestionSetEntity questionSet = questionSetReader.getQuestionSet(questionSetId);
-		DeliveryMode deliveryMode = mode == null ? DeliveryMode.MAKING : mode;
-		teamRoleValidator.checkQuestionReadAuthority(questionSet, userId, deliveryMode);
-		questionSet.validateDeliveryMode(deliveryMode);
-		boolean answerVisible = isAnswerVisible(questionSet, userId, deliveryMode);
+		teamRoleValidator.checkQuestionReadAuthority(questionSet, userId, mode);
+		questionSet.validateReadableMode(mode);
+		boolean answerVisible = isAnswerVisible(questionSet, userId, mode);
 
 		return getQuestionFactory(question.getType()).getQuestion(question, answerVisible);
 	}
@@ -170,12 +167,11 @@ public class QuestionService {
 	// Todo: 조회 성능 개선
 	public List<QuestionDto> getQuestions(final Long questionSetId, final DeliveryMode mode, final Long userId) {
 		QuestionSetEntity questionSet = questionSetReader.getQuestionSet(questionSetId);
-		DeliveryMode deliveryMode = mode == null ? DeliveryMode.MAKING : mode;
-		teamRoleValidator.checkQuestionReadAuthority(questionSet, userId, deliveryMode);
-		questionSet.validateDeliveryMode(deliveryMode);
-		boolean answerVisible = isAnswerVisible(questionSet, userId, deliveryMode);
+		teamRoleValidator.checkQuestionReadAuthority(questionSet, userId, mode);
+		questionSet.validateReadableMode(mode);
+		boolean answerVisible = isAnswerVisible(questionSet, userId, mode);
 		return questionReader.getQuestionsByQuestionSet(questionSet).stream()
-			.sorted(deliveryMode.questionComparator())
+			.sorted(mode.questionComparator())
 			.map(question -> getQuestionFactory(question.getType()).getQuestion(question, answerVisible))
 			.toList();
 	}
@@ -187,10 +183,7 @@ public class QuestionService {
 		if (mode != DeliveryMode.STUDY) {
 			return true;
 		}
-		return solvingSessionEntityRepository.findByUserIdAndQuestionSetIdAndSolveMode(userId,
-			questionSet.getId(), QuestionSetSolveMode.STUDY)
-			.map(session -> session.getStatus() == SolvingStatus.COMPLETE)
-			.orElse(false);
+		return solvingSessionReader.hasCompletedStudySession(userId, questionSet.getId());
 	}
 
 	@Transactional(readOnly = true)

@@ -19,13 +19,13 @@ class QuestionSetEntityTest {
 		"STUDY, STUDY, ONGOING", "STUDY, STUDY, AFTER", "MAKING, STUDY, MAKING",
 		"MANAGING, LIVE_TIME, BEFORE", "MANAGING, LIVE_TIME, AFTER"})
 	@DisplayName("문제셋 상태에 맞는 풀이 조회와 상태 제한이 없는 편집 및 관리 조회를 허용한다")
-	void validateDeliveryMode_permitted(DeliveryMode mode, QuestionSetSolveMode solveMode,
+	void validateReadableMode_permitted(DeliveryMode mode, QuestionSetSolveMode solveMode,
 		QuestionSetStatus status) {
 		// given
 		QuestionSetEntity questionSet = QuestionSetEntity.builder().solveMode(solveMode).status(status).build();
 
 		// when & then
-		assertThatCode(() -> questionSet.validateDeliveryMode(mode)).doesNotThrowAnyException();
+		assertThatCode(() -> questionSet.validateReadableMode(mode)).doesNotThrowAnyException();
 	}
 
 	@ParameterizedTest
@@ -35,13 +35,13 @@ class QuestionSetEntityTest {
 		"REVIEW, LIVE_TIME, ONGOING, ONLY_REVIEW", "REVIEW, LIVE_TIME, AFTER, ONLY_REVIEW",
 		"STUDY, LIVE_TIME, ONGOING, ONLY_STUDY"})
 	@DisplayName("문제셋 상태와 맞지 않는 풀이 모드는 기존 오류 코드로 거절한다")
-	void validateDeliveryMode_invalidMode(DeliveryMode mode, QuestionSetSolveMode solveMode,
+	void validateReadableMode_invalidMode(DeliveryMode mode, QuestionSetSolveMode solveMode,
 		QuestionSetStatus status, QuestionSetStatusExceptionCode code) {
 		// given
 		QuestionSetEntity questionSet = QuestionSetEntity.builder().solveMode(solveMode).status(status).build();
 
 		// when & then
-		assertThatThrownBy(() -> questionSet.validateDeliveryMode(mode))
+		assertThatThrownBy(() -> questionSet.validateReadableMode(mode))
 			.isInstanceOfSatisfying(QuestionSetStatusException.class,
 				exception -> assertThat(exception.getExceptionCode()).isEqualTo(code));
 	}

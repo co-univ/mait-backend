@@ -73,7 +73,7 @@ public class QuestionController {
 	public ResponseEntity<ApiResponse<QuestionApiResponse>> getQuestion(
 		@PathVariable("questionSetId") final Long questionSetId,
 		@PathVariable("questionId") final Long questionId,
-		@RequestParam(value = "mode", required = false) DeliveryMode mode,
+		@RequestParam(value = "mode", defaultValue = "MAKING") DeliveryMode mode,
 		@AuthenticationPrincipal MaitUser user) {
 		return ResponseEntity.ok(
 			ApiResponse.ok(QuestionApiResponse.from(
