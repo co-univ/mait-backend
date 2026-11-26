@@ -178,8 +178,7 @@ public class QuestionSetService {
 		final String difficulty,
 		final List<Long> categoryIds,
 		final Long userId) {
-		QuestionSetEntity questionSet = questionSetEntityRepository.findByIdForUpdate(questionSetId)
-			.orElseThrow(() -> new EntityNotFoundException("Question set not found"));
+		QuestionSetEntity questionSet = questionSetReader.getQuestionSetForUpdate(questionSetId);
 		teamRoleValidator.checkIsTeamManager(questionSet.getTeamId(), userId);
 
 		TeamEntity team = validateTeamSolveMode(questionSet.getTeamId(), solveMode);
