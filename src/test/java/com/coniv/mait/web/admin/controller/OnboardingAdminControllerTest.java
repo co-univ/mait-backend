@@ -13,6 +13,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 import org.springframework.http.MediaType;
+import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
 import com.coniv.mait.domain.onboarding.service.OnboardingScreenService;
@@ -24,6 +25,7 @@ import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletRequest;
 import jakarta.servlet.ServletResponse;
 
+@WithMockUser(roles = "ADMIN")
 public class OnboardingAdminControllerTest extends BaseIntegrationTest {
 
 	@MockitoBean

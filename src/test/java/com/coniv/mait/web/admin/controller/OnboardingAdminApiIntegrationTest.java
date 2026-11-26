@@ -11,6 +11,7 @@ import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
+import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
 import com.coniv.mait.domain.onboarding.entity.OnboardingScreenEntity;
@@ -23,6 +24,7 @@ import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletRequest;
 import jakarta.servlet.ServletResponse;
 
+@WithMockUser(roles = "ADMIN")
 public class OnboardingAdminApiIntegrationTest extends BaseIntegrationTest {
 
 	@Autowired

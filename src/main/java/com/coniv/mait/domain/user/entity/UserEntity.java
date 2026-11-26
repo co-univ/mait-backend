@@ -1,6 +1,7 @@
 package com.coniv.mait.domain.user.entity;
 
 import com.coniv.mait.domain.user.enums.LoginProvider;
+import com.coniv.mait.domain.user.enums.UserRole;
 import com.coniv.mait.global.entity.BaseTimeEntity;
 
 import jakarta.persistence.Column;
@@ -47,6 +48,10 @@ public class UserEntity extends BaseTimeEntity {
 
 	@Enumerated(EnumType.STRING)
 	private LoginProvider loginProvider;
+
+	@Enumerated(EnumType.STRING)
+	@Column(nullable = false, length = 20)
+	private UserRole role = UserRole.USER;
 
 	private UserEntity(String email, String name, String nickname, Boolean isLocalLogin, String providerId,
 		LoginProvider loginProvider) {
