@@ -9,8 +9,8 @@ import org.springframework.transaction.annotation.Transactional;
 import com.coniv.mait.domain.question.entity.QuestionEntity;
 import com.coniv.mait.domain.question.entity.QuestionSetEntity;
 import com.coniv.mait.domain.question.enums.QuestionSetStatus;
+import com.coniv.mait.domain.question.repository.QuestionSetEntityRepository;
 import com.coniv.mait.domain.question.service.component.QuestionReader;
-import com.coniv.mait.domain.question.service.component.QuestionSetReader;
 import com.coniv.mait.domain.question.util.LexoRank;
 
 import lombok.RequiredArgsConstructor;
@@ -22,12 +22,12 @@ public class QuestionRankRebalanceService {
 	public static final List<QuestionSetStatus> EDITABLE_STATUSES =
 		List.of(QuestionSetStatus.MAKING, QuestionSetStatus.BEFORE);
 
-	private final QuestionSetReader questionSetReader;
+	private final QuestionSetEntityRepository questionSetEntityRepository;
 	private final QuestionReader questionReader;
 
 	@Transactional
 	public void rebalance(Long questionSetId) {
-		Optional<QuestionSetEntity> editableQuestionSet = questionSetReader.findQuestionSetForUpdate(questionSetId)
+		Optional<QuestionSetEntity> editableQuestionSet = questionSetEntityRepository.findByIdForUpdate(questionSetId)
 			.filter(questionSet -> EDITABLE_STATUSES.contains(questionSet.getStatus()));
 		if (editableQuestionSet.isEmpty()) {
 			return;

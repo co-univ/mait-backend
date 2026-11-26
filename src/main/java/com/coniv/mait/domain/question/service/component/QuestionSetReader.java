@@ -4,7 +4,6 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Optional;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -37,12 +36,8 @@ public class QuestionSetReader {
 	}
 
 	public QuestionSetEntity getQuestionSetForUpdate(final Long questionSetId) {
-		return findQuestionSetForUpdate(questionSetId)
+		return questionSetEntityRepository.findByIdForUpdate(questionSetId)
 			.orElseThrow(() -> new EntityNotFoundException("QuestionSet not found with id: " + questionSetId));
-	}
-
-	public Optional<QuestionSetEntity> findQuestionSetForUpdate(final Long questionSetId) {
-		return questionSetEntityRepository.findByIdForUpdate(questionSetId);
 	}
 
 	public List<QuestionSetEntity> getFinishedLiveQuestionSetsBySolveModeInTeam(final Long teamId,
