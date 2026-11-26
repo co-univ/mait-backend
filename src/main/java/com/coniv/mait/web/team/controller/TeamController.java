@@ -103,21 +103,22 @@ public class TeamController {
 		return ResponseEntity.ok(ApiResponse.ok(TeamInviteApiResponse.from(teamInviteInfo)));
 	}
 
-	@Operation(summary = "초대 링크 목록 반환 API")
+	@Operation(summary = "초대 링크 목록 반환 API", description = "해당 팀의 OWNER·MAKER만 조회할 수 있습니다.")
 	@GetMapping("/{teamId}/invitations")
 	public ResponseEntity<ApiResponse<List<TeamInvitationLinksApiResponse>>> getTeamInvitations(
-		@PathVariable Long teamId) {
-		List<TeamInvitationLinkDto> invitations = teamService.getTeamInvitations(teamId);
+		@PathVariable Long teamId, @AuthenticationPrincipal MaitUser userPrincipal) {
+		List<TeamInvitationLinkDto> invitations = teamService.getTeamInvitations(teamId, userPrincipal.id());
 		List<TeamInvitationLinksApiResponse> response = invitations.stream()
 			.map(TeamInvitationLinksApiResponse::from)
 			.toList();
 		return ResponseEntity.ok(ApiResponse.ok(response));
 	}
 
-	@Operation(summary = "초대 링크 삭제 API")
+	@Operation(summary = "초대 링크 삭제 API", description = "초대 링크가 속한 팀의 OWNER·MAKER만 폐기할 수 있습니다.")
 	@DeleteMapping("/invitations/{invitationId}")
-	public ResponseEntity<ApiResponse<Void>> deleteTeamInvitation(@PathVariable Long invitationId) {
-		teamService.deleteTeamInvitation(invitationId);
+	public ResponseEntity<ApiResponse<Void>> deleteTeamInvitation(@PathVariable Long invitationId,
+		@AuthenticationPrincipal MaitUser userPrincipal) {
+		teamService.deleteTeamInvitation(invitationId, userPrincipal.id());
 		return ResponseEntity.ok(ApiResponse.noContent());
 	}
 
@@ -131,19 +132,19 @@ public class TeamController {
 		return ResponseEntity.ok(ApiResponse.ok(response));
 	}
 
-	@Operation(summary = "팀 가입 회원 목록 반환 API")
+	@Operation(summary = "팀 가입 회원 목록 반환 API", description = "해당 팀의 멤버만 조회할 수 있습니다.")
 	@GetMapping("/{teamId}/users")
 	public ResponseEntity<ApiResponse<List<JoinedTeamUserApiResponse>>> getTeamUsers(
-		@PathVariable Long teamId) {
-		List<TeamUserDto> teamUsers = teamService.getTeamUsers(teamId);
+		@PathVariable Long teamId, @AuthenticationPrincipal MaitUser userPrincipal) {
+		List<TeamUserDto> teamUsers = teamService.getTeamUsers(teamId, userPrincipal.id());
 		return ResponseEntity.ok(ApiResponse.ok(teamUsers.stream().map(JoinedTeamUserApiResponse::from).toList()));
 	}
 
-	@Operation(summary = "팀 가입 승인 대기 회원 목록 반환 API")
+	@Operation(summary = "팀 가입 승인 대기 회원 목록 반환 API", description = "해당 팀의 OWNER·MAKER만 조회할 수 있습니다.")
 	@GetMapping("/{teamId}/applicants")
 	public ResponseEntity<ApiResponse<List<ApplyTeamUserApiResponse>>> getTeamApplicants(
-		@PathVariable Long teamId) {
-		List<TeamApplicantDto> applicants = teamService.getApplicants(teamId);
+		@PathVariable Long teamId, @AuthenticationPrincipal MaitUser userPrincipal) {
+		List<TeamApplicantDto> applicants = teamService.getApplicants(teamId, userPrincipal.id());
 		return ResponseEntity.ok(ApiResponse.ok(applicants.stream().map(ApplyTeamUserApiResponse::from).toList()));
 	}
 

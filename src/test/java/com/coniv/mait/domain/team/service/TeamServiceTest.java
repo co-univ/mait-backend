@@ -436,9 +436,10 @@ class TeamServiceTest {
 			.thenReturn(List.of(noExpirationInvitation, activeInvitation));
 
 		// when
-		List<TeamInvitationLinkDto> result = teamService.getTeamInvitations(teamId);
+		List<TeamInvitationLinkDto> result = teamService.getTeamInvitations(teamId, 10L);
 
 		// then
+		verify(teamRoleValidator).checkIsTeamManager(teamId, 10L);
 		assertThat(result)
 			.extracting(TeamInvitationLinkDto::getToken)
 			.containsExactly("ACTIVE_TOKEN", "NO_EXPIRATION_TOKEN");
