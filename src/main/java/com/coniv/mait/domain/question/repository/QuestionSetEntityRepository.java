@@ -3,6 +3,7 @@ package com.coniv.mait.domain.question.repository;
 import java.util.List;
 import java.util.Optional;
 
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Query;
@@ -18,6 +19,9 @@ public interface QuestionSetEntityRepository extends JpaRepository<QuestionSetEn
 	@Lock(LockModeType.PESSIMISTIC_WRITE)
 	@Query("SELECT q FROM QuestionSetEntity q WHERE q.id = :id")
 	Optional<QuestionSetEntity> findByIdForUpdate(@Param("id") Long id);
+
+	List<QuestionSetEntity> findAllByIdGreaterThanAndStatusInOrderByIdAsc(long afterId,
+		List<QuestionSetStatus> statuses, Pageable pageable);
 
 	List<QuestionSetEntity> findAllByTeamId(Long teamId);
 

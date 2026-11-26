@@ -31,6 +31,7 @@ import com.coniv.mait.domain.question.entity.MultipleQuestionEntity;
 import com.coniv.mait.domain.question.entity.QuestionEntity;
 import com.coniv.mait.domain.question.entity.QuestionSetEntity;
 import com.coniv.mait.domain.question.enums.DeliveryMode;
+import com.coniv.mait.domain.question.enums.QuestionSetSolveMode;
 import com.coniv.mait.domain.question.enums.QuestionType;
 import com.coniv.mait.domain.question.exception.QuestionException;
 import com.coniv.mait.domain.question.exception.QuestionExceptionCode;
@@ -40,6 +41,7 @@ import com.coniv.mait.domain.question.repository.AiRequestStatusManager;
 import com.coniv.mait.domain.question.repository.MultipleChoiceEntityRepository;
 import com.coniv.mait.domain.question.repository.QuestionEntityRepository;
 import com.coniv.mait.domain.question.repository.QuestionSetEntityRepository;
+import com.coniv.mait.domain.question.schedule.QuestionRankRebalanceJob;
 import com.coniv.mait.domain.question.service.component.FillBlankQuestionFactory;
 import com.coniv.mait.domain.question.service.component.MultipleQuestionFactory;
 import com.coniv.mait.domain.question.service.component.OrderingQuestionFactory;
@@ -65,12 +67,19 @@ import com.coniv.mait.global.s3.service.S3FileUploader;
 @ActiveProfiles("test")
 @Import({QuestionService.class, MultipleQuestionFactory.class, ShortQuestionFactory.class,
 	FillBlankQuestionFactory.class, OrderingQuestionFactory.class, QuestionImageService.class,
-	TeamRoleValidator.class, TeamReader.class, UserReader.class, QuestionReader.class, QuestionSetReader.class})
+	TeamRoleValidator.class, TeamReader.class, UserReader.class, QuestionReader.class, QuestionSetReader.class,
+	QuestionRankRebalanceService.class, QuestionRankRebalanceJob.class})
 @Transactional(propagation = Propagation.NOT_SUPPORTED)
 class QuestionOrderConcurrencyIntegrationTest {
 
 	@Autowired
 	private QuestionReader questionReader;
+
+	@Autowired
+	private QuestionRankRebalanceJob rebalanceJob;
+
+	@Autowired
+	private QuestionRankRebalanceService rebalanceService;
 
 	@Autowired
 	private QuestionService service;
@@ -321,6 +330,93 @@ class QuestionOrderConcurrencyIntegrationTest {
 				.satisfies(saved -> assertThat(saved.getFirst().getId()).isEqualTo(added.getId()))
 				.extracting(QuestionEntity::getLexoRank).doesNotHaveDuplicates();
 		}
+	}
+
+	@Test
+	@DisplayName("배치는 편집 가능한 문제셋의 순서와 번호를 보존하고 같은 키를 다시 쓰지 않는다")
+	void rebalanceJob_preservesOrderAndNumbers() {
+		List<Long> ids = transaction.execute(status -> {
+			var set = questionSets.findById(questionSetId).orElseThrow();
+			set.completeQuestionSet("테스트", QuestionSetSolveMode.STUDY, "보통");
+			long last = saveQuestion("k");
+			long first = saveQuestion("V");
+			long second = saveQuestion("V");
+			questions.findById(first).orElseThrow().updateNumber(9);
+			return List.of(first, second, last);
+		});
+		rebalanceJob.run();
+		List<QuestionEntity> ordered = questionReader.getOrderedQuestions(questionSetId);
+		assertThat(ordered).extracting(QuestionEntity::getId).containsExactlyElementsOf(ids);
+		assertThat(ordered.getFirst().getNumber()).isEqualTo(9);
+		var ranks = ordered.stream().map(QuestionEntity::getLexoRank).toList();
+		assertThat(ranks).isSorted().doesNotHaveDuplicates().allMatch(rank -> rank.length() == 6);
+		rebalanceJob.run();
+		assertThat(questionReader.getOrderedQuestions(questionSetId))
+			.extracting(QuestionEntity::getLexoRank).containsExactlyElementsOf(ranks);
+	}
+
+	@Test
+	@DisplayName("재배치가 커밋 전에 롤백되면 기존 키가 남고 다음 배치가 다시 처리한다")
+	void rolledBackRebalance_isRetriedOnNextRun() {
+		List<Long> ids = transaction.execute(status -> List.of(saveQuestion("123"), saveQuestion("1230")));
+		transaction.executeWithoutResult(status -> {
+			rebalanceService.rebalance(questionSetId);
+			questions.flush();
+			status.setRollbackOnly();
+		});
+		assertThat(questionReader.getOrderedQuestions(questionSetId)).extracting(QuestionEntity::getLexoRank)
+			.containsExactly("123", "1230");
+
+		rebalanceJob.run();
+		var saved = questionReader.getOrderedQuestions(questionSetId);
+		assertThat(saved).extracting(QuestionEntity::getId).containsExactlyElementsOf(ids);
+		assertThat(saved).extracting(QuestionEntity::getLexoRank)
+			.isSorted().doesNotHaveDuplicates().allMatch(rank -> rank.length() == 6);
+	}
+
+	@Test
+	@DisplayName("재배치 후보를 찾은 뒤 풀이가 시작되면 순서 키를 건드리지 않는다")
+	void rebalance_skipsOngoingSet() {
+		transaction.executeWithoutResult(status -> {
+			saveQuestion("123");
+			saveQuestion("1230");
+			questionSets.findById(questionSetId).orElseThrow().markOngoingOnComplete();
+		});
+		rebalanceService.rebalance(questionSetId);
+		assertThat(questions.findAllByQuestionSetId(questionSetId)).extracting(QuestionEntity::getLexoRank)
+			.containsExactlyInAnyOrder("123", "1230");
+	}
+
+	@Test
+	@DisplayName("재배치 중 대기한 편집은 커밋된 최신 키 사이에 문제를 삽입한다")
+	void move_waitsForRebalanceAndUsesNewGap() throws Exception {
+		List<Long> ids = transaction.execute(status -> List.of(saveQuestion("123"), saveQuestion("1230"),
+			saveQuestion("Z")));
+		CountDownLatch rebalanced = new CountDownLatch(1);
+		CountDownLatch commit = new CountDownLatch(1);
+		CountDownLatch attempted = new CountDownLatch(1);
+		try (var executor = Executors.newFixedThreadPool(2)) {
+			Future<?> batch = executor.submit(() -> transaction.executeWithoutResult(status -> {
+				rebalanceService.rebalance(questionSetId);
+				rebalanced.countDown();
+				await(commit);
+			}));
+			await(rebalanced);
+			Future<?> move = executor.submit(() -> {
+				attempted.countDown();
+				service.changeQuestionOrder(questionSetId, ids.get(2), ids.get(0), ids.get(1), userId);
+			});
+			try {
+				await(attempted);
+				assertThatThrownBy(() -> move.get(200, TimeUnit.MILLISECONDS)).isInstanceOf(TimeoutException.class);
+			} finally {
+				commit.countDown();
+			}
+			batch.get(10, TimeUnit.SECONDS);
+			move.get(10, TimeUnit.SECONDS);
+		}
+		assertThat(questionReader.getOrderedQuestions(questionSetId)).extracting(QuestionEntity::getId)
+			.containsExactly(ids.get(0), ids.get(2), ids.get(1));
 	}
 
 	private Long saveQuestion(String rank) {
