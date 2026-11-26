@@ -30,23 +30,31 @@ public class QuestionRankRebalanceJob {
 	@Scheduled(cron = "${mait.question.rank-rebalance-cron:0 0 4 * * *}", zone = "Asia/Seoul")
 	public void run() {
 		long afterId = 0;
-		List<QuestionSetEntity> page;
-		do {
-			page = questionSetEntityRepository.findAllByIdGreaterThanAndStatusInOrderByIdAsc(afterId,
-				QuestionRankRebalanceService.EDITABLE_STATUSES, PageRequest.ofSize(PAGE_SIZE));
-			for (QuestionSetEntity questionSet : page) {
-				Long questionSetId = questionSet.getId();
-				try {
-					List<String> ranks = questionEntityRepository.findAllByQuestionSetId(questionSetId).stream()
-						.map(QuestionEntity::getLexoRank).toList();
-					if (LexoRank.needsRebalance(ranks)) {
-						questionRankRebalanceService.rebalance(questionSetId);
-					}
-				} catch (RuntimeException ex) {
-					log.error("문제 순서 키 재배치 실패: questionSetId={}", questionSetId, ex);
-				}
-				afterId = questionSetId;
+		PageRequest pageRequest = PageRequest.ofSize(PAGE_SIZE);
+		while (true) {
+			List<QuestionSetEntity> page = questionSetEntityRepository.findAllByIdGreaterThanAndStatusInOrderByIdAsc(
+				afterId, QuestionRankRebalanceService.EDITABLE_STATUSES, pageRequest);
+			page.stream()
+				.map(QuestionSetEntity::getId)
+				.forEach(this::rebalanceIfNeeded);
+
+			if (page.size() < PAGE_SIZE) {
+				return;
 			}
-		} while (page.size() == PAGE_SIZE);
+			afterId = page.getLast().getId();
+		}
+	}
+
+	private void rebalanceIfNeeded(Long questionSetId) {
+		try {
+			List<String> ranks = questionEntityRepository.findAllByQuestionSetId(questionSetId).stream()
+				.map(QuestionEntity::getLexoRank)
+				.toList();
+			if (LexoRank.needsRebalance(ranks)) {
+				questionRankRebalanceService.rebalance(questionSetId);
+			}
+		} catch (RuntimeException ex) {
+			log.error("문제 순서 키 재배치 실패: questionSetId={}", questionSetId, ex);
+		}
 	}
 }
