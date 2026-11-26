@@ -23,7 +23,8 @@ public enum DeliveryMode {
 	REVIEW("복습", TeamUserRole.PLAYER, true);
 
 	private static final Comparator<QuestionEntity> LEXO_RANK_COMPARATOR = Comparator
-		.comparing(QuestionEntity::getLexoRank, Comparator.nullsLast(String::compareTo));
+		.comparing(QuestionEntity::getLexoRank, Comparator.nullsLast(String::compareTo))
+		.thenComparing(QuestionEntity::getId, Comparator.nullsLast(Long::compareTo));
 	private static final Comparator<QuestionEntity> NUMBER_COMPARATOR = Comparator
 		.comparing(QuestionEntity::getNumber, Comparator.nullsLast(Long::compareTo));
 

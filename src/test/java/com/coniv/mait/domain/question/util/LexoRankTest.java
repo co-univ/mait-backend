@@ -2,10 +2,31 @@ package com.coniv.mait.domain.question.util;
 
 import static org.assertj.core.api.Assertions.*;
 
+import java.util.List;
+
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 class LexoRankTest {
+
+	@Test
+	@DisplayName("상한의 접두어가 유효하면 그 키를 사용한다")
+	void between_usesAvailablePrefix() {
+		assertThat(LexoRank.between("1", "100")).isEqualTo("10");
+		assertThat(LexoRank.prevBefore("00")).isEqualTo("0");
+	}
+
+	@Test
+	@DisplayName("긴 키와 중복, 잘못된 문자 및 삽입할 수 없는 간격을 감지한다")
+	void needsRebalance_detectsUnusableRanks() {
+		assertThat(LexoRank.needsRebalance(List.of("1", "100"))).isFalse();
+		assertThat(LexoRank.needsRebalance(List.of("A", "a"))).isFalse();
+		assertThat(LexoRank.needsRebalance(List.of("0"))).isTrue();
+		assertThat(LexoRank.needsRebalance(List.of("123", "1230"))).isTrue();
+		assertThat(LexoRank.needsRebalance(List.of("A", "A"))).isTrue();
+		assertThat(LexoRank.needsRebalance(List.of("X".repeat(33)))).isTrue();
+		assertThat(LexoRank.needsRebalance(List.of("a!"))).isTrue();
+	}
 
 	@Test
 	@DisplayName("prev와 next가 모두 null이면 middle 키를 반환한다")

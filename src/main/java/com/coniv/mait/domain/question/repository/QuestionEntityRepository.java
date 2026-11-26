@@ -4,6 +4,7 @@ import java.util.List;
 import java.util.Optional;
 
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -13,10 +14,13 @@ import com.coniv.mait.domain.question.entity.QuestionSetEntity;
 import com.coniv.mait.domain.question.enums.QuestionStatusType;
 import com.coniv.mait.domain.question.enums.QuestionType;
 
+import jakarta.persistence.LockModeType;
+
 public interface QuestionEntityRepository extends JpaRepository<QuestionEntity, Long> {
 	List<QuestionEntity> findAllByQuestionSetId(final Long questionSetId);
 
-	List<QuestionEntity> findAllByQuestionSetIdOrderByLexoRankAsc(final Long questionSetId);
+	@Lock(LockModeType.PESSIMISTIC_WRITE)
+	List<QuestionEntity> findAllForUpdateByQuestionSetIdOrderByIdAsc(Long questionSetId);
 
 	long countByQuestionSetId(Long questionSetId);
 
@@ -27,8 +31,6 @@ public interface QuestionEntityRepository extends JpaRepository<QuestionEntity, 
 
 	List<QuestionEntity> findAllByQuestionSetIdAndQuestionStatusIn(Long questionSetId,
 		List<QuestionStatusType> statuses);
-
-	Optional<QuestionEntity> findTopByQuestionSetIdOrderByLexoRankDesc(Long questionSetId);
 
 	Optional<QuestionEntity> findFirstByQuestionSetOrderByNumberAsc(QuestionSetEntity questionSet);
 

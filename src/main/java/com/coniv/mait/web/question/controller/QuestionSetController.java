@@ -138,10 +138,11 @@ public class QuestionSetController {
 	@Operation(summary = "문제 셋을 최종 저장 API", description = "문제 셋을 제작 완료 상태로 변경")
 	@PutMapping("/{questionSetId}")
 	public ResponseEntity<ApiResponse<QuestionSetApiResponse>> completeQuestionSet(
+		@AuthenticationPrincipal MaitUser user,
 		@PathVariable Long questionSetId, @Valid @RequestBody UpdateQuestionSetApiRequest request) {
 		return ResponseEntity.ok(ApiResponse.ok(QuestionSetApiResponse.from(
 			questionSetService.completeQuestionSet(questionSetId, request.resolvedTitle(),
-				request.solveMode(), request.difficulty(), request.categoryIds()))));
+				request.solveMode(), request.difficulty(), request.categoryIds(), user.id()))));
 	}
 
 	@Operation(summary = "문제 셋 풀이 방식 변경",
@@ -176,9 +177,10 @@ public class QuestionSetController {
 	@Operation(summary = "문제 셋 제목 단건 수정 API", description = "연필 버튼 클릭을 통한 문제 셋 단건 수정")
 	@PatchMapping("/{questionSetId}")
 	public ResponseEntity<ApiResponse<Void>> updateQuestionSet(
+		@AuthenticationPrincipal MaitUser user,
 		@RequestBody @Valid UpdateQuestionSetFieldApiRequest request,
 		@PathVariable Long questionSetId) {
-		questionSetService.updateQuestionSetField(questionSetId, request.resolvedTitle());
+		questionSetService.updateQuestionSetField(questionSetId, request.resolvedTitle(), user.id());
 		return ResponseEntity.ok(ApiResponse.noContent());
 	}
 

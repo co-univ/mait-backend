@@ -24,6 +24,7 @@ import com.coniv.mait.domain.question.repository.AiRequestStatusManager;
 import com.coniv.mait.domain.question.repository.QuestionEntityRepository;
 import com.coniv.mait.domain.question.repository.QuestionSetEntityRepository;
 import com.coniv.mait.domain.question.service.component.QuestionChecker;
+import com.coniv.mait.domain.question.service.component.QuestionReader;
 import com.coniv.mait.domain.question.service.component.QuestionSetReader;
 import com.coniv.mait.domain.question.service.dto.QuestionCount;
 import com.coniv.mait.domain.question.service.dto.QuestionSetCategoryDto;
@@ -64,6 +65,8 @@ public class QuestionSetService {
 	private final TeamReader teamReader;
 
 	private final QuestionSetReader questionSetReader;
+
+	private final QuestionReader questionReader;
 
 	private final QuestionSetMaterialService questionSetMaterialService;
 
@@ -173,17 +176,18 @@ public class QuestionSetService {
 		final String title,
 		final QuestionSetSolveMode solveMode,
 		final String difficulty,
-		final List<Long> categoryIds) {
+		final List<Long> categoryIds,
+		final Long userId) {
 		QuestionSetEntity questionSet = questionSetEntityRepository.findById(questionSetId)
 			.orElseThrow(() -> new EntityNotFoundException("Question set not found"));
+		teamRoleValidator.checkIsTeamManager(questionSet.getTeamId(), userId);
 
 		TeamEntity team = validateTeamSolveMode(questionSet.getTeamId(), solveMode);
 
 		// Todo: 현재 생성 단계가 아니면 예외
 		int number = 1;
 
-		List<QuestionEntity> questions = questionEntityRepository.findAllByQuestionSetIdOrderByLexoRankAsc(
-			questionSetId);
+		List<QuestionEntity> questions = questionReader.getOrderedQuestions(questionSetId);
 		for (QuestionEntity question : questions) {
 			question.updateNumber(number++);
 		}
@@ -218,9 +222,10 @@ public class QuestionSetService {
 	}
 
 	@Transactional
-	public void updateQuestionSetField(final Long questionSetId, final String title) {
+	public void updateQuestionSetField(final Long questionSetId, final String title, final Long userId) {
 		QuestionSetEntity questionSet = questionSetEntityRepository.findById(questionSetId)
 			.orElseThrow(() -> new EntityNotFoundException("Question set not found"));
+		teamRoleValidator.checkIsTeamManager(questionSet.getTeamId(), userId);
 
 		questionSet.updateTitle(title);
 	}
