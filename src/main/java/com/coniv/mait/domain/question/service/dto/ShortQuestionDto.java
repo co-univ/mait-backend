@@ -46,7 +46,7 @@ public class ShortQuestionDto extends QuestionDto {
 		return ShortQuestionDto.builder()
 			.id(shortQuestion.getId())
 			.content(shortQuestion.getContent())
-			.explanation(shortQuestion.getExplanation())
+			.explanation(answerVisible ? shortQuestion.getExplanation() : null)
 			.number(shortQuestion.getNumber())
 			.imageUrl(shortQuestion.getImageUrl())
 			.imageId(shortQuestion.getImageId())

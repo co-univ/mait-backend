@@ -40,7 +40,7 @@ public class OrderingQuestionDto extends QuestionDto {
 		return OrderingQuestionDto.builder()
 			.id(orderingQuestion.getId())
 			.content(orderingQuestion.getContent())
-			.explanation(orderingQuestion.getExplanation())
+			.explanation(answerVisible ? orderingQuestion.getExplanation() : null)
 			.number(orderingQuestion.getNumber())
 			.questionStatus(orderingQuestion.getQuestionStatus())
 			.imageUrl(orderingQuestion.getImageUrl())
