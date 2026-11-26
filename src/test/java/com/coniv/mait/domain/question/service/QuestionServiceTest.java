@@ -408,7 +408,7 @@ class QuestionServiceTest {
 
 		// factory 메서드들이 올바르게 호출되었는지 확인
 		verify(teamRoleValidator).checkQuestionReadAuthority(questionSetEntity, USER_ID, DeliveryMode.MAKING);
-		verify(questionSetEntity).validateReadableMode(DeliveryMode.MAKING);
+		verify(questionSetEntity).validateReadableModeAndStatus(DeliveryMode.MAKING);
 		verify(questionReader).getQuestionsByQuestionSet(questionSetEntity);
 		verify(shortQuestionFactory).getQuestion(shortQuestion, true);
 		verify(orderingQuestionFactory).getQuestion(orderingQuestion, true);
@@ -452,7 +452,7 @@ class QuestionServiceTest {
 		QuestionSetEntity questionSetEntity = mock(QuestionSetEntity.class);
 		when(questionSetReader.getQuestionSet(questionSetId)).thenReturn(questionSetEntity);
 		doThrow(new QuestionSetStatusException(QuestionSetStatusExceptionCode.ONLY_LIVE_TIME))
-			.when(questionSetEntity).validateReadableMode(DeliveryMode.LIVE_TIME);
+			.when(questionSetEntity).validateReadableModeAndStatus(DeliveryMode.LIVE_TIME);
 
 
 		ShortQuestionEntity shortQuestion = mock(ShortQuestionEntity.class);
@@ -494,7 +494,7 @@ class QuestionServiceTest {
 
 		// then - answerVisible = true로 호출되어야 함
 		verify(teamRoleValidator).checkQuestionReadAuthority(questionSetEntity, USER_ID, mode);
-		verify(questionSetEntity).validateReadableMode(mode);
+		verify(questionSetEntity).validateReadableModeAndStatus(mode);
 		verifyNoInteractions(solvingSessionReader);
 		verify(shortQuestionFactory).getQuestion(shortQuestion, true);
 	}

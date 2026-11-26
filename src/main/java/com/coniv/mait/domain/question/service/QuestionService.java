@@ -158,7 +158,7 @@ public class QuestionService {
 		QuestionEntity question = questionReader.getQuestion(questionId, questionSetId);
 		QuestionSetEntity questionSet = questionSetReader.getQuestionSet(questionSetId);
 		teamRoleValidator.checkQuestionReadAuthority(questionSet, userId, mode);
-		questionSet.validateReadableMode(mode);
+		questionSet.validateReadableModeAndStatus(mode);
 		boolean answerVisible = isAnswerVisible(questionSet, userId, mode);
 
 		return getQuestionFactory(question.getType()).getQuestion(question, answerVisible);
@@ -168,7 +168,7 @@ public class QuestionService {
 	public List<QuestionDto> getQuestions(final Long questionSetId, final DeliveryMode mode, final Long userId) {
 		QuestionSetEntity questionSet = questionSetReader.getQuestionSet(questionSetId);
 		teamRoleValidator.checkQuestionReadAuthority(questionSet, userId, mode);
-		questionSet.validateReadableMode(mode);
+		questionSet.validateReadableModeAndStatus(mode);
 		boolean answerVisible = isAnswerVisible(questionSet, userId, mode);
 		return questionReader.getQuestionsByQuestionSet(questionSet).stream()
 			.sorted(mode.questionComparator())

@@ -100,7 +100,7 @@ public class QuestionSetEntity extends BaseTimeEntity {
 		return status == QuestionSetStatus.ONGOING && solveMode == QuestionSetSolveMode.LIVE_TIME;
 	}
 
-	public void validateReadableMode(final DeliveryMode mode) {
+	public void validateReadableModeAndStatus(final DeliveryMode mode) {
 		if (mode == DeliveryMode.LIVE_TIME && !isOnLive()) {
 			throw new QuestionSetStatusException(QuestionSetStatusExceptionCode.ONLY_LIVE_TIME);
 		}

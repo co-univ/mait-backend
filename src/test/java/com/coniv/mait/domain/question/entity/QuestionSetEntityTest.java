@@ -25,7 +25,7 @@ class QuestionSetEntityTest {
 		QuestionSetEntity questionSet = QuestionSetEntity.builder().solveMode(solveMode).status(status).build();
 
 		// when & then
-		assertThatCode(() -> questionSet.validateReadableMode(mode)).doesNotThrowAnyException();
+		assertThatCode(() -> questionSet.validateReadableModeAndStatus(mode)).doesNotThrowAnyException();
 	}
 
 	@ParameterizedTest
@@ -41,7 +41,7 @@ class QuestionSetEntityTest {
 		QuestionSetEntity questionSet = QuestionSetEntity.builder().solveMode(solveMode).status(status).build();
 
 		// when & then
-		assertThatThrownBy(() -> questionSet.validateReadableMode(mode))
+		assertThatThrownBy(() -> questionSet.validateReadableModeAndStatus(mode))
 			.isInstanceOfSatisfying(QuestionSetStatusException.class,
 				exception -> assertThat(exception.getExceptionCode()).isEqualTo(code));
 	}
