@@ -1,10 +1,5 @@
 package com.coniv.mait.domain.solve.service.component;
 
-import java.util.Optional;
-import java.util.concurrent.TimeUnit;
-
-import org.redisson.api.RLock;
-import org.redisson.api.RedissonClient;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
@@ -12,16 +7,18 @@ import org.springframework.transaction.annotation.Transactional;
 import com.coniv.mait.domain.solve.entity.QuestionScorerEntity;
 import com.coniv.mait.domain.solve.repository.AnswerSubmitRecordEntityRepository;
 import com.coniv.mait.domain.solve.repository.QuestionScorerEntityRepository;
+import com.coniv.mait.global.lock.DistributedLock;
 
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 
-@Slf4j
 @Component
 @RequiredArgsConstructor
 public class ScorerGenerator {
 
-	private static final String KEY_PREFIX = "$scorer:update:questionId:";
+	// 득점자 판정은 제출 순서대로 처리돼야 하므로 즉시 거절하지 않고 대기한다.
+	private static final long LOCK_WAIT_SECONDS = 30L;
+
+	private static final String LOCK_KEY = "'scorer:update:questionId:' + #questionId";
 
 	private final QuestionScorerEntityRepository questionScorerEntityRepository;
 
@@ -29,55 +26,32 @@ public class ScorerGenerator {
 
 	private final ScorerProcessor scorerProcessor;
 
-	private final RedissonClient redissonClient;
-
+	// 락 획득 후 새 트랜잭션을 시작해야 REPEATABLE READ 에서도 직전 보유자가 커밋한 득점자를 읽는다.
+	// 제출 트랜잭션에 합류하면 락 대기 전에 열린 스냅샷을 읽어 득점자 중복 INSERT 로 제출이 실패한다.
+	// 락은 호출자 트랜잭션이 끝날 때 해제되므로 재계산이 미커밋 제출 기록을 놓치지 않는다.
+	@DistributedLock(key = LOCK_KEY, waitTime = LOCK_WAIT_SECONDS)
 	@Transactional(propagation = Propagation.REQUIRES_NEW)
 	public void updateScorer(Long questionId, Long userId, Long submitOrder) {
-		RLock lock = redissonClient.getLock(generateKey(questionId));
-		try {
-			boolean available = lock.tryLock(30, 1, TimeUnit.SECONDS);
-
-			if (!available) {
-				log.error("[락 획득 실패] questionId: {} , userId: {}", questionId, userId);
-				throw new RuntimeException("Scorer lock error");
+		questionScorerEntityRepository.findByQuestionId(questionId).ifPresentOrElse(scorer -> {
+			if (scorer.getSubmitOrder() > submitOrder) {
+				scorer.updateScorer(userId, submitOrder);
+				questionScorerEntityRepository.save(scorer);
 			}
-
-			updateOrInsertScorer(questionId, userId, submitOrder);
-
-		} catch (InterruptedException e) {
-			throw new RuntimeException(e);
-		} finally {
-			if (lock.isLocked() && lock.isHeldByCurrentThread()) {
-				lock.unlock();
-			}
-		}
+		}, () -> questionScorerEntityRepository.save(QuestionScorerEntity.builder()
+			.questionId(questionId)
+			.userId(userId)
+			.submitOrder(submitOrder)
+			.build()));
 	}
 
+	@DistributedLock(key = LOCK_KEY, waitTime = LOCK_WAIT_SECONDS)
 	@Transactional(propagation = Propagation.REQUIRES_NEW)
 	public void recalculateScorer(Long questionId) {
-		RLock lock = redissonClient.getLock(generateKey(questionId));
-		try {
-			boolean available = lock.tryLock(30, 1, TimeUnit.SECONDS);
-
-			if (!available) {
-				log.error("[락 획득 실패] 득점자 재계산 questionId: {}", questionId);
-				throw new RuntimeException("Scorer lock error");
-			}
-
-			answerSubmitRecordEntityRepository
-				.findFirstByQuestionIdAndIsCorrectTrueOrderBySubmitOrderAsc(questionId)
-				.ifPresentOrElse(
-					record -> applyScorer(questionId, record.getUserId(), record.getSubmitOrder()),
-					() -> removeScorer(questionId));
-
-		} catch (InterruptedException e) {
-			Thread.currentThread().interrupt();
-			throw new RuntimeException(e);
-		} finally {
-			if (lock.isLocked() && lock.isHeldByCurrentThread()) {
-				lock.unlock();
-			}
-		}
+		answerSubmitRecordEntityRepository
+			.findFirstByQuestionIdAndIsCorrectTrueOrderBySubmitOrderAsc(questionId)
+			.ifPresentOrElse(
+				record -> applyScorer(questionId, record.getUserId(), record.getSubmitOrder()),
+				() -> removeScorer(questionId));
 	}
 
 	private void applyScorer(Long questionId, Long userId, Long submitOrder) {
@@ -98,26 +72,5 @@ public class ScorerGenerator {
 			.ifPresent(questionScorerEntityRepository::delete);
 
 		scorerProcessor.clearScorer(questionId);
-	}
-
-	private void updateOrInsertScorer(Long questionId, Long userId, Long submitOrder) {
-		Optional<QuestionScorerEntity> questionScorer = questionScorerEntityRepository.findByQuestionId(questionId);
-		questionScorer.ifPresentOrElse(scorer -> {
-			if (scorer.getSubmitOrder() > submitOrder) {
-				scorer.updateScorer(userId, submitOrder);
-				questionScorerEntityRepository.save(scorer);
-			}
-		}, () -> {
-			QuestionScorerEntity newScorer = QuestionScorerEntity.builder()
-				.questionId(questionId)
-				.userId(userId)
-				.submitOrder(submitOrder)
-				.build();
-			questionScorerEntityRepository.save(newScorer);
-		});
-	}
-
-	private String generateKey(final Long questionId) {
-		return KEY_PREFIX + questionId;
 	}
 }
