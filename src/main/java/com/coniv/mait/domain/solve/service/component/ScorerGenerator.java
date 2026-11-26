@@ -1,7 +1,5 @@
 package com.coniv.mait.domain.solve.service.component;
 
-import java.util.Optional;
-
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
@@ -33,7 +31,16 @@ public class ScorerGenerator {
 	@DistributedLock(key = LOCK_KEY, waitTime = LOCK_WAIT_SECONDS)
 	@Transactional
 	public void updateScorer(Long questionId, Long userId, Long submitOrder) {
-		updateOrInsertScorer(questionId, userId, submitOrder);
+		questionScorerEntityRepository.findByQuestionId(questionId).ifPresentOrElse(scorer -> {
+			if (scorer.getSubmitOrder() > submitOrder) {
+				scorer.updateScorer(userId, submitOrder);
+				questionScorerEntityRepository.save(scorer);
+			}
+		}, () -> questionScorerEntityRepository.save(QuestionScorerEntity.builder()
+			.questionId(questionId)
+			.userId(userId)
+			.submitOrder(submitOrder)
+			.build()));
 	}
 
 	@DistributedLock(key = LOCK_KEY, waitTime = LOCK_WAIT_SECONDS)
@@ -64,22 +71,5 @@ public class ScorerGenerator {
 			.ifPresent(questionScorerEntityRepository::delete);
 
 		scorerProcessor.clearScorer(questionId);
-	}
-
-	private void updateOrInsertScorer(Long questionId, Long userId, Long submitOrder) {
-		Optional<QuestionScorerEntity> questionScorer = questionScorerEntityRepository.findByQuestionId(questionId);
-		questionScorer.ifPresentOrElse(scorer -> {
-			if (scorer.getSubmitOrder() > submitOrder) {
-				scorer.updateScorer(userId, submitOrder);
-				questionScorerEntityRepository.save(scorer);
-			}
-		}, () -> {
-			QuestionScorerEntity newScorer = QuestionScorerEntity.builder()
-				.questionId(questionId)
-				.userId(userId)
-				.submitOrder(submitOrder)
-				.build();
-			questionScorerEntityRepository.save(newScorer);
-		});
 	}
 }
