@@ -197,7 +197,7 @@ public class QuestionService {
 	}
 
 	public List<QuestionDto> getQuestions(final Long questionSetId, final DeliveryMode mode) {
-		return questionEntityRepository.findAllByQuestionSetId(questionSetId).stream()
+		return questionReader.getQuestionsByQuestionSet(questionSetId).stream()
 			.sorted(mode.questionComparator())
 			.map(question -> getQuestionFactory(question.getType()).getQuestion(question, mode.isAnswerVisible()))
 			.toList();
