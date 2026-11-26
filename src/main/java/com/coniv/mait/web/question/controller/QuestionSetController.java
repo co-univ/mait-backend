@@ -135,7 +135,9 @@ public class QuestionSetController {
 		return ResponseEntity.ok(ApiResponse.ok(QuestionSetApiResponse.from(questionSetDto)));
 	}
 
-	@Operation(summary = "문제 셋을 최종 저장 API", description = "문제 셋을 제작 완료 상태로 변경")
+	@Operation(summary = "문제 셋을 최종 저장 API",
+		description = "팀의 MAKER/OWNER가 MAKING 상태의 문제 셋을 제작 완료한다. "
+			+ "시작 전(BEFORE) 문제 셋의 모드 변경은 solve-mode API를 사용한다.")
 	@PutMapping("/{questionSetId}")
 	public ResponseEntity<ApiResponse<QuestionSetApiResponse>> completeQuestionSet(
 		@AuthenticationPrincipal MaitUser user,
